@@ -1,0 +1,33 @@
+name: flutter_powerauth_mobile_sdk_plugin_example
+description: "Testing app for the PowerAuth Flutter Mobile SDK"
+# The +1 is a temporary build number so that flutter build ios does not complain
+# about it missing for bundle.
+version: 0.0.1+1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Local symlink of our SDK
+  flutter_powerauth_mobile_sdk_plugin:
+    path: ../
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
