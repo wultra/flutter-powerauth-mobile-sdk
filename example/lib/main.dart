@@ -17,6 +17,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  bool _isConfigured = false;
   final _flutterPowerauthMobileSdkPlugin = PowerAuth("testID");
 
   @override
@@ -27,17 +28,32 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initPlatformState() async {
     String platformVersion;
+    bool isConfigured;
     try {
-      platformVersion =
-          await _flutterPowerauthMobileSdkPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      platformVersion = await _flutterPowerauthMobileSdkPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      isConfigured = await _flutterPowerauthMobileSdkPlugin.isConfigured();
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
+      isConfigured = false;
+    }
+
+    if (isConfigured) {
+      print("already configured");
+    } else {
+     await _flutterPowerauthMobileSdkPlugin.configure(
+        configuration: PowerAuthConfiguration(
+          configuration: 'ARAVst+fkgOOT/U1gBr1qLMDEOTfEduuLUvbpOmTq7cI+skBAUEEVjKe+8yFg62GvhwU8eE3iEZZCOeNqtEyz2AXXs/yZewnmdETC8J2sNcw5NnIApYDUmBh2n+XRHize4EiVdetjQ==', 
+          baseEndpointUrl: 'https://localhost/wrong'
+          )
+        );
+        print("Configured");
     }
 
     if (!mounted) return;
 
     setState(() {
       _platformVersion = platformVersion;
+      _isConfigured = isConfigured;
     });
   }
   
@@ -50,7 +66,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('PowerAuth testing app'),
+          title: Text('PowerAuth testing app: $_isConfigured'),
         ),
         body: Center(
           child: Text('Running on: $_platformVersion\n'),
