@@ -1,3 +1,9 @@
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_activation.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_activation_status.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authorization_http_header.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_configuration.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_create_activation_result.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
@@ -11,6 +17,126 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
 
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
+
+  @override
+  Future<bool> canStartActivation(String instanceId) {
+    // TODO: implement canStartActivation
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> changePassword(String instanceId, Object oldPassword, Object newPassword) {
+    // TODO: implement changePassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> configure({required String instanceId, required PowerAuthConfiguration configuration}) {
+    // TODO: implement configure
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PowerAuthCreateActivationResult> createActivation(String instanceId, PowerAuthActivation activation) {
+    // TODO: implement createActivation
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deconfigure(String instanceId) {
+    // TODO: implement deconfigure
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PowerAuthActivationStatus> fetchActivationStatus(String instanceId) {
+    // TODO: implement fetchActivationStatus
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getActivationFingerprint(String instanceId) {
+    // TODO: implement getActivationFingerprint
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getActivationIdentifier(String instanceId) {
+    // TODO: implement getActivationIdentifier
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> hasPendingActivation(String instanceId) {
+    // TODO: implement hasPendingActivation
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> hasValidActivation(String instanceId) {
+    // TODO: implement hasValidActivation
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> isConfigured(String instanceId) {
+    // TODO: implement isConfigured
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String> offlineSignature(String instanceId, PowerAuthAuthentication authentication, String uriId, String nonce, [String? body]) {
+    // TODO: implement offlineSignature
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> persistActivation(String instanceId, PowerAuthAuthentication authentication) {
+    // TODO: implement persistActivation
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> removeActivationLocal(String instanceId) {
+    // TODO: implement removeActivationLocal
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> removeActivationWithAuthentication(String instanceId, PowerAuthAuthentication authentication) {
+    // TODO: implement removeActivationWithAuthentication
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(String instanceId, PowerAuthAuthentication authentication, String uriId, [Map<String, String>? queryParams]) {
+    // TODO: implement requestGetSignature
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PowerAuthAuthorizationHttpHeader> requestSignature(String instanceId, PowerAuthAuthentication authentication, String method, String uriId, [String? body]) {
+    // TODO: implement requestSignature
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> unsafeChangePassword(String instanceId, Object oldPassword, Object newPassword) {
+    // TODO: implement unsafeChangePassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> validatePassword(String instanceId, Object password) {
+    // TODO: implement validatePassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> verifyServerSignedData(String instanceId, String data, String signature, bool useMasterKey) {
+    // TODO: implement verifyServerSignedData
+    throw UnimplementedError();
+  }
 }
 
 void main() {
@@ -21,7 +147,7 @@ void main() {
   });
 
   test('getPlatformVersion', () async {
-    PowerAuth flutterPowerauthMobileSdkPlugin = PowerAuth();
+    PowerAuth flutterPowerauthMobileSdkPlugin = PowerAuth("testID");
     MockFlutterPowerauthMobileSdkPluginPlatform fakePlatform = MockFlutterPowerauthMobileSdkPluginPlatform();
     PowerAuthPlatform.instance = fakePlatform;
 

@@ -8,7 +8,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('getPlatformVersion test', (WidgetTester tester) async {
-    final PowerAuth plugin = PowerAuth();
+    final PowerAuth plugin = PowerAuth("testID");
     final String? version = await plugin.getPlatformVersion();
 
     expect(version?.isNotEmpty, true);

@@ -15,35 +15,31 @@
  */
 
 import Flutter
-import UIKit
 import PowerAuth2
-import PowerAuthCore
 
-public class PowerAuthPlugin: NSObject, FlutterPlugin {
+public class PowerAuthPasswordPlugin: NSObject, FlutterPlugin {
+
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "powerauth_plugin", binaryMessenger: registrar.messenger())
-        let instance = PowerAuthPlugin()
+        // Use the unique channel name defined in Dart
+        let channel = FlutterMethodChannel(name: "powerauth_password_plugin", binaryMessenger: registrar.messenger())
+        let instance = PowerAuthPasswordPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
-
-        // Similarly to Android - sub-plugin registration to autolinking..
-        PowerAuthPasswordPlugin.register(with: registrar)
     }
-    
+
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
 
-        // Similarly to CDV, args are passed as part of the `FlutterMethodCall` object
-        // guard let arguments = call.arguments as? [String: Any] else {
-        //     // Error here?
-        //     return
-        // }
-        
         switch call.method {
-            //  case "configure": configure(call: call, result: result)
-            //  case "isConfigured": isConfigured(instanceId: instanceId, result: result)
-            case "getPlatformVersion": result("iOS " + UIDevice.current.systemVersion)
+            // case "initialize":
+            // case "release":
+            // case "length":
+            // case "clear":
+            // case "addCharacter":
+            // case "insertCharacter":
+            // case "removeCharacterAt":
+            // case "removeLastCharacter":
+            // case "isEqualTo":
 
             default:
-                print("PowerAuthPlugin received unexpected method: \(call.method)")
                 result(FlutterMethodNotImplemented)
         }
     }
