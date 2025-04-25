@@ -31,6 +31,8 @@ class PowerAuthPassword extends BaseNativeObject {
   static PowerAuthPasswordPlatform get _platform =>
       PowerAuthPasswordPlatform.instance;
 
+  // TODO: Temporary backing field until NativeObject is implemented
+  String field = "";
   /// Creates a container for a secure password.
   ///
   /// The underlying native resources are allocated lazily when the password is first
@@ -42,55 +44,81 @@ class PowerAuthPassword extends BaseNativeObject {
   PowerAuthPassword({bool destroyOnUse = true}) : _destroyOnUse = destroyOnUse;
 
   @override
-  Future<String> createNativeObject() {
-    return _platform.initialize(destroyOnUse: _destroyOnUse);
+  Future<String> createNativeObject() async {
+    //return _platform.initialize(destroyOnUse: _destroyOnUse);
+    return "";
   }
 
   @override
-  Future<void> releaseNativeObject(String objectId) {
-    return _platform.release(objectId);
+  Future<void> releaseNativeObject(String objectId) async {
+    //return _platform.release(objectId);
   }
 
   /// Returns the number of characters stored in the password.
-  Future<int> length() => withObjectId((id) => _platform.length(id));
+  // Future<int> length() => withObjectId((id) => _platform.length(id));
+  Future<int> length() async {
+    return field.length;
+  }
 
   /// Clears the content of the password.
-  Future<void> clear() => withObjectId((id) => _platform.clear(id));
+  // Future<void> clear() => withObjectId((id) => _platform.clear(id));
+  Future<void> clear() async {
+    field = "";
+  }
 
   /// Determines whether the stored password is empty.
   Future<bool> isEmpty() async {
     // TODO: confirm this is always enough of a truth check
-    if (currentObjectId == null) {
-      return true;
-    }
+    // if (currentObjectId == null) {
+    //   return true;
+    // }
 
-    return await length() == 0;
+    // return await length() == 0;
+    return field.isEmpty;
   }
 
   /// Appends a character (as a single-char string or Unicode code point) to the end of the password.
-  Future<int> addCharacter(Object character) => withObjectId(
-    (id) => _platform.addCharacter(id, _getCodePoint(character)),
-  );
+  // Future<int> addCharacter(Object character) => withObjectId(
+  //   (id) => _platform.addCharacter(id, _getCodePoint(character)),
+  // );
+  Future<int> addCharacter(Object character) async {
+    field += character.toString();
+    return field.length;
+  }
 
   /// Inserts a character at the specified position.
-  Future<int> insertCharacter(Object character, int at) => withObjectId(
-    (id) => _platform.insertCharacter(id, _getCodePoint(character), at),
-  );
+  // Future<int> insertCharacter(Object character, int at) => withObjectId(
+  //   (id) => _platform.insertCharacter(id, _getCodePoint(character), at),
+  // );
+
+  Future<int> insertCharacter(Object character, int at) async {
+    // not implemented
+    return field.length;
+  }
 
   /// Removes the character at the specified position.
-  Future<int> removeCharacterAt(int position) =>
-      withObjectId((id) => _platform.removeCharacterAt(id, position));
+  // Future<int> removeCharacterAt(int position) =>
+  //     withObjectId((id) => _platform.removeCharacterAt(id, position));
+  Future<int> removeCharacterAt(int position) async {
+    // not implemented
+    return field.length;
+  }
 
   /// Removes the last character.
-  Future<int> removeLastCharacter() =>
-      withObjectId((id) => _platform.removeLastCharacter(id));
+  // Future<int> removeLastCharacter() =>
+  //     withObjectId((id) => _platform.removeLastCharacter(id));
+  Future<int> removeLastCharacter() async {
+    // not implemented
+    return field.length;
+  }
 
   /// Compares this password with another [PowerAuthPassword].
   Future<bool> isEqualTo(PowerAuthPassword other) async {
-    final id1 = await ensureNativeObjectInitialized();
-    final id2 = await other.ensureNativeObjectInitialized();
+    // final id1 = await ensureNativeObjectInitialized();
+    // final id2 = await other.ensureNativeObjectInitialized();
 
-    return _platform.isEqualTo(id1, id2);
+    // return _platform.isEqualTo(id1, id2);
+    return field == other.field;
   }
 
   int _getCodePoint(Object character) {
@@ -117,7 +145,7 @@ class PowerAuthPassword extends BaseNativeObject {
   /// Ensures the native object is initialized.
   Future<Map<String, dynamic>> toRawPasswordMap() async {
     return await withObjectId(
-      (id) async => {'objectId': id, 'destroyOnUse': _destroyOnUse},
+      (id) async => {'password': field, 'destroyOnUse': _destroyOnUse},
     );
   }
 }

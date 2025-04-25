@@ -118,7 +118,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
       'fetchActivationStatus',
       {'instanceId': instanceId},
     );
-    return PowerAuthActivationStatus.fromMap(result);
+    return PowerAuthActivationStatus.fromJson(result);
   }
 
   @override

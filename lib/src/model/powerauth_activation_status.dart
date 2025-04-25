@@ -43,27 +43,21 @@ class PowerAuthActivationStatus {
     this.customObject,
   });
 
-  factory PowerAuthActivationStatus.fromMap(Map<dynamic, dynamic> map) {
+  factory PowerAuthActivationStatus.fromJson(Map<dynamic, dynamic> map) {
 
     PowerAuthActivationState parseState(String? stateString) {
       if (stateString == null) {
-
         // TODO - default out or throw?
         return PowerAuthActivationState.removed;
       }
         
       try {
-        return PowerAuthActivationState.values.firstWhere(
-          (e) => e.name.toUpperCase() == stateString.toUpperCase(),
-        );
+        return PowerAuthActivationState.values.firstWhere((e) => e.name == stateString);
       } catch (e) {
         
         // TODO - default out or throw?
-        print(
-          "Warning: Unknown PowerAuthActivationState received: $stateString",
-        );
-        return PowerAuthActivationState
-            .removed;
+        print("Warning: Unknown PowerAuthActivationState received: $stateString");
+        return PowerAuthActivationState.removed;
       }
     }
 
@@ -77,5 +71,17 @@ class PowerAuthActivationStatus {
               ? Map<String, dynamic>.from(map['customObject'] as Map)
               : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    var json = {
+      'state': state.name,
+      'failCount': failCount,
+      'maxFailCount': maxFailCount,
+      'remainingAttempts': remainingAttempts,
+      'customObject': customObject,
+    };
+    json.removeWhere((key, value) => value == null);
+    return json;
   }
 }

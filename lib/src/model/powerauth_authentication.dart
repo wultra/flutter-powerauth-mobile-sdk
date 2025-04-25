@@ -58,9 +58,9 @@ class PowerAuthBiometricPrompt {
 /// Use the factory constructors to create instances for different factor combinations.
 class PowerAuthAuthentication {
 
-  /// Password used for the knowledge factor. Can be a [String] or [PowerAuthPassword].
+  /// Password used for the knowledge factor.
   /// Set only if the knowledge factor is required.
-  final Object? password;
+  final PowerAuthPassword? password;
 
   /// Configuration for the biometric prompt, if biometry factor is used.
   final PowerAuthBiometricPrompt? biometricPrompt;
@@ -99,8 +99,7 @@ class PowerAuthAuthentication {
   }
 
   /// Creates an authentication object configured for possession and knowledge (password) factors.
-  /// [password] can be a [String] or a [PowerAuthPassword] object.
-  factory PowerAuthAuthentication.password(Object password) {
+  factory PowerAuthAuthentication.password(PowerAuthPassword password) {
     validatePasswordType(password);
     return PowerAuthAuthentication._(
       password: password,
@@ -110,8 +109,7 @@ class PowerAuthAuthentication {
   }
 
   /// Creates an object configured to persist activation with password.
-  /// [password] can be a [String] or a [PowerAuthPassword] object.
-  factory PowerAuthAuthentication.persistWithPassword(Object password) {
+  factory PowerAuthAuthentication.persistWithPassword(PowerAuthPassword password) {
     validatePasswordType(password);
     return PowerAuthAuthentication._(
       password: password,
@@ -121,10 +119,10 @@ class PowerAuthAuthentication {
   }
 
   /// Creates an object configured to persist activation with password and biometry.
-  /// [password] can be a [String] or a [PowerAuthPassword] object.
+  /// [password] [PowerAuthPassword] object.
   /// [biometricPrompt] is required on Android only when biometry config has `authenticateOnBiometricKeySetup` set to `true`.
   factory PowerAuthAuthentication.persistWithPasswordAndBiometry({
-    required Object password,
+    required PowerAuthPassword password,
     PowerAuthBiometricPrompt? biometricPrompt,
   }) {
     validatePasswordType(password);
@@ -148,12 +146,8 @@ class PowerAuthAuthentication {
   /// Converts this object into a map suitable for sending over the method channel.
   /// Handles converting PowerAuthPassword to its raw representation.
   Future<Map<String, dynamic>> toMap() async {
-    Object? rawPassword;
-    if (password is PowerAuthPassword) {
-      rawPassword = await (password as PowerAuthPassword).toRawPasswordMap();
-    } else if (password is String) {
-      rawPassword = password;
-    }
+    
+    var rawPassword = await (password as PowerAuthPassword).toRawPasswordMap();
 
     return {
       'password': rawPassword,
