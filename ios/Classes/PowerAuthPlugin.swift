@@ -55,7 +55,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
             // "getExternalPendingOperation" -> getExternalPendingOperation(instanceId, result)
         case "createActivation": createActivation(call, result)
         case "persistActivation": persistActivation(call, result)
-            // "validatePassword" -> validatePassword(call, instanceId, result)
+        case "validatePassword": validatePassword(call, result)
             // "changePassword" -> changePassword(call, instanceId, result)
             // "unsafeChangePassword" -> unsafeChangePassword(call, instanceId, result)
             // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
@@ -291,6 +291,26 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         }
     }
     
+    func validatePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        
+        usePowerAuth(call, result) { pa in
+            
+            guard
+                let passParam = self.getPasswordParameter(call, result),
+                let password = self.usePassword(dict: passParam, result: result) else {
+                return
+            }
+            
+            pa.validatePassword(password: password) { error in
+                if error == nil {
+                    result(nil)
+                } else {
+                    result(FlutterError(powerAuthError: error))
+                }
+            }
+        }
+    }
+    
     // MARK: PowerAuth Helper methods
     
     private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK) -> Void) {
@@ -369,6 +389,14 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         return PowerAuthCorePassword(string: password)
     }
     
+    private func getPasswordParameter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) -> [String: Any]? {
+        return getParameter("password", call, result)
+    }
+    
+    private func getPasswordParameter(from: [String: Any]) -> [String: Any]? {
+        return getParameter("password", from, nil)
+    }
+    
     private func constructAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, persist: Bool) -> PowerAuthAuthentication? {
         
         guard let dict: [String: Any] = getParameter("authentication", call, result) else {
@@ -377,7 +405,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
         
-        let userPassword: [String: Any]? = getParameter("password", dict, nil)
+        let userPassword = getPasswordParameter(from: dict)
         
         if persist {
             // Activation persist

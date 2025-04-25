@@ -119,6 +119,21 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<bool> validatePassword(String password) async {
+    try {
+      var paPassword = PowerAuthPassword();
+      for (var i = 0; i < password.length; i++) {
+        paPassword.addCharacter(password[i]);
+      }
+      await _sdk.validatePassword(paPassword);
+      print("Password is valid");
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -153,12 +168,33 @@ class _MyAppState extends State<MyApp> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  var password = await _showTextInputDialog(context, "Enter password");
+                  var password = await _showTextInputDialog(context, "Enter password to persist");
                   if (password != null && password.isNotEmpty) {
                     persistActivation(password);
                   }
                 },
                 child: const Text('Persist Registration'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  var password = await _showTextInputDialog(context, "Enter password to validate");
+                  if (password != null && password.isNotEmpty) {
+                    if (await validatePassword(password)) {
+                      _showSimpleDialog(
+                        context,
+                        "Success",
+                        "Password is valid",
+                      );
+                    } else {
+                      _showSimpleDialog(
+                        context,
+                        "Error",
+                        "Password is invalid",
+                      );
+                    }
+                  }
+                },
+                child: const Text('Validate Password'),
               ),
             ],
           ),
@@ -187,6 +223,28 @@ class _MyAppState extends State<MyApp> {
               child: const Text("OK"),
               onPressed: () => Navigator.pop(context, controller.text),
             ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<String?> _showSimpleDialog(
+    BuildContext context,
+    String title,
+    String text
+  ) async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(text),
+          actions: <Widget>[
+            ElevatedButton(
+              child: const Text("OK"),
+              onPressed: () => Navigator.pop(context),
+            )
           ],
         );
       },

@@ -139,16 +139,14 @@ class PowerAuth {
   Future<void> persistActivation(PowerAuthAuthentication authentication) =>
       _platform.persistActivation(instanceId, authentication);
 
-  /// Validates the provided [password] ([String] or [PowerAuthPassword]) against the server.
+  /// Validates the provided [password] against the server.
   /// This typically involves computing a signature and verifying it server-side.
-  Future<void> validatePassword(Object password) =>
+  Future<void> validatePassword(PowerAuthPassword password) =>
       _platform.validatePassword(instanceId, password);
 
   /// Changes the user's password. Validates the [oldPassword] on the server before
   /// setting the [newPassword].
-  /// 
-  /// Accepts [String] or [PowerAuthPassword] for both arguments.
-  Future<void> changePassword(Object oldPassword, Object newPassword) =>
+  Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) =>
       _platform.changePassword(instanceId, oldPassword, newPassword);
 
   /// Changes the user's password locally without server-side validation of the [oldPassword].
@@ -157,10 +155,8 @@ class PowerAuth {
   /// the local activation state may become corrupted. Ensure the old password
   /// is validated through other means before calling this.
   /// 
-  /// Accepts [String] or [PowerAuthPassword] for both arguments.
-  /// 
   /// Returns `true` if the local change was successful, `false` otherwise (e.g., cryptographic error).
-  Future<bool> unsafeChangePassword(Object oldPassword, Object newPassword) =>
+  Future<bool> unsafeChangePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) =>
       _platform.unsafeChangePassword(instanceId, oldPassword, newPassword);
 
   /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
