@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../model/powerauth_activation.dart';
@@ -120,22 +121,22 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('persistActivation() has not been implemented.');
   }
 
-  Future<void> validatePassword(String instanceId, Object password) {
+  Future<void> validatePassword(String instanceId, PowerAuthPassword password) {
     throw UnimplementedError('validatePassword() has not been implemented.');
   }
 
   Future<void> changePassword(
     String instanceId,
-    Object oldPassword,
-    Object newPassword,
+    PowerAuthPassword oldPassword,
+    PowerAuthPassword newPassword,
   ) {
     throw UnimplementedError('changePassword() has not been implemented.');
   }
 
   Future<bool> unsafeChangePassword(
     String instanceId,
-    Object oldPassword,
-    Object newPassword,
+    PowerAuthPassword oldPassword,
+    PowerAuthPassword newPassword,
   ) {
     throw UnimplementedError(
       'unsafeChangePassword() has not been implemented.',

@@ -40,20 +40,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   static MethodChannel get sharedChannel =>
       (PowerAuthPlatform.instance as PowerAuthMethodChannel).methodChannel;
 
-  static Future<dynamic> _serializePassword(Object password) async {
-    if (password is PowerAuthPassword) {
-  
-      return await password.toRawPasswordMap();
-    } else if (password is String) {
-  
-      return password;
-    } else {
-      throw ArgumentError(
-        'Password must be a String or a PowerAuthPassword object.',
-      );
-    }
-  }
-
   @override
   Future<void> configure({
     required String instanceId,
@@ -118,7 +104,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
       'fetchActivationStatus',
       {'instanceId': instanceId},
     );
-    return PowerAuthActivationStatus.fromMap(result);
+    return PowerAuthActivationStatus.fromJson(result);
   }
 
   @override
@@ -163,36 +149,36 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   }
 
   @override
-  Future<void> validatePassword(String instanceId, Object password) async {
+  Future<void> validatePassword(String instanceId, PowerAuthPassword password) async {
     await invokeMethod<void>('validatePassword', {
       'instanceId': instanceId,
-      'password': await _serializePassword(password),
+      'password': await password.toRawPasswordMap()
     });
   }
 
   @override
   Future<void> changePassword(
     String instanceId,
-    Object oldPassword,
-    Object newPassword,
+    PowerAuthPassword oldPassword,
+    PowerAuthPassword newPassword,
   ) async {
     await invokeMethod<void>('changePassword', {
       'instanceId': instanceId,
-      'oldPassword': await _serializePassword(oldPassword),
-      'newPassword': await _serializePassword(newPassword),
+      'oldPassword': await oldPassword.toRawPasswordMap(),
+      'newPassword': await newPassword.toRawPasswordMap()
     });
   }
 
   @override
   Future<bool> unsafeChangePassword(
     String instanceId,
-    Object oldPassword,
-    Object newPassword,
+    PowerAuthPassword oldPassword,
+    PowerAuthPassword newPassword,
   ) async {
     return await invokeMethod<bool>('unsafeChangePassword', {
       'instanceId': instanceId,
-      'oldPassword': await _serializePassword(oldPassword),
-      'newPassword': await _serializePassword(newPassword),
+      'oldPassword': await oldPassword.toRawPasswordMap(),
+      'newPassword': await newPassword.toRawPasswordMap(),
     });
   }
 

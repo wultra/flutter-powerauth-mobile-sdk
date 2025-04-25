@@ -25,7 +25,7 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   }
 
   @override
-  Future<void> changePassword(String instanceId, Object oldPassword, Object newPassword) {
+  Future<void> changePassword(String instanceId, PowerAuthPassword oldPassword, PowerAuthPassword newPassword) {
     // TODO: implement changePassword
     throw UnimplementedError();
   }
@@ -121,13 +121,13 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   }
 
   @override
-  Future<bool> unsafeChangePassword(String instanceId, Object oldPassword, Object newPassword) {
+  Future<bool> unsafeChangePassword(String instanceId, PowerAuthPassword oldPassword, PowerAuthPassword newPassword) {
     // TODO: implement unsafeChangePassword
     throw UnimplementedError();
   }
 
   @override
-  Future<void> validatePassword(String instanceId, Object password) {
+  Future<void> validatePassword(String instanceId, PowerAuthPassword password) {
     // TODO: implement validatePassword
     throw UnimplementedError();
   }
