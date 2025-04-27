@@ -57,7 +57,6 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         case "persistActivation": persistActivation(call, result)
         case "validatePassword": validatePassword(call, result)
             // "changePassword" -> changePassword(call, instanceId, result)
-            // "unsafeChangePassword" -> unsafeChangePassword(call, instanceId, result)
             // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
             // "requestSignature" -> requestSignature(call, instanceId, result)
             // "offlineSignature" -> offlineSignature(call, instanceId, result)

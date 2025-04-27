@@ -104,9 +104,6 @@ enum PowerAuthErrorCode {
   /// Error in `correctTypedCharacter`.
   invalidCharacter,
 
-  /// Used invalid recovery code in parseRecoveryCode.
-  invalidRecoveryCode,
-
   /// Error when generating a token.
   cannotGenerateToken,
 

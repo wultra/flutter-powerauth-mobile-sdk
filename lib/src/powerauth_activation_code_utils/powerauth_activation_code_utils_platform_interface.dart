@@ -40,24 +40,10 @@ abstract class PowerAuthUtilsPlatform extends PlatformInterface {
     throw UnimplementedError('parseActivationCode() has not been implemented.');
   }
 
-  Future<PowerAuthActivationCode> parseRecoveryCode(String recoveryCode) {
-    throw UnimplementedError('parseRecoveryCode() has not been implemented.');
-  }
-
   Future<bool> validateActivationCode(String activationCode) {
     throw UnimplementedError(
       'validateActivationCode() has not been implemented.',
     );
-  }
-
-  Future<bool> validateRecoveryCode(String recoveryCode) {
-    throw UnimplementedError(
-      'validateRecoveryCode() has not been implemented.',
-    );
-  }
-
-  Future<bool> validateRecoveryPuk(String puk) {
-    throw UnimplementedError('validateRecoveryPuk() has not been implemented.');
   }
 
   Future<bool> validateTypedCharacter(int character) {

@@ -125,10 +125,9 @@ class PowerAuth {
   ) => _platform.removeActivationWithAuthentication(instanceId, authentication);
 
   /// Starts the activation process using the provided [activation] details
-  /// (activation code, recovery code, or custom attributes).
+  /// (activation code or custom attributes).
   /// 
-  /// Returns a [PowerAuthCreateActivationResult] containing the activation fingerprint
-  /// and potentially recovery information.
+  /// Returns a [PowerAuthCreateActivationResult] containing the activation fingerprint.
   Future<PowerAuthCreateActivationResult> createActivation(
     PowerAuthActivation activation,
   ) => _platform.createActivation(instanceId, activation);
@@ -148,16 +147,6 @@ class PowerAuth {
   /// setting the [newPassword].
   Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) =>
       _platform.changePassword(instanceId, oldPassword, newPassword);
-
-  /// Changes the user's password locally without server-side validation of the [oldPassword].
-  /// 
-  /// **Warning:** Use with extreme caution. If the [oldPassword] is incorrect,
-  /// the local activation state may become corrupted. Ensure the old password
-  /// is validated through other means before calling this.
-  /// 
-  /// Returns `true` if the local change was successful, `false` otherwise (e.g., cryptographic error).
-  Future<bool> unsafeChangePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) =>
-      _platform.unsafeChangePassword(instanceId, oldPassword, newPassword);
 
   /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
   ///
@@ -252,6 +241,5 @@ class PowerAuth {
   //     _platform.removeBiometryFactor(instanceId);
 
   // TODO: remove this debug call before release!
-  // --- DEBUG ---
   Future<String?> getPlatformVersion() => _platform.getPlatformVersion();
 }

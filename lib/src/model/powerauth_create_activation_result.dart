@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-import 'powerauth_recovery_activation_data.dart';
-
 /// Success object returned by the `createActivation` call.
 class PowerAuthCreateActivationResult {
 
   /// Decimalized fingerprint calculated from device's and server's public keys.
   final String activationFingerprint;
 
-  /// If supported and enabled on the server, then the object contains "Recovery Code" and PUK,
-  /// created for this particular activation. Your application should display these values to the user
-  /// and forget them immediately. You should NEVER store these values persistently on the device.
-  final PowerAuthRecoveryActivationData? activationRecovery;
-
   /// When available, the contents of this object depend on your enrollment server configuration.
   final Map<String, dynamic>? customAttributes;
 
   PowerAuthCreateActivationResult({
     required this.activationFingerprint,
-    this.activationRecovery,
     this.customAttributes,
   });
 
   factory PowerAuthCreateActivationResult.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthCreateActivationResult(
       activationFingerprint: map['activationFingerprint'] as String,
-      activationRecovery:
-          map['activationRecovery'] != null
-              ? PowerAuthRecoveryActivationData.fromMap(
-                map['activationRecovery'] as Map,
-              )
-              : null,
       customAttributes:
           map['customAttributes'] != null
               ? Map<String, dynamic>.from(map['customAttributes'] as Map)

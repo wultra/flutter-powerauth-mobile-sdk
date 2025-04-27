@@ -57,31 +57,10 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
   }
 
   @override
-  Future<PowerAuthActivationCode> parseRecoveryCode(String recoveryCode) async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'util_parseRecoveryCode',
-      {'recoveryCode': recoveryCode},
-    );
-    return PowerAuthActivationCode.fromMap(result);
-  }
-
-  @override
   Future<bool> validateActivationCode(String activationCode) async {
     return await invokeMethod<bool>('util_validateActivationCode', {
       'activationCode': activationCode,
     });
-  }
-
-  @override
-  Future<bool> validateRecoveryCode(String recoveryCode) async {
-    return await invokeMethod<bool>('util_validateRecoveryCode', {
-      'recoveryCode': recoveryCode,
-    });
-  }
-
-  @override
-  Future<bool> validateRecoveryPuk(String puk) async {
-    return await invokeMethod<bool>('util_validateRecoveryPuk', {'puk': puk});
   }
 
   @override
@@ -97,7 +76,6 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
       'character': character,
     });
   }
-
 
   @override
   Future<PinTestResult> testPin(Object pin) async {

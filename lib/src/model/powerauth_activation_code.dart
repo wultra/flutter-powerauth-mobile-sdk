@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-/// Contains parsed components from a user-provided activation or recovery code.
+/// Contains parsed components from a user-provided activation.
 class PowerAuthActivationCode {
 
   /// If created from an activation code, contains the code without the signature part.
-  /// If created from a recovery code, contains the code without the optional "R:" prefix.
   final String activationCode;
 
   /// Signature calculated from [activationCode].
   /// Typically optional if the user typed the code manually.
-  /// Always empty if created from a recovery code.
   final String? activationSignature;
 
   PowerAuthActivationCode({
@@ -34,7 +32,7 @@ class PowerAuthActivationCode {
   factory PowerAuthActivationCode.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthActivationCode(
       activationCode: map['activationCode'] as String,
-      // Handle potential null from native if signature isn't present
+      // TODO: handle potential null from native if signature isn't present
       activationSignature: map['activationSignature'] as String?,
     );
   }

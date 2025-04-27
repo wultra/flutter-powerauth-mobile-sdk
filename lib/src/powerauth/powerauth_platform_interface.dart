@@ -17,13 +17,6 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import '../model/powerauth_activation.dart';
-import '../model/powerauth_activation_status.dart';
-import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
-import '../model/powerauth_configuration.dart';
-import '../model/powerauth_create_activation_result.dart';
-
 import 'powerauth_method_channel.dart';
 
 /// An internal platform interface for core PowerAuth SDK functionalities.
@@ -133,16 +126,6 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('changePassword() has not been implemented.');
   }
 
-  Future<bool> unsafeChangePassword(
-    String instanceId,
-    PowerAuthPassword oldPassword,
-    PowerAuthPassword newPassword,
-  ) {
-    throw UnimplementedError(
-      'unsafeChangePassword() has not been implemented.',
-    );
-  }
-
   Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
@@ -206,7 +189,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   //   );
   // }
 
-  // --- Deprecated / Example ---
+  // TODO: remove this debug call before release!
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }

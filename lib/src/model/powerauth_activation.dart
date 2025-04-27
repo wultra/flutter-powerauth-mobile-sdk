@@ -25,12 +25,6 @@ class PowerAuthActivation {
   /// May contain an optional signature part if scanned from a QR code.
   final String? activationCode;
 
-  /// Recovery code, obtained either via QR code scanning or by manual entry.
-  final String? recoveryCode;
-
-  /// PUK obtained by manual entry.
-  final String? recoveryPuk;
-
   /// Custom activation parameters that are used to prove identity of a user.
   final Map<String, dynamic>? identityAttributes;
 
@@ -50,8 +44,6 @@ class PowerAuthActivation {
   PowerAuthActivation._({
     required this.activationName,
     this.activationCode,
-    this.recoveryCode,
-    this.recoveryPuk,
     this.identityAttributes,
     this.extras,
     this.customAttributes,
@@ -75,23 +67,6 @@ class PowerAuthActivation {
     );
   }
 
-  /// Creates an instance configured with a recovery activation code and PUK.
-  factory PowerAuthActivation.fromRecoveryCode({
-    required String recoveryCode,
-    required String recoveryPuk,
-    required String name,
-    String? extras,
-    Map<String, dynamic>? customAttributes,
-  }) {
-    return PowerAuthActivation._(
-      activationName: name,
-      recoveryCode: recoveryCode,
-      recoveryPuk: recoveryPuk,
-      extras: extras,
-      customAttributes: customAttributes,
-    );
-  }
-
   /// Creates an instance configured with identity attributes for custom activation purposes.
   factory PowerAuthActivation.fromIdentityAttributes({
     required Map<String, dynamic> identityAttributes,
@@ -111,8 +86,6 @@ class PowerAuthActivation {
     return {
       'activationName': activationName,
       'activationCode': activationCode,
-      'recoveryCode': recoveryCode,
-      'recoveryPuk': recoveryPuk,
       'identityAttributes': identityAttributes,
       'extras': extras,
       'customAttributes': customAttributes,

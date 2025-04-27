@@ -16,9 +16,9 @@
 
 import 'dart:async';
 
-import '../model/powerauth_error.dart'; // Assuming PinTestResult will be defined here or elsewhere
-import 'powerauth_password_platform_interface.dart'; // Import for platform interface
-import '../model/base_native_object.dart'; // Import the base class
+import '../model/powerauth_error.dart';
+import 'powerauth_password_platform_interface.dart';
+import '../model/base_native_object.dart';
 
 /// Represents a secure storage for a user's password or PIN.
 /// Extends [BaseNativeObject] to handle native object lifecycle.

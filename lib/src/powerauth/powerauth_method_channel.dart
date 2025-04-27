@@ -170,19 +170,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   }
 
   @override
-  Future<bool> unsafeChangePassword(
-    String instanceId,
-    PowerAuthPassword oldPassword,
-    PowerAuthPassword newPassword,
-  ) async {
-    return await invokeMethod<bool>('unsafeChangePassword', {
-      'instanceId': instanceId,
-      'oldPassword': await oldPassword.toRawPasswordMap(),
-      'newPassword': await newPassword.toRawPasswordMap(),
-    });
-  }
-
-  @override
   Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
@@ -287,6 +274,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   //   });
   // }
 
+  // TODO: remove this debug call before release!
   @override
   Future<String?> getPlatformVersion() async {
     final version = await methodChannel.invokeMethod<String>(

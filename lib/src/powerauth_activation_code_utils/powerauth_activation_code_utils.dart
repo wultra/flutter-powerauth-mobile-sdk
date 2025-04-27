@@ -21,19 +21,14 @@ import '../model/powerauth_activation_code.dart';
 import '../model/powerauth_error.dart';
 import '../powerauth_password/powerauth_password.dart';
 
-/// Provides utility functions related to PowerAuth activation codes, PUKs, and PIN strength.
+/// Provides utility functions related to PowerAuth activation codes nd PIN strength.
 /// The `PowerAuthActivationCodeUtil` provides various set of methods for parsing and validating
-/// activation or recovery codes.
+/// activation codes.
 ///
 /// Current format:
 /// ```
 /// code without signature:    CCCCC-CCCCC-CCCCC-CCCCC
 /// code with signature:       CCCCC-CCCCC-CCCCC-CCCCC#BASE64_STRING_WITH_SIGNATURE
-/// 
-/// recovery code:             CCCCC-CCCCC-CCCCC-CCCCC
-/// recovery code from QR:     R:CCCCC-CCCCC-CCCCC-CCCCC
-/// 
-/// recovery PUK:              DDDDDDDDDD
 /// ```
 /// 
 /// - Where the 'C' is Base32 sequence of characters, fully decodable into the sequence of bytes.
@@ -41,9 +36,6 @@ import '../powerauth_password/powerauth_password.dart';
 ///   it to last two bytes (in big endian order).
 /// 
 /// - Where the 'D' is digit (0 - 9)
-/// 
-/// As you can see, both activation and recovery codes, shares the same basic principle (like CRC16
-/// checksum). That's why parser returns the same `PowerAuthOtp` object for both scenarios. 
 class PowerAuthActivationCodeUtil {
 
   PowerAuthActivationCodeUtil._();
@@ -58,32 +50,17 @@ class PowerAuthActivationCodeUtil {
     String activationCode,
   ) => _platform.parseActivationCode(activationCode);
 
-  /// Parses a recovery code string (e.g., "ABCDE-FGHIJ-KLMNO-PQRST" or "R:ABCDE-FGHIJ-KLMNO-PQRST").
-  /// Returns a [PowerAuthActivationCode] object (signature will be null).
-  /// Throws an exception if the format is invalid.
-  static Future<PowerAuthActivationCode> parseRecoveryCode(
-    String recoveryCode,
-  ) => _platform.parseRecoveryCode(recoveryCode);
-
   /// Validates the format of an activation code (must not contain the signature part).
   static Future<bool> validateActivationCode(String activationCode) =>
       _platform.validateActivationCode(activationCode);
 
-  /// Validates the format of a recovery code (allows the optional "R:" prefix).
-  static Future<bool> validateRecoveryCode(String recoveryCode) =>
-      _platform.validateRecoveryCode(recoveryCode);
-
-  /// Validates the format of a PUK (typically checks for 10 digits).
-  static Future<bool> validateRecoveryPuk(String puk) =>
-      _platform.validateRecoveryPuk(puk);
-
   /// Checks if a character (given as Unicode code point) is a valid character
-  /// for activation or recovery codes (Base32: A-Z, 2-7).
+  /// for activation codes (Base32: A-Z, 2-7).
   static Future<bool> validateTypedCharacter(int character) =>
       _platform.validateTypedCharacter(character);
 
   /// Validates and potentially corrects a typed character (Unicode code point)
-  /// for activation/recovery codes.
+  /// for activation codes.
   ///
   /// Corrections performed:
   /// - Lowercase to uppercase (a -> A)
