@@ -17,8 +17,6 @@
 package com.wultra.android.powerauth.flutter
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -28,13 +26,34 @@ import io.getlime.security.powerauth.core.*
 import io.getlime.security.powerauth.exception.*
 import io.getlime.security.powerauth.networking.response.*
 import io.getlime.security.powerauth.sdk.*
+import io.getlime.security.powerauth.core.Password
+import io.getlime.security.powerauth.exception.PowerAuthErrorException
+import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 
+// TODO: migrate method docs from RN
 class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel : MethodChannel
     private lateinit var context: Context
 
     private val instances = mutableMapOf<String, PowerAuthSDK>()
-    private val mainThreadHandler = Handler(Looper.getMainLooper())
+
+    companion object ArgKeys {
+        const val INSTANCE_ID = "instanceId"
+        const val CONFIGURATION = "configuration"
+        const val ACTIVATION = "activation"
+        const val AUTHENTICATION = "authentication"
+        const val PASSWORD = "password"
+        const val OLD_PASSWORD = "oldPassword"
+        const val NEW_PASSWORD = "newPassword"
+        const val URI_ID = "uriId"
+        const val QUERY_PARAMS = "queryParams"
+        const val METHOD = "method"
+        const val BODY = "body"
+        const val NONCE = "nonce"
+        const val DATA = "data"
+        const val SIGNATURE = "signature"
+        const val USE_MASTER_KEY = "useMasterKey"
+    }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -72,6 +91,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+
         // TODO(post-beta): Flutter can destroy / recreate the plugin object if the engine detaches.
         // This can happen f.e. with the back button press on the first screen (app keeps running, but plugins re-attach.
         // We should explore this more (and cache the state?).
@@ -80,7 +100,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun usePowerAuth(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
         try {
-            val instanceId: String = call.argument("instanceId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing instanceId parameter")
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             val sdk = instances[instanceId] ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured.")
 
             block(sdk)
@@ -91,33 +111,22 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     // TODO: copy-pasted placeholder for when we have biometry
     private fun usePowerAuthOnMainThread(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
-        mainThreadHandler.post {
-            usePowerAuth(call, result, block)
-        }
-    }
-
-    private fun postResultSuccess(result: Result, data: Any?) {
-        mainThreadHandler.post { result.success(data) }
-    }
-
-    private fun postResultError(result: Result, throwable: Throwable) {
-        mainThreadHandler.post { Errors.error(result, throwable) }
+//        Handler(Looper.getMainLooper()).post {
+//            usePowerAuth(call, result, block)
+//        }
     }
 
     private fun configure(call: MethodCall, result: Result) {
         try {
-            val instanceId: String = call.argument("instanceId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing instanceId parameter")
-            val configurationMap: Map<String, Any> = call.argument("configuration") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing configuration parameter")
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val configurationMap: Map<String, Any> = call.getRequiredArgument(CONFIGURATION)
             if (instances.containsKey(instanceId)) {
                 throw WrapperException(Errors.EC_WRONG_PARAMETER, "PowerAuth instance '$instanceId' is already configured.")
             }
 
             val powerAuthConfiguration = buildPowerAuthConfiguration(instanceId, configurationMap)
-            val clientConfiguration = buildPowerAuthClientConfiguration(configurationMap["clientConfiguration"] as? Map<String, Any> ?: emptyMap())
 
-            val sdk = PowerAuthSDK.Builder(powerAuthConfiguration)
-                .clientConfiguration(clientConfiguration)
-                .build(context)
+            val sdk = PowerAuthSDK.Builder(powerAuthConfiguration).build(context)
 
             instances[instanceId] = sdk
             result.success(null)
@@ -128,7 +137,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun isConfigured(call: MethodCall, result: Result) {
         try {
-            val instanceId: String = call.argument("instanceId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing instanceId parameter")
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             result.success(instances.containsKey(instanceId))
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -137,7 +146,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun deconfigure(call: MethodCall, result: Result) {
         try {
-            val instanceId: String = call.argument("instanceId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing instanceId parameter")
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             instances.remove(instanceId)
 
             // TODO: check if SDK needs explicit cleanup
@@ -181,10 +190,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
         usePowerAuth(call, result) { sdk ->
             sdk.fetchActivationStatusWithCallback(context, object : IActivationStatusListener {
                 override fun onActivationStatusSucceed(status: ActivationStatus) {
-                    postResultSuccess(result, activationStatusToMap(status))
+                    result.success(activationStatusToMap(status))
                 }
                 override fun onActivationStatusFailed(t: Throwable) {
-                    postResultError(result, t)
+                    Errors.error(result, t)
                 }
             })
         }
@@ -199,14 +208,14 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun removeActivationWithAuthentication(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, "authentication", result, persist = false)
+            val authentication = buildAuthenticationObject(call, persist = false)
 
             sdk.removeActivationWithAuthentication(context, authentication, object: IActivationRemoveListener {
                 override fun onActivationRemoveSucceed() {
-                    postResultSuccess(result, null)
+                    result.success(null)
                 }
                 override fun onActivationRemoveFailed(t: Throwable) {
-                    postResultError(result, t)
+                    Errors.error(result, t)
                 }
             })
         }
@@ -214,15 +223,15 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun createActivation(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val activationMap: Map<String, Any> = call.argument("activation") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing activation parameter")
+            val activationMap: Map<String, Any> = call.getRequiredArgument(ACTIVATION)
             val activation = buildActivationObject(activationMap)
 
             sdk.createActivation(activation, object: ICreateActivationListener {
                 override fun onActivationCreateSucceed(activationResult: CreateActivationResult) {
-                    postResultSuccess(result, createActivationResultToMap(activationResult))
+                    result.success(createActivationResultToMap(activationResult))
                 }
                 override fun onActivationCreateFailed(t: Throwable) {
-                    postResultError(result, t)
+                    Errors.error(result, t)
                 }
             })
         }
@@ -230,7 +239,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun persistActivation(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, "authentication", result, persist = true)
+            val authentication = buildAuthenticationObject(call, persist = true)
             val resultCode = sdk.persistActivationWithAuthentication(context, authentication)
 
             if (resultCode == PowerAuthErrorCodes.SUCCEED) {
@@ -243,15 +252,15 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun validatePassword(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val passwordMap: Map<String, Any> = call.argument("password") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing password parameter")
+            val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val password = buildPasswordObject(passwordMap)
 
             sdk.validatePassword(context, password, object: IValidatePasswordListener {
                 override fun onPasswordValid() {
-                    postResultSuccess(result, null)
+                    result.success(null)
                 }
                 override fun onPasswordValidationFailed(t: Throwable) {
-                    postResultError(result, t)
+                    Errors.error(result, t)
                 }
             })
         }
@@ -259,18 +268,18 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun changePassword(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val oldPasswordMap: Map<String, Any> = call.argument("oldPassword") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing oldPassword parameter")
-            val newPasswordMap: Map<String, Any> = call.argument("newPassword") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing newPassword parameter")
+            val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
+            val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
 
             val oldPassword = buildPasswordObject(oldPasswordMap)
             val newPassword = buildPasswordObject(newPasswordMap)
 
             sdk.changePassword(context, oldPassword, newPassword, object: IChangePasswordListener {
                 override fun onPasswordChangeSucceed() {
-                    postResultSuccess(result, null)
+                    result.success(null)
                 }
                 override fun onPasswordChangeFailed(t: Throwable) {
-                    postResultError(result, t)
+                    Errors.error(result, t)
                 }
             })
         }
@@ -278,9 +287,9 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun requestGetSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, "authentication", result, persist = false)
-            val uriId: String = call.argument("uriId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing uriId parameter")
-            val queryParams: Map<String, String>? = call.argument("queryParams")
+            val authentication = buildAuthenticationObject(call, persist = false)
+            val uriId: String = call.getRequiredArgument(URI_ID)
+            val queryParams: Map<String, String>? = call.argument(QUERY_PARAMS)
 
             val header = sdk.requestGetSignatureWithAuthentication(context, authentication, uriId, queryParams)
 
@@ -294,10 +303,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun requestSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, "authentication", result, persist = false)
-            val method: String = call.argument("method") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing method parameter")
-            val uriId: String = call.argument("uriId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing uriId parameter")
-            val bodyString: String? = call.argument("body")
+            val authentication = buildAuthenticationObject(call, persist = false)
+            val method: String = call.getRequiredArgument(METHOD)
+            val uriId: String = call.getRequiredArgument(URI_ID)
+            val bodyString: String? = call.argument(BODY)
             val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
 
             val header = sdk.requestSignatureWithAuthentication(context, authentication, method, uriId, requestData)
@@ -312,10 +321,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun offlineSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, "authentication", result, persist = false)
-            val uriId: String = call.argument("uriId") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing uriId parameter")
-            val nonce: String = call.argument("nonce") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing nonce parameter")
-            val bodyString: String? = call.argument("body")
+            val authentication = buildAuthenticationObject(call, persist = false)
+            val uriId: String = call.getRequiredArgument(URI_ID)
+            val nonce: String = call.getRequiredArgument(NONCE)
+            val bodyString: String? = call.argument(BODY)
             val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
 
             val signature: String? =
@@ -331,9 +340,9 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
 
     private fun verifyServerSignedData(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val dataString: String = call.argument("data") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing data parameter")
-            val signature: String = call.argument("signature") ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing signature parameter")
-            val useMasterKey: Boolean = call.argument("useMasterKey") ?: false
+            val dataString: String = call.getRequiredArgument(DATA)
+            val signature: String = call.getRequiredArgument(SIGNATURE)
+            val useMasterKey: Boolean = call.argument<Boolean>(USE_MASTER_KEY) ?: false
             val dataBytes = DataFormat.BASE64.decodeBytes(dataString)
             val signatureBytes = DataFormat.BASE64.decodeBytes(signature)
 
@@ -344,17 +353,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
     }
 
     private fun buildPowerAuthConfiguration(instanceId: String, map: Map<String, Any>): PowerAuthConfiguration {
-        val baseEndpointUrl = map["baseEndpointUrl"] as? String ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing 'apiUrl' in configuration")
-        val configuration = map["configuration"] as? String ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing 'appKey' in configuration")
-
+        val baseEndpointUrl = map["baseEndpointUrl"] as? String ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing 'baseEndpointUrl' in configuration")
+        val configuration = map["configuration"] as? String ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing 'configuration' in configuration")
 
         return PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configuration).build()
-    }
-
-    private fun buildPowerAuthClientConfiguration(map: Map<String, Any>): PowerAuthClientConfiguration {
-        val builder = PowerAuthClientConfiguration.Builder()
-        // TODO: add full configs when implemented in Dart
-        return builder.build()
     }
 
     private fun activationStatusToMap(status: ActivationStatus): Map<String, Any?> {
@@ -397,8 +399,8 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
         return activationBuilder.build()
     }
 
-    private fun buildAuthenticationObject(call: MethodCall, argumentName: String, result: Result, persist: Boolean): PowerAuthAuthentication {
-        val authMap: Map<String, Any> = call.argument(argumentName) ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing $argumentName parameter")
+    private fun buildAuthenticationObject(call: MethodCall, persist: Boolean): PowerAuthAuthentication {
+        val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
 
 //        val useBiometry = authMap["isBiometry"] as? Boolean ?: false
         val passwordMap = authMap["password"] as? Map<String, Any>
@@ -444,6 +446,14 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler {
         return mapOf(
             "key" to header.key,
             "value" to header.value
+        )
+    }
+
+    @Throws(WrapperException::class)
+    private fun <T> MethodCall.getRequiredArgument(key: String): T {
+        return this.argument<T>(key) ?: throw WrapperException(
+            Errors.EC_WRONG_PARAMETER,
+            "Missing required argument: '$key'"
         )
     }
 }
