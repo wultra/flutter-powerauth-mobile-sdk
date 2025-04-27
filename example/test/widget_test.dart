@@ -5,7 +5,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/main.dart';
 
 void main() {
   testWidgets('Verify Platform version', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const PowerAuthTestingApp());
 
     expect(
       find.byWidgetPredicate(

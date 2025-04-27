@@ -29,7 +29,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_powerauth_mobile_sdk_plugin: bcda5fbfaeb30930760fd3cdbecfb7bb80038a52
+  flutter_powerauth_mobile_sdk_plugin: 4020632fcfd2350ed2e9734405adad384774d167
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   PowerAuth2: e2599d3b5fc750e6bd872d9b616f9d2b74d7a1ee
   PowerAuthCore: 31ac7f7ca404376ee8dff4a827b6c754989b28cf
