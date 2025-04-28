@@ -33,87 +33,79 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-
-        // Similarly to CDV, args are passed as part of the `FlutterMethodCall` object
-        // guard let arguments = call.arguments as? [String: Any] else {
-        //     // Error here?
-        //     return
-        // }
         
-        switch call.method {
-        case "configure": configure(call, result)
-        case "isConfigured": isConfigured(call, result)
-        case "deconfigure": deconfigure(call, result)
-        case "hasValidActivation": hasValidActivation(call, result)
-        case "canStartActivation": canStartActivation(call, result)
-        case "hasPendingActivation": hasPendingActivation(call, result)
-        case "getActivationIdentifier": getActivationIdentifier(call, result)
-        case "getActivationFingerprint": getActivationFingerprint(call, result)
-        case "fetchActivationStatus": fetchActivationStatus(call, result)
-        case "removeActivationLocal": removeActivationLocal(call, result)
-        case "removeActivationWithAuthentication": removeActivationWithAuthentication(call, result)
-            // "getExternalPendingOperation" -> getExternalPendingOperation(instanceId, result)
-        case "createActivation": createActivation(call, result)
-        case "persistActivation": persistActivation(call, result)
-        case "validatePassword": validatePassword(call, result)
-        case "changePassword": changePassword(call, result)
-            // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
-            // "requestSignature" -> requestSignature(call, instanceId, result)
-        case "offlineSignature": offlineSignature(call, result)
-        case "verifyServerSignedData": verifyServerSignedData(call, result)
-        case "getPlatformVersion": result("iOS " + UIDevice.current.systemVersion)
-
-        default:
-            print("PowerAuthPlugin received unexpected method: \(call.method)")
-            result(FlutterMethodNotImplemented)
+        do {
+            switch call.method {
+            case "configure": try configure(call, result)
+            case "isConfigured": try isConfigured(call, result)
+            case "deconfigure": try deconfigure(call, result)
+            case "hasValidActivation": try hasValidActivation(call, result)
+            case "canStartActivation": try canStartActivation(call, result)
+            case "hasPendingActivation": try hasPendingActivation(call, result)
+            case "getActivationIdentifier": try getActivationIdentifier(call, result)
+            case "getActivationFingerprint": try getActivationFingerprint(call, result)
+            case "fetchActivationStatus": try fetchActivationStatus(call, result)
+            case "removeActivationLocal": try removeActivationLocal(call, result)
+            case "removeActivationWithAuthentication": try removeActivationWithAuthentication(call, result)
+                // "getExternalPendingOperation" -> getExternalPendingOperation(instanceId, result)
+            case "createActivation": try createActivation(call, result)
+            case "persistActivation": try persistActivation(call, result)
+            case "validatePassword": try validatePassword(call, result)
+            case "changePassword": try changePassword(call, result)
+                // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
+                // "requestSignature" -> requestSignature(call, instanceId, result)
+            case "offlineSignature": try offlineSignature(call, result)
+            case "verifyServerSignedData": try verifyServerSignedData(call, result)
+            case "getPlatformVersion": result("iOS " + UIDevice.current.systemVersion)
+                
+            default:
+                print("PowerAuthPlugin received unexpected method: \(call.method)")
+                result(FlutterMethodNotImplemented)
+            }
+        } catch let e {
+            result(FlutterError(thrownByPlugin: e))
         }
+    }
+    
+    enum ArgKeys: String {
+        case instanceId
+        case configuration
+        case activation
+        case authentication
+        case password
+        case oldPassword
+        case newPassword
+        case uriId
+        case queryParams
+        case method
+        case body
+        case nonce
+        case data
+        case signature
+        case useMasterKey
     }
     
     // MARK: - POWERAUTH PLUGIN API CODE
     
     private var instances = [String: PowerAuthSDK]()
     
-    private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        result(getPowerAuthInstance(call) != nil)
+    private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        let instanceId: String = try call.requireParameter(.instanceId)
+        result(instances[instanceId] != nil)
     }
     
-    private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        guard let instanceId = getInstanceIdParameter(call) else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Missing instanceId parameter",
-                    details: nil
-                )
-            )
-            return
+        let instanceId: String = try call.requireParameter(.instanceId)
+        
+        guard instances[instanceId] == nil else {
+            throw PluginException(.wrongParameter, message: "PowerAuth instance is alread configured.")
         }
         
-        guard getPowerAuthInstance(instanceId) == nil else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter, // TODO: error code?
-                    message: "PowerAuth instance is alread configured.",
-                    details: nil
-                )
-            )
-            return
-        }
-        
-        guard let configuration: [String: Any] = getParameter("configuration", call, result) else {
-            return
-        }
+        let configuration: FlutterMap = try call.requireParameter(.configuration)
         
         guard let paConfig = PowerAuthConfiguration(instanceId: instanceId, arguments: configuration) else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Invalid PowerAuthConfiguration parameters.",
-                    details: nil
-                )
-            )
-            return
+            throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration parameters.")
         }
         
         let pa = PowerAuthSDK(configuration: paConfig)
@@ -121,137 +113,116 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         result(true)
     }
     
-    private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        
-        guard let instanceId = getInstanceIdParameter(call) else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Missing instanceId parameter",
-                    details: nil
-                )
-            )
-            return
-        }
-        
-        instances.removeValue(forKey: instanceId)
+    private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        instances.removeValue(forKey: try call.requireParameter(.instanceId))
         result(true)
     }
     
-    private func hasValidActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            result(pa.hasValidActivation())
+    private func hasValidActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.hasValidActivation())
         }
     }
     
-    private func canStartActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            result(pa.canStartActivation())
+    private func canStartActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.canStartActivation())
         }
     }
     
-    private func hasPendingActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            result(pa.hasPendingActivation())
+    private func hasPendingActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.hasPendingActivation())
         }
     }
     
-    private func getActivationIdentifier(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            result(pa.activationIdentifier)
+    private func getActivationIdentifier(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.activationIdentifier)
         }
     }
     
-    private func getActivationFingerprint(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            result(pa.activationFingerprint)
+    private func getActivationFingerprint(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.activationFingerprint)
         }
     }
     
-    private func fetchActivationStatus(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
+    private func fetchActivationStatus(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
             
-            pa.fetchActivationStatus { status, error in
+            sdk.fetchActivationStatus { status, error in
                 
-                guard let status else {
-                    result(FlutterError(powerAuthError: error))
-                    return
-                }
-                
-                let response: [String: Any?] = [
-                    "state": status.state.serializable,
-                    "failCount": status.failCount,
-                    "maxFailCount": status.maxFailCount,
-                    "remainingAttempts": status.remainingAttempts,
-                    "customObject": status.customObject
-                ]
-                
-                result(response)
-            }
-        }
-    }
-    
-    private func removeActivationLocal(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            pa.removeActivationLocal()
-            result(true)
-        }
-    }
-    
-    private func removeActivationWithAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
-            
-            guard let auth = constructAuthentication(call, result) else {
-                return
-            }
-            
-            pa.removeActivation(with: auth) { error in
-                if let error {
-                    result(FlutterError(powerAuthError: error))
-                } else {
-                    result(true)
+                wrap {
+                    if let error {
+                        throw error
+                    }
+                    let response: [String: Any?] = [
+                        "state": status!.state.serializable,
+                        "failCount": status!.failCount,
+                        "maxFailCount": status!.maxFailCount,
+                        "remainingAttempts": status!.remainingAttempts,
+                        "customObject": status!.customObject
+                    ]
+                    
+                    result(response)
                 }
             }
         }
     }
     
-    private func createActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
+    private func removeActivationLocal(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            sdk.removeActivationLocal()
+            result(nil)
+        }
+    }
+    
+    private func removeActivationWithAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            
+            sdk.removeActivation(with: try constructAuthentication(call)) { error in
+                wrap {
+                    if let error {
+                        throw error
+                    } else {
+                        result(nil)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func createActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
             
             var paActivation: PowerAuthActivation?
-            
-            guard let activation: [String: Any] = getParameter("activation", call, result) else {
-                return
-            }
-                
+            let activation: FlutterMap = try call.requireParameter(.activation)
             let name = activation["activationName"] as? String
             
             if let activationCode = activation["activationCode"] as? String {
                 do {
                     paActivation = try PowerAuthActivation(activationCode: activationCode, name: name)
                 } catch let e {
-                    result(FlutterError(code: .invalidActivationObject, message: "Invalid activation code provided", details: e.localizedDescription))
-                    return
+                    throw PluginException(.invalidActivationObject, message: "Invalid activation code provided", details: e.localizedDescription)
                 }
             } else if let identityAttributes = activation["identityAttributes"] as? [String: String] {
                 do {
                     paActivation = try PowerAuthActivation(identityAttributes: identityAttributes, name:name)
                 } catch let e {
-                    result(FlutterError(code: .invalidActivationObject, message: "Invalid identity attributes provided", details: e.localizedDescription))
-                    return
+                    throw PluginException(.invalidActivationObject, message: "Invalid identity attributes provided", details: e.localizedDescription)
                 }
             }
             
             guard let paActivation else {
-                result(FlutterError(code: .invalidActivationObject, message: "Activation object is invalid.", details: nil))
-                return
+                throw PluginException(.invalidActivationObject, message: "Activation object is invalid.", details: nil)
             }
             
             if let extras = activation["extras"] as? String {
                 paActivation.with(extras: extras)
             }
             
-            if let customAttributes = activation["customAttributes"] as? [String: Any] {
+            if let customAttributes = activation["customAttributes"] as? FlutterMap {
                 paActivation.with(customAttributes: customAttributes)
             }
             
@@ -259,116 +230,92 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
                 paActivation.with(additionalActivationOtp: otp)
             }
             
-            pa.createActivation(paActivation) { activationResult, error in
+            sdk.createActivation(paActivation) { activationResult, error in
                 
-                guard let activationResult else {
-                    result(FlutterError(powerAuthError: error))
-                    return
+                wrap {
+                    if let error {
+                        throw error
+                    }
+                    
+                    result([
+                        "activationFingerprint": activationResult!.activationFingerprint,
+                        "customAttributes": activationResult!.customAttributes
+                    ])
                 }
-                
-                result([
-                    "activationFingerprint": activationResult.activationFingerprint,
-                    "customAttributes": activationResult.customAttributes
-                ])
             }
         }
     }
     
-    func persistActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
+    func persistActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             
-            guard let auth = constructAuthentication(call, result) else {
-                return
-            }
-            
-            do {
-                try pa.persistActivation(with: auth)
-                result(nil)
-            } catch let e {
-                result(FlutterError(powerAuthError: e))
-            }
+            let auth = try constructAuthentication(call)
+            try sdk.persistActivation(with: auth)
+            result(nil)
         }
     }
     
-    func validatePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    func validatePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        usePowerAuth(call, result) { pa in
+        try usePowerAuth(call, result) { sdk, wrap in
             
-            guard
-                let passParam = self.getPasswordParameter(call, result),
-                let password = self.usePassword(dict: passParam, result: result) else {
-                return
-            }
+            let passParam: FlutterMap = try call.requireParameter(.password)
+            let password = try self.usePassword(passParam)
             
-            pa.validatePassword(password: password) { error in
-                if error == nil {
+            sdk.validatePassword(password: password) { error in
+                wrap {
+                    if let error {
+                        throw error
+                    }
                     result(nil)
-                } else {
-                    result(FlutterError(powerAuthError: error))
                 }
             }
         }
     }
     
-    func changePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    func changePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        usePowerAuth(call, result) { pa in
+        try usePowerAuth(call, result) { sdk, wrap in
             
+            let oldPassParam: FlutterMap = try call.requireParameter(.oldPassword)
+            let newPassParam: FlutterMap = try call.requireParameter(.newPassword)
+            let oldPassword = try self.usePassword(oldPassParam)
+            let newPassword = try self.usePassword(newPassParam)
             
-            guard
-                let oldPassParam = self.getPasswordParameter(call, result, parameter: "oldPassword"),
-                let newPassParam = self.getPasswordParameter(call, result, parameter: "newPassword"),
-                let oldPassword = self.usePassword(dict: oldPassParam, result: result),
-                let newPassword = self.usePassword(dict: newPassParam, result: result)else {
-                return
-            }
-            
-            pa.changePassword(from: oldPassword, to: newPassword) { error in
-                if error == nil {
+            sdk.changePassword(from: oldPassword, to: newPassword) { error in
+                wrap {
+                    if let error {
+                        throw error
+                    }
                     result(nil)
-                } else {
-                    result(FlutterError(powerAuthError: error))
                 }
             }
         }
     }
     
-    private func offlineSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
+    private func offlineSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             
-            guard
-                let auth = self.constructAuthentication(call, result),
-                let uriId: String = self.getParameter("uriId", call, result),
-                let nonce: String = self.getParameter("nonce", call, result) else {
-                return
-            }
-            
+            let auth = try constructAuthentication(call)
+            let uriId: String = try call.requireParameter(.uriId)
+            let nonce: String = try call.requireParameter(.nonce)
             let data: Data?
-            if let bodyString: String = self.getParameter("body", call, nil) {
+            if let bodyString: String = call.getParameter(.body) {
                 data = Data(base64Encoded: bodyString)
             } else {
                 data = nil
             }
             
-            do {
-                let signature = try pa.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce)
-                result(signature)
-            } catch let e {
-                result(FlutterError(powerAuthError: e))
-            }
-            
+            result(try sdk.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce))
         }
     }
     
-    private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        usePowerAuth(call, result) { pa in
+    private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             
-            guard
-                let dataString: String = self.getParameter("data", call, result),
-                let signature: String = self.getParameter("signature", call, result),
-                let masterKey: Bool = self.getParameter("masterKey", call, result) else {
-                return
-            }
+            let dataString: String = try call.requireParameter(.data)
+            let signature: String = try call.requireParameter(.signature)
+            let masterKey: Bool = try call.requireParameter(.useMasterKey)
             
             guard let data: Data = Data(base64Encoded: dataString) else {
                 // TODO: consider returning an error?
@@ -376,7 +323,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
                 return
             }
             
-            let verifyResult = pa.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
+            let verifyResult = sdk.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
             result(verifyResult)
             
         }
@@ -384,106 +331,44 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     
     // MARK: PowerAuth Helper methods
     
-    private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK) -> Void) {
+    private typealias WrapThrowBlock = (() throws -> Void) -> Void
+    
+    private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
         
-        guard let instance = getPowerAuthInstance(call) else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.instanceNotConfigured,
-                    message: "PowerAuth instance not configured.",
-                    details: nil
-                )
-            )
-            return
+        guard let instance = instances[try call.requireParameter(.instanceId)] else {
+            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
         }
         
-        block(instance)
-    }
-    
-    private func getPowerAuthInstance(_ call: FlutterMethodCall) -> PowerAuthSDK? {
-        guard let instanceId = getInstanceIdParameter(call) else {
-            return nil
-        }
-        return getPowerAuthInstance(instanceId)
-    }
-    
-    private func getPowerAuthInstance(_ instanceId: String) -> PowerAuthSDK? {
-        return instances[instanceId]
-    }
-    
-    private func getInstanceIdParameter(_ call: FlutterMethodCall) -> String? {
-        return getParameter("instanceId", call, nil)
-    }
-    
-    private func getParameter<T>(_ key: String, _ call: FlutterMethodCall, _ result: FlutterResult?) -> T? {
-        guard let arguments = call.arguments as? [String: Any] else {
-            result?(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Invalid arguments format. Expecting a Map<String, dynamic>.",
-                    details: nil
-                )
-            )
-            return nil
+        let wrapBlock: WrapThrowBlock = { (tryBlock: () throws -> Void) in
+            do {
+                try tryBlock()
+            } catch let e {
+                result(FlutterError(thrownByPlugin: e))
+            }
         }
         
-        return getParameter(key, arguments, result)
+        try block(instance, wrapBlock)
     }
     
-    private func getParameter<T>(_ key: String, _ arguments: [String: Any], _ result: FlutterResult?) -> T? {
-        guard let parameter = arguments[key] as? T else {
-            result?(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Unexpected parameter format. Expecting \(key) to be of type \(String(describing: T.self)).",
-                    details: nil
-                )
-            )
-            return nil
-        }
-        
-        return parameter
-    }
-    
-    func usePassword(dict: [String: Any]?, result: FlutterResult) -> PowerAuthCorePassword? {
+    private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {
         // TODO: we don't use object register yet, so just take plain password until implemented properly
-        guard let dict, let password = dict["password"] as? String else {
-            result(
-                FlutterError(
-                    code: PowerAuthFlutterError.wrongParameter,
-                    message: "Failed to parse provided password",
-                    details: nil
-                )
-            )
-            return nil
+        guard let dict, let password: String = dict.get(.password) else {
+            throw PluginException(.wrongParameter, message: "Failed to parse provided password")
         }
         return PowerAuthCorePassword(string: password)
     }
     
-    private func getPasswordParameter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, parameter: String = "password") -> [String: Any]? {
-        return getParameter(parameter, call, result)
-    }
-    
-    private func getPasswordParameter(from: [String: Any]) -> [String: Any]? {
-        return getParameter("password", from, nil)
-    }
-    
-    private func constructAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) -> PowerAuthAuthentication? {
+    private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
         
-        guard let dict: [String: Any] = getParameter("authentication", call, result) else {
-            return nil
-        }
-        
+        let dict: FlutterMap = try call.requireParameter(.authentication)
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
         let persist = dict["isPersist"] as? Bool ?? false // TODO: fallback ok?
         
-        let userPassword = getPasswordParameter(from: dict)
+        let userPassword: FlutterMap? = dict.get(.password)
         
         if persist {
             // Activation persist
-            guard let password = usePassword(dict: userPassword, result: result) else {
-                return nil
-            }
+            let password = try usePassword(userPassword)
             if useBiometry {
                 // All factors needs to be estabilished in activation.
                 return PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password)
@@ -493,9 +378,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         } else {
             // Data signing
             if let userPassword {
-                guard let password = usePassword(dict: userPassword, result: result) else {
-                    return nil
-                }
+                let password = try usePassword(userPassword)
                 return PowerAuthAuthentication.possessionWithPassword(password: password)
             } else if useBiometry {
                 if let biometryKeyId = dict["biometryKeyId"] as? String {
@@ -594,86 +477,84 @@ enum PowerAuthFlutterError: String {
 
 extension FlutterError {
     
-    convenience init(code: PowerAuthFlutterError, message: String?, details: Any?) {
-        self.init(code: code.rawValue, message: message, details: details)
-    }
-    
-    // TODO: this is converted 1:1 from React-Native - improve if necessary
-    
-    // expecing NSError thrown from PowerAuthSDK object
-    convenience init(powerAuthError: Error?) {
+    convenience init(thrownByPlugin: Error) {
+        if let pe = thrownByPlugin as? PluginException {
+            self.init(code: pe.code, message: pe.message, details: pe.details)
+            return
+        }
         
         var errorCode: PowerAuthFlutterError
         var message: String
-        var details: Any? = powerAuthError?.localizedDescription
+        var details: Any? = thrownByPlugin.localizedDescription
         
         // all PowerAuth errors are NSErrors
-        if let error = powerAuthError as? NSError {
-            message = error.localizedDescription
-            // If powerAuthErrorCode is different than .NA, then it's PowerAuthDomain error.
-            let paErrorCode = error.powerAuthErrorCode
-            if paErrorCode != PowerAuthErrorCode.NA {
-                // Handle PA error
-                if let responseData = error.userInfo[PowerAuthErrorInfoKey_AdditionalInfo] as? [String: Any] {
-                    // Handle error response received from the server. In this case, we have to re-create the error in a nice-to-serialize manner
-                    let responseObject = error.userInfo[PowerAuthErrorDomain] as? PowerAuthRestApiErrorResponse
-                    let httpStatusCode = responseObject?.httpStatusCode
-                    if (httpStatusCode == 401) {
-                        errorCode = .authenticationError
-                        message = "Unauthorized"
-                    } else {
-                        errorCode = .responseError
-                        message = "Wrong HTTP status code received from the server"
-                    }
-                    var newUserInfo: [String: Any] = [NSLocalizedDescriptionKey: message]
-                    if let responseObject {
-                        newUserInfo["httpStatusCode"] = httpStatusCode
-                        // Serialize dictionary back to string, to be compatible with Android
-                        if let jsonData = try? JSONSerialization.data(withJSONObject: responseData as Any) {
-                            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                                newUserInfo["responseBody"] = jsonString
-                            }
-                        }
-                        if let serverResponseCode = responseObject.responseObject.code {
-                            newUserInfo["serverResponseCode"] = serverResponseCode
-                        }
-                        if let serverResponseMessage = responseObject.responseObject.message {
-                            newUserInfo["serverResponseMessage"] = serverResponseMessage
-                        }
-                    }
-                    // Finally, build a new error
-                    details = [
-                        "domain": PowerAuthErrorDomain,
-                        "code": error.code,
-                        "userInfo": newUserInfo
-                    ]
-                    //
+        let error = thrownByPlugin as NSError
+        message = error.localizedDescription
+        // If powerAuthErrorCode is different than .NA, then it's PowerAuthDomain error.
+        let paErrorCode = error.powerAuthErrorCode
+        if paErrorCode != PowerAuthErrorCode.NA {
+            // Handle PA error
+            if let responseData = error.userInfo[PowerAuthErrorInfoKey_AdditionalInfo] as? FlutterMap {
+                // Handle error response received from the server. In this case, we have to re-create the error in a nice-to-serialize manner
+                let responseObject = error.userInfo[PowerAuthErrorDomain] as? PowerAuthRestApiErrorResponse
+                let httpStatusCode = responseObject?.httpStatusCode
+                if (httpStatusCode == 401) {
+                    errorCode = .authenticationError
+                    message = "Unauthorized"
                 } else {
-                    // Other type of PowerAuthError. Just translate errorCode to string and keep NSError as it is.
-                    errorCode = .from(paErrorCode)
-                    //
+                    errorCode = .responseError
+                    message = "Wrong HTTP status code received from the server"
                 }
-            } else if error.domain  == NSURLErrorDomain {
-                // Handle error from NSURLSession
-                errorCode = .networkError
+                var newUserInfo: FlutterMap = [NSLocalizedDescriptionKey: message]
+                if let responseObject {
+                    newUserInfo["httpStatusCode"] = httpStatusCode
+                    // Serialize dictionary back to string, to be compatible with Android
+                    if let jsonData = try? JSONSerialization.data(withJSONObject: responseData as Any) {
+                        if let jsonString = String(data: jsonData, encoding: .utf8) {
+                            newUserInfo["responseBody"] = jsonString
+                        }
+                    }
+                    if let serverResponseCode = responseObject.responseObject.code {
+                        newUserInfo["serverResponseCode"] = serverResponseCode
+                    }
+                    if let serverResponseMessage = responseObject.responseObject.message {
+                        newUserInfo["serverResponseMessage"] = serverResponseMessage
+                    }
+                }
+                // Finally, build a new error
+                details = [
+                    "domain": PowerAuthErrorDomain,
+                    "code": error.code,
+                    "userInfo": newUserInfo
+                ]
                 //
             } else {
-                // We don't know this domain, so translate result as an UNKNOWN_ERROR
-                errorCode = .unknownError
+                // Other type of PowerAuthError. Just translate errorCode to string and keep NSError as it is.
+                errorCode = .from(paErrorCode)
                 //
             }
+        } else if error.domain  == NSURLErrorDomain {
+            // Handle error from NSURLSession
+            errorCode = .networkError
+            //
         } else {
+            // We don't know this domain, so translate result as an UNKNOWN_ERROR
             errorCode = .unknownError
-            message = "Native code failed with unspecified error"
+            //
         }
         
         // creat the code...
         self.init(code: errorCode, message: message, details: details)
     }
+    
+    private convenience init(code: PowerAuthFlutterError, message: String?, details: Any?) {
+        self.init(code: code.rawValue, message: message, details: details)
+    }
+    
 }
 
-extension PowerAuthConfiguration {
-    convenience init?(instanceId: String, arguments: [String: Any]) {
+private extension PowerAuthConfiguration {
+    convenience init?(instanceId: String, arguments: FlutterMap) {
         guard
             let sdkConfig = arguments["configuration"] as? String,
             let baseEndpointUrl = arguments["baseEndpointUrl"] as? String
@@ -685,7 +566,7 @@ extension PowerAuthConfiguration {
     }
 }
 
-extension PowerAuthActivationState {
+private extension PowerAuthActivationState {
     var serializable: String {
         return switch (self) {
         case .created: "created"
@@ -696,5 +577,44 @@ extension PowerAuthActivationState {
         case .deadlock: "deadlock"
         @unknown default: fatalError("UNSUPPORTED POWERAUTH ACTIVATION STATE")
         }
+    }
+}
+
+private struct PluginException: Error {
+    
+    let code: PowerAuthFlutterError
+    let message: String?
+    let details: Any?
+    
+    init(_ code: PowerAuthFlutterError, message: String? = nil, details: Any? = nil) {
+        self.code = code
+        self.message = message
+        self.details = details
+    }
+}
+
+extension FlutterMethodCall {
+    
+    func requireParameter<T>(_ key: PowerAuthPlugin.ArgKeys) throws -> T {
+        guard let parameter: T = getParameter(key) else {
+            throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
+        }
+        return parameter
+    }
+    
+    func getParameter<T>(_ key: PowerAuthPlugin.ArgKeys) -> T? {
+        guard let arguments = arguments as? FlutterMap else {
+            return nil
+        }
+        
+        return arguments.get(key)
+    }
+}
+
+private typealias FlutterMap = [String: Any]
+
+private extension FlutterMap {
+    func get<T>(_ key: PowerAuthPlugin.ArgKeys) -> T? {
+        return self[key.rawValue] as? T
     }
 }
