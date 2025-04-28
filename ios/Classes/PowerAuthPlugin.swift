@@ -56,11 +56,11 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         case "createActivation": createActivation(call, result)
         case "persistActivation": persistActivation(call, result)
         case "validatePassword": validatePassword(call, result)
-            // "changePassword" -> changePassword(call, instanceId, result)
+        case "changePassword": changePassword(call, result)
             // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
             // "requestSignature" -> requestSignature(call, instanceId, result)
-            // "offlineSignature" -> offlineSignature(call, instanceId, result)
-            // "verifyServerSignedData" -> verifyServerSignedData(call, instanceId, result)
+        case "offlineSignature": offlineSignature(call, result)
+        case "verifyServerSignedData": verifyServerSignedData(call, result)
         case "getPlatformVersion": result("iOS " + UIDevice.current.systemVersion)
 
         default:
@@ -201,7 +201,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     private func removeActivationWithAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         usePowerAuth(call, result) { pa in
             
-            guard let auth = constructAuthentication(call, result, persist: false) else {
+            guard let auth = constructAuthentication(call, result) else {
                 return
             }
             
@@ -277,7 +277,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     func persistActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         usePowerAuth(call, result) { pa in
             
-            guard let auth = constructAuthentication(call, result, persist: true) else {
+            guard let auth = constructAuthentication(call, result) else {
                 return
             }
             
@@ -307,6 +307,78 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
                     result(FlutterError(powerAuthError: error))
                 }
             }
+        }
+    }
+    
+    func changePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        
+        usePowerAuth(call, result) { pa in
+            
+            
+            guard
+                let oldPassParam = self.getPasswordParameter(call, result, parameter: "oldPassword"),
+                let newPassParam = self.getPasswordParameter(call, result, parameter: "newPassword"),
+                let oldPassword = self.usePassword(dict: oldPassParam, result: result),
+                let newPassword = self.usePassword(dict: newPassParam, result: result)else {
+                return
+            }
+            
+            pa.changePassword(from: oldPassword, to: newPassword) { error in
+                if error == nil {
+                    result(nil)
+                } else {
+                    result(FlutterError(powerAuthError: error))
+                }
+            }
+        }
+    }
+    
+    private func offlineSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        usePowerAuth(call, result) { pa in
+            
+            guard
+                let auth = self.constructAuthentication(call, result),
+                let uriId: String = self.getParameter("uriId", call, result),
+                let nonce: String = self.getParameter("nonce", call, result) else {
+                return
+            }
+            
+            let data: Data?
+            if let bodyString: String = self.getParameter("body", call, nil) {
+                data = Data(base64Encoded: bodyString)
+            } else {
+                data = nil
+            }
+            
+            do {
+                let signature = try pa.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce)
+                result(signature)
+            } catch let e {
+                result(FlutterError(powerAuthError: e))
+            }
+            
+        }
+    }
+    
+    private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        usePowerAuth(call, result) { pa in
+            
+            guard
+                let dataString: String = self.getParameter("data", call, result),
+                let signature: String = self.getParameter("signature", call, result),
+                let masterKey: Bool = self.getParameter("masterKey", call, result) else {
+                return
+            }
+            
+            guard let data: Data = Data(base64Encoded: dataString) else {
+                // TODO: consider returning an error?
+                result(false)
+                return
+            }
+            
+            let verifyResult = pa.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
+            result(verifyResult)
+            
         }
     }
     
@@ -388,21 +460,22 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         return PowerAuthCorePassword(string: password)
     }
     
-    private func getPasswordParameter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) -> [String: Any]? {
-        return getParameter("password", call, result)
+    private func getPasswordParameter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, parameter: String = "password") -> [String: Any]? {
+        return getParameter(parameter, call, result)
     }
     
     private func getPasswordParameter(from: [String: Any]) -> [String: Any]? {
         return getParameter("password", from, nil)
     }
     
-    private func constructAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, persist: Bool) -> PowerAuthAuthentication? {
+    private func constructAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) -> PowerAuthAuthentication? {
         
         guard let dict: [String: Any] = getParameter("authentication", call, result) else {
             return nil
         }
         
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
+        let persist = dict["isPersist"] as? Bool ?? false // TODO: fallback ok?
         
         let userPassword = getPasswordParameter(from: dict)
         
