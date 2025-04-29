@@ -43,6 +43,12 @@ class PowerAuthPassword extends BaseNativeObject {
   ///                   vault unlock, password change). Defaults to `true`.
   PowerAuthPassword({bool destroyOnUse = true}) : _destroyOnUse = destroyOnUse;
 
+  factory PowerAuthPassword.fromString(String password, {bool destroyOnUse = true}) {
+    final pass = PowerAuthPassword(destroyOnUse: destroyOnUse);
+    pass.field = password;
+    return pass;
+  }
+
   @override
   Future<String> createNativeObject() async {
     //return _platform.initialize(destroyOnUse: _destroyOnUse);

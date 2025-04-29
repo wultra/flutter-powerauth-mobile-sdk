@@ -280,12 +280,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             let uriId: String = try call.requireParameter(.uriId)
             let nonce: String = try call.requireParameter(.nonce)
-            let data: Data?
-            if let bodyString: String = call.getParameter(.body) {
-                data = Data(base64Encoded: bodyString)
-            } else {
-                data = nil
-            }
+            let bodyString: String? = call.getParameter(.body)
+            let data = bodyString?.data(using: .utf8)
             
             result(try sdk.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce))
         }
@@ -294,11 +290,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             
-            let dataBase64String: String = try call.requireParameter(.data)
+            let stringData: String = try call.requireParameter(.data)
             let signature: String = try call.requireParameter(.signature)
-            let masterKey: Bool = try call.requireParameter(.useMasterKey)
+            let masterKey: Bool = call.getParameter(.useMasterKey) ?? false
             
-            guard let data: Data = Data(base64Encoded: dataBase64String) else {
+            guard let data = stringData.data(using: .utf8) else {
                 // TODO: consider returning an error?
                 result(false)
                 return
@@ -332,12 +328,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let uriId: String = try call.requireParameter(.uriId)
             let method: String = try call.requireParameter(.method)
             
-            let data: Data?
-            if let dataBase64String: String = call.getParameter(.body) {
-                data = Data(base64Encoded: dataBase64String)
-            } else {
-                data = nil
-            }
+            let bodyString: String? = call.getParameter(.body)
+            let data = bodyString?.data(using: .utf8)
             
             let signature = try sdk.requestSignature(with: auth, method: method, uriId: uriId, body: data)
             result([
