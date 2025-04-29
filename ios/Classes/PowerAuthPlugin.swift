@@ -47,13 +47,12 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
             case "fetchActivationStatus": try fetchActivationStatus(call, result)
             case "removeActivationLocal": try removeActivationLocal(call, result)
             case "removeActivationWithAuthentication": try removeActivationWithAuthentication(call, result)
-                // "getExternalPendingOperation" -> getExternalPendingOperation(instanceId, result)
             case "createActivation": try createActivation(call, result)
             case "persistActivation": try persistActivation(call, result)
             case "validatePassword": try validatePassword(call, result)
             case "changePassword": try changePassword(call, result)
-                // "requestGetSignature" -> requestGetSignature(call, instanceId, result)
-                // "requestSignature" -> requestSignature(call, instanceId, result)
+            case "requestGetSignature": try requestGetSignature(call, result)
+            case "requestSignature": try requestSignature(call, result)
             case "offlineSignature": try offlineSignature(call, result)
             case "verifyServerSignedData": try verifyServerSignedData(call, result)
             case "getPlatformVersion": result("iOS " + UIDevice.current.systemVersion)
@@ -313,11 +312,11 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             
-            let dataString: String = try call.requireParameter(.data)
+            let dataBase64String: String = try call.requireParameter(.data)
             let signature: String = try call.requireParameter(.signature)
             let masterKey: Bool = try call.requireParameter(.useMasterKey)
             
-            guard let data: Data = Data(base64Encoded: dataString) else {
+            guard let data: Data = Data(base64Encoded: dataBase64String) else {
                 // TODO: consider returning an error?
                 result(false)
                 return
@@ -326,6 +325,43 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
             let verifyResult = sdk.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
             result(verifyResult)
             
+        }
+    }
+    
+    private func requestGetSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            
+            let auth = try constructAuthentication(call)
+            let uriId: String = try call.requireParameter(.uriId)
+            let queryparams: [String: String]? = call.getParameter(.queryParams)
+            
+            let signature = try sdk.requestGetSignature(with: auth, uriId: uriId, params: queryparams)
+            result([
+                "key": signature.key,
+                "value": signature.value
+            ])
+        }
+    }
+    
+    private func requestSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            
+            let auth = try constructAuthentication(call)
+            let uriId: String = try call.requireParameter(.uriId)
+            let method: String = try call.requireParameter(.method)
+            
+            let data: Data?
+            if let dataBase64String: String = call.getParameter(.body) {
+                data = Data(base64Encoded: dataBase64String)
+            } else {
+                data = nil
+            }
+            
+            let signature = try sdk.requestSignature(with: auth, method: method, uriId: uriId, body: data)
+            result([
+                "key": signature.key,
+                "value": signature.value
+            ])
         }
     }
     
