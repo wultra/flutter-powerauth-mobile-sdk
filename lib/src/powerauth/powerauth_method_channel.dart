@@ -17,6 +17,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../model/powerauth_biometry_configuration.dart';
+import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_keychain_configuration.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -43,11 +46,15 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   @override
   Future<void> configure({
     required String instanceId,
-    required PowerAuthConfiguration configuration
+    required PowerAuthConfiguration configuration,
+    PowerAuthBiometryConfiguration? biometryConfiguration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
   }) async {
     await invokeMethod<void>('configure', {
       'instanceId': instanceId,
-      'configuration': configuration.toMap()
+      'configuration': configuration.toMap(),
+      'biometryConfiguration': biometryConfiguration?.toMap(),
+      'keychainConfiguration': keychainConfiguration?.toMap(),
     });
   }
 
@@ -237,42 +244,41 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
     });
   }
 
-  // TODO: this is ready, but biometry is planned for phase 1.5
-  // @override
-  // Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) async {
-  //   final result = await invokeMethod<Map<dynamic, dynamic>>(
-  //     'getBiometryInfo',
-  //     {'instanceId': instanceId},
-  //   );
-  //   return PowerAuthBiometryInfo.fromMap(result);
-  // }
+  @override
+  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>(
+      'getBiometryInfo',
+      {'instanceId': instanceId},
+    );
+    return PowerAuthBiometryInfo.fromMap(result);
+  }
 
-  // @override
-  // Future<void> addBiometryFactor(
-  //   String instanceId,
-  //   Object password, [
-  //   PowerAuthBiometricPrompt? prompt,
-  // ]) async {
-  //   await invokeMethod<void>('addBiometryFactor', {
-  //     'instanceId': instanceId,
-  //     'password': await _serializePassword(password),
-  //     'prompt': prompt?.toMap(),
-  //   });
-  // }
+  @override
+  Future<void> addBiometryFactor(
+    String instanceId,
+    PowerAuthPassword password, [
+    PowerAuthBiometricPrompt? prompt,
+  ]) async {
+    await invokeMethod<void>('addBiometryFactor', {
+      'instanceId': instanceId,
+      'password': password.toRawPasswordMap(),
+      'prompt': prompt?.toMap(),
+    });
+  }
 
-  // @override
-  // Future<bool> hasBiometryFactor(String instanceId) async {
-  //   return await invokeMethod<bool>('hasBiometryFactor', {
-  //     'instanceId': instanceId,
-  //   });
-  // }
+  @override
+  Future<bool> hasBiometryFactor(String instanceId) async {
+    return await invokeMethod<bool>('hasBiometryFactor', {
+      'instanceId': instanceId,
+    });
+  }
 
-  // @override
-  // Future<void> removeBiometryFactor(String instanceId) async {
-  //   await invokeMethod<void>('removeBiometryFactor', {
-  //     'instanceId': instanceId,
-  //   });
-  // }
+  @override
+  Future<void> removeBiometryFactor(String instanceId) async {
+    await invokeMethod<void>('removeBiometryFactor', {
+      'instanceId': instanceId,
+    });
+  }
 
   // TODO: remove this debug call before release!
   @override

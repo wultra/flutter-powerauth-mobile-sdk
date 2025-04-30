@@ -16,6 +16,9 @@
 
 import 'dart:async';
 
+import '../model/powerauth_biometry_configuration.dart';
+import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_keychain_configuration.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../model/powerauth_activation.dart';
@@ -29,9 +32,13 @@ import '../powerauth_password/powerauth_password.dart';
 /// Internal helper class to hold the configuration set for a single PowerAuth instance.
 class _InstanceConfigurationHolder {
   final PowerAuthConfiguration configuration;
+  final PowerAuthBiometryConfiguration? biometryConfiguration;
+  final PowerAuthKeychainConfiguration? keychainConfiguration;
 
   _InstanceConfigurationHolder({
-    required this.configuration
+    required this.configuration,
+    this.biometryConfiguration,
+    this.keychainConfiguration,
   });
 }
 
@@ -60,16 +67,28 @@ class PowerAuth {
   PowerAuthConfiguration? get configuration =>
       _configRegister[instanceId]?.configuration;
 
+  /// Returns the biometry configuration used for this instance, if configured.
+  PowerAuthBiometryConfiguration? get biometryConfiguration =>
+      _configRegister[instanceId]?.biometryConfiguration;
+
+  /// Returns the keychain configuration used for this instance, if configured.
+  PowerAuthKeychainConfiguration? get keychainConfiguration =>
+      _configRegister[instanceId]?.keychainConfiguration;
+
   /// Prepares the PowerAuth instance with an advanced configuration.
   /// 
   /// Must be called before any other method.
   /// [configuration] - Configuration object with basic parameters for `PowerAuth` class.
   Future<void> configure({
-    required PowerAuthConfiguration configuration
+    required PowerAuthConfiguration configuration,
+    PowerAuthBiometryConfiguration? biometryConfiguration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
   }) async {
     _configRegister[instanceId] = _InstanceConfigurationHolder(
       configuration:
-          configuration
+          configuration,
+      biometryConfiguration: biometryConfiguration,
+      keychainConfiguration: keychainConfiguration,
     );
 
     await _platform.configure(
@@ -220,25 +239,24 @@ class PowerAuth {
     useMasterKey,
   );
 
-  // TODO: this is ready, but biometry is planned for phase 1.5
-  // /// Gets information about the biometric capabilities of the device.
-  // Future<PowerAuthBiometryInfo> getBiometryInfo() =>
-  //     _platform.getBiometryInfo(instanceId);
+  /// Gets information about the biometric capabilities of the device.
+  Future<PowerAuthBiometryInfo> getBiometryInfo() =>
+      _platform.getBiometryInfo(instanceId);
 
-  // /// Adds or regenerates the biometry-related factor key locally.
-  // /// This typically requires vault unlock via the provided [password] ([String] or [PowerAuthPassword]).
-  // /// The optional [prompt] is used for the system biometric dialog if needed during key setup (Android specific).
-  // Future<void> addBiometryFactor(
-  //   Object password, [
-  //   PowerAuthBiometricPrompt? prompt,
-  // ]) => _platform.addBiometryFactor(instanceId, password, prompt);
+  /// Adds or regenerates the biometry-related factor key locally.
+  /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
+  /// The optional [prompt] is used for the system biometric dialog if needed during key setup (Android specific).
+  Future<void> addBiometryFactor(
+    PowerAuthPassword password, [
+    PowerAuthBiometricPrompt? prompt,
+  ]) => _platform.addBiometryFactor(instanceId, password, prompt);
 
-  // /// Checks if a biometry key exists locally for the current activation.
-  // Future<bool> hasBiometryFactor() => _platform.hasBiometryFactor(instanceId);
+  /// Checks if a biometry key exists locally for the current activation.
+  Future<bool> hasBiometryFactor() => _platform.hasBiometryFactor(instanceId);
 
-  // /// Removes the biometry key associated with the current activation locally.
-  // Future<void> removeBiometryFactor() =>
-  //     _platform.removeBiometryFactor(instanceId);
+  /// Removes the biometry key associated with the current activation locally.
+  Future<void> removeBiometryFactor() =>
+      _platform.removeBiometryFactor(instanceId);
 
   // TODO: remove this debug call before release!
   Future<String?> getPlatformVersion() => _platform.getPlatformVersion();

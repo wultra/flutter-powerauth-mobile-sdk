@@ -17,6 +17,9 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../model/powerauth_biometry_configuration.dart';
+import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_keychain_configuration.dart';
 import 'powerauth_method_channel.dart';
 
 /// An internal platform interface for core PowerAuth SDK functionalities.
@@ -40,7 +43,9 @@ abstract class PowerAuthPlatform extends PlatformInterface {
 
   Future<void> configure({
     required String instanceId,
-    required PowerAuthConfiguration configuration
+    required PowerAuthConfiguration configuration,
+    PowerAuthBiometryConfiguration? biometryConfiguration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
   }) {
     throw UnimplementedError('configure() has not been implemented.');
   }
@@ -166,28 +171,27 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  // TODO: this is ready, but biometry is planned for phase 1.5
-  // Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) {
-  //   throw UnimplementedError('getBiometryInfo() has not been implemented.');
-  // }
+  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) {
+    throw UnimplementedError('getBiometryInfo() has not been implemented.');
+  }
 
-  // Future<void> addBiometryFactor(
-  //   String instanceId,
-  //   Object password, [
-  //   PowerAuthBiometricPrompt? prompt,
-  // ]) {
-  //   throw UnimplementedError('addBiometryFactor() has not been implemented.');
-  // }
+  Future<void> addBiometryFactor(
+    String instanceId,
+    PowerAuthPassword password, [
+    PowerAuthBiometricPrompt? prompt,
+  ]) {
+    throw UnimplementedError('addBiometryFactor() has not been implemented.');
+  }
 
-  // Future<bool> hasBiometryFactor(String instanceId) {
-  //   throw UnimplementedError('hasBiometryFactor() has not been implemented.');
-  // }
+  Future<bool> hasBiometryFactor(String instanceId) {
+    throw UnimplementedError('hasBiometryFactor() has not been implemented.');
+  }
 
-  // Future<void> removeBiometryFactor(String instanceId) {
-  //   throw UnimplementedError(
-  //     'removeBiometryFactor() has not been implemented.',
-  //   );
-  // }
+  Future<void> removeBiometryFactor(String instanceId) {
+    throw UnimplementedError(
+      'removeBiometryFactor() has not been implemented.',
+    );
+  }
 
   // TODO: remove this debug call before release!
   Future<String?> getPlatformVersion() {

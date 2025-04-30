@@ -196,8 +196,8 @@ class PinTestResult {
             try {
               return PinTestIssue.values.firstWhere(
                 (e) =>
-                    e.name.toUpperCase() ==
-                    (issueString as String).toUpperCase(),
+                    e.name ==
+                    (issueString as String),
               );
             } catch (e) {
               print("Warning: Unknown PinTestIssue received: $issueString");

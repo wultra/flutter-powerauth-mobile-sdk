@@ -72,7 +72,7 @@ mixin MethodChannelHelper {
     } on PlatformException catch (e) {
       throw PowerAuthException(
         code: PowerAuthErrorCode.values.firstWhere(
-          (code) => code.name.toUpperCase() == e.code,
+          (code) => code.name == e.code,
           orElse: () => PowerAuthErrorCode.unknownError,
         ),
         message: e.message,
