@@ -50,7 +50,7 @@ Use the following code to enable biometric authentication:
 final password = PowerAuthPassword.fromString("1234");
 try {
     // Establish biometric data using provided password
-    await _powerAuth.addBiometryFactor(password, {
+    await powerAuth.addBiometryFactor(password, {
         promptTitle: "Add biometry", 
         promptMessage: "Allow biometry factor"
     });
@@ -59,7 +59,8 @@ try {
     await powerAuth.addBiometryFactor(password);
 } catch (e) {
     //failed
-}```
+}
+```
 
 ## Disable Biometry
 

@@ -1,13 +1,13 @@
 # Configuration
 
-Before you call any method on the newly created `var powerAuth = PowerAuth(instanceId);` object, you need to configure it first. An unconfigured instance will throw exceptions. Use `await powerAuth.isConfigured();` to check if configured.
+Before you call any method on the newly created `final powerAuth = PowerAuth(instanceId);` object, you need to configure it first. An unconfigured instance will throw exceptions. Use `await powerAuth.isConfigured();` to check if configured.
 
 ## 1. Parameters
 
 You will need the following parameters to prepare and configure a PowerAuth instance:
 
 - **instanceId** - Identifier of the app - the application package name/identifier is recommended.
-- **configuration** - String (base64) with the cryptographic configuration - this configuration can be retrieved via the `Get App Details` Admin API in the [PowerAuth Cloud](https://github.com/wultra/powerauth-cloud/) server component.
+- **configuration** - String (base64) with the cryptographic configuration - this configuration can be retrieved via the `Get App Details` Admin API in the [PowerAuth Cloud](https://developers.wultra.com/components/powerauth-cloud) server component.
 - **baseEndpointUrl** - Base URL to the PowerAuth Standard RESTful API. _(usualy sometihng like `https://<your-domain>/enrollment-server`)_
 
 ## 2. Configuration
@@ -20,7 +20,7 @@ To configure the PowerAuth instance, simply import it from the plugin and use th
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
 Future<void> initPowerauth() async {
-    var powerAuth = PowerAuth("your-app-instance-id");
+    final powerAuth = PowerAuth("your-app-instance-id");
     
     // An already configured instance will throw an
     // exception when you try to configure it again

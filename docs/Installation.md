@@ -20,8 +20,6 @@ Open `pubspec.yaml` and add:
 
 ```yaml
 dependencies:
-  flutter:
-    sdk: flutter
   flutter_powerauth_mobile_sdk_plugin: ^1.0.0  # Check pub.dev for latest version
 ```
 
@@ -73,7 +71,7 @@ In your main Dart file or wherever needed:
 ```dart
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
-var powerAuth = PowerAuth("my-instance-id);
+final powerAuth = PowerAuth("my-instance-id);
 ```
 
 ## Read Next
