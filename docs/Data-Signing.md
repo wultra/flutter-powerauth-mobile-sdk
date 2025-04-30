@@ -13,7 +13,7 @@ To sign request data, you need to first obtain user credentials (password, PIN c
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234));
+final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
 ```
 
 When signing `POST`, `PUT`, or `DELETE` requests, use request body bytes (UTF-8) as request data and the following code:

@@ -5,7 +5,7 @@
 The library is available for the following __Flutter 3.3.0+__ platforms:
 
 - __Android 5.0 (API 21)__ and newer
-- __iOS 11.0__ and newer
+- __iOS 13.4__ and newer
 
 ## How To Install
 
@@ -50,10 +50,10 @@ compileOptions {
 
 #### iOS
 
-In `ios/Podfile`, ensure the platform version is at least 12.0:
+In `ios/Podfile`, ensure the platform version is at least 13.4:
 
 ```ruby
-platform :ios, '12.0'
+platform :ios, '13.4'
 ```
 
 Then install pods:

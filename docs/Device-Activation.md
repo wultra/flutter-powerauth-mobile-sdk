@@ -98,7 +98,7 @@ final activation = PowerAuthActivation.fromActivationCode(
     activationCode: "45AWJ-BVACS-SBWHS-ABANA", 
     name: "deviceName",
     customAttributes: customAttributes,
-    extras: "EXTRA_FLAGS // Extra flags that will be associated with the activation record on PowerAuth 
+    extras: "EXTRA_FLAGS" // Extra flags that will be associated with the activation record on PowerAuth 
 );
 // Create a new activation as usual
 try {
@@ -115,7 +115,7 @@ After you create an activation using one of the methods mentioned above, you nee
 
 ```dart
 final auth = PowerAuthAuthentication.persistWithPasswordAndBiometry(
-    password: "1234", 
+    password: PowerAuthPassword.fromString("1234"), 
     biometricPrompt: {
         // The `PowerAuthBiometricPrompt` object is required on the Android platform in case that
         // `biometryConfiguration.authenticateOnBiometricKeySetup` is true.
