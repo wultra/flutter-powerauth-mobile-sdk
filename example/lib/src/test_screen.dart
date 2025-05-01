@@ -250,11 +250,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
     _setLoading(true);
     try {
-      var paPassword = PowerAuthPassword();
-      for (var i = 0; i < password.length; i++) {
-        paPassword.addCharacter(password[i]);
-      }
-
+      final paPassword = PowerAuthPassword.fromString(password);
       await _powerAuth.validatePassword(paPassword);
       print('Password validation successful.');
  
@@ -275,16 +271,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
     _setLoading(true);
     try {
-      var oldPaPassword = PowerAuthPassword();
-      for (var i = 0; i < oldPassword.length; i++) {
-        oldPaPassword.addCharacter(oldPassword[i]);
-      }
-
-      var newPaPassword = PowerAuthPassword();
-      for (var i = 0; i < newPassword.length; i++) {
-        newPaPassword.addCharacter(newPassword[i]);
-      }
-
+      final oldPaPassword = PowerAuthPassword.fromString(oldPassword);
+      final newPaPassword = PowerAuthPassword.fromString(newPassword);
+      
       await _powerAuth.changePassword(oldPaPassword, newPaPassword);
       print('Password changed successfully (online).');
 
