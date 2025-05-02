@@ -56,12 +56,15 @@ class PowerAuth {
   ///
   /// Multiple PowerAuth SDK instances can be created, each identified by a unique [instanceId].
   ///  The bundle identifier/packagename is recommended.
-  /// 
+  ///
   /// 2 instances with the same instanceId will be internaly the same object!
-  PowerAuth(this.instanceId);
+  PowerAuth(this.instanceId) {
+    if (instanceId.isEmpty) {
+      throw ArgumentError.value(instanceId, 'instanceId', 'cannot be empty');
+    }
+  }
 
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
-
 
   /// Returns the base configuration used for this instance, if configured.
   PowerAuthConfiguration? get configuration =>
@@ -76,7 +79,7 @@ class PowerAuth {
       _configRegister[instanceId]?.keychainConfiguration;
 
   /// Prepares the PowerAuth instance with an advanced configuration.
-  /// 
+  ///
   /// Must be called before any other method.
   /// [configuration] - Configuration object with basic parameters for `PowerAuth` class.
   Future<void> configure({
@@ -85,15 +88,16 @@ class PowerAuth {
     PowerAuthKeychainConfiguration? keychainConfiguration,
   }) async {
     _configRegister[instanceId] = _InstanceConfigurationHolder(
-      configuration:
-          configuration,
+      configuration: configuration,
       biometryConfiguration: biometryConfiguration,
       keychainConfiguration: keychainConfiguration,
     );
 
     await _platform.configure(
       instanceId: instanceId,
-      configuration: configuration
+      configuration: configuration,
+      biometryConfiguration: biometryConfiguration,
+      keychainConfiguration: keychainConfiguration,
     );
   }
 
@@ -145,14 +149,14 @@ class PowerAuth {
 
   /// Starts the activation process using the provided [activation] details
   /// (activation code or custom attributes).
-  /// 
+  ///
   /// Returns a [PowerAuthCreateActivationResult] containing the activation fingerprint.
   Future<PowerAuthCreateActivationResult> createActivation(
     PowerAuthActivation activation,
   ) => _platform.createActivation(instanceId, activation);
 
   /// Persists the activation data locally after a successful `createActivation` call.
-  /// 
+  ///
   /// Requires [authentication] (password and optionally biometry) to secure the local activation state.
   Future<void> persistActivation(PowerAuthAuthentication authentication) =>
       _platform.persistActivation(instanceId, authentication);

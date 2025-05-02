@@ -17,14 +17,10 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
-import '../model/powerauth_keychain_configuration.dart';
 import 'powerauth_method_channel.dart';
 
 /// An internal platform interface for core PowerAuth SDK functionalities.
 abstract class PowerAuthPlatform extends PlatformInterface {
-
   PowerAuthPlatform() : super(token: _token);
 
   static final Object _token = Object();
@@ -39,7 +35,6 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }
-
 
   Future<void> configure({
     required String instanceId,
