@@ -21,6 +21,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import androidx.fragment.app.FragmentActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -413,7 +414,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val useMasterKey: Boolean = call.argument<Boolean>(USE_MASTER_KEY) ?: false
 
             val dataBytes = dataString.toByteArray()
-            val signatureBytes = signature.toByteArray()
+            val signatureBytes = Base64.decode(signature, Base64.DEFAULT)
 
             val isValid = sdk.verifyServerSignedData(dataBytes, signatureBytes, useMasterKey)
 
