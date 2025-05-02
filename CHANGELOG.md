@@ -1,3 +1,3 @@
-## 0.0.1
+## 1.0.0-beta.1
 
-* TODO: Describe initial alfa release.
+* Initial beta release of the SDK.
