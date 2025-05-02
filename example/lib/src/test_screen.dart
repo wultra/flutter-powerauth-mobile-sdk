@@ -1,8 +1,23 @@
 import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
 import '../config.dart';
+
+// Helper to generate a fixed-size random nonce
+String _generateRandomNonce() {
+  final random = Random.secure();
+  final nonceBytes = Uint8List(16);
+
+  for (int i = 0; i < nonceBytes.length; i++) {
+    nonceBytes[i] = random.nextInt(256);
+  }
+
+  return base64Encode(nonceBytes);
+}
 
 class PowerAuthTestingScreen extends StatefulWidget {
   const PowerAuthTestingScreen({super.key});
@@ -761,8 +776,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   /// Builds the signature operation buttons.
   Widget _buildSignatureButtons() {
     const defaultUriId = '/pa/signature/validate';
-    const defaultData = 'VGhpcyBpcyBzZWNyZXQhIQ==';
-    const defaultBody = 'This is secret!!';
+    const defaultData = 'e2pzb25ib2R5OiAieWVzIn0=';
+    const defaultBody = '{jsonbody: "yes"}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1370,7 +1385,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       final paPassword = PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
-      final nonce = base64Encode(utf8.encode(DateTime.now().toIso8601String()));
+      final nonce = _generateRandomNonce();
 
       final signature = await _powerAuth.offlineSignature(
         authentication,
@@ -1393,8 +1408,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String uriId,
     String data,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true)
-      return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
     if (_hasBiometryFactor != true)
       return _setError('Biometry factor not available');
 
@@ -1408,7 +1422,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.biometry(
         biometricPrompt: prompt,
       );
-      final nonce = base64Encode(utf8.encode(DateTime.now().toIso8601String()));
+      final nonce = _generateRandomNonce();
 
       final signature = await _powerAuth.offlineSignature(
         authentication,
