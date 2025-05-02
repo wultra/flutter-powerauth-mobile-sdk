@@ -1,0 +1,8 @@
+# https://dart.dev/guides/language/analysis-options
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # TODO disable this after beta, we'll disable the single place once
+    # we have a simple logger in place. with // ignore: avoid_print
+    avoid_print: false

@@ -1,0 +1,39 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_powerauth_mobile_sdk_plugin (0.0.1):
+    - Flutter
+    - PowerAuth2 (~> 1.9.4)
+  - integration_test (0.0.1):
+    - Flutter
+  - PowerAuth2 (1.9.4):
+    - PowerAuthCore (~> 1.9.4)
+  - PowerAuthCore (1.9.4)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_powerauth_mobile_sdk_plugin (from `.symlinks/plugins/flutter_powerauth_mobile_sdk_plugin/ios`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+
+SPEC REPOS:
+  trunk:
+    - PowerAuth2
+    - PowerAuthCore
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_powerauth_mobile_sdk_plugin:
+    :path: ".symlinks/plugins/flutter_powerauth_mobile_sdk_plugin/ios"
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_powerauth_mobile_sdk_plugin: 4020632fcfd2350ed2e9734405adad384774d167
+  integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
+  PowerAuth2: e2599d3b5fc750e6bd872d9b616f9d2b74d7a1ee
+  PowerAuthCore: 31ac7f7ca404376ee8dff4a827b6c754989b28cf
+
+PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5
+
+COCOAPODS: 1.16.2
