@@ -789,16 +789,18 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   : () => _showSignatureInputDialog(
                     context,
                     title: 'Compute Offline Signature (PWD)',
-                    fields: {'Password': true, 'URI ID': false, 'Data': false},
+                    fields: {'Password': true, 'URI ID': false, 'Data': false, 'Nonce': false},
                     initialValues: {
                       'URI ID': defaultUriId,
                       'Data': defaultData,
+                      'Nonce': _generateRandomNonce(),
                     },
                     onSubmit: (values) {
                       _computeOfflineSignatureWithPassword(
                         values['Password']!,
                         values['URI ID']!,
                         values['Data']!,
+                        values['Nonce']!,
                       );
                     },
                   ),
@@ -816,15 +818,17 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   : () => _showSignatureInputDialog(
                     context,
                     title: 'Compute Offline Signature (Bio)',
-                    fields: {'URI ID': false, 'Data': false},
+                    fields: {'URI ID': false, 'Data': false, 'Nonce': false},
                     initialValues: {
                       'URI ID': defaultUriId,
                       'Data': defaultData,
+                      'Nonce': _generateRandomNonce(),
                     },
                     onSubmit: (values) {
                       _computeOfflineSignatureWithBiometry(
                         values['URI ID']!,
                         values['Data']!,
+                        values['Nonce']!,
                       );
                     },
                   ),
@@ -1378,20 +1382,22 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String password,
     String uriId,
     String data,
+    String nonce,
   ) async {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
     _setLoading(true);
 
+    final fixedData = data.replaceAll("\\n", "\n");
+
     try {
       final paPassword = PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
-      final nonce = _generateRandomNonce();
 
       final signature = await _powerAuth.offlineSignature(
         authentication,
         uriId,
         nonce,
-        data,
+        fixedData,
       );
 
       print('Offline signature (PWD) computed: $signature');
@@ -1407,12 +1413,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   Future<void> _computeOfflineSignatureWithBiometry(
     String uriId,
     String data,
+    String nonce,
   ) async {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
     if (_hasBiometryFactor != true)
       return _setError('Biometry factor not available');
 
     _setLoading(true);
+    final fixedData = data.replaceAll("\\n", "\n");
     try {
       final prompt = PowerAuthBiometricPrompt(
         promptTitle: "Offline Signature",
@@ -1422,13 +1430,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.biometry(
         biometricPrompt: prompt,
       );
-      final nonce = _generateRandomNonce();
 
       final signature = await _powerAuth.offlineSignature(
         authentication,
         uriId,
         nonce,
-        data,
+        fixedData,
       );
 
       print('Offline signature (Bio) computed: $signature');
