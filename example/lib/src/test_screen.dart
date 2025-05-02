@@ -572,8 +572,15 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   Widget _buildStatusInfo() {
     String formatBool(bool? b) => b == null ? 'Unknown' : b.toString();
 
-    String formatStatus(PowerAuthActivationStatus? status) =>
-        status?.state.name ?? 'Unknown';
+    String formatStatus(PowerAuthActivationStatus? status) {
+      if (status == null) return 'Unknown';
+      final name = status.state.name;
+      if (status.state == PowerAuthActivationState.active) {
+        return '$name (${status.remainingAttempts} auth. attempts left)';
+      }
+      return name;
+    }
+        
 
     String formatBiometryType(PowerAuthBiometryInfo? info) =>
         info?.biometryType.name ?? 'Unknown';

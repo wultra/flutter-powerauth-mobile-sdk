@@ -22,6 +22,7 @@ import PowerAuthCore
 public class PowerAuthPlugin: NSObject, FlutterPlugin {
     
     private let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)]
+    private let logger = Logger(enableDebug: false)
     
     public override init() {
         
@@ -57,7 +58,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         }
         
         do {
-            print("Call \(call.method) being handeled by the \(service.name)")
+            logger.debug("Call \(call.method) being handeled by the \(service.name) service")
             try service.handle(handler, call, result)
         } catch let e {
             result(FlutterError(thrownByPlugin: e))
@@ -68,7 +69,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         if call.method == "getPlatformVersion" {
             result("iOS " + UIDevice.current.systemVersion)
         } else {
-            print("PowerAuth plugin received unexpected method: \(call.method)")
+            logger.info("PowerAuth plugin received unexpected method: \(call.method)")
             result(FlutterMethodNotImplemented)
         }
     }
@@ -81,5 +82,24 @@ private extension PowerAuthFlutterService {
     
     var opaqueHandlers: [String: Any] {
         return handlers.mapValues { $0 }
+    }
+}
+
+private class Logger {
+    
+    private let enableDebug: Bool
+    
+    init(enableDebug: Bool = false) {
+        self.enableDebug = enableDebug
+    }
+    
+    func debug(_ message: String) {
+        if enableDebug {
+            print("PowerAuthPlugin: \(message)")
+        }
+    }
+    
+    func info(_ message: String) {
+        print("PowerAuthPlugin: \(message)")
     }
 }

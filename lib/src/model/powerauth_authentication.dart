@@ -100,7 +100,6 @@ class PowerAuthAuthentication {
 
   /// Creates an authentication object configured for possession and knowledge (password) factors.
   factory PowerAuthAuthentication.password(PowerAuthPassword password) {
-    validatePasswordType(password);
     return PowerAuthAuthentication._(
       password: password,
       forActivationPersist: false,
@@ -110,7 +109,6 @@ class PowerAuthAuthentication {
 
   /// Creates an object configured to persist activation with password.
   factory PowerAuthAuthentication.persistWithPassword(PowerAuthPassword password) {
-    validatePasswordType(password);
     return PowerAuthAuthentication._(
       password: password,
       forActivationPersist: true,
@@ -125,7 +123,6 @@ class PowerAuthAuthentication {
     required PowerAuthPassword password,
     PowerAuthBiometricPrompt? biometricPrompt,
   }) {
-    validatePasswordType(password);
     return PowerAuthAuthentication._(
       password: password,
       biometricPrompt: biometricPrompt,
@@ -134,20 +131,11 @@ class PowerAuthAuthentication {
     );
   }
 
-  // Helper to validate password type
-  static void validatePasswordType(Object password) {
-    if (password is! String && password is! PowerAuthPassword) {
-      throw ArgumentError(
-        'Password must be a String or a PowerAuthPassword object.',
-      );
-    }
-  }
-
   /// Converts this object into a map suitable for sending over the method channel.
   /// Handles converting PowerAuthPassword to its raw representation.
   Future<Map<String, dynamic>> toMap() async {
     
-    var rawPassword = await (password as PowerAuthPassword).toRawPasswordMap();
+    var rawPassword = await password?.toRawPasswordMap();
 
     return {
       'password': rawPassword,
