@@ -25,6 +25,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   String? _activationId;
   String? _activationFingerprint;
   PowerAuthActivationStatus? _activationStatus;
+  bool? _hasBiometryFactor;
+  PowerAuthBiometryInfo? _biometryInfo;
 
   @override
   void initState() {
@@ -36,50 +38,49 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _isInitialized = true;
     _setLoading(true);
 
-    // try {
-      _isConfigured = await _powerAuth.isConfigured();
-      if (_isConfigured) {
-        await _refreshState();
-      } else {
-        if (AppConfig.isConfigMissing()) {
-          _setError("PowerAuth configuration is missing or invalid. ");
-          _setLoading(false);
-  
-          return;
-        }
-        try {
-          final configuration = PowerAuthConfiguration(
-            configuration: AppConfig.powerAuthConfigString,
-            baseEndpointUrl: AppConfig.baseUrl,
-          );
+    _isConfigured = await _powerAuth.isConfigured();
+    if (_isConfigured) {
+      await _refreshState();
+    } else {
+      if (AppConfig.isConfigMissing()) {
+        _setError("PowerAuth configuration is missing or invalid. ");
+        _setLoading(false);
 
-          await _powerAuth.configure(configuration: configuration);
-          print('PowerAuth configured successfully for instance: $_instanceId');
-
-          _isConfigured = true;
-          await _refreshState();
-        } on PowerAuthException catch (configError) {
-          _setError(
-            "PowerAuth configuration failed (Code: ${configError.code}, msg: ${configError.message}). ");
-          _isConfigured = false;
-          _setLoading(false);
-        } catch (configError) {
-          _setError('Failed to auto-configure PowerAuth (Unknown Error): $configError');
-          _isConfigured = false;
-          _setLoading(false);
-        }
+        return;
       }
-    // } on PowerAuthException catch (initError) {
-    //   _setError(
-    //     'Failed to check initial configuration: ${initError.message} (${initError.code})',
-    //   );
-    //   _isConfigured = false;
-    //   _setLoading(false);
-    // } catch (initError) {
-    //   _setError('Unexpected error during initialization check: $initError');
-    //   _isConfigured = false;
-    //   _setLoading(false);
-    // }
+
+      try {
+        final powerAuthConfig = PowerAuthConfiguration(
+          configuration: AppConfig.powerAuthConfigString,
+          baseEndpointUrl: AppConfig.baseUrl,
+        );
+
+        final biometryConfig = PowerAuthBiometryConfiguration();
+        final keychainConfig = PowerAuthKeychainConfiguration();
+
+        await _powerAuth.configure(
+          configuration: powerAuthConfig,
+          biometryConfiguration: biometryConfig,
+          keychainConfiguration: keychainConfig,
+        );
+        print('PowerAuth configured successfully for instance: $_instanceId');
+
+        _isConfigured = true;
+        await _refreshState();
+      } on PowerAuthException catch (configError) {
+        _setError(
+          "PowerAuth configuration failed (Code: ${configError.code}, msg: ${configError.message}). ",
+        );
+        _isConfigured = false;
+        _setLoading(false);
+      } catch (configError) {
+        _setError(
+          'Failed to auto-configure PowerAuth (Unknown Error): $configError',
+        );
+        _isConfigured = false;
+        _setLoading(false);
+      }
+    }
   }
 
   Future<void> _refreshState() async {
@@ -95,8 +96,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
     PowerAuthActivationStatus? activationStatus;
     try {
-      activationStatus = await _powerAuth.fetchActivationStatus(); 
-    } catch (e) {}
+      activationStatus = await _powerAuth.fetchActivationStatus();
+    } catch (e) {
+      print("Failed to fetch activation status: $e");
+    }
 
     try {
       // TODO: it will perhaps be better so separate this later. Future failing on first error is too flaky.
@@ -106,6 +109,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.hasPendingActivation(),
         _powerAuth.getActivationIdentifier(),
         _powerAuth.getActivationFingerprint(),
+        _powerAuth.hasBiometryFactor(),
+        _powerAuth.getBiometryInfo(),
       ]);
 
       setState(() {
@@ -114,6 +119,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _hasPendingActivation = results[2] as bool?;
         _activationId = results[3] as String?;
         _activationFingerprint = results[4] as String?;
+        _hasBiometryFactor = results[5] as bool?;
+        _biometryInfo = results[6] as PowerAuthBiometryInfo?;
         _activationStatus = activationStatus;
       });
 
@@ -128,6 +135,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _hasPendingActivation = null;
         _activationId = null;
         _activationFingerprint = null;
+        _hasBiometryFactor = null;
+        _biometryInfo = null;
         _activationStatus = null;
       });
     } catch (e) {
@@ -138,6 +147,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _hasPendingActivation = null;
         _activationId = null;
         _activationFingerprint = null;
+        _hasBiometryFactor = null;
+        _biometryInfo = null;
         _activationStatus = null;
       });
     }
@@ -161,8 +172,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       _activationId = null;
       _activationFingerprint = null;
       _activationStatus = null;
+      _hasBiometryFactor = null;
+      _biometryInfo = null;
     });
-    // await _initializeAndRefresh();
   }
 
   Future<void> _createActivationWithCode(
@@ -182,7 +194,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
       await _refreshState();
     } on PowerAuthException catch (e) {
-      _setError('Activation creation failed: ${e.message} (${e.code}), ${e.toString()}');
+      _setError('Activation creation failed: ${e.message} (${e.code})');
     } catch (e) {
       _setError('Unexpected error during activation creation: $e');
     }
@@ -203,9 +215,42 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
       await _refreshState();
     } on PowerAuthException catch (e) {
-      _setError('Activation persist failed: ${e.message} (${e.code}), ${e.toString()}');
+      _setError(
+        'Activation persist failed: ${e.message} (${e.code}), ${e.toString()}',
+      );
     } catch (e) {
       _setError('Unexpected error during activation persist: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _persistActivationWithPasswordAndBiometry(PowerAuthPassword password) async {
+    if (!_isConfigured) return _setError('Instance not configured');
+    if (_hasPendingActivation != true) return _setError('No pending activation to persist');
+
+    _setLoading(true);
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "Persist Activation",
+        promptMessage: "Please confirm activation persistence with biometry.",
+      );
+
+      final authentication =
+          PowerAuthAuthentication.persistWithPasswordAndBiometry(
+            password: password,
+            biometricPrompt: prompt,
+          );
+
+      await _powerAuth.persistActivation(authentication);
+      print('Activation persisted successfully with Password + Biometry.');
+
+      await _refreshState();
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Activation persist (Bio) failed: ${e.message} (${e.code}), ${e.toString()}',
+      );
+    } catch (e) {
+      _setError('Unexpected error during activation persist (Bio): $e');
     }
     _setLoading(false);
   }
@@ -218,12 +263,40 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       final authentication = PowerAuthAuthentication.password(password);
       await _powerAuth.removeActivationWithAuthentication(authentication);
+
       print('Activation removed successfully.');
       await _refreshState();
     } on PowerAuthException catch (e) {
       _setError('Activation removal failed: ${e.message} (${e.code})');
     } catch (e) {
       _setError('Unexpected error during activation removal: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _removeActivationWithBiometry() async {
+    if (!_isConfigured) return _setError('Instance not configured');
+    if (_hasValidActivation != true) return _setError('No active activation to remove');
+
+    _setLoading(true);
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "Remove Activation",
+        promptMessage: "Please confirm activation removal with biometry.",
+      );
+
+      final authentication = PowerAuthAuthentication.biometry(
+        biometricPrompt: prompt,
+      );
+
+      await _powerAuth.removeActivationWithAuthentication(authentication);
+      print('Activation removed successfully with biometry.');
+
+      await _refreshState();
+    } on PowerAuthException catch (e) {
+      _setError('Activation removal (Bio) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during activation removal (Bio): $e');
     }
     _setLoading(false);
   }
@@ -235,7 +308,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       await _powerAuth.removeActivationLocal();
       print('Local activation removed successfully.');
- 
+
       await _refreshState();
     } on PowerAuthException catch (e) {
       _setError('Local activation removal failed: ${e.message} (${e.code})');
@@ -246,18 +319,17 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _validatePassword(String password) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true)
+      return _setError('Instance not configured or no valid activation');
 
     _setLoading(true);
     try {
       final paPassword = PowerAuthPassword.fromString(password);
       await _powerAuth.validatePassword(paPassword);
       print('Password validation successful.');
- 
+
       // TODO: temporarily using the error banner as a success also...
-      _setError(
-        'Password is valid.',
-      );
+      _setError('Password is valid.');
     } on PowerAuthException catch (e) {
       _setError('Password validation failed: ${e.message} (${e.code})');
     } catch (e) {
@@ -267,57 +339,22 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _changePassword(String oldPassword, String newPassword) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true)
+      return _setError('Instance not configured or no valid activation');
 
     _setLoading(true);
     try {
       final oldPaPassword = PowerAuthPassword.fromString(oldPassword);
       final newPaPassword = PowerAuthPassword.fromString(newPassword);
-      
+
       await _powerAuth.changePassword(oldPaPassword, newPaPassword);
       print('Password changed successfully (online).');
 
-      _setError(
-        'Password changed successfully.',
-      );
+      _setError('Password changed successfully.');
     } on PowerAuthException catch (e) {
       _setError('Password change failed: ${e.message} (${e.code})');
     } catch (e) {
       _setError('Unexpected error during password change: $e');
-    }
-    _setLoading(false);
-  }
-
-  Future<void> _computeOfflineSignature(
-    String password,
-    String uriId,
-    String data,
-  ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-
-    _setLoading(true);
-    try {
-      var paPassword = PowerAuthPassword();
-      for (var i = 0; i < password.length; i++) {
-        paPassword.addCharacter(password[i]);
-      }
-
-      final authentication = PowerAuthAuthentication.password(paPassword);
-      final nonce = base64Encode(utf8.encode(DateTime.now().toIso8601String()));
-
-      final signature = await _powerAuth.offlineSignature(
-        authentication,
-        uriId,
-        nonce,
-        data,
-      );
-      print('Offline signature computed: $signature');
-
-      _setError('Offline Signature: $signature');
-    } on PowerAuthException catch (e) {
-      _setError('Offline signature failed: ${e.message} (${e.code})');
-    } catch (e) {
-      _setError('Unexpected error during offline signature: $e');
     }
     _setLoading(false);
   }
@@ -338,7 +375,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
       print('Server signature verification result: $isValid');
 
-      // TODO: temporarily using the error banner as a success also... 
+      // TODO: temporarily using the error banner as a success also...
       _setError('Server Signature Verified: $isValid');
     } on PowerAuthException catch (e) {
       _setError(
@@ -346,62 +383,6 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
     } catch (e) {
       _setError('Unexpected error during server signature verification: $e');
-    }
-    _setLoading(false);
-  }
-
-  Future<void> _computeGetSignature(String password, String uriId) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-
-    _setLoading(true);
-    try {
-      var paPassword = PowerAuthPassword();
-      for (var i = 0; i < password.length; i++) {
-        paPassword.addCharacter(password[i]);
-      }
-
-      final authentication = PowerAuthAuthentication.password(paPassword);
-      final header = await _powerAuth.requestGetSignature(
-        authentication,
-        uriId,
-      );
-      print('GET Signature Header: ${header.key}: ${header.value}');
-      _setError('GET Header: ${header.key}: ${header.value}');
-    } on PowerAuthException catch (e) {
-      _setError('GET signature failed: ${e.message} (${e.code})');
-    } catch (e) {
-      _setError('Unexpected error during GET signature: $e');
-    }
-    _setLoading(false);
-  }
-
-  Future<void> _computePostSignature(
-    String password,
-    String uriId,
-    String body,
-  ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-
-    _setLoading(true);
-    try {
-      var paPassword = PowerAuthPassword();
-      for (var i = 0; i < password.length; i++) {
-        paPassword.addCharacter(password[i]);
-      }
-
-      final authentication = PowerAuthAuthentication.password(paPassword);
-      final header = await _powerAuth.requestSignature(
-        authentication,
-        'POST',
-        uriId,
-        body,
-      );
-      print('POST Signature Header: ${header.key}: ${header.value}');
-      _setError('POST Header: ${header.key}: ${header.value}');
-    } on PowerAuthException catch (e) {
-      _setError('POST signature failed: ${e.message} (${e.code})');
-    } catch (e) {
-      _setError('Unexpected error during POST signature: $e');
     }
     _setLoading(false);
   }
@@ -438,7 +419,6 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('PowerAuth Testing App'),
@@ -487,7 +467,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               else if (_isLoading)
                 const Center(child: Text('Loading status...'))
               else if (!_isConfigured && !AppConfig.isConfigMissing())
-                const Text('Instance is not configured or the .env config is broken!')
+                const Text(
+                  'Instance is not configured or the .env config is broken!',
+                )
               else
                 const Text(
                   'PowerAuth instance is not configured. Please check .env file.',
@@ -507,6 +489,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               ),
               const SizedBox(height: 10),
               _buildActivationButtons(),
+              const SizedBox(height: 20),
+
+              Text(
+                'Biometry Management', // New Section
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              _buildBiometryButtons(), // New Buttons
               const SizedBox(height: 20),
 
               Text(
@@ -581,7 +571,15 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   Widget _buildStatusInfo() {
     String formatBool(bool? b) => b == null ? 'Unknown' : b.toString();
-    String formatStatus(PowerAuthActivationStatus? status) => status?.state.name ?? 'Unknown';
+
+    String formatStatus(PowerAuthActivationStatus? status) =>
+        status?.state.name ?? 'Unknown';
+
+    String formatBiometryType(PowerAuthBiometryInfo? info) =>
+        info?.biometryType.name ?? 'Unknown';
+
+    String formatBiometryStatus(PowerAuthBiometryInfo? info) =>
+        info?.canAuthenticate.name ?? 'Unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,6 +593,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         Text('Activation ID: ${_activationId ?? "Unknown"}'),
         Text('Activation Fingerprint: ${_activationFingerprint ?? "Unknown"}'),
         Text('Activation Status: ${formatStatus(_activationStatus)}'),
+        Text('Has Biometry Factor: ${formatBool(_hasBiometryFactor)}'),
+        Text(
+          'Biometry Info Available: ${formatBool(_biometryInfo?.isAvailable)}',
+        ),
+        Text('Biometry Info Type: ${formatBiometryType(_biometryInfo)}'),
+        Text('Biometry Info Status: ${formatBiometryStatus(_biometryInfo)}'),
       ],
     );
   }
@@ -605,9 +609,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       children: [
         ElevatedButton(
           onPressed:
-              _isLoading ||
-                      !_isConfigured ||
-                      _hasPendingActivation == true
+              _isLoading || !_isConfigured || _hasPendingActivation == true
                   ? null
                   : () => _showInputDialog(
                     context,
@@ -626,19 +628,34 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showInputDialog(
                     context,
-                    title: 'Persist Activation',
+                    title: 'Persist Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
                     onSubmit: (password) {
-                      var paPassword = PowerAuthPassword();
-                      for (var i = 0; i < password.length; i++) {
-                       paPassword.addCharacter(password[i]);
-                      }
-
-                      _persistActivationWithPassword(paPassword);
+                      _persistActivationWithPassword(
+                        PowerAuthPassword.fromString(password),
+                      );
                     },
                   ),
           child: const Text('Persist Activation (Password)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasPendingActivation != true
+                  ? null
+                  : () => _showInputDialog(
+                    context,
+                    title: 'Persist Activation (PWD+Bio)',
+                    label: 'Password',
+                    isPassword: true,
+                    onSubmit: (password) {
+                      _persistActivationWithPasswordAndBiometry(
+                        PowerAuthPassword.fromString(password),
+                      );
+                    },
+                  ),
+          child: const Text('Persist Activation (Password+Bio)'),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
@@ -647,20 +664,31 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showInputDialog(
                     context,
-                    title: 'Remove Activation',
+                    title: 'Remove Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
                     onSubmit: (password) {
-                      var paPassword = PowerAuthPassword();
-                      for (var i = 0; i < password.length; i++) {
-                       paPassword.addCharacter(password[i]);
-                      }
-
-                      _removeActivationWithPassword(paPassword);
+                      _removeActivationWithPassword(
+                        PowerAuthPassword.fromString(password),
+                      );
                     },
                   ),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[700]),
           child: const Text('Remove Activation (Password)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () async {
+                    _removeActivationWithBiometry();
+                  },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange[900]),
+          child: const Text('Remove Activation (Biometry)'),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
@@ -727,7 +755,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   Widget _buildSignatureButtons() {
     const defaultUriId = '/pa/signature/validate';
     const defaultData = 'VGhpcyBpcyBzZWNyZXQhIQ==';
-    const defaultBody = '{jsonbody: "yes"}';
+    const defaultBody = 'This is secret!!';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -738,22 +766,49 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showSignatureInputDialog(
                     context,
-                    title: 'Compute Offline Signature',
+                    title: 'Compute Offline Signature (PWD)',
                     fields: {'Password': true, 'URI ID': false, 'Data': false},
                     initialValues: {
                       'URI ID': defaultUriId,
                       'Data': defaultData,
                     },
                     onSubmit: (values) {
-                      _computeOfflineSignature(
+                      _computeOfflineSignatureWithPassword(
                         values['Password']!,
                         values['URI ID']!,
                         values['Data']!,
                       );
                     },
                   ),
-          child: const Text('Compute Offline Signature'),
+          child: const Text('Compute Offline Signature (PWD)'),
         ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Compute Offline Signature (Bio)',
+                    fields: {'URI ID': false, 'Data': false},
+                    initialValues: {
+                      'URI ID': defaultUriId,
+                      'Data': defaultData,
+                    },
+                    onSubmit: (values) {
+                      _computeOfflineSignatureWithBiometry(
+                        values['URI ID']!,
+                        values['Data']!,
+                      );
+                    },
+                  ),
+          child: const Text('Compute Offline Signature (Bio)'),
+        ),
+
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed:
@@ -773,6 +828,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ),
           child: const Text('Verify Server Signature'),
         ),
+
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed:
@@ -780,18 +836,39 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showSignatureInputDialog(
                     context,
-                    title: 'Compute GET Signature Header',
+                    title: 'Compute GET Signature Header (PWD)',
                     fields: {'Password': true, 'URI ID': false},
                     initialValues: {'URI ID': defaultUriId},
                     onSubmit: (values) {
-                      _computeGetSignature(
+                      _computeGetSignatureWithPassword(
                         values['Password']!,
                         values['URI ID']!,
                       );
                     },
                   ),
-          child: const Text('Compute GET Signature Header'),
+          child: const Text('Compute GET Signature Header (PWD)'),
         ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Compute GET Signature Header (Bio)',
+                    fields: {'URI ID': false},
+                    initialValues: {'URI ID': defaultUriId},
+                    onSubmit: (values) {
+                      _computeGetSignatureWithBiometry(values['URI ID']!);
+                    },
+                  ),
+          child: const Text('Compute GET Signature Header (Bio)'),
+        ),
+
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed:
@@ -799,7 +876,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showSignatureInputDialog(
                     context,
-                    title: 'Compute POST Signature Header',
+                    title: 'Compute POST Signature Header (PWD)',
                     fields: {
                       'Password': true,
                       'URI ID': false,
@@ -810,14 +887,40 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                       'Request Body': defaultBody,
                     },
                     onSubmit: (values) {
-                      _computePostSignature(
+                      _computePostSignatureWithPassword(
                         values['Password']!,
                         values['URI ID']!,
                         values['Request Body']!,
                       );
                     },
                   ),
-          child: const Text('Compute POST Signature Header'),
+          child: const Text('Compute POST Signature Header (PWD)'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Compute POST Signature Header (Bio)',
+                    fields: {'URI ID': false, 'Request Body': false},
+                    initialValues: {
+                      'URI ID': defaultUriId,
+                      'Request Body': defaultBody,
+                    },
+                    onSubmit: (values) {
+                      _computePostSignatureWithBiometry(
+                        values['URI ID']!,
+                        values['Request Body']!,
+                      );
+                    },
+                  ),
+          child: const Text('Compute POST Signature Header (Bio)'),
         ),
       ],
     );
@@ -825,10 +928,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   /// Builds the validation utility buttons.
   Widget _buildValidationButtons() {
-    // Helper moved inside build method scope or passed context
     void showResultDialog(String title, String message) {
       showDialog(
-        context: context, // Use the build context
+        context: context,
         builder:
             (ctx) => AlertDialog(
               title: Text(title),
@@ -1157,5 +1259,285 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         );
       },
     );
+  }
+
+  Widget _buildBiometryButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor == true
+                  ? null
+                  : _addBiometryFactor,
+          child: const Text('Add Biometry Factor'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasBiometryFactor != true
+                  ? null
+                  : _removeBiometryFactor,
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
+          child: const Text('Remove Biometry Factor'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _addBiometryFactor() async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (_hasBiometryFactor == true) return _setError('Biometry factor already added');
+
+    await _showInputDialog(
+      context,
+      title: 'Add Biometry Factor',
+      label: 'Password',
+      isPassword: true,
+      onSubmit: (password) async {
+        _setLoading(true);
+
+        try {
+          final paPassword = PowerAuthPassword.fromString(password);
+          final prompt = PowerAuthBiometricPrompt(
+            promptTitle: "Add Biometry",
+            promptMessage: "Please authenticate to add biometry.",
+          );
+
+          await _powerAuth.addBiometryFactor(paPassword, prompt);
+          print('Biometry factor added successfully.');
+          _setError('Biometry factor added.');
+
+          await _refreshState();
+        } on PowerAuthException catch (e) {
+          _setError('Adding biometry factor failed: ${e.message} (${e.code})');
+        } catch (e) {
+          _setError('Unexpected error adding biometry factor: $e');
+        }
+        _setLoading(false);
+      },
+    );
+  }
+
+  Future<void> _removeBiometryFactor() async {
+    if (!_isConfigured || _hasBiometryFactor != true) {
+      return _setError(
+        'Instance not configured or no biometry factor to remove',
+      );
+    }
+
+    final confirm = await _showConfirmDialog(
+      context,
+      title: 'Remove Biometry Factor',
+      content: 'Are you sure you want to remove the biometry factor? This cannot be undone.',
+    );
+
+    if (confirm != true) return;
+
+    _setLoading(true);
+    try {
+      await _powerAuth.removeBiometryFactor();
+      print('Biometry factor removed successfully.');
+      _setError('Biometry factor removed.');
+
+      await _refreshState();
+    } on PowerAuthException catch (e) {
+      _setError('Removing biometry factor failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error removing biometry factor: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computeOfflineSignatureWithPassword(
+    String password,
+    String uriId,
+    String data,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    _setLoading(true);
+
+    try {
+      final paPassword = PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final nonce = base64Encode(utf8.encode(DateTime.now().toIso8601String()));
+
+      final signature = await _powerAuth.offlineSignature(
+        authentication,
+        uriId,
+        nonce,
+        data,
+      );
+
+      print('Offline signature (PWD) computed: $signature');
+      _setError('Offline Signature (PWD): $signature');
+    } on PowerAuthException catch (e) {
+      _setError('Offline signature (PWD) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during offline signature (PWD): $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computeOfflineSignatureWithBiometry(
+    String uriId,
+    String data,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true)
+      return _setError('Instance not configured or no valid activation');
+    if (_hasBiometryFactor != true)
+      return _setError('Biometry factor not available');
+
+    _setLoading(true);
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "Offline Signature",
+        promptMessage: "Authenticate for offline signature.",
+      );
+
+      final authentication = PowerAuthAuthentication.biometry(
+        biometricPrompt: prompt,
+      );
+      final nonce = base64Encode(utf8.encode(DateTime.now().toIso8601String()));
+
+      final signature = await _powerAuth.offlineSignature(
+        authentication,
+        uriId,
+        nonce,
+        data,
+      );
+
+      print('Offline signature (Bio) computed: $signature');
+      _setError('Offline Signature (Bio): $signature');
+    } on PowerAuthException catch (e) {
+      _setError('Offline signature (Bio) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during offline signature (Bio): $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computeGetSignatureWithPassword(
+    String password,
+    String uriId,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    _setLoading(true);
+
+    try {
+      final paPassword = PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+
+      final header = await _powerAuth.requestGetSignature(
+        authentication,
+        uriId,
+      );
+
+      print('GET Signature Header (PWD): ${header.key}: ${header.value}');
+      _setError('GET Header (PWD): ${header.key}: ${header.value}');
+    } on PowerAuthException catch (e) {
+      _setError('GET signature (PWD) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during GET signature (PWD): $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computeGetSignatureWithBiometry(String uriId) async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (_hasBiometryFactor != true) return _setError('Biometry factor not available');
+
+    _setLoading(true);
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "GET Signature",
+        promptMessage: "Authenticate for GET signature.",
+      );
+
+      final authentication = PowerAuthAuthentication.biometry(
+        biometricPrompt: prompt,
+      );
+
+      final header = await _powerAuth.requestGetSignature(
+        authentication,
+        uriId,
+      );
+
+      print('GET Signature Header (Bio): ${header.key}: ${header.value}');
+      _setError('GET Header (Bio): ${header.key}: ${header.value}');
+    } on PowerAuthException catch (e) {
+      _setError('GET signature (Bio) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during GET signature (Bio): $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computePostSignatureWithPassword(
+    String password,
+    String uriId,
+    String body,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    _setLoading(true);
+
+    try {
+      final paPassword = PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+
+      final header = await _powerAuth.requestSignature(
+        authentication,
+        'POST',
+        uriId,
+        body,
+      );
+
+      print('POST Signature Header (PWD): ${header.key}: ${header.value}');
+      _setError('POST Header (PWD): ${header.key}: ${header.value}');
+    } on PowerAuthException catch (e) {
+      _setError('POST signature (PWD) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during POST signature (PWD): $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _computePostSignatureWithBiometry(
+    String uriId,
+    String body,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (_hasBiometryFactor != true) return _setError('Biometry factor not available');
+
+    _setLoading(true);
+
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "POST Signature",
+        promptMessage: "Authenticate for POST signature.",
+      );
+
+      final authentication = PowerAuthAuthentication.biometry(
+        biometricPrompt: prompt,
+      );
+
+      final header = await _powerAuth.requestSignature(
+        authentication,
+        'POST',
+        uriId,
+        body,
+      );
+
+      print('POST Signature Header (Bio): ${header.key}: ${header.value}');
+      _setError('POST Header (Bio): ${header.key}: ${header.value}');
+    } on PowerAuthException catch (e) {
+      _setError('POST signature (Bio) failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected error during POST signature (Bio): $e');
+    }
+    _setLoading(false);
   }
 }
