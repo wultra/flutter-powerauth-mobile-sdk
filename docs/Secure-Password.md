@@ -4,9 +4,10 @@ The `PowerAuthPassword` class implements safe storage for users' passwords. The 
  
 - If it's constructed with the `destroyOnUse` parameter set to `true`, then the native password is automatically destroyed after it's used for the cryptographic operation.
  
-- If it's constructed with `powerAuthInstanceId`, then the native object will be destroyed after the `PowerAuth` class with the same identifier is deconfigured.
+<!-- - If it's constructed with `powerAuthInstanceId`, then the native object will be destroyed after the `PowerAuth` class with the same identifier is deconfigured. -->
  
-- If you leave the instance of the `PowerAuthPassword` class as it is, then the native password is removed from memory after 5 minutes of inactivity. The Flutter object is still functional, so if you use any API function, then the native password is re-initialized, but the previous passphrase is lost. You can provide an optional `onAutomaticCleanup` function to the object's constructor to detect this situation.
+- If you leave the instance of the `PowerAuthPassword` class as it is, then the native password is removed from memory after 5 minutes of inactivity. The Flutter object is still functional, so if you use any API function, then the native password is re-initialized, but the previous passphrase is lost. 
+<!-- You can provide an optional `onAutomaticCleanup` function to the object's constructor to detect this situation. -->
  
 - If you call any `PowerAuthPassword` method except `release()`, then the auto-cleanup timer is reset, so the native password will live for another 5 minutes.
  
@@ -16,13 +17,13 @@ If you're interested in more details about why the passwords should be protected
 
 ## Instantiating password
 
-1. Create your own instance:
+<!-- 1. Create your own instance: -->
    ```dart
    final password = PowerAuthPassword();
    ```
    Such a password is not bound to any PowerAuth instance, so it will not be destroyed together with the `PowerAuth` instance.
 
-2. Create using `PowerAuth` object:
+<!-- 2. Create using `PowerAuth` object:
    ```dart
    final password = powerAuth.createPassword();
    ```
@@ -32,9 +33,15 @@ In both ways, you can alter the following parameters:
 
 - `destroyOnUse` is by default `true` and the native password is destroyed automatically after it's used for the cryptographic operation. If you set `false`, then it's recommended to use the `release()` method once the password is no longer needed.
 
-- `onAutomaticCleanup` function is called when the password object detects that the native password was destroyed due to the object's inactivity. See [Automatic cleanup](#automatic-cleanup) chapter for more details.
+- `onAutomaticCleanup` function is called when the password object detects that the native password was destroyed due to the object's inactivity. See [Automatic cleanup](#automatic-cleanup) chapter for more details. -->
 
 ## Using password
+
+```dart
+// Creatiing password from already obtained String
+// Note that this is not recommended. Do this only when you retrieve the whole string form a text input.
+final password = PowerAuthPassword.fromString("1234");
+```
 
 ```dart
 // Change password from "0123" to "3210".

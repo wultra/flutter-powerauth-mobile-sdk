@@ -83,13 +83,28 @@ class PowerAuthPassword extends BaseNativeObject {
     return field.isEmpty;
   }
 
-  /// Appends a character (as a single-char string or Unicode code point) to the end of the password.
-  // Future<int> addCharacter(Object character) => withObjectId(
-  //   (id) => _platform.addCharacter(id, _getCodePoint(character)),
-  // );
-  Future<int> addCharacter(Object character) async {
-    field += character.toString();
+  /// Appends a character to the end of the password.
+  /// If more than one character is provided, only the first one is used.
+  Future<int> addCharacter(String character) async {
+    if (character.isNotEmpty) {
+      final char = character[0];
+      field += char;
+    }
     return field.length;
+    // Future<int> addCharacter(Object character) => withObjectId(
+    //   (id) => _platform.addCharacter(id, _getCodePoint(character)),
+    // );
+  }
+
+  /// Appends a character to the end of the password.
+  /// If more than one character is provided, only the first one is used.
+  Future<int> addCodePoint(int characterCodePoint) async {
+    final char = String.fromCharCode(characterCodePoint);
+    field += char;
+    return field.length;
+    // Future<int> addCharacter(Object character) => withObjectId(
+    //   (id) => _platform.addCharacter(id, _getCodePoint(character)),
+    // );
   }
 
   /// Inserts a character at the specified position.
@@ -97,24 +112,26 @@ class PowerAuthPassword extends BaseNativeObject {
   //   (id) => _platform.insertCharacter(id, _getCodePoint(character), at),
   // );
 
-  Future<int> insertCharacter(Object character, int at) async {
-    // not implemented
-    return field.length;
-  }
+  // Future<int> insertCharacter(Object character, int at) async {
+  //   // not implemented
+  //   return field.length;
+  // }
 
   /// Removes the character at the specified position.
   // Future<int> removeCharacterAt(int position) =>
   //     withObjectId((id) => _platform.removeCharacterAt(id, position));
-  Future<int> removeCharacterAt(int position) async {
-    // not implemented
-    return field.length;
-  }
+  // Future<int> removeCharacterAt(int position) async {
+  //   // not implemented
+  //   return field.length;
+  // }
 
   /// Removes the last character.
   // Future<int> removeLastCharacter() =>
   //     withObjectId((id) => _platform.removeLastCharacter(id));
   Future<int> removeLastCharacter() async {
-    // not implemented
+    if (field.isNotEmpty) {
+      field = field.substring(0, field.length - 1);
+    }
     return field.length;
   }
 
@@ -127,25 +144,25 @@ class PowerAuthPassword extends BaseNativeObject {
     return field == other.field;
   }
 
-  int _getCodePoint(Object character) {
-    if (character is int) {
-      return character;
-    } else if (character is String) {
-      if (character.isEmpty) {
-        throw PowerAuthException(
-          code: PowerAuthErrorCode.wrongParameter,
-          message: 'String must not be empty',
-        );
-      }
+  // int _getCodePoint(Object character) {
+  //   if (character is int) {
+  //     return character;
+  //   } else if (character is String) {
+  //     if (character.isEmpty) {
+  //       throw PowerAuthException(
+  //         code: PowerAuthErrorCode.wrongParameter,
+  //         message: 'String must not be empty',
+  //       );
+  //     }
 
-      return character.runes.first;
-    } else {
-      throw PowerAuthException(
-        code: PowerAuthErrorCode.wrongParameter,
-        message: 'Must be a String or int (Unicode code point)',
-      );
-    }
-  }
+  //     return character.runes.first;
+  //   } else {
+  //     throw PowerAuthException(
+  //       code: PowerAuthErrorCode.wrongParameter,
+  //       message: 'Must be a String or int (Unicode code point)',
+  //     );
+  //   }
+  // }
 
   /// Internal method for serialization.
   /// Ensures the native object is initialized.

@@ -44,7 +44,12 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "requestGetSignature": requestGetSignature,
         "requestSignature": requestSignature,
         "offlineSignature": offlineSignature,
-        "verifyServerSignedData": verifyServerSignedData
+        "verifyServerSignedData": verifyServerSignedData,
+        "getBiometryInfo": getBiometryInfo,
+        "addBiometryFactor": addBiometryFactor,
+        "hasBiometryFactor": hasBiometryFactor,
+        "removeBiometryFactor": removeBiometryFactor,
+        "authenticateWithBiometry": authenticateWithBiometry
     ]
     
     // MARK: - POWERAUTH "BRIDGE" API CODE
@@ -66,9 +71,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case data
         case signature
         case useMasterKey
+        case prompt
     }
     
     private var instances = [String: PowerAuthSDK]() // TODO: replace with object register
+    private var biometricKeyCache = [String: (data: PowerAuthData, created: Date)]()
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(.instanceId)
@@ -322,7 +329,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     }
     
     private func requestSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
+        try usePowerAuth(call, result) { sdk, wrap in
             
             let auth = try constructAuthentication(call)
             let uriId: String = try call.requireParameter(.uriId)
@@ -336,6 +343,109 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 "key": signature.key,
                 "value": signature.value
             ])
+        }
+    }
+    
+    private func getBiometryInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        let biometryType = switch PowerAuthKeychain.biometricAuthenticationInfo.biometryType {
+        case .touchID: "fingerprint"
+        case .faceID: "face"
+        default: "none"
+        }
+        let canAuthenticate = switch PowerAuthKeychain.biometricAuthenticationInfo.currentStatus {
+        case .available: "ok"
+        case .notEnrolled: "notEnrolled"
+        case .notAvailable: "notAvailable"
+        case .notSupported: "notSupported"
+        case .lockout: "lockout"
+        default: "notAvailable" // fallback for Swift 6
+        }
+        
+        result([
+            "isAvailable": PowerAuthKeychain.canUseBiometricAuthentication,
+            "biometryType": biometryType,
+            "canAuthenticate": canAuthenticate
+        ]);
+    }
+    
+    private func addBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            // Workaround for native SDK. We're expectint MISSING or PEDNING_ACTIVATION
+            // but native SDK prioritize biometry-related error in this situation.
+            guard sdk.hasValidActivation() else {
+                throw PluginException(.missingActivation)
+            }
+            guard !sdk.hasPendingActivation() else {
+                throw PluginException(.pendingActivation)
+            }
+            let passParam: FlutterMap = try call.requireParameter(.password)
+            let password = try self.usePassword(passParam)
+            sdk.addBiometryFactor(password: password) { error in
+                wrap {
+                    if let error {
+                        throw error
+                    }
+                    result(nil)
+                }
+            }
+        }
+    }
+    
+    private func hasBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            result(sdk.hasBiometryFactor())
+        }
+    }
+    
+    private func removeBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            wrap {
+                if sdk.removeBiometryFactor() {
+                    result(nil)
+                } else {
+                    if !sdk.hasBiometryFactor() {
+                        throw PluginException(.biometryNotConfigured, message: "Biometry not configured in this PowerAuth instance")
+                    } else {
+                        throw PluginException(.flutterError, message: "Biometry not configured in this PowerAuth instance")
+                    }
+                }
+            }
+        }
+    }
+    
+    private func authenticateWithBiometry(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            
+            let prompt: FlutterMap = try call.requireParameter(.prompt)
+            
+            guard let promptMessage = prompt["promptMessage"] as? String else {
+                throw PluginException(.wrongParameter, message: "Missing 'promptMessage' in prompt parameter")
+            }
+            
+            let cancelButton = prompt["cancelButtonTitle"] as? String
+            let fallbackButton = prompt["fallbackButtonTitle"] as? String
+            let context = LAContext()
+            context.localizedReason = promptMessage
+            context.localizedCancelTitle = cancelButton
+            context.localizedFallbackTitle = fallbackButton ?? "" // empty string hides the button
+            sdk.authenticateUsingBiometry(withContext: context) { authentication, error in
+                wrap {
+                    guard let authentication else {
+                        throw error ?? PluginException(.unknownError, message: "Unknown error")
+                    }
+                    guard let overridenBiometryKey = authentication.overridenBiometryKey else {
+                        throw PluginException(.unknownError, message: "Missing overridenBiometryKey in authentication")
+                    }
+                    // Allocate native object
+                    let managedData = PowerAuthData(data: overridenBiometryKey, cleanup: true)
+                    
+                    // TODO: implement with object register -> see PA JS OBJC impl.
+                    let keyId = UUID().uuidString
+                    let timestamp = Date()
+                    self.biometricKeyCache[keyId] = (managedData, timestamp)
+                    result(keyId)
+                }
+            }
         }
     }
     
@@ -370,6 +480,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
         
+        cleanupExpiredBiometricKeys()
+        
         let dict: FlutterMap = try call.requireParameter(.authentication)
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
         let persist = dict["isPersist"] as? Bool ?? false // TODO: fallback ok?
@@ -392,15 +504,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 return PowerAuthAuthentication.possessionWithPassword(password: password)
             } else if useBiometry {
                 if let biometryKeyId = dict["biometryKeyId"] as? String {
-                    // TODO: not implemented yet
-                    fatalError("Not implemented")
-//                    PowerAuthData * biometryKeyData = [_objectRegister useObjectWithId:biometryKeyId expectedClass:[PowerAuthData class]];
-//                    if (biometryKeyData) {
-//                        return [PowerAuthAuthentication possessionWithBiometryWithCustomBiometryKey:biometryKeyData.data customPossessionKey:nil];
-//                    } else {
-//                        reject(EC_INVALID_NATIVE_OBJECT, @"Biometric key in PowerAuthAuthentication object is no longer valid.", nil);
-//                        return nil;
-//                    }
+                    guard let entry = biometricKeyCache[biometryKeyId] else {
+                        throw PluginException(.invalidNativeObject, message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
+                    }
+                    biometricKeyCache.removeValue(forKey: biometryKeyId) // TODO: temp solution
+                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: entry.data.data, customPossessionKey: nil)
                 }
                 let prompt = dict["biometricPrompt"] as? [String: String]
                 let message = prompt?["promptMessage"]
@@ -415,6 +523,18 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 }
             } else {
                 return PowerAuthAuthentication.possession()
+            }
+        }
+    }
+    
+    private func cleanupExpiredBiometricKeys() {
+        let now = Date()
+        var iterator = biometricKeyCache.makeIterator()
+        
+        biometricKeyCache.keys.forEach { key in
+            let item = biometricKeyCache[key]!
+            if now.timeIntervalSince1970 - item.created.timeIntervalSince1970 >= 10_000 {
+                biometricKeyCache.removeValue(forKey: key)
             }
         }
     }
@@ -460,5 +580,27 @@ private extension FlutterMethodCall {
     
     func getParameter<T>(_ key: PowerAuthService.Args) -> T? {
         return getParameter(key.rawValue)
+    }
+}
+
+
+// TODO: make sure this works properly
+private class PowerAuthData {
+    
+    private(set) var data: Data
+    private let cleanup: Bool
+    
+    init(data: Data, cleanup: Bool) {
+        self.data = data
+        self.cleanup = cleanup
+    }
+    
+    deinit {
+        if cleanup {
+            let count = data.count
+            _ = data.withUnsafeMutableBytes {
+                $0.baseAddress?.initializeMemory(as: UInt8.self, repeating: 0, count: count)
+            }
+        }
     }
 }

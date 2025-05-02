@@ -43,7 +43,7 @@ internal enum PowerAuthFlutterError: String {
     case authenticationError
     case responseError
     case unknownError
-    case reactNativeError
+    case flutterError
     case invalidActivationObject
     case invalidActivationCode
     case invalidCharacter
