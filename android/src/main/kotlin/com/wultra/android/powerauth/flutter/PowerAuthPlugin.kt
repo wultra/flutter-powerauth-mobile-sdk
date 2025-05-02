@@ -649,7 +649,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun activationStateToString(state: Int): String {
         return when (state) {
             ActivationStatus.State_Created -> "created"
-            ActivationStatus.State_Pending_Commit -> "pending_commit"
+            ActivationStatus.State_Pending_Commit -> "pendingCommit"
             ActivationStatus.State_Active -> "active"
             ActivationStatus.State_Blocked -> "blocked"
             ActivationStatus.State_Removed -> "removed"
