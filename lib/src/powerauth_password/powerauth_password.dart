@@ -16,8 +16,8 @@
 
 import 'dart:async';
 
-import '../model/powerauth_error.dart';
-import 'powerauth_password_platform_interface.dart';
+// import '../model/powerauth_error.dart';
+// import 'powerauth_password_platform_interface.dart';
 import '../model/base_native_object.dart';
 
 /// Represents a secure storage for a user's password or PIN.
@@ -28,8 +28,8 @@ class PowerAuthPassword extends BaseNativeObject {
   final bool _destroyOnUse;
 
   // Platform instance accessor - static for easy access in overrides
-  static PowerAuthPasswordPlatform get _platform =>
-      PowerAuthPasswordPlatform.instance;
+  // static PowerAuthPasswordPlatform get _platform =>
+  //     PowerAuthPasswordPlatform.instance;
 
   // TODO: Temporary backing field until NativeObject is implemented
   String field = "";
