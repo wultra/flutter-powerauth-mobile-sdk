@@ -1,10 +1,3 @@
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_activation.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_activation_status.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authorization_http_header.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_configuration.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_create_activation_result.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_platform_interface.dart';
@@ -31,7 +24,12 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   }
 
   @override
-  Future<void> configure({required String instanceId, required PowerAuthConfiguration configuration}) {
+  Future<void> configure({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthBiometryConfiguration? biometryConfiguration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+  }) {
     // TODO: implement configure
     throw UnimplementedError();
   }
@@ -129,6 +127,30 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   @override
   Future<bool> verifyServerSignedData(String instanceId, String data, String signature, bool useMasterKey) {
     // TODO: implement verifyServerSignedData
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<void> addBiometryFactor(String instanceId, PowerAuthPassword password, [PowerAuthBiometricPrompt? prompt]) {
+    // TODO: implement addBiometryFactor
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) {
+    // TODO: implement getBiometryInfo
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<bool> hasBiometryFactor(String instanceId) {
+    // TODO: implement hasBiometryFactor
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<void> removeBiometryFactor(String instanceId) {
+    // TODO: implement removeBiometryFactor
     throw UnimplementedError();
   }
 }
