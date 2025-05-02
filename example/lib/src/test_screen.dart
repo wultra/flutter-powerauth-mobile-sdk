@@ -1524,6 +1524,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
 
       print('POST Signature Header (PWD): ${header.key}: ${header.value}');
+      print('For payload: ${base64Encode(utf8.encode(body))}');
       _setError('POST Header (PWD): ${header.key}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (PWD) failed: ${e.message} (${e.code})');
@@ -1560,6 +1561,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
 
       print('POST Signature Header (Bio): ${header.key}: ${header.value}');
+      print('For payload: ${base64Encode(utf8.encode(body))}');
       _setError('POST Header (Bio): ${header.key}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (Bio) failed: ${e.message} (${e.code})');
