@@ -18,7 +18,7 @@ internal class Constants {
     
     /// Time interval in milliseconds to keep pre-authorized biometric
     /// key in memory.
-    static let BIOMETRY_KEY_KEEP_ALIVE_TIME: Double = 10_000
+    static let BIOMETRY_KEY_KEEP_ALIVE_TIME: Int = 10_000
 
     /// Time interval in milliseconds to keep password object valid
     /// in memory.

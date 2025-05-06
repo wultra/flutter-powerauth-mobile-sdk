@@ -73,9 +73,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case signature
         case useMasterKey
         case prompt
+        case isReusable
     }
-    
-    private var biometricKeyCache = [String: (data: PowerAuthData, created: Date)]()
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(.instanceId)
@@ -424,6 +423,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, wrap in
             
             let prompt: FlutterMap = try call.requireParameter(.prompt)
+            let isReusable = call.getParameter(.isReusable) ?? false
             
             guard let promptMessage = prompt["promptMessage"] as? String else {
                 throw PluginException(.wrongParameter, message: "Missing 'promptMessage' in prompt parameter")
@@ -446,11 +446,17 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     // Allocate native object
                     let managedData = PowerAuthData(data: overridenBiometryKey, cleanup: true)
                     
-                    // TODO: implement with object register -> see PA JS OBJC impl.
-                    let keyId = UUID().uuidString
-                    let timestamp = Date()
-                    self.biometricKeyCache[keyId] = (managedData, timestamp)
-                    result(keyId)
+                    // If reusable authentication is going to be created, then "keep alive" release policy is applied.
+                    // Basically, the data will be available up to 10 seconds from the last access.
+                    // If authentication is not reusable, then dispose biometric key after its 1st use. We still need
+                    // to combine it with "expire" policy to make sure that key don't remain in memory forever.
+                    var policy = [ReleasePolicy.keepAlive(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)]
+                    if isReusable == false {
+                        policy.append(.afterUse(1))
+                    }
+                    
+                    let managedId = self.register.add(object: managedData, tag: sdk.configuration.instanceId, policies: policy)
+                    result(managedId)
                 }
             }
         }
@@ -489,8 +495,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
         
-        cleanupExpiredBiometricKeys()
-        
         let dict: FlutterMap = try call.requireParameter(.authentication)
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
         let persist = dict["isPersist"] as? Bool ?? false // TODO: fallback ok?
@@ -513,11 +517,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 return PowerAuthAuthentication.possessionWithPassword(password: password)
             } else if useBiometry {
                 if let biometryKeyId = dict["biometryKeyId"] as? String {
-                    guard let entry = biometricKeyCache[biometryKeyId] else {
+                    guard let biometryKeyData: PowerAuthData = register.use(id: biometryKeyId) else {
                         throw PluginException(.invalidNativeObject, message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
                     }
-                    biometricKeyCache.removeValue(forKey: biometryKeyId) // TODO: temp solution
-                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: entry.data.data, customPossessionKey: nil)
+                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: biometryKeyData.data, customPossessionKey: nil)
                 }
                 let prompt = dict["biometricPrompt"] as? [String: String]
                 let message = prompt?["promptMessage"]
@@ -532,17 +535,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 }
             } else {
                 return PowerAuthAuthentication.possession()
-            }
-        }
-    }
-    
-    private func cleanupExpiredBiometricKeys() {
-        let now = Date()
-        
-        biometricKeyCache.keys.forEach { key in
-            let item = biometricKeyCache[key]!
-            if (now.timeIntervalSince1970 - item.created.timeIntervalSince1970) >= CGFloat(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME) {
-                biometricKeyCache.removeValue(forKey: key)
             }
         }
     }
@@ -591,8 +583,6 @@ private extension FlutterMethodCall {
     }
 }
 
-
-// TODO: make sure this works properly
 private class PowerAuthData {
     
     private(set) var data: Data
