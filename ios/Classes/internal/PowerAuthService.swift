@@ -529,11 +529,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func cleanupExpiredBiometricKeys() {
         let now = Date()
-        var iterator = biometricKeyCache.makeIterator()
         
         biometricKeyCache.keys.forEach { key in
             let item = biometricKeyCache[key]!
-            if now.timeIntervalSince1970 - item.created.timeIntervalSince1970 >= 10_000 {
+            if (now.timeIntervalSince1970 - item.created.timeIntervalSince1970) >= CGFloat(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME) {
                 biometricKeyCache.removeValue(forKey: key)
             }
         }

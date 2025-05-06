@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import Foundation
 import Flutter
 import UIKit
 import PowerAuth2
@@ -135,4 +136,41 @@ internal extension FlutterMethodCall {
         
         return arguments.get(key)
     }
+}
+
+internal class Lock {
+    
+    /// Underlying synchronization primitive.
+    private let semaphore: DispatchSemaphore
+    
+    /// Designated initializer
+    init() {
+        semaphore = DispatchSemaphore(value: 1)
+    }
+    
+    /// Attempts to acquire a lock, blocking a thread’s execution
+    /// until the lock can be acquired.
+    func lock() {
+        semaphore.wait()
+    }
+    
+    /// Releases a previously acquired lock.
+    func unlock() {
+        semaphore.signal()
+    }
+    
+    /// Executes block after lock is acquired and releases it immediately afterwards.
+    /// - Parameter block: block that will be executed during the lock
+    /// - Returns: returns the output pf the block
+    func synchronized<T>(_ block: () -> T) -> T {
+        semaphore.wait()
+        defer {
+            semaphore.signal()
+        }
+        return block()
+    }
+}
+
+class Utils {
+    
 }
