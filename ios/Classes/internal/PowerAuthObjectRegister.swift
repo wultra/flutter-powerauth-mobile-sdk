@@ -27,10 +27,6 @@ internal class PowerAuthObjectRegister {
         case touch
         case remove
     }
-    private static let OPT_NONE = 0       // no options
-    private static let OPT_SET_USE = 1    // set object as used
-    private static let OPT_TOUCH = 2      // touch object
-    private static let OPT_REMOVE = 3     // remove object
     
     // MARK: - Native interface
     
@@ -45,26 +41,21 @@ internal class PowerAuthObjectRegister {
     }
     
     func registerObject(object: Any, id: String, tag: String, policies: [ReleasePolicy]) -> Bool {
-        return registerObject(objectId: id, tag: tag, policies: policies) {
+        return registerObject(id: id, tag: tag, policies: policies) {
             return object
         }
     }
     
-    func registerObject(objectId: String, tag: String, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
-        guard isValidObjectId(objectId) == false else {
-            return false
-        }
+    func registerObject(id: String, tag: String, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
         
         return lock.synchronized {
-            guard let registeredId = self.translateObjectId(objectId) else {
-                return false
-            }
-            guard self.register[registeredId] == nil else {
+            
+            guard self.register[id] == nil else {
                 return false
             }
             let object = objectFactory()
-            let managedObject = PowerAuthManagedObject(object: object, key: registeredId, tag: tag, policies: policies)
-            register[registeredId] = managedObject
+            let managedObject = PowerAuthManagedObject(object: object, key: id, tag: tag, policies: policies)
+            register[id] = managedObject
             self.scheduleClenaup()
             return true
         }
@@ -72,25 +63,25 @@ internal class PowerAuthObjectRegister {
     
     func useObject<T>(id: String) -> T? {
         return lock.synchronized {
-            return findManagedObject(id:id, options: Self.OPT_SET_USE)
+            return findManagedObject(id: id, action: .use)
         }
     }
     
     func findObject<T>(id: String) -> T? {
         return lock.synchronized {
-            return findManagedObject(id:id, options: Self.OPT_NONE)
+            return findManagedObject(id: id)
         }
     }
     
     func touchObject<T>(id: String) -> T? {
         return lock.synchronized {
-            return findManagedObject(id:id, options: Self.OPT_TOUCH)
+            return findManagedObject(id: id, action: .touch)
         }
     }
     
     func containsObject(id: String) -> Bool {
         return lock.synchronized {
-            let obj: Any? = self.findManagedObject(id: id, options: Self.OPT_NONE)
+            let obj: Any? = self.findManagedObject(id: id)
             return obj != nil
         }
     }
@@ -105,12 +96,8 @@ internal class PowerAuthObjectRegister {
     
     func removeObject<T>(id: String) -> T? {
         return lock.synchronized {
-            return self.findManagedObject(id: id, options: Self.OPT_REMOVE)
+            return self.findManagedObject(id: id, action: .remove)
         }
-    }
-    
-    func isValidObjectId(_ objectId: Any) -> Bool {
-        return ((objectId as? String)?.count ?? 0) > 0
     }
     
     func setCleanupPeriod(_ period: Int) {
@@ -126,32 +113,15 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-    
-    /// Translate generated object ID or application specific object ID into
-    /// key to register. The function also handles possible invalid, or null
-    /// objects are passed from JavaScript by accident.
-    ///
-    /// - Parameter objectId: Object ID to translate.
-    /// - Returns: Translated key to object register.
-    private func translateObjectId(_ objectId: Any) -> String? {
-        guard let stringId = objectId as? String, stringId.count > 0 else {
-            return nil
-        }
-        return stringId
-    }
-    
     /// Find object in the object register.
     /// - Parameters:
     ///   - objectId: Generated or application specific object register.
     ///   - expectedClass: Expected class to retrieve. If not provided, then the stored object can be anything.
-    ///   - options: Additional operations that will be performed with the object. See `OPT_*` macros for more details.
+    ///   - action: Additional operations that will be performed with the object
     /// - Returns: Object retrieved from the register or nil if no such object exist.
-    private func findManagedObject<T>(id: String, options: Int) -> T? {
-        guard let registeredId = translateObjectId(id) else {
-            return nil
-        }
+    private func findManagedObject<T>(id: String, action: ObjectAction = .none) -> T? {
         
-        guard let managedObject = register[registeredId] else {
+        guard let managedObject = register[id] else {
             return nil
         }
         
@@ -163,15 +133,11 @@ internal class PowerAuthObjectRegister {
             return nil
         }
         
-        if options == Self.OPT_SET_USE {
-            // Set object as used.
-            managedObject.setUsed()
-        } else if options == Self.OPT_TOUCH {
-            // Just touch the object and prolong its lifetime.
-            managedObject.touch()
-        } else if (options == Self.OPT_REMOVE) {
-            // Remove object from the register.
-            register.removeValue(forKey: registeredId)
+        switch action {
+        case .none: break
+        case .use: managedObject.setUsed()
+        case .touch: managedObject.touch()
+        case .remove: register.removeValue(forKey: id)
         }
         return object
     }
