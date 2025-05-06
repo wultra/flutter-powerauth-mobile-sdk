@@ -38,7 +38,5 @@ internal class Constants {
     static let CLEANUP_PERIOD_MIN: Int = 100
     /// Maximum allowed period for automatic objects cleanup job.
     static let CLEANUP_PERIOD_MAX: Int = 60_000
-    /// Keep object in memory for one more second after the explicit remove.
-    static let CLEANUP_REMOVE_DELAY: Double = 1_000 // TODO: copied from Android, do we need this?
 
 }

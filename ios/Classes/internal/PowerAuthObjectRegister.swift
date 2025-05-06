@@ -30,7 +30,7 @@ internal class PowerAuthObjectRegister {
     
     // MARK: - Native interface
     
-    func registerObject(object: Any, tag: String, policies: [ReleasePolicy]) -> String {
+    func add(object: Any, tag: String, policies: [ReleasePolicy]) -> String {
         return lock.synchronized {
             let identifier = generateIdentifier()
             let managedObject = PowerAuthManagedObject(object: object, key: identifier, tag: tag, policies: policies)
@@ -40,53 +40,50 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-    func registerObject(object: Any, id: String, tag: String, policies: [ReleasePolicy]) -> Bool {
-        return registerObject(id: id, tag: tag, policies: policies) {
-            return object
-        }
+    func add(object: Any, id: String, tag: String, policies: [ReleasePolicy]) -> Bool {
+        return add(id: id, tag: tag, policies: policies) { object }
     }
     
-    func registerObject(id: String, tag: String, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
+    func add(id: String, tag: String, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
         
         return lock.synchronized {
             
             guard self.register[id] == nil else {
                 return false
             }
-            let object = objectFactory()
-            let managedObject = PowerAuthManagedObject(object: object, key: id, tag: tag, policies: policies)
+            let managedObject = PowerAuthManagedObject(object: objectFactory(), key: id, tag: tag, policies: policies)
             register[id] = managedObject
             self.scheduleClenaup()
             return true
         }
     }
     
-    func useObject<T>(id: String) -> T? {
+    func use<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id, action: .use)
         }
     }
     
-    func findObject<T>(id: String) -> T? {
+    func find<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id)
         }
     }
     
-    func touchObject<T>(id: String) -> T? {
+    func touch<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id, action: .touch)
         }
     }
     
-    func containsObject(id: String) -> Bool {
+    func contains(id: String) -> Bool {
         return lock.synchronized {
             let obj: Any? = self.findManagedObject(id: id)
             return obj != nil
         }
     }
     
-    func removeAllObjects(tag: String) {
+    func removeAll(tag: String) {
         lock.synchronized {
             self.findAndRemoveObjects { key, value in
                 return tag == value.tag
@@ -94,9 +91,15 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-    func removeObject<T>(id: String) -> T? {
+    func remove<T>(id: String) -> T? {
         return lock.synchronized {
             return self.findManagedObject(id: id, action: .remove)
+        }
+    }
+    
+    func remove(id: String) {
+        lock.synchronized {
+            self.findManagedObject(id: id, action: .remove)
         }
     }
     
@@ -144,12 +147,12 @@ internal class PowerAuthObjectRegister {
     
     /// Schedule an object cleanup job.
     private func scheduleClenaup() {
-        guard !scheduledCleanup && register.count > 0 else {
+        guard scheduledCleanup == false && register.isEmpty == false else {
             return
         }
         scheduledCleanup = true
         // Wake-up after cleanup period seconds and do the cleanup.
-        DispatchQueue.global().asyncAfter(deadline: .now() + Double(cleanupPeriod) * Double(NSEC_PER_MSEC)) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(cleanupPeriod)) {
             self.lock.synchronized {
                 self.doCleanup()
             }
@@ -162,7 +165,7 @@ internal class PowerAuthObjectRegister {
         scheduledCleanup = false
         // Remove all invalid objects
         findAndRemoveObjects { _, obj in
-            return obj.isStillValid() == false
+            obj.isStillValid() == false
         }
         // Schedule cleanup for the next round
         scheduleClenaup()
@@ -186,9 +189,9 @@ internal class PowerAuthObjectRegister {
     
     /// Generate a new object identifier.
     /// - Returns: New unique object identifier.
-    func generateIdentifier() -> String {
+    private func generateIdentifier() -> String {
         while(true) {
-            let identifier = Self.getRandomString()
+            let identifier = Utils.getRandomString()
             if register[identifier] == nil {
                 return identifier
             }
@@ -219,13 +222,6 @@ internal class PowerAuthObjectRegister {
 //        return [[self debugDumpObjectsWithTag:nil] description];
 //    }
 #endif // DEBUG
-    
-    private static func getRandomString() -> String {
-        let count = Int(3 * (3 + arc4random_uniform(6)))
-        var data = NSMutableData(length: count)!
-        arc4random_buf(data.mutableBytes, data.length)
-        return data.base64EncodedString()
-    }
     
 }
 
@@ -317,12 +313,11 @@ internal class PowerAuthManagedObject {
         lastUseDate = Date()
     }
     
-    
     /// Evaluate whether time interval between now and reference date is greater or equal than time interval in release policy.
     /// - Parameters:
     ///   - refDate: Reference date.
     ///   - rp: Pointer to release policy structure.
-    static func isExpired(refDate: Date, rp: ReleasePolicy) -> Bool {
+    private func isExpired(refDate: Date, rp: ReleasePolicy) -> Bool {
         return -refDate.timeIntervalSinceNow * 1_000 >= Double(rp.getPolicyParam())
     }
     
@@ -340,11 +335,11 @@ internal class PowerAuthManagedObject {
                 }
                 break;
             case .expire:
-                if Self.isExpired(refDate: createDate, rp: policy) {
+                if isExpired(refDate: createDate, rp: policy) {
                     return false
                 }
             case .keepAlive:
-                if Self.isExpired(refDate: lastUseDate, rp: policy) {
+                if isExpired(refDate: lastUseDate, rp: policy) {
                     return false
                 }
             case .manual:

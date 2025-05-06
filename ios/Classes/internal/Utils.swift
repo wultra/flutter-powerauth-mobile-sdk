@@ -171,6 +171,11 @@ internal class Lock {
     }
 }
 
-class Utils {
-    
+internal class Utils {
+    static func getRandomString() -> String {
+        let count = Int(3 * (3 + arc4random_uniform(6)))
+        var data = NSMutableData(length: count)!
+        arc4random_buf(data.mutableBytes, data.length)
+        return data.base64EncodedString()
+    }
 }

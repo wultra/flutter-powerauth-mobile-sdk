@@ -21,9 +21,12 @@ import PowerAuthCore
 
 internal class PowerAuthService: PowerAuthFlutterService {
     
-    // MARK: - PowerAuthFlutterService members
-    
     var name: String { "PowerAuth" }
+    private let register: PowerAuthObjectRegister
+    
+    init(register: PowerAuthObjectRegister) {
+        self.register = register
+    }
     
     let handlers = [
         "configure": configure,
@@ -52,8 +55,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "authenticateWithBiometry": authenticateWithBiometry
     ]
     
-    // MARK: - POWERAUTH "BRIDGE" API CODE
-    
     // Possible Flutter call parameters
     enum Args: String {
         case instanceId
@@ -74,21 +75,17 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case prompt
     }
     
-    private var instances = [String: PowerAuthSDK]() // TODO: replace with object register
     private var biometricKeyCache = [String: (data: PowerAuthData, created: Date)]()
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(.instanceId)
-        result(instances[instanceId] != nil)
+        let sdk: PowerAuthSDK? = register.find(id: instanceId)
+        result(sdk != nil)
     }
     
     private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
         let instanceId: String = try call.requireParameter(.instanceId)
-        
-        guard instances[instanceId] == nil else {
-            throw PluginException(.wrongParameter, message: "PowerAuth instance is alread configured.")
-        }
         
         let configuration: FlutterMap = try call.requireParameter(.configuration)
         
@@ -96,13 +93,23 @@ internal class PowerAuthService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration parameters.")
         }
         
-        let pa = PowerAuthSDK(configuration: paConfig)
-        instances[instanceId] = pa
-        result(true)
+        guard let sdk = PowerAuthSDK(configuration: paConfig) else {
+            throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
+        }
+        
+        let registered = register.add(id: instanceId, tag: instanceId, policies: [.manual()]) {
+            sdk
+        }
+        if registered {
+            result(true)
+        } else {
+            throw PluginException(.flutterError, message: "PowerAuth instance is alread configured.")
+        }
     }
     
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        instances.removeValue(forKey: try call.requireParameter(.instanceId))
+        let instanceId: String = try call.requireParameter(.instanceId)
+        register.remove(id: instanceId)
         result(true)
     }
     
@@ -455,7 +462,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
         
-        guard let instance = instances[try call.requireParameter(.instanceId)] else {
+        let instanceID: String = try call.requireParameter(.instanceId)
+        
+        guard let instance: PowerAuthSDK = register.find(id: instanceID) else {
             throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
         }
         
