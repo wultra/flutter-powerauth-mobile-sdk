@@ -26,7 +26,7 @@ class PowerAuthPasswordMethodChannel extends PowerAuthPasswordPlatform
   @override
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel(
-    'powerauth_password_plugin',
+    'powerauth_plugin',
   );
 
   @override

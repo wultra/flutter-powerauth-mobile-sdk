@@ -34,7 +34,7 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         "util_correctTypedCharacter": correctTypedCharacter
     ]
     
-    enum Args: String {
+    fileprivate enum Args: String {
         case character
         case activationCode
     }

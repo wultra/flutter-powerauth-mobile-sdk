@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
-import UIKit
 import PowerAuth2
-import PowerAuthCore
 
 internal extension FlutterError {
     
@@ -108,74 +105,5 @@ internal struct PluginException: Error {
         self.code = code
         self.message = message
         self.details = details
-    }
-}
-
-internal typealias FlutterMap = [String: Any]
-
-internal extension FlutterMap {
-    
-    func get<T>(_ key: String) -> T? {
-        return self[key] as? T
-    }
-}
-
-internal extension FlutterMethodCall {
-    
-    func requireParameter<T>(_ key: String) throws -> T {
-        guard let parameter: T = getParameter(key) else {
-            throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
-        }
-        return parameter
-    }
-    
-    func getParameter<T>(_ key: String) -> T? {
-        guard let arguments = arguments as? FlutterMap else {
-            return nil
-        }
-        
-        return arguments.get(key)
-    }
-}
-
-internal class Lock {
-    
-    /// Underlying synchronization primitive.
-    private let semaphore: DispatchSemaphore
-    
-    /// Designated initializer
-    init() {
-        semaphore = DispatchSemaphore(value: 1)
-    }
-    
-    /// Attempts to acquire a lock, blocking a thread’s execution
-    /// until the lock can be acquired.
-    func lock() {
-        semaphore.wait()
-    }
-    
-    /// Releases a previously acquired lock.
-    func unlock() {
-        semaphore.signal()
-    }
-    
-    /// Executes block after lock is acquired and releases it immediately afterwards.
-    /// - Parameter block: block that will be executed during the lock
-    /// - Returns: returns the output pf the block
-    func synchronized<T>(_ block: () -> T) -> T {
-        semaphore.wait()
-        defer {
-            semaphore.signal()
-        }
-        return block()
-    }
-}
-
-internal class Utils {
-    static func getRandomString() -> String {
-        let count = Int(3 * (3 + arc4random_uniform(6)))
-        var data = NSMutableData(length: count)!
-        arc4random_buf(data.mutableBytes, data.length)
-        return data.base64EncodedString()
     }
 }

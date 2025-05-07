@@ -30,7 +30,7 @@ internal class PowerAuthObjectRegister {
     
     // MARK: - Native interface
     
-    func add(object: Any, tag: String, policies: [ReleasePolicy]) -> String {
+    func add(object: Any, tag: String?, policies: [ReleasePolicy]) -> String {
         return lock.synchronized {
             let identifier = generateIdentifier()
             let managedObject = PowerAuthManagedObject(object: object, key: identifier, tag: tag, policies: policies)
@@ -40,11 +40,11 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-    func add(object: Any, id: String, tag: String, policies: [ReleasePolicy]) -> Bool {
+    func add(object: Any, id: String, tag: String?, policies: [ReleasePolicy]) -> Bool {
         return add(id: id, tag: tag, policies: policies) { object }
     }
     
-    func add(id: String, tag: String, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
+    func add(id: String, tag: String?, policies: [ReleasePolicy], objectFactory: () -> Any) -> Bool {
         
         return lock.synchronized {
             
@@ -280,20 +280,27 @@ internal class ReleasePolicy: Equatable {
     static func == (lhs: ReleasePolicy, rhs: ReleasePolicy) -> Bool {
         return lhs.value == rhs.value
     }
+    
+    static func getTimeInterval(value: Int, defaultValue: Int) -> Int {
+        #if DEBUG
+        return min(value > 0 ? value: defaultValue, defaultValue)
+        #endif
+        return defaultValue
+    }
 }
 
 internal class PowerAuthManagedObject {
     
     let object: Any
     let key: String
-    let tag: String
+    let tag: String?
     var usageCount: Int = 0
     let createDate: Date
     var lastUseDate: Date
     private let managedByOwner: Bool
     private let policies: [ReleasePolicy]
     
-    init(object: Any, key: String, tag: String, policies: [ReleasePolicy]) {
+    init(object: Any, key: String, tag: String?, policies: [ReleasePolicy]) {
         let now = Date()
         self.object = object
         self.key = key
@@ -388,4 +395,66 @@ internal class PowerAuthManagedObject {
         return [:]
 #endif // DEBUG
     }
+}
+
+extension PowerAuthObjectRegister {
+    /// Function translate object into PowerAuthCorePassword. If such conversion is not possible then use reject promise to
+    /// report an error. The password object is marked as used or touched if found in register.
+    /// - Parameters:
+    ///   - anyPassword: Object to convert into PowerAuthCorePassword.
+    ///   - objectRegister: Object register instance.
+    ///   - reject: Reject function to call in case of failure
+    ///   - use: If YES then object is marked as used, otherwise touched.
+//    static PowerAuthCorePassword * FindPasswordImpl(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject, BOOL use)
+//    {
+//        if ([anyPassword isKindOfClass:[NSString class]]) {
+//            // Password is in form of string
+//            return [PowerAuthCorePassword passwordWithString:anyPassword];
+//        }
+//        if ([anyPassword isKindOfClass:[NSDictionary class]]) {
+//            // It appears that this is an object
+//            id passwordObjectId = [(NSDictionary*)anyPassword objectForKey:@"objectId"];
+//            if (!passwordObjectId) {
+//                // Object identifier is not present in the object. This means that wrong object is passed to call,
+//                // or PowerAuthPassword javascript object is not initialized yet.
+//                reject(EC_WRONG_PARAMETER, @"PowerAuthPassword is not initialized", nil);
+//                return nil;
+//            }
+//            PowerAuthCorePassword * password = use
+//                ? [objectRegister useObjectWithId:passwordObjectId expectedClass:[PowerAuthCorePassword class]]
+//                : [objectRegister touchObjectWithId:passwordObjectId expectedClass:[PowerAuthCorePassword class]];
+//            if (!password) {
+//                reject(EC_INVALID_NATIVE_OBJECT, @"PowerAuthPassword object is no longer valid", nil);
+//                return nil;
+//            }
+//            return password;
+//        }
+//        reject(EC_WRONG_PARAMETER, @"PowerAuthPassword or string is required", nil);
+//        return nil;
+//    }
+//
+//    PowerAuthCorePassword * UsePassword(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
+//    {
+//        return FindPasswordImpl(anyPassword, objectRegister, reject, YES);
+//    }
+//
+//    PowerAuthCorePassword * TouchPassword(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
+//    {
+//        return FindPasswordImpl(anyPassword, objectRegister, reject, NO);
+//    }
+//
+//    PowerAuthSDK * GetPowerAuthSdk(id anyId, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
+//    {
+//        PowerAuthSDK * sdk;
+//        if (![objectRegister isValidObjectId: anyId]) {
+//            if (reject) reject(EC_WRONG_PARAMETER, @"PowerAuth instance identifier is missing or empty string", nil);
+//            sdk = nil;
+//        } else {
+//            sdk = [objectRegister findObjectWithId:anyId expectedClass:[PowerAuthSDK class]];
+//            if (!sdk) {
+//                if (reject) reject(EC_INSTANCE_NOT_CONFIGURED, @"PowerAuth instance is not configured.", nil);
+//            }
+//        }
+//        return sdk;
+//    }
 }

@@ -21,7 +21,7 @@ import PowerAuthCore
 
 internal class PowerAuthService: PowerAuthFlutterService {
     
-    var name: String { "PowerAuth" }
+    let name = "PowerAuth"
     private let register: PowerAuthObjectRegister
     
     init(register: PowerAuthObjectRegister) {
@@ -56,7 +56,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     ]
     
     // Possible Flutter call parameters
-    enum Args: String {
+    fileprivate enum Args: String {
         case instanceId
         case configuration
         case activation
@@ -487,6 +487,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {
         // TODO: we don't use object register yet, so just take plain password until implemented properly
+        
+        
+        
         guard let dict, let password: String = dict.get(.password) else {
             throw PluginException(.wrongParameter, message: "Failed to parse provided password")
         }

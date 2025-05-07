@@ -22,7 +22,7 @@ internal class Constants {
 
     /// Time interval in milliseconds to keep password object valid
     /// in memory.
-    static let PASSWORD_KEY_KEEP_ALIVE_TIME: Double = 5 * 60 * 1_000
+    static let PASSWORD_KEY_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
 
     /// Time interval in milliseconds to keep encryptor object alive in memory
     static let ENCRYPTOR_KEEP_ALIVE_TIME: Double = 5 * 60 * 1_000
