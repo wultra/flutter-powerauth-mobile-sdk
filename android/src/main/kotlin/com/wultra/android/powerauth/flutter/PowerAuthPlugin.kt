@@ -39,7 +39,6 @@ import io.getlime.security.powerauth.core.Password
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 import io.getlime.security.powerauth.keychain.KeychainProtection
-import java.util.UUID
 import kotlin.collections.set
 
 import android.util.Pair
@@ -50,10 +49,8 @@ import androidx.core.util.component2
 class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var channel : MethodChannel
     private lateinit var context: Context
-
-    private val instances = mutableMapOf<String, PowerAuthSDK>()
     private var currentActivity: Activity? = null
-    private val biometricKeyCache = mutableMapOf<String, Pair<ByteArray, Long>>()
+    private lateinit var objectRegister: PowerAuthObjectRegister
 
     companion object ArgKeys {
         const val INSTANCE_ID = "instanceId"
@@ -93,14 +90,15 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         const val BIOMETRY_KEY_ID = "biometryKeyId"
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
+        const val OBJECT_ID = "objectId"
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
-
-        // TODO: implement back sub-module registration when we need it
+        
+        objectRegister = PowerAuthObjectRegister()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -109,7 +107,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         // TODO(post-beta): Flutter can destroy / recreate the plugin object if the engine detaches.
         // This can happen f.e. with the back button press on the first screen (app keeps running, but plugins re-attach.
         // We should explore this more (and cache the state?).
-        instances.clear()
+        objectRegister.invalidate()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -159,6 +157,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             "hasBiometryFactor" -> hasBiometryFactor(call, result)
             "removeBiometryFactor" -> removeBiometryFactor(call, result)
             "authenticateWithBiometry" -> authenticateWithBiometry(call, result)
+            "removeNativeObject" -> removeNativeObject(call, result)
             else -> result.notImplemented()
         }
     }
@@ -166,9 +165,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun usePowerAuth(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
-            val sdk = instances[instanceId] ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured.")
+            val sdkForBlock = objectRegister.useObject(instanceId, PowerAuthSDK::class.java)
+                ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured or no longer valid.")
 
-            block(sdk)
+            block(sdkForBlock)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
@@ -176,7 +176,15 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun usePowerAuthOnMainThread(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
         Handler(Looper.getMainLooper()).post {
-            usePowerAuth(call, result, block)
+            try {
+                val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+                val sdkForBlock = objectRegister.useObject(instanceId, PowerAuthSDK::class.java)
+                    ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured or no longer valid.")
+
+                block(sdkForBlock)
+            } catch (t: Throwable) {
+                Errors.error(result, t)
+            }
         }
     }
 
@@ -187,18 +195,22 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val biometryConfigMap = call.argument<Map<String, Any>>(BIOMETRY_CONFIGURATION)
             val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
 
-            if (instances.containsKey(instanceId)) {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "PowerAuth instance '$instanceId' is already configured.")
+            val registered = registerPowerAuthInstance(instanceId) {
+                val powerAuthConfiguration = buildPowerAuthConfiguration(instanceId, configurationMap)
+                val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
+
+                val sdk = PowerAuthSDK.Builder(powerAuthConfiguration)
+                    .keychainConfiguration(keychainConfiguration)
+                    .build(context)
+
+                ManagedAny.wrap(sdk)
             }
-            val powerAuthConfiguration = buildPowerAuthConfiguration(instanceId, configurationMap)
-            val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
 
-            val sdk = PowerAuthSDK.Builder(powerAuthConfiguration)
-                .keychainConfiguration(keychainConfiguration)
-                .build(context)
-
-            instances[instanceId] = sdk
-            result.success(null)
+            if (registered) {
+                result.success(null)
+            } else {
+                throw WrapperException(Errors.EC_WRONG_PARAMETER, "PowerAuth instance '$instanceId' is already configured or registration failed.")
+            }
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
@@ -207,7 +219,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun isConfigured(call: MethodCall, result: Result) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
-            result.success(instances.containsKey(instanceId))
+            result.success(getPowerAuthInstance(instanceId) != null)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
@@ -216,9 +228,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun deconfigure(call: MethodCall, result: Result) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
-            instances.remove(instanceId)
-
-            // TODO: check if SDK needs explicit cleanup
+            unregisterPowerAuthInstance(instanceId)
             result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -462,12 +472,11 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val corePassword = buildPasswordObject(passwordMap)
 
             try {
-                // validateBiometryBeforeUse(sdk)
+                validateBiometryBeforeUse(sdk)
 
                 val activity = currentActivity
-                if (activity == null) {
-                    throw WrapperException(Errors.EC_FLUTTER_ERROR, "Android Activity is not available when attempting to add biometry factor.")
-                }
+                    ?: throw WrapperException(Errors.EC_FLUTTER_ERROR, "Android Activity is not available when attempting to add biometry factor.")
+
                 if (activity !is FragmentActivity) {
                     throw WrapperException(Errors.EC_FLUTTER_ERROR, "Attached Android Activity is not a FragmentActivity, which is required for biometry.")
                 }
@@ -529,16 +538,14 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun authenticateWithBiometry(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
 
             try {
                 validateBiometryBeforeUse(sdk)
 
                 val activity = currentActivity
-                if (activity == null) {
-                    throw WrapperException(Errors.EC_FLUTTER_ERROR, "Android Activity is not available when attempting biometric authentication.")
-                }
-                if (activity !is FragmentActivity) {
-                    throw WrapperException(Errors.EC_FLUTTER_ERROR, "Attached Android Activity is not a FragmentActivity, which is required for biometry.")
+                if (activity == null || activity !is FragmentActivity) {
+                    throw WrapperException(Errors.EC_FLUTTER_ERROR, "FragmentActivity is not available for biometry.")
                 }
 
                 val (title, description) = extractPromptStrings(promptMap)
@@ -556,14 +563,19 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                         override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
                             val key = authentication.biometryFactorRelatedKey
                             if (key == null) {
-                                Errors.error(result, WrapperException(Errors.EC_FLUTTER_ERROR, "Biometric key was missing after successful authentication."))
+                                Errors.error(result, WrapperException(Errors.EC_FLUTTER_ERROR, "Biometric key missing after success."))
                                 return
                             }
 
-                            val keyId = UUID.randomUUID().toString()
-                            val timestamp = System.currentTimeMillis()
-
-                            biometricKeyCache[keyId] = Pair(key, timestamp)
+                            val managedKey = ManagedAny.wrap(key)
+                            val keyId = objectRegister.registerObject(
+                                managedKey,
+                                instanceId,
+                                listOf(
+                                    ReleasePolicy.afterUse(1),
+                                    ReleasePolicy.expire(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
+                                )
+                            )
                             result.success(keyId)
                         }
 
@@ -690,8 +702,6 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             null
         }
 
-        cleanupExpiredBiometricKeys()
-
         return if (persist) {
             if (password != null) {
                 PowerAuthAuthentication.persistWithPassword(password)
@@ -700,12 +710,12 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             }
         } else {
             if (biometryKeyId != null) {
-                val keyEntry = biometricKeyCache.remove(biometryKeyId)
+                val retrievedKey = objectRegister.useObject(biometryKeyId, ByteArray::class.java)
 
-                if (keyEntry != null) {
-                    PowerAuthAuthentication.possessionWithBiometry(keyEntry.first)
+                if (retrievedKey != null) {
+                    PowerAuthAuthentication.possessionWithBiometry(retrievedKey)
                 } else {
-                    throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Biometric key ID is no longer valid or expired.")
+                    throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Biometric key ID '$biometryKeyId' is no longer valid or expired.")
                 }
             } else if (useBiometry) {
                 PowerAuthAuthentication.possession()
@@ -774,15 +784,13 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
-    private fun cleanupExpiredBiometricKeys() {
-        val now = System.currentTimeMillis()
-        val iterator = biometricKeyCache.entries.iterator()
-
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            if (now - entry.value.second >= Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME) {
-                iterator.remove()
-            }
+    private fun removeNativeObject(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val removed = objectRegister.removeObject(objectId)
+            result.success(removed)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
         }
     }
 
@@ -826,5 +834,40 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             "strongbox" -> KeychainProtection.STRONGBOX
             else -> KeychainProtection.NONE
         }
+    }
+
+    @Throws(PowerAuthErrorException::class)
+    private fun getPowerAuthInstance(instanceId: String): PowerAuthSDK? {
+        if (!objectRegister.isValidObjectId(instanceId)) {
+            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid.")
+        }
+
+        return objectRegister.findObject(instanceId, PowerAuthSDK::class.java)
+    }
+
+    @Throws(Throwable::class)
+    private fun registerPowerAuthInstance(
+        instanceId: String,
+        factory: PowerAuthObjectRegister.ObjectFactory<PowerAuthSDK>
+    ): Boolean {
+        if (!objectRegister.isValidObjectId(instanceId)) {
+            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for registration.")
+        }
+
+        return objectRegister.registerObjectWithId(
+            instanceId,
+            instanceId,
+            listOf(ReleasePolicy.manual()),
+            factory
+        )
+    }
+
+    @Throws(PowerAuthErrorException::class)
+    private fun unregisterPowerAuthInstance(instanceId: String) {
+        if (!objectRegister.isValidObjectId(instanceId)) {
+            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for unregistration.")
+        }
+
+        objectRegister.removeAllObjectsWithTag(instanceId)
     }
 }
