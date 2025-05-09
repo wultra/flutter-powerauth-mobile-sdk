@@ -339,7 +339,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
     _setLoading(true);
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       await _powerAuth.validatePassword(paPassword);
       print('Password validation successful.');
 
@@ -359,8 +359,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
     _setLoading(true);
     try {
-      final oldPaPassword = PowerAuthPassword.fromString(oldPassword);
-      final newPaPassword = PowerAuthPassword.fromString(newPassword);
+      final oldPaPassword = await PowerAuthPassword.fromString(oldPassword);
+      final newPaPassword = await PowerAuthPassword.fromString(newPassword);
 
       await _powerAuth.changePassword(oldPaPassword, newPaPassword);
       print('Password changed successfully (online).');
@@ -653,9 +653,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Persist Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _persistActivationWithPassword(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -671,9 +671,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Persist Activation (PWD+Bio)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _persistActivationWithPasswordAndBiometry(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -689,9 +689,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Remove Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _removeActivationWithPassword(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -1327,7 +1327,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _setLoading(true);
 
         try {
-          final paPassword = PowerAuthPassword.fromString(password);
+          final paPassword = await PowerAuthPassword.fromString(password);
           final prompt = PowerAuthBiometricPrompt(
             promptTitle: "Add Biometry",
             promptMessage: "Please authenticate to add biometry.",
@@ -1390,7 +1390,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     final fixedData = data.replaceAll("\\n", "\n");
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final signature = await _powerAuth.offlineSignature(
@@ -1456,7 +1456,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(true);
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final header = await _powerAuth.requestGetSignature(
@@ -1513,7 +1513,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(true);
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final header = await _powerAuth.requestSignature(
