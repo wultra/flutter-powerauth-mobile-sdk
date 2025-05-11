@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import '../model/powerauth_error.dart';
 import 'powerauth_password_platform_interface.dart';
 import '../model/base_native_object.dart';
@@ -71,6 +73,7 @@ class PowerAuthPassword extends BaseNativeObject {
   }
 
   @override
+  @protected
   Future<String> createNativeObject() async {
     return _platform.initialize(
       destroyOnUse: _destroyOnUse,
@@ -80,6 +83,7 @@ class PowerAuthPassword extends BaseNativeObject {
   }
 
   @override
+  @protected
   Future<void> releaseNativeObject(String objectId) async {
     return _platform.release(objectId);
   }

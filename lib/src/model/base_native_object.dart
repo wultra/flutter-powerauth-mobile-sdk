@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import '../model/powerauth_error.dart';
 
 /// Abstract base class for Dart objects that wrap a native counterpart
@@ -31,17 +33,21 @@ abstract class BaseNativeObject {
   bool _isReleased = false;
 
   /// Returns true if the underlying native object has been released.
+  @protected
   bool get isReleased => _isReleased;
 
   /// Abstract method that subclasses must implement to create the native object.
   /// Should return the unique object ID assigned by the native side.
+  @protected
   Future<String> createNativeObject();
 
   /// Abstract method that subclasses must implement to release the native object.
+  @protected
   Future<void> releaseNativeObject(String objectId);
 
   /// Ensures the native object is initialized and returns its ID.
   /// Handles concurrent initialization attempts.
+  @protected
   Future<String> ensureNativeObjectInitialized() async {
   
     // TODO: not sure whether we want to throw or simply log
@@ -81,6 +87,7 @@ abstract class BaseNativeObject {
 
   /// Releases the native object associated with this wrapper.
   /// The object becomes unusable after calling this method.
+  @protected
   Future<void> release() async {
     if (_isReleased) return;
     _isReleased = true;
@@ -123,6 +130,7 @@ abstract class BaseNativeObject {
 
   /// Allows subclasses that receive a pre-initialized object ID to mark
   /// the base class initialization as complete.
+  @protected
   void completeInitialization(String initialObjectId) {
     if (objectId == null && !_initCompleter.isCompleted) {
       objectId = initialObjectId;
@@ -138,11 +146,13 @@ abstract class BaseNativeObject {
 
   /// Helper method for subclasses to safely execute actions requiring the native object ID.
   /// Ensures the native object is initialized before executing the action.
+  @protected
   Future<T> withObjectId<T>(Future<T> Function(String objectId) action) async {
     final id = await ensureNativeObjectInitialized();
 
     return await action(id);
   }
 
+  @protected
   String? get currentObjectId => objectId;
 }
