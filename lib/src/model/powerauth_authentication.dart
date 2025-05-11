@@ -142,7 +142,6 @@ class PowerAuthAuthentication {
       'biometricPrompt': biometricPrompt?.toMap(),
       'isPersist': forActivationPersist,
       'isBiometry': useBiometry,
-      // 'isReusable' and 'biometryKeyId' seem internal to the RN layer for optimization, might not be needed directly here.
     }..removeWhere((key, value) => value == null);
   }
 }

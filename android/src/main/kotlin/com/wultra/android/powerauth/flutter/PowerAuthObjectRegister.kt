@@ -59,8 +59,6 @@ class PowerAuthObjectRegister {
         var useCount: Int = 0,
         var removeOrderTime: Long = 0
     ) {
-        val isManuallyManaged: Boolean = policies == null
-
         fun setUsed() {
             lastUseTime = SystemClock.elapsedRealtime()
             useCount++
@@ -142,7 +140,7 @@ class PowerAuthObjectRegister {
         managedObjects[id] = ManagedObjectHolder(objectWrapper, tag, releasePolicies)
         scheduleCleanupJob()
 
-        return id
+        return@withLock id
     }
 
     /**
@@ -155,13 +153,13 @@ class PowerAuthObjectRegister {
         releasePolicies: List<ReleasePolicy>
     ): Boolean = lock.withLock {
         if (!isValidObjectId(id) || managedObjects.containsKey(id)) {
-            return false
+            return@withLock false
         }
 
         managedObjects[id] = ManagedObjectHolder(objectWrapper, tag, releasePolicies)
         scheduleCleanupJob()
 
-        return true
+        return@withLock true
     }
 
     /**
@@ -175,7 +173,7 @@ class PowerAuthObjectRegister {
         factory: ObjectFactory<T>
     ): Boolean = lock.withLock {
         if (!isValidObjectId(id) || managedObjects.containsKey(id)) {
-            return false
+            return@withLock false
         }
 
         val objectWrapper = factory.create()
@@ -183,7 +181,7 @@ class PowerAuthObjectRegister {
         managedObjects[id] = ManagedObjectHolder(objectWrapper, tag, releasePolicies)
         scheduleCleanupJob()
 
-        return true
+        return@withLock true
     }
 
     /**
@@ -194,14 +192,14 @@ class PowerAuthObjectRegister {
      * @param <T> Expected object's type.
      * @return instance of object with given identifier or null if no such object exists in register.
     </T> */
-    private fun <T: Any> findAndProcessObject(id: String?, expectedClass: Class<T>, options: Int): T? {
+    private fun <T: Any> findAndProcessObject(id: String?, expectedClass: Class<T>?, options: Int): T? {
         val objectId = id ?: return null
         val holder = managedObjects[objectId]
 
         if (holder != null) {
             val instance = holder.obj.managedInstance()
 
-            if (expectedClass.isInstance(instance)) {
+            if (expectedClass == null || expectedClass.isInstance(instance)) {
                 if (holder.isStillValid) {
                     when (options) {
                         OPT_SET_USE -> holder.setUsed()
@@ -212,10 +210,6 @@ class PowerAuthObjectRegister {
                                 managedObjects.remove(objectId)
                             }
                         }
-                    }
-                    // TODO: seems like if after OPT_SET_USE, the object became invalid (e.g. AfterUse(1)), remove it -- verify
-                    if (options == OPT_SET_USE && !holder.isStillValid && holder.isReadyForRemove) {
-                        managedObjects.remove(objectId)
                     }
 
                     @Suppress("UNCHECKED_CAST")
@@ -228,22 +222,15 @@ class PowerAuthObjectRegister {
     }
 
     fun <T : Any> findObject(id: String, type: Class<T>): T? = lock.withLock {
-        findAndProcessObject(id, type, OPT_NONE)
+        return findAndProcessObject(id, type, OPT_NONE)
     }
 
     fun <T : Any> useObject(id: String, type: Class<T>): T? = lock.withLock {
-        val obj = findAndProcessObject(id, type, OPT_SET_USE)
+        return findAndProcessObject(id, type, OPT_SET_USE)
+    }
 
-        // Hypothesis (c0mtru1se) on the need for this explicit cleanup (gotta confirm this before release!)
-        // scheduleCleanupJob is called from findAndProcessObject's OPT_SET_USE if object is removed immediately
-        // and also after any explicit removal in removeObject
-        // If findAndProcessObject removed it, scheduleCleanupJob() would be called there if needed for other objects.
-        // If it wasn't removed, but use changed policies, cleanup will catch it.
-        // The main point is that scheduleCleanupJob() should run if the state of *any* object changes
-        // such that it might need a timer start/stop.
-        if (obj != null) scheduleCleanupJob()
-
-        return obj
+    fun <T : Any> touchObject(id: String, type: Class<T>): T? = lock.withLock {
+        return findAndProcessObject(id, type, OPT_TOUCH)
     }
 
     fun removeObject(id: String): Boolean = lock.withLock {
@@ -268,7 +255,7 @@ class PowerAuthObjectRegister {
             val holder = entry.value
 
             if (tag == null || holder.tag == tag) {
-                if (tag != null || !holder.isManuallyManaged) {
+                if (tag != null) {
                     if (holder.setRemoved()) {
                         holder.obj.cleanup()
                         iterator.remove()
@@ -330,7 +317,7 @@ class PowerAuthObjectRegister {
 
     /** Schedule an object cleanup job. */
     internal fun scheduleCleanupJob() = lock.withLock {
-        if (managedObjects.any { !it.value.isManuallyManaged && it.value.removeOrderTime == 0L }) {
+        if (managedObjects.isNotEmpty()) {
             if (cleanupTimer == null) {
                 cleanupTimer = Timer("PowerAuthObjectRegisterTimer")
                 startCleanupJob()

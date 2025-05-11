@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../model/powerauth_activation.dart';
+import '../model/powerauth_activation_status.dart';
+import '../model/powerauth_authentication.dart';
+import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_biometry_configuration.dart';
+import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_configuration.dart';
+import '../model/powerauth_create_activation_result.dart';
+import '../model/powerauth_keychain_configuration.dart';
+import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
 
 /// An internal platform interface for core PowerAuth SDK functionalities.

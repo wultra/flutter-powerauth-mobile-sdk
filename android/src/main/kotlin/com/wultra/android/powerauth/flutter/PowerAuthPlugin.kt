@@ -91,13 +91,62 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
         const val OBJECT_ID = "objectId"
+
+        const val PASSWORD_DESTROY_ON_USE = "destroyOnUse"
+        const val PASSWORD_AUTORELEASE_TIME = "autoreleaseTime"
+        const val PASSWORD_OWNER_ID = "ownerId"
+        const val PASSWORD_ID1 = "passwordId1"
+        const val PASSWORD_ID2 = "passwordId2"
+        const val PASSWORD_POSITION = "position"
+    }
+
+    private object MethodNames {
+        const val GET_PLATFORM_VERSION = "getPlatformVersion"
+        const val CONFIGURE = "configure"
+        const val IS_CONFIGURED = "isConfigured"
+        const val DECONFIGURE = "deconfigure"
+        const val UTIL_PARSE_ACTIVATION_CODE = "util_parseActivationCode"
+        const val UTIL_VALIDATE_ACTIVATION_CODE = "util_validateActivationCode"
+        const val UTIL_VALIDATE_TYPED_CHARACTER = "util_validateTypedCharacter"
+        const val UTIL_CORRECT_TYPED_CHARACTER = "util_correctTypedCharacter"
+        const val HAS_VALID_ACTIVATION = "hasValidActivation"
+        const val CAN_START_ACTIVATION = "canStartActivation"
+        const val HAS_PENDING_ACTIVATION = "hasPendingActivation"
+        const val GET_ACTIVATION_IDENTIFIER = "getActivationIdentifier"
+        const val GET_ACTIVATION_FINGERPRINT = "getActivationFingerprint"
+        const val FETCH_ACTIVATION_STATUS = "fetchActivationStatus"
+        const val REMOVE_ACTIVATION_LOCAL = "removeActivationLocal"
+        const val REMOVE_ACTIVATION_WITH_AUTHENTICATION = "removeActivationWithAuthentication"
+        const val CREATE_ACTIVATION = "createActivation"
+        const val PERSIST_ACTIVATION = "persistActivation"
+        const val VALIDATE_PASSWORD = "validatePassword"
+        const val CHANGE_PASSWORD = "changePassword"
+        const val REQUEST_GET_SIGNATURE = "requestGetSignature"
+        const val REQUEST_SIGNATURE = "requestSignature"
+        const val OFFLINE_SIGNATURE = "offlineSignature"
+        const val VERIFY_SERVER_SIGNED_DATA = "verifyServerSignedData"
+        const val GET_BIOMETRY_INFO = "getBiometryInfo"
+        const val ADD_BIOMETRY_FACTOR = "addBiometryFactor"
+        const val HAS_BIOMETRY_FACTOR = "hasBiometryFactor"
+        const val REMOVE_BIOMETRY_FACTOR = "removeBiometryFactor"
+        const val AUTHENTICATE_WITH_BIOMETRY = "authenticateWithBiometry"
+
+        const val PASSWORD_INITIALIZE = "password_initialize"
+        const val PASSWORD_RELEASE = "password_release"
+        const val PASSWORD_CLEAR = "password_clear"
+        const val PASSWORD_LENGTH = "password_length"
+        const val PASSWORD_IS_EQUAL = "password_isEqual"
+        const val PASSWORD_ADD_CHARACTER = "password_addCharacter"
+        const val PASSWORD_INSERT_CHARACTER = "password_insertCharacter"
+        const val PASSWORD_REMOVE_CHARACTER_AT = "password_removeCharacterAt"
+        const val PASSWORD_REMOVE_LAST_CHARACTER = "password_removeLastCharacter"
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
-        
+
         objectRegister = PowerAuthObjectRegister()
     }
 
@@ -128,36 +177,44 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
-            "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
-            "configure" -> configure(call, result)
-            "isConfigured" -> isConfigured(call, result)
-            "deconfigure" -> deconfigure(call, result)
-            "util_parseActivationCode" -> parseActivationCode(call, result)
-            "util_validateActivationCode" -> validateActivationCode(call, result)
-            "util_validateTypedCharacter" -> validateTypedCharacter(call, result)
-            "util_correctTypedCharacter" -> correctTypedCharacter(call, result)
-            "hasValidActivation" -> hasValidActivation(call, result)
-            "canStartActivation" -> canStartActivation(call, result)
-            "hasPendingActivation" -> hasPendingActivation(call, result)
-            "getActivationIdentifier" -> getActivationIdentifier(call, result)
-            "getActivationFingerprint" -> getActivationFingerprint(call, result)
-            "fetchActivationStatus" -> fetchActivationStatus(call, result)
-            "removeActivationLocal" -> removeActivationLocal(call, result)
-            "removeActivationWithAuthentication" -> removeActivationWithAuthentication(call, result)
-            "createActivation" -> createActivation(call, result)
-            "persistActivation" -> persistActivation(call, result)
-            "validatePassword" -> validatePassword(call, result)
-            "changePassword" -> changePassword(call, result)
-            "requestGetSignature" -> requestGetSignature(call, result)
-            "requestSignature" -> requestSignature(call, result)
-            "offlineSignature" -> offlineSignature(call, result)
-            "verifyServerSignedData" -> verifyServerSignedData(call, result)
-            "getBiometryInfo" -> getBiometryInfo(result)
-            "addBiometryFactor" -> addBiometryFactor(call, result)
-            "hasBiometryFactor" -> hasBiometryFactor(call, result)
-            "removeBiometryFactor" -> removeBiometryFactor(call, result)
-            "authenticateWithBiometry" -> authenticateWithBiometry(call, result)
-            "removeNativeObject" -> removeNativeObject(call, result)
+            MethodNames.GET_PLATFORM_VERSION -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
+            MethodNames.CONFIGURE -> configure(call, result)
+            MethodNames.IS_CONFIGURED -> isConfigured(call, result)
+            MethodNames.DECONFIGURE -> deconfigure(call, result)
+            MethodNames.UTIL_PARSE_ACTIVATION_CODE -> parseActivationCode(call, result)
+            MethodNames.UTIL_VALIDATE_ACTIVATION_CODE -> validateActivationCode(call, result)
+            MethodNames.UTIL_VALIDATE_TYPED_CHARACTER -> validateTypedCharacter(call, result)
+            MethodNames.UTIL_CORRECT_TYPED_CHARACTER -> correctTypedCharacter(call, result)
+            MethodNames.HAS_VALID_ACTIVATION -> hasValidActivation(call, result)
+            MethodNames.CAN_START_ACTIVATION -> canStartActivation(call, result)
+            MethodNames.HAS_PENDING_ACTIVATION -> hasPendingActivation(call, result)
+            MethodNames.GET_ACTIVATION_IDENTIFIER -> getActivationIdentifier(call, result)
+            MethodNames.GET_ACTIVATION_FINGERPRINT -> getActivationFingerprint(call, result)
+            MethodNames.FETCH_ACTIVATION_STATUS -> fetchActivationStatus(call, result)
+            MethodNames.REMOVE_ACTIVATION_LOCAL -> removeActivationLocal(call, result)
+            MethodNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION -> removeActivationWithAuthentication(call, result)
+            MethodNames.CREATE_ACTIVATION -> createActivation(call, result)
+            MethodNames.PERSIST_ACTIVATION -> persistActivation(call, result)
+            MethodNames.VALIDATE_PASSWORD -> validatePassword(call, result)
+            MethodNames.CHANGE_PASSWORD -> changePassword(call, result)
+            MethodNames.REQUEST_GET_SIGNATURE -> requestGetSignature(call, result)
+            MethodNames.REQUEST_SIGNATURE -> requestSignature(call, result)
+            MethodNames.OFFLINE_SIGNATURE -> offlineSignature(call, result)
+            MethodNames.VERIFY_SERVER_SIGNED_DATA -> verifyServerSignedData(call, result)
+            MethodNames.GET_BIOMETRY_INFO -> getBiometryInfo(result)
+            MethodNames.ADD_BIOMETRY_FACTOR -> addBiometryFactor(call, result)
+            MethodNames.HAS_BIOMETRY_FACTOR -> hasBiometryFactor(call, result)
+            MethodNames.REMOVE_BIOMETRY_FACTOR -> removeBiometryFactor(call, result)
+            MethodNames.AUTHENTICATE_WITH_BIOMETRY -> authenticateWithBiometry(call, result)
+            MethodNames.PASSWORD_INITIALIZE -> passwordInitialize(call, result)
+            MethodNames.PASSWORD_RELEASE -> removeNativeObject(call, result)
+            MethodNames.PASSWORD_CLEAR -> passwordClear(call, result)
+            MethodNames.PASSWORD_LENGTH -> passwordLength(call, result)
+            MethodNames.PASSWORD_IS_EQUAL -> passwordIsEqual(call, result)
+            MethodNames.PASSWORD_ADD_CHARACTER -> passwordAddCharacter(call, result)
+            MethodNames.PASSWORD_INSERT_CHARACTER -> passwordInsertCharacter(call, result)
+            MethodNames.PASSWORD_REMOVE_CHARACTER_AT -> passwordRemoveCharacterAt(call, result)
+            MethodNames.PASSWORD_REMOVE_LAST_CHARACTER -> passwordRemoveLastCharacter(call, result)
             else -> result.notImplemented()
         }
     }
@@ -203,7 +260,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                     .keychainConfiguration(keychainConfiguration)
                     .build(context)
 
-                ManagedAny.wrap(sdk)
+                return@registerPowerAuthInstance ManagedAny.wrap(sdk)
             }
 
             if (registered) {
@@ -332,7 +389,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun validatePassword(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
-            val password = buildPasswordObject(passwordMap)
+            val password = buildPasswordObject(passwordMap, use = true)
 
             sdk.validatePassword(context, password, object: IValidatePasswordListener {
                 override fun onPasswordValid() {
@@ -350,8 +407,8 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
             val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
 
-            val oldPassword = buildPasswordObject(oldPasswordMap)
-            val newPassword = buildPasswordObject(newPasswordMap)
+            val oldPassword = buildPasswordObject(oldPasswordMap, use = false)
+            val newPassword = buildPasswordObject(newPasswordMap, use = false)
 
             sdk.changePassword(context, oldPassword, newPassword, object: IChangePasswordListener {
                 override fun onPasswordChangeSucceed() {
@@ -469,10 +526,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
-            val corePassword = buildPasswordObject(passwordMap)
+            val corePassword = buildPasswordObject(passwordMap, use = true)
 
             try {
-                validateBiometryBeforeUse(sdk)
+                // validateBiometryBeforeUse(sdk)
 
                 val activity = currentActivity
                     ?: throw WrapperException(Errors.EC_FLUTTER_ERROR, "Android Activity is not available when attempting to add biometry factor.")
@@ -697,14 +754,37 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
 
         val password: Password? = if (passwordMap != null) {
-            buildPasswordObject(passwordMap)
+            buildPasswordObject(passwordMap, use = true)
         } else {
             null
         }
 
         return if (persist) {
             if (password != null) {
-                PowerAuthAuthentication.persistWithPassword(password)
+                // This iS a copy-paste from RN to keep feature parity, it's also not supported in the Flutter wrapper currentl.
+                if (useBiometry) {
+                    val biometryKeyIdFromAuthMap = authMap[BIOMETRY_KEY_ID] as? String
+
+                    if (biometryKeyIdFromAuthMap != null) {
+                        val biometricKeyBytes = objectRegister.useObject(biometryKeyIdFromAuthMap, ByteArray::class.java)
+
+                        if (biometricKeyBytes != null) {
+                            PowerAuthAuthentication.persistWithPasswordAndBiometry(password, biometricKeyBytes)
+                        } else {
+                            throw WrapperException(
+                                Errors.EC_INVALID_NATIVE_OBJECT,
+                                "Biometric key for ID '$biometryKeyIdFromAuthMap' not found or expired. It is required for persisting with biometry."
+                            )
+                        }
+                    } else {
+                        throw WrapperException(
+                            Errors.EC_WRONG_PARAMETER,
+                            "'biometryKeyId' is missing in authentication arguments, but is required for persisting with biometry."
+                        )
+                    }
+                } else {
+                    PowerAuthAuthentication.persistWithPassword(password)
+                }
             } else {
                 throw WrapperException(Errors.EC_WRONG_PARAMETER, "Password is required for persisting activation")
             }
@@ -727,10 +807,23 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
-    private fun buildPasswordObject(map: Map<String, Any>): Password {
-        // TODO: move from Strings when we have ObjectRegister
-        val passwordString = map[PASSWORD] as? String ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing 'password' string in password object")
-        return Password(passwordString)
+    private fun buildPasswordObject(passwordArgMap: Map<String, Any>, use: Boolean): Password {
+        passwordArgMap[OBJECT_ID]?.let { objectIdValue ->
+            if (objectIdValue is String) {
+                val managedPassword = if (use) {
+                    objectRegister.useObject(objectIdValue, Password::class.java)
+                } else {
+                    objectRegister.touchObject(objectIdValue, Password::class.java)
+                }
+
+                return managedPassword ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "PowerAuthPassword object with ID '$objectIdValue' is no longer valid or not found."
+                )
+            }
+        }
+
+        throw WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid password argument. Expected a map with 'objectId' string.")
     }
 
     private fun createActivationResultToMap(activationResult: CreateActivationResult): Map<String, Any?> {
@@ -869,5 +962,166 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         objectRegister.removeAllObjectsWithTag(instanceId)
+    }
+
+    private fun <R> withPassword(call: MethodCall, result: Result, block: (password: Password) -> R) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val password = objectRegister.touchObject(objectId, Password::class.java)
+                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$objectId' is no longer valid or not found.")
+
+            val blockResult = block(password)
+
+            // TODO: double-check whether we should always result strongly or whether to move this into the block
+            if (blockResult is Unit) {
+                result.success(null)
+            } else {
+                result.success(blockResult)
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun <R> withPasswordAndCharacter(call: MethodCall, result: Result, block: (password: Password, codePoint: Int) -> R) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val characterInt: Int = call.getRequiredArgument(CHARACTER)
+
+            if (characterInt < 0 || characterInt > Constants.CODEPOINT_MAX) {
+                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid CodePoint: $characterInt")
+            }
+
+            val password = objectRegister.touchObject(objectId, Password::class.java)
+                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$objectId' is no longer valid or not found.")
+
+            val blockResult = block(password, characterInt)
+
+            // TODO: double-check whether we should always result strongly or whether to move this into the block
+            if (blockResult is Unit) {
+                result.success(null)
+            } else {
+                result.success(blockResult)
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun passwordInitialize(call: MethodCall, result: Result) {
+        try {
+            val destroyOnUse: Boolean = call.argument<Boolean>(PASSWORD_DESTROY_ON_USE) ?: false
+            val ownerId: String? = call.argument<String>(PASSWORD_OWNER_ID)
+            val autoreleaseTimeMs: Int = call.argument<Int>(PASSWORD_AUTORELEASE_TIME) ?: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
+
+            if (ownerId != null && objectRegister.findObject(ownerId, PowerAuthSDK::class.java) == null) {
+                throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance for ownerId '$ownerId' is not configured.")
+            }
+
+            var actualReleaseTime = Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
+
+            if (autoreleaseTimeMs > 0) {
+                actualReleaseTime = autoreleaseTimeMs
+            }
+
+            val passwordInstance = ManagedAny.wrap(Password()) { obj: Password -> obj.destroy() }
+
+            val releasePolicies = mutableListOf<ReleasePolicy>()
+            if (destroyOnUse) {
+                releasePolicies.add(ReleasePolicy.afterUse(1))
+            }
+            releasePolicies.add(ReleasePolicy.keepAlive(actualReleaseTime))
+
+            val objectId = objectRegister.registerObject(passwordInstance, ownerId, releasePolicies)
+            result.success(objectId)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun passwordClear(call: MethodCall, result: Result) {
+        withPassword(call, result) { password ->
+            return@withPassword password.clear()
+        }
+    }
+
+    private fun passwordLength(call: MethodCall, result: Result) {
+        withPassword(call, result) { password ->
+            return@withPassword password.length()
+        }
+    }
+
+    private fun passwordIsEqual(call: MethodCall, result: Result) {
+        try {
+            val id1: String = call.getRequiredArgument(PASSWORD_ID1)
+            val id2: String = call.getRequiredArgument(PASSWORD_ID2)
+
+            val p1 = objectRegister.touchObject(id1, Password::class.java)
+                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$id1' is no longer valid or not found.")
+            val p2 = objectRegister.touchObject(id2, Password::class.java)
+                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$id2' is no longer valid or not found.")
+
+            result.success(p1.isEqualToPassword(p2))
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun passwordAddCharacter(call: MethodCall, result: Result) {
+        withPasswordAndCharacter(call, result) { password, codePoint ->
+            password.addCharacter(codePoint)
+
+            return@withPasswordAndCharacter password.length()
+        }
+    }
+
+    private fun passwordInsertCharacter(call: MethodCall, result: Result) {
+        try {
+            val position: Int = call.getRequiredArgument(PASSWORD_POSITION)
+
+            withPasswordAndCharacter(call, result) { password, codePoint ->
+                if (position >= 0 && position <= password.length()) {
+                    password.insertCharacter(codePoint, position)
+
+                    return@withPasswordAndCharacter password.length()
+                } else {
+                    throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
+                }
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun passwordRemoveCharacterAt(call: MethodCall, result: Result) {
+        try {
+            val position: Int = call.getRequiredArgument(PASSWORD_POSITION)
+
+            withPassword(call, result) { password ->
+                if (position >= 0 && position < password.length()) {
+                    password.removeCharacter(position)
+
+                    return@withPassword password.length()
+                } else {
+                    if (password.length() == 0 && position == 0) {
+                        return@withPassword 0
+                    } else {
+                        throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun passwordRemoveLastCharacter(call: MethodCall, result: Result) {
+        withPassword(call, result) { password ->
+            if (password.length() > 0) {
+                password.removeLastCharacter()
+            }
+
+            return@withPassword password.length()
+        }
     }
 }

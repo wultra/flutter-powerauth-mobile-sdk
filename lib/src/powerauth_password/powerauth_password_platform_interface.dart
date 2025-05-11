@@ -33,7 +33,11 @@ abstract class PowerAuthPasswordPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String> initialize({required bool destroyOnUse}) {
+  Future<String> initialize({
+    required bool destroyOnUse,
+    String? powerAuthInstanceId,
+    int? autoReleaseTimeMillis,
+  }) {
     throw UnimplementedError('initialize() has not been implemented.');
   }
 
