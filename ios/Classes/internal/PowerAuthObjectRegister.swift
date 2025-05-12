@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import PowerAuthCore
+import Flutter
+
 internal class PowerAuthObjectRegister {
     
     private let lock = Lock()
@@ -398,63 +401,27 @@ internal class PowerAuthManagedObject {
 }
 
 extension PowerAuthObjectRegister {
-    /// Function translate object into PowerAuthCorePassword. If such conversion is not possible then use reject promise to
-    /// report an error. The password object is marked as used or touched if found in register.
-    /// - Parameters:
-    ///   - anyPassword: Object to convert into PowerAuthCorePassword.
-    ///   - objectRegister: Object register instance.
-    ///   - reject: Reject function to call in case of failure
-    ///   - use: If YES then object is marked as used, otherwise touched.
-//    static PowerAuthCorePassword * FindPasswordImpl(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject, BOOL use)
-//    {
-//        if ([anyPassword isKindOfClass:[NSString class]]) {
-//            // Password is in form of string
-//            return [PowerAuthCorePassword passwordWithString:anyPassword];
-//        }
-//        if ([anyPassword isKindOfClass:[NSDictionary class]]) {
-//            // It appears that this is an object
-//            id passwordObjectId = [(NSDictionary*)anyPassword objectForKey:@"objectId"];
-//            if (!passwordObjectId) {
-//                // Object identifier is not present in the object. This means that wrong object is passed to call,
-//                // or PowerAuthPassword javascript object is not initialized yet.
-//                reject(EC_WRONG_PARAMETER, @"PowerAuthPassword is not initialized", nil);
-//                return nil;
-//            }
-//            PowerAuthCorePassword * password = use
-//                ? [objectRegister useObjectWithId:passwordObjectId expectedClass:[PowerAuthCorePassword class]]
-//                : [objectRegister touchObjectWithId:passwordObjectId expectedClass:[PowerAuthCorePassword class]];
-//            if (!password) {
-//                reject(EC_INVALID_NATIVE_OBJECT, @"PowerAuthPassword object is no longer valid", nil);
-//                return nil;
-//            }
-//            return password;
-//        }
-//        reject(EC_WRONG_PARAMETER, @"PowerAuthPassword or string is required", nil);
-//        return nil;
-//    }
-//
-//    PowerAuthCorePassword * UsePassword(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
-//    {
-//        return FindPasswordImpl(anyPassword, objectRegister, reject, YES);
-//    }
-//
-//    PowerAuthCorePassword * TouchPassword(id anyPassword, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
-//    {
-//        return FindPasswordImpl(anyPassword, objectRegister, reject, NO);
-//    }
-//
-//    PowerAuthSDK * GetPowerAuthSdk(id anyId, PowerAuthObjectRegister * objectRegister, RCTPromiseRejectBlock reject)
-//    {
-//        PowerAuthSDK * sdk;
-//        if (![objectRegister isValidObjectId: anyId]) {
-//            if (reject) reject(EC_WRONG_PARAMETER, @"PowerAuth instance identifier is missing or empty string", nil);
-//            sdk = nil;
-//        } else {
-//            sdk = [objectRegister findObjectWithId:anyId expectedClass:[PowerAuthSDK class]];
-//            if (!sdk) {
-//                if (reject) reject(EC_INSTANCE_NOT_CONFIGURED, @"PowerAuth instance is not configured.", nil);
-//            }
-//        }
-//        return sdk;
-//    }
+    
+    private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthCorePassword {
+        
+        guard let objectId: String = dict?.get("objectId") else {
+            // Object identifier is not present in the object. This means that wrong object is passed to call,
+            // or PowerAuthPassword dart object is not initialized yet.
+            throw PluginException(.wrongParameter, message: "PowerAuthPassword is not initialized")
+        }
+        
+        let password: PowerAuthCorePassword? = use ? self.use(id: objectId) : touch(id: objectId)
+        guard let password else {
+            throw PluginException(.invalidNativeObject, message: "PowerAuthPassword object is no longer valid")
+        }
+        return password
+    }
+
+    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: true)
+    }
+    
+    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: false)
+    }
 }

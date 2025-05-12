@@ -486,14 +486,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     }
     
     private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        // TODO: we don't use object register yet, so just take plain password until implemented properly
-        
-        
-        
-        guard let dict, let password: String = dict.get(.password) else {
-            throw PluginException(.wrongParameter, message: "Failed to parse provided password")
-        }
-        return PowerAuthCorePassword(string: password)
+        return try register.usePassword(dict: dict)
     }
     
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {

@@ -68,12 +68,6 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
     }
 }
 
-private extension FlutterMap {
-    func get<T>(_ key: PowerAuthService.Args) -> T? {
-        return get(key.rawValue)
-    }
-}
-
 private extension FlutterMethodCall {
     func requireParameter<T>(_ key: PowerAuthUtilsService.Args) throws -> T {
         return try requireParameter(key.rawValue)
