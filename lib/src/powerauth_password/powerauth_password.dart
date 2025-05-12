@@ -45,6 +45,7 @@ class PowerAuthPassword extends BaseNativeObject {
     bool destroyOnUse = true,
   }) async {
     final pass = PowerAuthPassword(destroyOnUse: destroyOnUse);
+    await pass.createNativeObject();
     for (final character in password.runes) {
       await pass.addCodePoint(character);
     }
