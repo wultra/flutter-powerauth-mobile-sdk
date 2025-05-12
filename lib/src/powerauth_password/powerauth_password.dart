@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import '../model/powerauth_error.dart';
 import 'powerauth_password_platform_interface.dart';
 import '../model/base_native_object.dart';
@@ -26,10 +28,13 @@ class PowerAuthPassword extends BaseNativeObject {
 
   // Configuration specific to password
   final bool _destroyOnUse;
+  final String? _powerAuthInstanceId;
+  final int? _autoReleaseTimeMillis;
 
   // Platform instance accessor - static for easy access in overrides
   static PowerAuthPasswordPlatform get _platform =>
       PowerAuthPasswordPlatform.instance;
+
   /// Creates a container for a secure password.
   ///
   /// The underlying native resources are allocated lazily when the password is first
@@ -38,13 +43,29 @@ class PowerAuthPassword extends BaseNativeObject {
   /// - `destroyOnUse`: If `true`, the native password object is marked to be destroyed
   ///                   after its first use in a cryptographic operation (e.g., signing,
   ///                   vault unlock, password change). Defaults to `true`.
-  PowerAuthPassword({bool destroyOnUse = true}) : _destroyOnUse = destroyOnUse;
+  /// - `powerAuthInstanceId`: Optional. If provided, associates this password object with a
+  ///                      specific `PowerAuth` instance ID for lifecycle management or debugging.
+  /// - `autoReleaseTimeMillis`: Optional. Specifies a custom auto-release time in milliseconds
+  ///                            for the native object. Platform defaults apply if not set.
+  PowerAuthPassword({
+    bool destroyOnUse = true,
+    String? powerAuthInstanceId,
+    int? autoReleaseTimeMillis,
+  }) : _destroyOnUse = destroyOnUse,
+       _powerAuthInstanceId = powerAuthInstanceId,
+       _autoReleaseTimeMillis = autoReleaseTimeMillis;
 
   static Future<PowerAuthPassword> fromString(
     String password, {
     bool destroyOnUse = true,
+    String? powerAuthInstanceId,
+    int? autoReleaseTimeMillis,
   }) async {
-    final pass = PowerAuthPassword(destroyOnUse: destroyOnUse);
+    final pass = PowerAuthPassword(
+      destroyOnUse: destroyOnUse,
+      powerAuthInstanceId: powerAuthInstanceId,
+      autoReleaseTimeMillis: autoReleaseTimeMillis,
+    );
     await pass.createNativeObject();
     for (final character in password.runes) {
       await pass.addCodePoint(character);
@@ -53,11 +74,17 @@ class PowerAuthPassword extends BaseNativeObject {
   }
 
   @override
+  @protected
   Future<String> createNativeObject() async {
-    return _platform.initialize(destroyOnUse: _destroyOnUse);
+    return _platform.initialize(
+      destroyOnUse: _destroyOnUse,
+      powerAuthInstanceId: _powerAuthInstanceId,
+      autoReleaseTimeMillis: _autoReleaseTimeMillis,
+    );
   }
 
   @override
+  @protected
   Future<void> releaseNativeObject(String objectId) async {
     return _platform.release(objectId);
   }
@@ -75,24 +102,20 @@ class PowerAuthPassword extends BaseNativeObject {
 
   /// Appends a character to the end of the password.
   /// If more than one character is provided, only the first one is used.
-    Future<int> addCharacter(String character) async {
-      return addCodePoint(_getCodePoint(character));
-    }
+  Future<int> addCharacter(String character) async {
+    return addCodePoint(_getCodePoint(character));
+  }
 
   /// Appends a character to the end of the password.
   /// If more than one character is provided, only the first one is used.
-  Future<int> addCodePoint(int codePoint) => withObjectId(
-      (id) => _platform.addCharacter(id, codePoint),
-    );
+  Future<int> addCodePoint(int codePoint) => withObjectId((id) => _platform.addCharacter(id, codePoint));
 
   /// Inserts a character at the specified position.
   Future<int> insertCharacter(String character, int at) async {
     return insertCodePoint(_getCodePoint(character), at);
   }
 
-  Future<int> insertCodePoint(int codePoint, int at) => withObjectId(
-    (id) => _platform.insertCharacter(id, codePoint, at),
-  );
+  Future<int> insertCodePoint(int codePoint, int at) => withObjectId((id) => _platform.insertCharacter(id, codePoint, at));
 
   /// Removes the character at the specified position.
   Future<int> removeCharacterAt(int position) =>
@@ -124,8 +147,13 @@ class PowerAuthPassword extends BaseNativeObject {
   /// Internal method for serialization.
   /// Ensures the native object is initialized.
   Future<Map<String, dynamic>> toRawPasswordMap() async {
-    return await withObjectId(
-      (id) async => {'objectId': objectId, 'destroyOnUse': _destroyOnUse},
-    );
+    return await withObjectId((id) async {
+      return {
+        'objectId': id,
+        'destroyOnUse': _destroyOnUse,
+        'ownerId': _powerAuthInstanceId,
+        'autoreleaseTime': _autoReleaseTimeMillis
+      }..removeWhere((key, value) => value == null);
+    });
   }
 }

@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_keychain_configuration.dart';
+import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -30,7 +31,6 @@ import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
 import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
-import '../powerauth_password/powerauth_password.dart';
 
 /// An implementation of [PowerAuthPlatform] that uses method channels.
 class PowerAuthMethodChannel extends PowerAuthPlatform
@@ -63,13 +63,11 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
         );
 
         try {
-          final keyId = await invokeNullableMethod<String>(
-            'authenticateWithBiometry',
-            {
-              'instanceId': instanceId,
-              'prompt': authentication.biometricPrompt?.toMap(),
-            },
-          );
+          final keyId =
+              await invokeNullableMethod<String>('authenticateWithBiometry', {
+                'instanceId': instanceId,
+                'prompt': authentication.biometricPrompt?.toMap(),
+              });
 
           if (keyId != null) {
             print("Native biometric auth successful, caching key ID: $keyId");
@@ -208,11 +206,10 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
     String instanceId,
     PowerAuthAuthentication authentication,
   ) async {
-    // TODO: make sure we dont need the injecting of bimoetry ID here
-    await invokeMethod<void>('persistActivation', {
+    final args = await _prepareAuthArguments(instanceId, authentication, {
       'instanceId': instanceId,
-      'authentication': await authentication.toMap(),
     });
+    await invokeMethod<void>('persistActivation', args);
   }
 
   @override
