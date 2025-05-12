@@ -16,10 +16,9 @@
 
 import 'dart:async';
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_client_configuration.dart';
-
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
 import 'powerauth_platform_interface.dart';
