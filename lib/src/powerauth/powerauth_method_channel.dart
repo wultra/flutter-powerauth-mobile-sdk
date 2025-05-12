@@ -19,7 +19,9 @@ import 'package:flutter/services.dart';
 
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
+import '../model/powerauth_sharing_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_platform_interface.dart';
 
@@ -104,14 +106,18 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
   Future<void> configure({
     required String instanceId,
     required PowerAuthConfiguration configuration,
+    PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) async {
     await invokeMethod<void>('configure', {
       'instanceId': instanceId,
       'configuration': configuration.toMap(),
+      'clientConfiguration': clientConfiguration?.toMap(),
       'biometryConfiguration': biometryConfiguration?.toMap(),
       'keychainConfiguration': keychainConfiguration?.toMap(),
+      'sharingConfiguration': sharingConfiguration?.toMap(),
     });
   }
 
