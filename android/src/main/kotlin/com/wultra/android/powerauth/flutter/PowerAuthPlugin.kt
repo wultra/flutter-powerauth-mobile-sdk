@@ -91,12 +91,11 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
         const val OBJECT_ID = "objectId"
+        const val OTHER_OBJECT_ID = "otherObjectId"
 
         const val PASSWORD_DESTROY_ON_USE = "destroyOnUse"
         const val PASSWORD_AUTORELEASE_TIME = "autoreleaseTime"
         const val PASSWORD_OWNER_ID = "ownerId"
-        const val PASSWORD_ID1 = "passwordId1"
-        const val PASSWORD_ID2 = "passwordId2"
         const val PASSWORD_POSITION = "position"
     }
 
@@ -135,7 +134,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         const val PASSWORD_RELEASE = "password_release"
         const val PASSWORD_CLEAR = "password_clear"
         const val PASSWORD_LENGTH = "password_length"
-        const val PASSWORD_IS_EQUAL = "password_isEqual"
+        const val PASSWORD_IS_EQUAL = "password_isEqualTo"
         const val PASSWORD_ADD_CHARACTER = "password_addCharacter"
         const val PASSWORD_INSERT_CHARACTER = "password_insertCharacter"
         const val PASSWORD_REMOVE_CHARACTER_AT = "password_removeCharacterAt"
@@ -1053,8 +1052,8 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun passwordIsEqual(call: MethodCall, result: Result) {
         try {
-            val id1: String = call.getRequiredArgument(PASSWORD_ID1)
-            val id2: String = call.getRequiredArgument(PASSWORD_ID2)
+            val id1: String = call.getRequiredArgument(OBJECT_ID)
+            val id2: String = call.getRequiredArgument(OTHER_OBJECT_ID)
 
             val p1 = objectRegister.touchObject(id1, Password::class.java)
                 ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$id1' is no longer valid or not found.")
@@ -1102,13 +1101,8 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                     password.removeCharacter(position)
 
                     return@withPassword password.length()
-                } else {
-                    if (password.length() == 0 && position == 0) {
-                        return@withPassword 0
-                    } else {
-                        throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
-                    }
                 }
+                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
             }
         } catch (t: Throwable) {
             Errors.error(result, t)

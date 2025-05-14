@@ -105,8 +105,8 @@ class PowerAuthPasswordTests {
         var t4 = await importPassword('k');
         cleanup.addAll([p1, t1, t2, t3, t4]);
 
-        await expect(p1.removeCharacterAt(-1)).toThrow(PowerAuthErrorCode.wrongParameter);
-        await expect(p1.removeCharacterAt(5)).toThrow(PowerAuthErrorCode.wrongParameter);
+        await expect(p1.removeCharacterAt(-1)).toThrow(PowerAuthErrorCode.wrongParameter, message: "negative index");
+        await expect(p1.removeCharacterAt(5)).toThrow(PowerAuthErrorCode.wrongParameter, message: "index out of range");
 
         await expect(p1.removeCharacterAt(0)).toBe(4);
         await expect(p1.isEqualTo(t1)).toBe(true);
@@ -121,7 +121,7 @@ class PowerAuthPasswordTests {
         // Pop last should not fail
         await expect(p1.removeLastCharacter()).toBe(0);
 
-        await expect(p1.removeCharacterAt(0)).toThrow(PowerAuthErrorCode.wrongParameter);
+        await expect(p1.removeCharacterAt(0)).toThrow(PowerAuthErrorCode.wrongParameter, message: "index out of range");
     }
 
     Future<void> testInsertCharacters() async {
@@ -441,14 +441,14 @@ Future<void> toBeDefined({String message = ""}) async {
     }
   }
 
-  Future<void> toThrow(PowerAuthErrorCode code) async {
+  Future<void> toThrow(PowerAuthErrorCode code, {String message = ""}) async {
 
     var self = await this;
     var exception = self.exception;
     self.isResultExpected = exception is PowerAuthException && exception.code == code;
 
     if (!self.isResultExpected) {
-      print("expected to throw $code, but got ${self.exception} - ${self.exception}");
+      print("expected to throw $code, but got exception: ${self.exception}, value: ${self.result} - $message");
     }
   }
 }
