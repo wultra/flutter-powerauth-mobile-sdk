@@ -22,9 +22,11 @@ import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
+import '../model/powerauth_sharing_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
 
@@ -48,8 +50,10 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<void> configure({
     required String instanceId,
     required PowerAuthConfiguration configuration,
+    PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) {
     throw UnimplementedError('configure() has not been implemented.');
   }

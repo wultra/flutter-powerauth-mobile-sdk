@@ -1,3 +1,5 @@
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_client_configuration.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_sharing_configuration.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_platform_interface.dart';
@@ -27,8 +29,10 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   Future<void> configure({
     required String instanceId,
     required PowerAuthConfiguration configuration,
+    PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) {
     // TODO: implement configure
     throw UnimplementedError();

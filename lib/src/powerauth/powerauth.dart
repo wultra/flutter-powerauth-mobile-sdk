@@ -18,7 +18,9 @@ import 'dart:async';
 
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
+import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
+import '../model/powerauth_sharing_configuration.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../model/powerauth_activation.dart';
@@ -32,13 +34,17 @@ import '../powerauth_password/powerauth_password.dart';
 /// Internal helper class to hold the configuration set for a single PowerAuth instance.
 class _InstanceConfigurationHolder {
   final PowerAuthConfiguration configuration;
+  final PowerAuthClientConfiguration? clientConfiguration;
   final PowerAuthBiometryConfiguration? biometryConfiguration;
   final PowerAuthKeychainConfiguration? keychainConfiguration;
+  final PowerAuthSharingConfiguration? sharingConfiguration;
 
   _InstanceConfigurationHolder({
     required this.configuration,
     this.biometryConfiguration,
     this.keychainConfiguration,
+    this.clientConfiguration,
+    this.sharingConfiguration
   });
 }
 
@@ -70,6 +76,10 @@ class PowerAuth {
   PowerAuthConfiguration? get configuration =>
       _configRegister[instanceId]?.configuration;
 
+  /// Returns the client configuration used for this instance, if configured.
+  PowerAuthClientConfiguration? get clientConfiguration =>
+      _configRegister[instanceId]?.clientConfiguration;
+
   /// Returns the biometry configuration used for this instance, if configured.
   PowerAuthBiometryConfiguration? get biometryConfiguration =>
       _configRegister[instanceId]?.biometryConfiguration;
@@ -78,26 +88,36 @@ class PowerAuth {
   PowerAuthKeychainConfiguration? get keychainConfiguration =>
       _configRegister[instanceId]?.keychainConfiguration;
 
+  /// Returns the sharing configuration used for this instance (iOS only), if configured.
+  PowerAuthSharingConfiguration? get sharingConfiguration =>
+      _configRegister[instanceId]?.sharingConfiguration;
+
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///
   /// Must be called before any other method.
   /// [configuration] - Configuration object with basic parameters for `PowerAuth` class.
   Future<void> configure({
     required PowerAuthConfiguration configuration,
+    PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration
   }) async {
     _configRegister[instanceId] = _InstanceConfigurationHolder(
       configuration: configuration,
+      clientConfiguration: clientConfiguration,
       biometryConfiguration: biometryConfiguration,
       keychainConfiguration: keychainConfiguration,
+      sharingConfiguration: sharingConfiguration
     );
 
     await _platform.configure(
       instanceId: instanceId,
       configuration: configuration,
+      clientConfiguration: clientConfiguration,
       biometryConfiguration: biometryConfiguration,
       keychainConfiguration: keychainConfiguration,
+      sharingConfiguration: sharingConfiguration
     );
   }
 
