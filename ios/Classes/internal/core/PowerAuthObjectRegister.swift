@@ -201,23 +201,22 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-//    - (NSArray<NSDictionary*>*) debugDumpObjectsWithTag:(nullable NSString*)tag
-//    {
-//#if DEBUG
-//        return [self synchronized:^{
-//            NSMutableArray * content = [NSMutableArray arrayWithCapacity:_register.count];
-//            [_register enumerateKeysAndObjectsUsingBlock:^(NSString * key, PowerAuthManagedObject * obj, BOOL * stop) {
-//                if (tag && (!obj.tag || ![obj.tag isEqualToString:tag])) {
-//                    return;
-//                }
-//                [content addObject:[obj debugDump]];
-//            }];
-//            return content;
-//        }];
-//#else
-//        return @[];
-//#endif
-//    }
+    func debugDumpObjectsWithTag(tag: String?) -> [Dictionary<String, Any?>] {
+#if DEBUG
+        return lock.synchronized {
+            var content = [Dictionary<String, Any?>]()
+            for (key, obj) in register {
+                if let tag, (obj.tag == nil || obj.tag != tag ) {
+                    continue
+                }
+                content.append(obj.debugDump())
+            }
+            return content
+        }
+#else
+        return []
+#endif
+    }
     
 #if DEBUG
 //    - (NSString*) description

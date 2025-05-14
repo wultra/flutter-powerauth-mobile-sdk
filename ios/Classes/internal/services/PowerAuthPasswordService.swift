@@ -33,10 +33,10 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         "password_release": release,
         "password_clear": clear,
         "password_length": length,
-        "password_isEqual": isEqual,
+        "password_isEqualTo": isEqual,
         "password_addCharacter": addCharacter,
         "password_insertCharacter": insertCharacter,
-        "password_removeCharacter": removeCharacter,
+        "password_removeCharacterAt": removeCharacter,
         "password_removeLastCharacter": removeLastCharacter
     ]
     
@@ -47,7 +47,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         case objectId
         case otherObjectId
         case character
-        case at
+        case position
     }
     
     private func initialize(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -112,11 +112,11 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     private func insertCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
         let character: Int = try call.requireParameter(.character)
-        let at: Int = try call.requireParameter(.at)
+        let at: Int = try call.requireParameter(.position)
         
         try withPassword(id: objectId, character: character) { password, char in
-            let position = UInt(at)
-            if position >= 0 && position <= password.length() {
+            if at >= 0 && at <= password.length() {
+                let position = UInt(at)
                 password.insertCharacter(char, at: position)
                 result(password.length())
             }
@@ -126,11 +126,11 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func removeCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let at: Int = try call.requireParameter(.at)
+        let at: Int = try call.requireParameter(.position)
         
         try withPassword(id: objectId) { password in
-            let position = UInt(at)
-            if position >= 0 && position < password.length() {
+            if at >= 0 && at < password.length() {
+                let position = UInt(at)
                 password.removeCharacter(at: position)
                 result(password.length())
             }
@@ -154,6 +154,11 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     }
     
     private func withPassword(id: String, character: Int, action: (PowerAuthCoreMutablePassword, UInt32) throws -> Void) throws {
+        
+        guard character >= 0 else {
+            throw PluginException(.wrongParameter, message: "CodePoint cannot be negative")
+        }
+        
         let codePoint = UInt32(character)
         
         guard codePoint <= Constants.CODEPOINT_MAX else {
