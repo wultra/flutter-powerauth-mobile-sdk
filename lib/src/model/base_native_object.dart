@@ -89,10 +89,11 @@ abstract class BaseNativeObject {
   /// The object becomes unusable after calling this method.
   @protected
   Future<void> release() async {
-    if (_isReleased) return;
-    _isReleased = true;
 
     String? idToRelease = objectId;
+
+    if (_isReleased || idToRelease == null) return;
+    _isReleased = true;
 
     if (_isInitializing && !_initCompleter.isCompleted) {
       print(

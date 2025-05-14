@@ -283,9 +283,9 @@ internal class ReleasePolicy: Equatable {
         return lhs.value == rhs.value
     }
     
-    static func getTimeInterval(value: Int, defaultValue: Int) -> Int {
+    static func getTimeInterval(value: Int?, defaultValue: Int) -> Int {
         #if DEBUG
-        return min(value > 0 ? value: defaultValue, defaultValue)
+        return min(value ?? defaultValue, defaultValue)
         #endif
         return defaultValue
     }

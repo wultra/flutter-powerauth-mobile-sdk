@@ -66,7 +66,6 @@ class PowerAuthPassword extends BaseNativeObject {
       powerAuthInstanceId: powerAuthInstanceId,
       autoReleaseTimeMillis: autoReleaseTimeMillis,
     );
-    await pass.createNativeObject();
     for (final character in password.runes) {
       await pass.addCodePoint(character);
     }

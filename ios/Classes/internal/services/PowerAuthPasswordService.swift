@@ -54,7 +54,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         
         let destroyOnUse: Bool = try call.requireParameter(.destroyOnUse)
         let paInstanceId: String? = call.getParameter(.powerAuthInstanceId)
-        let autoreleaseTime = call.getParameter(.autoreleaseTime) ?? 0
+        let autoreleaseTime: Int? = call.getParameter(.autoreleaseTime)
         
         // TODO: supported scenario? (is supported in JS, do we want it here?)
         if let paInstanceId, !register.contains(id: paInstanceId) {
