@@ -44,6 +44,9 @@ import kotlin.collections.set
 import android.util.Pair
 import androidx.core.util.component1
 import androidx.core.util.component2
+import io.getlime.security.powerauth.networking.interceptors.BasicHttpAuthenticationRequestInterceptor
+import io.getlime.security.powerauth.networking.interceptors.CustomHeaderRequestInterceptor
+import io.getlime.security.powerauth.networking.ssl.HttpClientSslNoValidationStrategy
 
 // TODO: migrate method docs from RN
 class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -55,8 +58,10 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     companion object ArgKeys {
         const val INSTANCE_ID = "instanceId"
         const val CONFIGURATION = "configuration"
+        const val CLIENT_CONFIGURATION = "clientConfiguration"
         const val BIOMETRY_CONFIGURATION = "biometryConfiguration"
         const val KEYCHAIN_CONFIGURATION = "keychainConfiguration"
+        const val SHARING_CONFIGURATION = "sharingConfiguration"
         const val ACTIVATION = "activation"
         const val AUTHENTICATION = "authentication"
         const val PASSWORD = "password"
@@ -73,6 +78,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         const val ACTIVATION_CODE = "activationCode"
         const val CHARACTER = "character"
         const val PROMPT = "prompt"
+        const val BIOMETRIC_PROMPT = "biometricPrompt"
         const val ACTIVATION_SIGNATURE = "activationSignature"
         const val ACTIVATION_NAME = "activationName"
         const val IDENTITY_ATTRIBUTES = "identityAttributes"
@@ -247,17 +253,24 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun configure(call: MethodCall, result: Result) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+
             val configurationMap: Map<String, Any> = call.getRequiredArgument(CONFIGURATION)
+            val clientConfigMap = call.argument<Map<String, Any>>(CLIENT_CONFIGURATION)
             val biometryConfigMap = call.argument<Map<String, Any>>(BIOMETRY_CONFIGURATION)
             val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
+            @Suppress("UNUSED_VARIABLE")
+            val sharingConfigMap = call.argument<Map<String, Any>>(SHARING_CONFIGURATION)
 
             val registered = registerPowerAuthInstance(instanceId) {
                 val powerAuthConfiguration = buildPowerAuthConfiguration(instanceId, configurationMap)
+                val clientConfiguration = buildPowerAuthClientConfiguration(clientConfigMap)
                 val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
 
-                val sdk = PowerAuthSDK.Builder(powerAuthConfiguration)
+                val sdkBuilder = PowerAuthSDK.Builder(powerAuthConfiguration)
+                    .clientConfiguration(clientConfiguration)
                     .keychainConfiguration(keychainConfiguration)
-                    .build(context)
+
+                val sdk = sdkBuilder.build(context)
 
                 return@registerPowerAuthInstance ManagedAny.wrap(sdk)
             }
@@ -373,14 +386,47 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun persistActivation(call: MethodCall, result: Result) {
-        usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = true)
-            val resultCode = sdk.persistActivationWithAuthentication(context, authentication)
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
+            val useBiometryActual = authMap[IS_BIOMETRY] as? Boolean ?: false
 
-            if (resultCode == PowerAuthErrorCodes.SUCCEED) {
-                result.success(null)
+            val authenticationObject = buildAuthenticationObject(call, persist = true)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && useBiometryActual) {
+                val corePassword = authenticationObject.password
+                    ?: throw WrapperException(Errors.EC_FLUTTER_ERROR, "Password could not be retrieved from authentication object for biometric persist.")
+
+                val promptMap: Map<String, String>? = authMap[BIOMETRIC_PROMPT] as? Map<String, String>
+                val (title, description) = extractPromptStrings(promptMap)
+
+                val activity = currentActivity as? FragmentActivity
+                    ?: throw WrapperException(Errors.EC_FLUTTER_ERROR, "FragmentActivity is not available for biometric prompt.")
+
+                sdk.persistActivation(
+                    context,
+                    activity,
+                    title,
+                    description,
+                    corePassword,
+                    object : IPersistActivationWithBiometricsListener {
+                        override fun onBiometricDialogCancelled() {
+                            Errors.error(result, PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL))
+                        }
+                        override fun onBiometricDialogSuccess() {
+                            result.success(null)
+                        }
+                        override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
+                            Errors.error(result, error)
+                        }
+                    }
+                )
             } else {
-                throw PowerAuthErrorException(resultCode)
+                val resultCode = sdk.persistActivationWithAuthentication(context, authenticationObject)
+                if (resultCode == PowerAuthErrorCodes.SUCCEED) {
+                    result.success(null)
+                } else {
+                    Errors.error(result, PowerAuthErrorException(resultCode))
+                }
             }
         }
     }
@@ -759,45 +805,38 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         return if (persist) {
-            if (password != null) {
-                // This iS a copy-paste from RN to keep feature parity, it's also not supported in the Flutter wrapper currentl.
-                if (useBiometry) {
-                    val biometryKeyIdFromAuthMap = authMap[BIOMETRY_KEY_ID] as? String
+            if (password == null) {
+                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Password is required for persisting activation.")
+            }
 
-                    if (biometryKeyIdFromAuthMap != null) {
-                        val biometricKeyBytes = objectRegister.useObject(biometryKeyIdFromAuthMap, ByteArray::class.java)
-
-                        if (biometricKeyBytes != null) {
-                            PowerAuthAuthentication.persistWithPasswordAndBiometry(password, biometricKeyBytes)
-                        } else {
-                            throw WrapperException(
-                                Errors.EC_INVALID_NATIVE_OBJECT,
-                                "Biometric key for ID '$biometryKeyIdFromAuthMap' not found or expired. It is required for persisting with biometry."
-                            )
-                        }
-                    } else {
-                        throw WrapperException(
-                            Errors.EC_WRONG_PARAMETER,
-                            "'biometryKeyId' is missing in authentication arguments, but is required for persisting with biometry."
+            if (useBiometry) {
+                val biometricKeyBytes = biometryKeyId?.let { keyId ->
+                    objectRegister.useObject(keyId, ByteArray::class.java)
+                        ?: throw WrapperException(
+                            Errors.EC_INVALID_NATIVE_OBJECT,
+                            "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired. This key is required if biometryKeyId is explicitly provided for persisting."
                         )
-                    }
+                }
+
+                if (biometricKeyBytes != null) {
+                    PowerAuthAuthentication.persistWithPasswordAndBiometry(password, biometricKeyBytes)
                 } else {
                     PowerAuthAuthentication.persistWithPassword(password)
                 }
             } else {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Password is required for persisting activation")
+                PowerAuthAuthentication.persistWithPassword(password)
             }
         } else {
-            if (biometryKeyId != null) {
-                val retrievedKey = objectRegister.useObject(biometryKeyId, ByteArray::class.java)
+            val biometryKeyBytes = biometryKeyId?.let { keyId ->
+                objectRegister.useObject(keyId, ByteArray::class.java)
+                    ?: throw WrapperException(
+                        Errors.EC_INVALID_NATIVE_OBJECT,
+                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
+                    )
+            }
 
-                if (retrievedKey != null) {
-                    PowerAuthAuthentication.possessionWithBiometry(retrievedKey)
-                } else {
-                    throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Biometric key ID '$biometryKeyId' is no longer valid or expired.")
-                }
-            } else if (useBiometry) {
-                PowerAuthAuthentication.possession()
+            if (biometryKeyBytes != null) {
+                PowerAuthAuthentication.possessionWithBiometry(biometryKeyBytes)
             } else if (password != null) {
                 PowerAuthAuthentication.possessionWithPassword(password)
             } else {
@@ -1117,5 +1156,48 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
             return@withPassword password.length()
         }
+    }
+
+    private fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
+        val builder = PowerAuthClientConfiguration.Builder()
+
+        clientConfigMap?.let { map ->
+            val enableUnsecure = (map["enableUnsecureTraffic"] as? Boolean)
+                ?: PowerAuthClientConfiguration.DEFAULT_ALLOW_UNSECURED_CONNECTION
+
+            if (enableUnsecure) {
+                builder.clientValidationStrategy(HttpClientSslNoValidationStrategy())
+                builder.allowUnsecuredConnection(true)
+            }
+
+            val connectionTimeoutMs = (map["connectionTimeout"] as? Double)?.let { (it * 1000).toInt() }
+                ?: PowerAuthClientConfiguration.DEFAULT_CONNECTION_TIMEOUT
+            val readTimeoutMs = (map["readTimeout"] as? Double)?.let { (it * 1000).toInt() }
+                ?: PowerAuthClientConfiguration.DEFAULT_READ_TIMEOUT
+
+            builder.timeouts(connectionTimeoutMs, readTimeoutMs)
+
+            @Suppress("UNCHECKED_CAST")
+            (map["customHttpHeaders"] as? List<Map<String, String>>)?.forEach { headerMap ->
+                val name = headerMap["name"]
+                val value = headerMap["value"]
+
+                if (name != null && value != null) {
+                    builder.requestInterceptor(CustomHeaderRequestInterceptor(name, value))
+                }
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            (map["basicHttpAuthentication"] as? Map<String, String>)?.let { authMap ->
+                val username = authMap["username"]
+                val password = authMap["password"]
+
+                if (username != null && password != null) {
+                    builder.requestInterceptor(BasicHttpAuthenticationRequestInterceptor(username, password))
+                }
+            }
+        }
+
+        return builder.build()
     }
 }
