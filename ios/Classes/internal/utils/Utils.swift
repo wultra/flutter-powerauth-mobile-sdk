@@ -24,6 +24,13 @@ internal extension FlutterMap {
     func get<T>(_ key: String) -> T? {
         return self[key] as? T
     }
+    
+    func require<T>(_ key: String) throws -> T {
+        guard let parameter: T = get(key) else {
+            throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
+        }
+        return parameter
+    }
 }
 
 internal extension FlutterMethodCall {

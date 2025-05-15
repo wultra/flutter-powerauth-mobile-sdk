@@ -129,17 +129,17 @@ class PowerAuthPasswordTests {
         var p2 = await importPassword('Sk💀ll');
         cleanup.addAll([p1, p2]);
 
-        expect(await p1.insertCharacter('l', 0)).toBe(1);
-        expect(await p1.insertCharacter('l', 1)).toBe(2);
-        expect(await p1.insertCharacter('S', 0)).toBe(3);
-        expect(await p1.insertCharacter('k', 1)).toBe(4);
-        expect(await p1.insertCodePoint(0x1F480, 2)).toBe(5);
+        await expect(await p1.insertCharacter('l', 0)).toBe(1);
+        await expect(await p1.insertCharacter('l', 1)).toBe(2);
+        await expect(await p1.insertCharacter('S', 0)).toBe(3);
+        await expect(await p1.insertCharacter('k', 1)).toBe(4);
+        await expect(await p1.insertCodePoint(0x1F480, 2)).toBe(5);
 
         await expect(p1.insertCharacter('X', -1)).toThrow(PowerAuthErrorCode.wrongParameter);
         await expect(p1.insertCharacter('X', 6)).toThrow(PowerAuthErrorCode.wrongParameter);
         await expect(p1.insertCodePoint(0x110000, 0)).toThrow(PowerAuthErrorCode.wrongParameter);
 
-        expect(await p1.isEqualTo(p2)).toBe(true);
+        await expect(await p1.isEqualTo(p2)).toBe(true);
     }
 
     Future<void> testUnicode() async {
@@ -149,26 +149,26 @@ class PowerAuthPasswordTests {
         var p4 = new PowerAuthPassword();
         cleanup.addAll([p1, p2, p3, p4]);
         
-        expect(await p1.length()).toBe(4);
-        expect(await p2.length()).toBe(5);
+        await expect(await p1.length()).toBe(4);
+        await expect(await p2.length()).toBe(5);
 
         await p3.addCharacter('★');
         await p3.addCharacter('🤣🤫');
         await p3.addCharacter('🤫');
         await p3.addCharacter('🪘x');
 
-        expect(await p3.length()).toBe(4);
+        await expect(await p3.length()).toBe(4);
 
         await p4.addCodePoint(0x2605);
         await p4.addCodePoint(0x1F923);
         await p4.addCodePoint(0x1F92B);
         await p4.addCodePoint(0x1FA98);
 
-        expect(await p4.length()).toBe(4);
+        await expect(await p4.length()).toBe(4);
 
-        expect(await p3.isEqualTo(p4)).toBe(true);
-        expect(await p3.isEqualTo(p1)).toBe(true);
-        expect(await p4.isEqualTo(p1)).toBe(true);
+        await expect(await p3.isEqualTo(p4)).toBe(true);
+        await expect(await p3.isEqualTo(p1)).toBe(true);
+        await expect(await p4.isEqualTo(p1)).toBe(true);
     }
 
     // async testAutomaticCleanup() {
@@ -273,13 +273,13 @@ class PowerAuthPasswordTests {
         // expect(p2CleanupCalled).toBe(0)
 
         await p1.addCodePoint(48);
-        expect(await p1.isEmpty()).toBe(false);
-        expect(await p2.isEmpty()).toBe(true);
+        await expect(await p1.isEmpty()).toBe(false);
+        await expect(await p2.isEmpty()).toBe(true);
 
         var id1AfterAccess = p1.objectId;
         var id2AfterAccess = p2.objectId;
-        expect(id1AfterAccess).toBeDefined();
-        expect(id2AfterAccess).toBeDefined();
+        await expect(id1AfterAccess).toBeDefined();
+        await expect(id2AfterAccess).toBeDefined();
 
         // expect(p1CleanupCalled).toBe(0);
         // expect(p2CleanupCalled).toBe(0);
@@ -289,8 +289,8 @@ class PowerAuthPasswordTests {
         await p2.release();
 
         // Both passwords should be released and throw on access
-        expect(p1.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
-        expect(p2.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
+        await expect(p1.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
+        await expect(p2.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
 
         // expect(await Register.findObject(id1AfterAccess, 'password')).toBe(false)
         // expect(await Register.findObject(id2AfterAccess, 'password')).toBe(false)

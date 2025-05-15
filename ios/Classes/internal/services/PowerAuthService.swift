@@ -59,6 +59,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
     fileprivate enum Args: String {
         case instanceId
         case configuration
+        case clientConfiguration
+        case biometryConfiguration
+        case keychainConfiguration
+        case sharingConfiguration
         case activation
         case authentication
         case password
@@ -92,7 +96,68 @@ internal class PowerAuthService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration parameters.")
         }
         
-        guard let sdk = PowerAuthSDK(configuration: paConfig) else {
+        if let sharingConfiguration: FlutterMap = call.getParameter(.sharingConfiguration) {
+            let sharingConfig = PowerAuthSharingConfiguration(
+                appGroup: try sharingConfiguration.require("appGroup"),
+                appIdentifier: try sharingConfiguration.require("appIdentifier"),
+                keychainAccessGroup: try sharingConfiguration.require("keychainAccessGroup")
+            )
+            sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get("sharedMemoryIdentifier")
+            paConfig.sharingConfiguration = sharingConfig
+        }
+        
+        guard paConfig.validate() else {
+            throw PluginException(.wrongParameter, message: "Provided configuration is invalid")
+        }
+        
+        let clientConfiguration: FlutterMap = try call.requireParameter(.clientConfiguration)
+        let clientConfig = PowerAuthClientConfiguration()
+        clientConfig.defaultRequestTimeout = try clientConfiguration.require("connectionTimeout")
+        
+        // HTTP client config
+        if try clientConfiguration.require("enableUnsecureTraffic") as Bool {
+            clientConfig.sslValidationStrategy = PowerAuthClientSslNoValidationStrategy()
+        }
+        
+        var interceptors = [PowerAuthCustomHeaderRequestInterceptor]()
+        
+        // http headers
+        if let httpHeaders: [FlutterMap] = clientConfiguration.get("customHttpHeaders") {
+            for header in httpHeaders {
+                if
+                    let name: String = header.get("name"),
+                    let value: String = header.get("value") {
+                    interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: name, value: value))
+                }
+                
+            }
+        }
+        
+        // Basic Authentication
+        if
+            let basicAuth: FlutterMap = clientConfiguration.get("basicHttpAuthentication"),
+            let username: String = basicAuth.get("username"),
+            let password: String = basicAuth.get("password")
+        {
+            interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
+        }
+        
+        clientConfig.requestInterceptors = interceptors
+        
+        
+        let keychainConfiguration: FlutterMap = try call.requireParameter(.keychainConfiguration)
+        let biometryConfiguration: FlutterMap = try call.requireParameter(.biometryConfiguration)
+        let keychainConfig = PowerAuthKeychainConfiguration()
+        
+        // Keychain specific
+        keychainConfig.keychainAttribute_AccessGroup = keychainConfiguration.get("accessGroupName")
+        keychainConfig.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration.get("userDefaultsSuiteName")
+        
+        // Biometry
+        keychainConfig.linkBiometricItemsToCurrentSet = biometryConfiguration.get("linkItemsToCurrentSet") ?? keychainConfig.linkBiometricItemsToCurrentSet
+        keychainConfig.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration.get("fallbackToDevicePasscode") ?? keychainConfig.allowBiometricAuthenticationFallbackToDevicePasscode
+        
+        guard let sdk = PowerAuthSDK(configuration: paConfig, keychainConfiguration: keychainConfig, clientConfiguration: clientConfig) else {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
         }
         
