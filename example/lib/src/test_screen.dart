@@ -4,9 +4,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
 
 import '../config.dart';
-import '../tests/password_tests.dart';
 
 // Helper to generate a fixed-size random nonce
 String _generateRandomNonce() {
@@ -437,9 +437,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     });
   }
 
-  void _runPasswordsTests() async {
-    var tests = PowerAuthPasswordTests();
-    await tests.runTests();
+  void _runTests() async {
+    Tests().run();
   }
 
   @override
@@ -468,7 +467,16 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: <Widget>[
+            const Text('Automatic tests:'),
+            ElevatedButton(
+              onPressed: () => _runTests(),
+              child: const Text('Run test'),
+            ),
+            const SizedBox(height: 12),
+            const Text('Manual testing:'),
+
             _buildInstanceSelector(),
+
             const SizedBox(height: 10),
 
             if (_errorMessage != null)
@@ -778,11 +786,6 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Change Password (Online)'),
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: () => _runPasswordsTests(),
-          child: const Text('Run Passwords test'),
         ),
       ],
     );

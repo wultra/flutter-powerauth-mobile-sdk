@@ -81,7 +81,7 @@ internal class PowerAuthObjectRegister {
     
     func contains(id: String) -> Bool {
         return lock.synchronized {
-            let obj: Any? = self.findManagedObject(id: id)
+            let obj: Any? = self.findManagedObject(id: id, validateType: false)
             return obj != nil
         }
     }
@@ -102,7 +102,7 @@ internal class PowerAuthObjectRegister {
     
     func remove(id: String) {
         lock.synchronized {
-            self.findManagedObject(id: id, action: .remove)
+            self.findManagedObject(id: id, action: .remove, validateType: false)
         }
     }
     
@@ -125,13 +125,13 @@ internal class PowerAuthObjectRegister {
     ///   - expectedClass: Expected class to retrieve. If not provided, then the stored object can be anything.
     ///   - action: Additional operations that will be performed with the object
     /// - Returns: Object retrieved from the register or nil if no such object exist.
-    private func findManagedObject<T>(id: String, action: ObjectAction = .none) -> T? {
+    private func findManagedObject<T>(id: String, action: ObjectAction = .none, validateType: Bool = true) -> T? {
         
         guard let managedObject = register[id] else {
             return nil
         }
         
-        guard let object = managedObject.object as? T else {
+        guard validateType == false || managedObject.object is T else {
             return nil
         }
         
@@ -145,7 +145,7 @@ internal class PowerAuthObjectRegister {
         case .touch: managedObject.touch()
         case .remove: register.removeValue(forKey: id)
         }
-        return object
+        return managedObject.object as? T
     }
     
     /// Schedule an object cleanup job.

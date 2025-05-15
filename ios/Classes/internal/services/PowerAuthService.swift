@@ -110,52 +110,61 @@ internal class PowerAuthService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Provided configuration is invalid")
         }
         
-        let clientConfiguration: FlutterMap = try call.requireParameter(.clientConfiguration)
-        let clientConfig = PowerAuthClientConfiguration()
-        clientConfig.defaultRequestTimeout = try clientConfiguration.require("connectionTimeout")
+        let clientConfiguration: FlutterMap? = call.getParameter(.clientConfiguration)
+        let timeout: TimeInterval? = clientConfiguration?.get("connectionTimeout")
+        let enableUnsecureTraffic: Bool? = clientConfiguration?.get("enableUnsecureTraffic")
+        var clientConfig: PowerAuthClientConfiguration?
         
-        // HTTP client config
-        if try clientConfiguration.require("enableUnsecureTraffic") as Bool {
-            clientConfig.sslValidationStrategy = PowerAuthClientSslNoValidationStrategy()
+        if timeout != nil || enableUnsecureTraffic != nil {
+            let cc = PowerAuthClientConfiguration()
+            cc.defaultRequestTimeout = timeout ?? cc.defaultRequestTimeout
+            if enableUnsecureTraffic == true {
+                cc.sslValidationStrategy = PowerAuthClientSslNoValidationStrategy()
+            }
+            clientConfig = cc
         }
         
         var interceptors = [PowerAuthCustomHeaderRequestInterceptor]()
         
         // http headers
-        if let httpHeaders: [FlutterMap] = clientConfiguration.get("customHttpHeaders") {
+        if let httpHeaders: [FlutterMap] = clientConfiguration?.get("customHttpHeaders") {
             for header in httpHeaders {
                 if
                     let name: String = header.get("name"),
                     let value: String = header.get("value") {
                     interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: name, value: value))
                 }
-                
             }
         }
         
         // Basic Authentication
         if
-            let basicAuth: FlutterMap = clientConfiguration.get("basicHttpAuthentication"),
+            let basicAuth: FlutterMap = clientConfiguration?.get("basicHttpAuthentication"),
             let username: String = basicAuth.get("username"),
             let password: String = basicAuth.get("password")
         {
             interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
         }
         
-        clientConfig.requestInterceptors = interceptors
+        if interceptors.isEmpty == false {
+            clientConfig = clientConfig ?? PowerAuthClientConfiguration()
+            clientConfig!.requestInterceptors = interceptors
+        }
         
-        
-        let keychainConfiguration: FlutterMap = try call.requireParameter(.keychainConfiguration)
-        let biometryConfiguration: FlutterMap = try call.requireParameter(.biometryConfiguration)
-        let keychainConfig = PowerAuthKeychainConfiguration()
-        
-        // Keychain specific
-        keychainConfig.keychainAttribute_AccessGroup = keychainConfiguration.get("accessGroupName")
-        keychainConfig.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration.get("userDefaultsSuiteName")
-        
-        // Biometry
-        keychainConfig.linkBiometricItemsToCurrentSet = biometryConfiguration.get("linkItemsToCurrentSet") ?? keychainConfig.linkBiometricItemsToCurrentSet
-        keychainConfig.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration.get("fallbackToDevicePasscode") ?? keychainConfig.allowBiometricAuthenticationFallbackToDevicePasscode
+        var keychainConfig: PowerAuthKeychainConfiguration?
+        let keychainConfiguration: FlutterMap? = call.getParameter(.keychainConfiguration)
+        let biometryConfiguration: FlutterMap? = call.getParameter(.biometryConfiguration)
+        if keychainConfiguration != nil || biometryConfiguration != nil {
+            let kc = PowerAuthKeychainConfiguration()
+            // Keychain specific
+            kc.keychainAttribute_AccessGroup = keychainConfiguration?.get("accessGroupName")
+            kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration?.get("userDefaultsSuiteName")
+            
+            // Biometry
+            kc.linkBiometricItemsToCurrentSet = biometryConfiguration?.get("linkItemsToCurrentSet") ?? kc.linkBiometricItemsToCurrentSet
+            kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration?.get("fallbackToDevicePasscode") ?? kc.allowBiometricAuthenticationFallbackToDevicePasscode
+            keychainConfig = kc
+        }
         
         guard let sdk = PowerAuthSDK(configuration: paConfig, keychainConfiguration: keychainConfig, clientConfiguration: clientConfig) else {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
