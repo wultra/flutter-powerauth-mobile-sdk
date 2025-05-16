@@ -90,7 +90,6 @@ extension FutureExpectResult on Future<ExpectResult> {
 
 
   Future<void> toBeDefined({String message = ""}) async {
-
     var self = await this;
     self.isResultExpected = self.result != null;
     if (!self.isResultExpected) {
@@ -103,7 +102,6 @@ extension FutureExpectResult on Future<ExpectResult> {
   }
 
   Future<void> toBeNull({String message = ""}) async {
-
     var self = await this;
     self.isResultExpected = self.result == null;
     if (!self.isResultExpected) {
@@ -116,7 +114,6 @@ extension FutureExpectResult on Future<ExpectResult> {
   }
 
   Future<void> toBe(Object other, {String message = ""}) async {
-
     var self = await this;
     self.isResultExpected = self.result == other;
     if (!self.isResultExpected) {
@@ -129,13 +126,20 @@ extension FutureExpectResult on Future<ExpectResult> {
   }
 
   Future<void> toThrow(PowerAuthErrorCode code, {String message = ""}) async {
-
     var self = await this;
     var exception = self.exception;
     self.isResultExpected = exception is PowerAuthException && exception.code == code;
 
     if (!self.isResultExpected) {
       print("expected to throw $code, but got exception: ${self.exception}, value: ${self.result} - $message");
+    }
+  }
+
+  Future<void> toSucceed({String message = ""}) async {
+    var self = await this;
+    self.isResultExpected = self.exception == null;
+    if (!self.isResultExpected) {
+      print("expected to succeed, but got exception: ${self.exception}, value: ${self.result} - $message");
     }
   }
 }

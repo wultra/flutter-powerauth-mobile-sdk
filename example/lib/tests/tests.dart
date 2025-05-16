@@ -12,6 +12,6 @@ class Tests {
       await testSuite.runTests();
     }
     final failedTests = testSuites.where((testSuite) => testSuite.testFailCount > 0);
-    print("### ${testSuites.length} suites finished with ${failedTests.length} failed tests ${failedTests.length > 0 ? "❌❌❌" : "✅✅✅"}");
+    print("### ${testSuites.length} suites finished with ${failedTests.length} failed tests ${failedTests.isNotEmpty ? "❌❌❌" : "✅✅✅"}");
   }
 }

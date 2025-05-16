@@ -4,12 +4,13 @@ import 'dart:io';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
 class ConfigurationTests extends TestSuite {
 
   @override 
   getTests() {
-    return [testConfigureAndDeconfigure, iosTestActivationSharing];
+    return [testConfigureAndDeconfigure, iosTestActivationSharing, testReconfigureWhileActive];
   }
 
   @override
@@ -33,8 +34,8 @@ class ConfigurationTests extends TestSuite {
     final helper1 = await getHelper1();
     final helper2 = await getHelper2();
     // SDK instances from helpers should be available
-    final sdk1 = helper1.powerAuthSdk!;
-    final sdk2 = helper2.powerAuthSdk!;
+    final sdk1 = helper1.sdk;
+    final sdk2 = helper2.sdk;
 
     await expect(sdk1.isConfigured()).toBe(true);
     await expect(sdk2.isConfigured()).toBe(true);
@@ -81,7 +82,7 @@ class ConfigurationTests extends TestSuite {
       return;
     }
     final helper1 = await getHelper1();
-    final sdk1 = helper1.powerAuthSdk!;
+    final sdk1 = helper1.sdk;
     await expect(sdk1.isConfigured()).toBe(true);
     await expect(sdk1.sharingConfiguration?.appGroup).toBe("group.com.wultra.testGroup");
     await expect(sdk1.sharingConfiguration?.appIdentifier).toBe("SharedInstanceTests");
@@ -89,128 +90,170 @@ class ConfigurationTests extends TestSuite {
     await expect(sdk1.sharingConfiguration?.sharedMemoryIdentifier).toBe("tst3");
   }
 
-  ActivationHelper? helperInstance1;
-  ActivationHelper? helperInstance2;
+  Future<void> testReconfigureWhileActive() async {
+    final helper1 = await getHelper1();
+    final sdk1 = helper1.sdk;
+    final helper2 = await getHelper2();
+    final sdk2 = helper2.sdk;
+
+    await expect(await sdk1.isConfigured()).toBe(true);
+    await expect(await sdk2.isConfigured()).toBe(true);
+
+    final config1 = sdk1.configuration;
+    final config2 = sdk2.configuration;
+    final clientConfig1 = sdk1.clientConfiguration;
+    final clientConfig2 = sdk2.clientConfiguration;
+    final keychainConfig1 = sdk1.keychainConfiguration;
+    final keychainConfig2 = sdk2.keychainConfiguration;
+    final biometryConfig1 = sdk1.biometryConfiguration;
+    final biometryConfig2 = sdk2.biometryConfiguration;
+    final sharingConfig1 = sdk1.sharingConfiguration;
+    final sharingConfig2 = sdk2.sharingConfiguration;
+
+    await expect(config1).toBeDefined();
+    await expect(config2).toBeDefined();
+    await expect(clientConfig1).toBeNull();
+    await expect(clientConfig2).toBeNull();
+    await expect(keychainConfig1).toBeNull();
+    await expect(keychainConfig2).toBeNull();
+    await expect(biometryConfig1).toBeNull();
+    await expect(biometryConfig2).toBeNull();
+    await expect(sharingConfig1).toBeNull();
+    await expect(sharingConfig2).toBeNull();
+
+    await helper1.prepareActivation(password: await getPassword1());
+    await helper2.prepareActivation(password: await getPassword2());
+
+    await expect(sdk1.hasValidActivation()).toBe(true);
+    await expect(sdk2.hasValidActivation()).toBe(true);
+
+    await expect(sdk1.validatePassword(await getPassword1())).toSucceed();
+    await expect(sdk2.validatePassword(await getPassword2())).toSucceed();
+
+    sdk1.deconfigure();
+    sdk2.deconfigure();
+
+    // // Now run all methods that must fail while instance is not configured
+    await runMethodsThatMustFail(sdk1);
+    await runMethodsThatMustFail(sdk2);
+
+    // // Reconfigure. This technically re-create native SDK objects on behalf
+    await sdk1.configure(configuration: config1!, clientConfiguration: clientConfig1, biometryConfiguration: biometryConfig1, keychainConfiguration: keychainConfig1);
+    await sdk2.configure(configuration: config2!, clientConfiguration: clientConfig2, biometryConfiguration: biometryConfig2, keychainConfiguration: keychainConfig2);
+
+    await expect(sdk1.isConfigured()).toBe(true);
+    await expect(sdk2.isConfigured()).toBe(true);
+
+    await expect(sdk1.hasValidActivation()).toBe(true);
+    await expect(sdk2.hasValidActivation()).toBe(true);
+
+    await expect(sdk1.validatePassword(await getPassword1())).toSucceed();
+    await expect(sdk2.validatePassword(await getPassword2())).toSucceed();
+
+    await expect(sdk1.removeActivationWithAuthentication(PowerAuthAuthentication.password(await getPassword1()))).toSucceed();
+    await expect(sdk2.removeActivationWithAuthentication(PowerAuthAuthentication.password(await getPassword2()))).toSucceed();
+  }
+
+  // -- HELPERS --
+
+  Future<void> runMethodsThatMustFail(PowerAuth sdk) async {
+    final commitAuth = PowerAuthAuthentication.persistWithPassword(await PowerAuthPassword.fromString('1234'));
+    final signAuth = PowerAuthAuthentication.possession();
+    final emptyPassword = await PowerAuthPassword.fromString('');
+    await expect(sdk.hasValidActivation()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.canStartActivation()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.hasPendingActivation()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.fetchActivationStatus()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.createActivation(PowerAuthActivation.fromActivationCode(activationCode: '', name: ''))).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.persistActivation(commitAuth)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.getActivationFingerprint()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.getActivationIdentifier()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.removeActivationWithAuthentication(signAuth)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.removeActivationLocal()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.requestGetSignature(signAuth, '', null)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.requestSignature(signAuth, '', '')).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.offlineSignature(signAuth, '', '', null)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.verifyServerSignedData('', '', false)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.changePassword(emptyPassword, emptyPassword)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.addBiometryFactor(emptyPassword, null)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.hasBiometryFactor()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.removeBiometryFactor()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    // await expect(sdk.fetchEncryptionKey(signAuth, 1000)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    // await expect(sdk.signDataWithDevicePrivateKey(signAuth, '')).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.validatePassword(emptyPassword)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    // await expect(sdk.groupedBiometricAuthentication(signAuth, async auth => {})).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    
+    // TODO: getBiometryInfo() doesn't depend on configuration. We should move this to separate class
+    // await expect(sdk.getBiometryInfo()).toThrow(PowerAuthErrorCode.instanceNotConfigured})
+  }
+
+  IntegrationHelper? helperInstance1;
+  IntegrationHelper? helperInstance2;
 
   final instance1 = 'testInstance1';
   final instance2 = 'testInstance2';
-  final password1 = 'SueprSecure';
-  final password2 = 'GoodAlternative';
-
-  Future<ActivationHelper> getHelper1() async {
+  Future<PowerAuthPassword> getPassword1() async { return  await PowerAuthPassword.fromString("password1"); }
+  Future<PowerAuthPassword> getPassword2() async { return await PowerAuthPassword.fromString("password2"); }
+    
+  Future<IntegrationHelper> getHelper1() async {
     helperInstance1 ??= await createInstance(instance1);
     return helperInstance1!;
   }
 
-  Future<ActivationHelper> getHelper2() async {
+  Future<IntegrationHelper> getHelper2() async {
     
     helperInstance2 ??= await createInstance(instance2);
     return helperInstance2!;
   }
 
-  Future<ActivationHelper> createInstance(String instanceId) async {
-    final helper = ActivationHelper(); //await createActivationHelper(this.serverApi, this.config, activation => this.customizePowerAuthActivation(activation))
-    //await helper.getPowerAuthSdk(this.prepareData(instanceId))
-    helper.powerAuthSdk = await createSDK(prepareData(instanceId));
+  Future<IntegrationHelper> createInstance(String instanceId) async {
+    final helper = IntegrationHelper(PowerAuth(instanceId));
+    await _configureSDK(helper);
     return helper;
   }
 
-  Future<PowerAuth> createSDK(CustomActivationHelperPrepareData pd) async {
-    // Prepare instanceId. We're using custom data in prepare interface to keep instance id.
-    final instanceId = pd.powerAuthInstanceId ?? 'default';
-    final sdk = PowerAuth(instanceId);
-    if (await sdk.isConfigured()) {
-        sdk.deconfigure();
+  Future<void> cleanupInstance(IntegrationHelper? helper) async {
+    if (helper == null) {
+      return;
     }
-    // Use configuration objects
-    final instanceConfig = pd.instanceConfig ?? PowerAuthConfiguration(configuration: AppConfig.powerAuthConfigString, baseEndpointUrl: AppConfig.baseUrl);
-    await sdk.configure(
-      configuration: instanceConfig, 
-      clientConfiguration: pd.clientConfig,
-      biometryConfiguration: pd.biometryConfig,
-      keychainConfiguration: pd.keychainConfig,
-      sharingConfiguration: pd.sharingConfiguration
-    );
-    return sdk;
-  }
-
-  Future<void> cleanupInstance(ActivationHelper? helper, String instanceId) async {
-    final sdk = PowerAuth(instanceId);
-    if (await sdk.isConfigured()) {
-        await sdk.removeActivationLocal();
-        sdk.deconfigure();
+    if (await helper.sdk.isConfigured()) {
+        await helper.sdk.removeActivationLocal();
+        helper.sdk.deconfigure();
     }
-    await helper?.cleanup();
+    // await helper?.cleanup();
   }
 
   Future<void> cleanupInstances() async {
-      await cleanupInstance(helperInstance1, instance1);
-      await cleanupInstance(helperInstance2, instance2);
+      await cleanupInstance(helperInstance1);
+      await cleanupInstance(helperInstance2);
       helperInstance1 = null;
       helperInstance2 = null;
   }
 
-    // customizePowerAuthActivation(activation: PowerAuthActivation) {}
+  Future<void> _configureSDK(IntegrationHelper helper) async {
 
-  CustomActivationHelperPrepareData prepareData(String instanceId) {
-    final data = CustomActivationHelperPrepareData();
-    data.powerAuthInstanceId = instanceId;
-    data.password = instanceId == instance1 ? password1 : password2;
+    if (await helper.sdk.isConfigured()) {
+      helper.sdk.deconfigure();
+    }
+
+    PowerAuthConfiguration configuration = PowerAuthConfiguration(
+      configuration: AppConfig.sdkConfig,
+      baseEndpointUrl: AppConfig.enrollmentUrl
+    );
+    PowerAuthSharingConfiguration? sharingConfig;
+    PowerAuthBiometryConfiguration? biometryConfig;
     if (currentTestName == 'iosTestActivationSharing') {
-      data.sharingConfiguration = PowerAuthSharingConfiguration(
+      sharingConfig = PowerAuthSharingConfiguration(
         appGroup: "group.com.wultra.testGroup",
         appIdentifier: "SharedInstanceTests",
         keychainAccessGroup: "fake.accessGroup", // This will work only in simulator
         sharedMemoryIdentifier: "tst3"
       );
     } else if (currentTestName == 'testConfigurationWithBiometry') {
-      data.biometryConfig = PowerAuthBiometryConfiguration(
+      biometryConfig = PowerAuthBiometryConfiguration(
         authenticateOnBiometricKeySetup: false
       );
     }
-    return data;
+    await helper.sdk.configure(configuration: configuration, clientConfiguration: null, biometryConfiguration: biometryConfig, keychainConfiguration: null, sharingConfiguration: sharingConfig);
   }
-}
-
-class ActivationHelper {
-  PowerAuth? powerAuthSdk;
-
-  Future<void> cleanup() async {
-    // Cleanup logic here
-  }
-}
-
-class CustomActivationHelperPrepareData extends ActivationHelperPrepareData {
-    /// If provided, then overrides instance identifier from TestConfig
-    String? powerAuthInstanceId;
-    
-    /// If provided, then `PowerAuth` object will be configured with this configuration, instead of the default one.
-    PowerAuthConfiguration? instanceConfig;
-    
-    /// If provided, then this client configuration will be applied to PowerAuth instance.
-    /// Note that the configuration will be ignored if `useConfigObjects` is false and `instanceConfig` is undefined. 
-    PowerAuthClientConfiguration? clientConfig;
-    
-    /// If provided, then this keychain configuration will be applied to PowerAuth instance.
-    /// Note that the configuration will be ignored if `useConfigObjects` is false and `instanceConfig` is undefined. 
-    PowerAuthKeychainConfiguration? keychainConfig;
-    
-    /// If provided, then this biometry configuration will be applied to PowerAuth instance.
-    /// Note that the configuration will be ignored if `useConfigObjects` is false and `instanceConfig` is undefined. 
-    PowerAuthBiometryConfiguration? biometryConfig;
-    
-    /// If provided, then this sharing configuration will be applied to PowerAuth instance.
-    /// Note that the configuration will be ignored if `useConfigObjects` is false and `instanceConfig` is undefined.
-    PowerAuthSharingConfiguration? sharingConfiguration;
-}
-
-class ActivationHelperPrepareData {
-    /// Password for knowledge factor
-    String? password;
-    /// Information whether activation will use also biometry factor.
-    bool? useBiometry;
-    /// OTP in case of OTP validaiton.
-    String? otp;
-    /// OTP validation mode.
-    // ActivationOtpValidation? otpValidation;
 }

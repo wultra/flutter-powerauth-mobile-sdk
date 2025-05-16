@@ -67,8 +67,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
       try {
         final powerAuthConfig = PowerAuthConfiguration(
-          configuration: AppConfig.powerAuthConfigString,
-          baseEndpointUrl: AppConfig.baseUrl,
+          configuration: AppConfig.sdkConfig,
+          baseEndpointUrl: AppConfig.enrollmentUrl,
         );
 
         final biometryConfig = PowerAuthBiometryConfiguration();

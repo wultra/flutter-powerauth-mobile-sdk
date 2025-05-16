@@ -11,6 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.1.0 
 
   # Local symlink of our SDK
   flutter_powerauth_mobile_sdk_plugin:
