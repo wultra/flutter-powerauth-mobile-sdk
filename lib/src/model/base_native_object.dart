@@ -87,7 +87,6 @@ abstract class BaseNativeObject {
 
   /// Releases the native object associated with this wrapper.
   /// The object becomes unusable after calling this method.
-  @protected
   Future<void> release() async {
 
     String? idToRelease = objectId;

@@ -339,9 +339,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _validatePassword(String password) async {
-    if (!_isConfigured || _hasValidActivation != true)
+    if (!_isConfigured || _hasValidActivation != true) {
       return _setError('Instance not configured or no valid activation');
-
+    }
     _setLoading(true);
     try {
       final paPassword = await PowerAuthPassword.fromString(password);
@@ -359,9 +359,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _changePassword(String oldPassword, String newPassword) async {
-    if (!_isConfigured || _hasValidActivation != true)
+    if (!_isConfigured || _hasValidActivation != true) {
       return _setError('Instance not configured or no valid activation');
-
+    }
     _setLoading(true);
     try {
       final oldPaPassword = await PowerAuthPassword.fromString(oldPassword);
@@ -1434,9 +1434,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String nonce,
   ) async {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-    if (_hasBiometryFactor != true)
+    if (_hasBiometryFactor != true) {
       return _setError('Biometry factor not available');
-
+    }
     _setLoading(true);
     final fixedData = data.replaceAll("\\n", "\n");
     try {

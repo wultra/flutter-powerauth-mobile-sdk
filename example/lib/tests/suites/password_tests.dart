@@ -95,8 +95,8 @@ Future<void> testInsertCharacters() async {
   Future<void> testUnicode() async {
     var p1 = await importPassword('★🤣🤫🪘');
     var p2 = await importPassword('Sk💀ll');
-    var p3 = new PowerAuthPassword();
-    var p4 = new PowerAuthPassword();
+    var p3 = PowerAuthPassword();
+    var p4 = PowerAuthPassword();
     cleanup.addAll([p1, p2, p3, p4]);
     
     await expect(await p1.length()).toBe(4);
@@ -207,8 +207,8 @@ Future<void> testInsertCharacters() async {
   // }
   
   Future<void> testManualRelease() async {
-    var p1CleanupCalled = 0;
-    var p2CleanupCalled = 0;
+    // var p1CleanupCalled = 0;
+    // var p2CleanupCalled = 0;
     // const p1 = PowerAuthPassword(false, () => { p1CleanupCalled += 1 }, undefined, 100)
     // const p2 = PowerAuthPassword(true, () => { p2CleanupCalled += 1 }, undefined, 100)
     var p1 = PowerAuthPassword(destroyOnUse: false, powerAuthInstanceId: null, autoReleaseTimeMillis: 100);

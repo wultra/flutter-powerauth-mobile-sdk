@@ -37,7 +37,7 @@ abstract class TestSuite {
     }
     var failedResultsCount = singleTestResults.where((result) => !result.isResultExpected).length;
     if (failedResultsCount > 0) {
-      print("  Test finished with ${failedResultsCount} failed asserts out of ${singleTestResults.length}");
+      print("  Test finished with $failedResultsCount failed asserts out of ${singleTestResults.length}");
       testFailCount += 1;
     } else {
       print("  All ${singleTestResults.length} asserts passed");
