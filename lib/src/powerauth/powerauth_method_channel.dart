@@ -212,10 +212,10 @@ class PowerAuthMethodChannel extends PowerAuthPlatform
     String instanceId,
     PowerAuthAuthentication authentication,
   ) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
+    await invokeMethod<void>('persistActivation', {
       'instanceId': instanceId,
+      'authentication': await authentication.toMap()
     });
-    await invokeMethod<void>('persistActivation', args);
   }
 
   @override
