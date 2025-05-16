@@ -50,15 +50,18 @@ class PowerAuthObjectRegister {
         fun create(): IManagedObject<T>
     }
 
-    private data class ManagedObjectHolder(
+    private class ManagedObjectHolder(
         val obj: IManagedObject<out Any>,
         val tag: String?,
-        val policies: List<ReleasePolicy>?,
+        policies: List<ReleasePolicy>,
         val creationTime: Long = SystemClock.elapsedRealtime(),
         var lastUseTime: Long = creationTime,
         var useCount: Int = 0,
         var removeOrderTime: Long = 0
     ) {
+        // TODO: improve
+        val policies = if (policies.contains(ReleasePolicy.manual())) null else policies
+
         fun setUsed() {
             lastUseTime = SystemClock.elapsedRealtime()
             useCount++
@@ -254,6 +257,7 @@ class PowerAuthObjectRegister {
             val entry = iterator.next()
             val holder = entry.value
 
+            // TODO: this if makes no sense...
             if (tag == null || holder.tag == tag) {
                 if (tag != null) {
                     if (holder.setRemoved()) {

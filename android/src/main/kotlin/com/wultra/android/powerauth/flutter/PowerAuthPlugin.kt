@@ -999,7 +999,7 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for unregistration.")
         }
 
-        objectRegister.removeAllObjectsWithTag(instanceId)
+        objectRegister.removeObject(instanceId)
     }
 
     private fun <R> withPassword(call: MethodCall, result: Result, block: (password: Password) -> R) {

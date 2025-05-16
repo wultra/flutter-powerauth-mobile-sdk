@@ -125,7 +125,7 @@ class PowerAuth {
   Future<bool> isConfigured() => _platform.isConfigured(instanceId);
 
   /// Deconfigures this instance, removing its state.
-  void deconfigure() async {
+  Future<void> deconfigure() async {
     _configRegister.remove(instanceId);
     await _platform.deconfigure(instanceId);
   }

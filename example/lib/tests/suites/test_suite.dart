@@ -53,7 +53,12 @@ abstract class TestSuite {
       currentTestName = test.toString().replaceFirst("Closure: () => Future<void> from Function ", "").replaceAll("'", "").replaceAll(":", "").replaceAll(".", "");
       print("- Running $currentTestName");
       await beforeEach();
-      await test();
+      try {
+        await test();
+      } catch (e) {
+        print("  Test failed with exception: $e");
+        testFailCount += 1; // TODO: this should be handled better
+      }
       await afterEach();
     }
     await afterAll();

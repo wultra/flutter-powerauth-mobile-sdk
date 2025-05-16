@@ -10,7 +10,7 @@ class ConfigurationTests extends TestSuite {
 
   @override 
   getTests() {
-    return [testConfigureAndDeconfigure, iosTestActivationSharing, testReconfigureWhileActive];
+    return [testConfigureAndDeconfigure, iosTestActivationSharing, testReconfigureWhileActive, testFullConfiguration];
   }
 
   @override
@@ -76,9 +76,22 @@ class ConfigurationTests extends TestSuite {
     await expect(sdk2.isConfigured()).toBe(false);
   }
 
+  Future<void> testFullConfiguration() async {
+    final helper1 = await getHelper1();
+    final sdk1 = helper1.sdk;
+
+    await expect(sdk1.isConfigured()).toBe(true);
+
+    await expect(sdk1.configuration).toBeDefined();
+    await expect(sdk1.clientConfiguration).toBeDefined();
+    await expect(sdk1.keychainConfiguration).toBeDefined();
+    await expect(sdk1.biometryConfiguration).toBeDefined();
+    await expect(sdk1.sharingConfiguration).toBeDefined();
+  }
+
   Future<void> iosTestActivationSharing() async {
     if (!Platform.isIOS) {
-      print("Skipping iOS test on non-iOS platform");
+      print("  🫡 Skipping iOS test on non-iOS platform");
       return;
     }
     final helper1 = await getHelper1();
@@ -218,7 +231,7 @@ class ConfigurationTests extends TestSuite {
     }
     if (await helper.sdk.isConfigured()) {
         await helper.sdk.removeActivationLocal();
-        helper.sdk.deconfigure();
+        await helper.sdk.deconfigure();
     }
     // await helper?.cleanup();
   }
@@ -233,7 +246,7 @@ class ConfigurationTests extends TestSuite {
   Future<void> _configureSDK(IntegrationHelper helper) async {
 
     if (await helper.sdk.isConfigured()) {
-      helper.sdk.deconfigure();
+      await helper.sdk.deconfigure();
     }
 
     PowerAuthConfiguration configuration = PowerAuthConfiguration(
@@ -242,6 +255,8 @@ class ConfigurationTests extends TestSuite {
     );
     PowerAuthSharingConfiguration? sharingConfig;
     PowerAuthBiometryConfiguration? biometryConfig;
+    PowerAuthKeychainConfiguration? keychainConfig;
+    PowerAuthClientConfiguration? clientConfig;
     if (currentTestName == 'iosTestActivationSharing') {
       sharingConfig = PowerAuthSharingConfiguration(
         appGroup: "group.com.wultra.testGroup",
@@ -249,11 +264,28 @@ class ConfigurationTests extends TestSuite {
         keychainAccessGroup: "fake.accessGroup", // This will work only in simulator
         sharedMemoryIdentifier: "tst3"
       );
-    } else if (currentTestName == 'testConfigurationWithBiometry') {
+    }
+    if (currentTestName == 'testConfigurationWithBiometry' || currentTestName == 'testFullConfiguration') {
       biometryConfig = PowerAuthBiometryConfiguration(
         authenticateOnBiometricKeySetup: false
       );
     }
-    await helper.sdk.configure(configuration: configuration, clientConfiguration: null, biometryConfiguration: biometryConfig, keychainConfiguration: null, sharingConfiguration: sharingConfig);
+    if (currentTestName == 'testFullConfiguration') {
+      clientConfig = PowerAuthClientConfiguration();
+      keychainConfig = PowerAuthKeychainConfiguration();
+      sharingConfig = PowerAuthSharingConfiguration(
+        appGroup: "group.com.wultra.testGroup",
+        appIdentifier: "SharedInstanceTests",
+        keychainAccessGroup: "fake.accessGroup", // This will work only in simulator
+        sharedMemoryIdentifier: "tst4"
+      );
+    }
+    await helper.sdk.configure(
+      configuration: configuration, 
+      clientConfiguration: clientConfig, 
+      biometryConfiguration: biometryConfig, 
+      keychainConfiguration: keychainConfig, 
+      sharingConfiguration: sharingConfig
+      );
   }
 }
