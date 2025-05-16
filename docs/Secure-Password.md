@@ -38,7 +38,7 @@ In both ways, you can alter the following parameters:
 ## Using password
 
 ```dart
-// Creatiing password from already obtained String
+// Creating password from already obtained String
 // Note that this is not recommended. Do this only when you retrieve the whole string form a text input.
 final password = PowerAuthPassword.fromString("1234");
 ```
@@ -53,10 +53,10 @@ try {
     await oldPassword.addCharacter('3');
     
     final newPassword = PowerAuthPassword();
-    await newPassword.addCharacter(51);
-    await newPassword.addCharacter(50);
-    await newPassword.addCharacter(49);
-    await newPassword.addCharacter(48);
+    await newPassword.addCodePoint(51);
+    await newPassword.addCodePoint(50);
+    await newPassword.addCodePoint(49);
+    await newPassword.addCodePoint(48);
     
     await powerAuth.changePassword(oldPassword, newPassword);
 } catch (e) {
@@ -75,8 +75,8 @@ length = await password.addCharacter('A');
 length = await password.addCharacter('B');
 print('length = $length');          // length = 2
 
-length = await password.insertCharacter(48, 2);
-length = await password.insertCharacter(49, 2);
+length = await password.insertCodePoint(48, 2);
+length = await password.insertCodePoint(49, 2);
 print('length = $length');          // length = 4
 
 length = await password.removeLastCharacter();
@@ -98,8 +98,8 @@ final p3 = PowerAuthPassword();
 await p1.addCharacter('0');
 await p1.addCharacter('A');
 
-await p2.addCharacter(48);
-await p2.addCharacter(65);
+await p2.addCodePoint(48);
+await p2.addCodePoint(65);
 
 final p1p2equal = await p1.isEqualTo(p2);
 final p2p3equal = await p2.isEqualTo(p3);
