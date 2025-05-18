@@ -34,7 +34,7 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         "util_correctTypedCharacter": correctTypedCharacter
     ]
     
-    enum Args: String {
+    fileprivate enum Args: String {
         case character
         case activationCode
     }
@@ -65,12 +65,6 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         let char: Int = try call.requireParameter(.character)
         let validated = PowerAuthActivationCodeUtil.validateAndCorrectTypedCharacter(UInt32(char))
         result(validated)
-    }
-}
-
-private extension FlutterMap {
-    func get<T>(_ key: PowerAuthService.Args) -> T? {
-        return get(key.rawValue)
     }
 }
 

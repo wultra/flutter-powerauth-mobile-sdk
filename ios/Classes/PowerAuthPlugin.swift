@@ -26,9 +26,12 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     
     public override init() {
         
+        let register = PowerAuthObjectRegister()
+        
         let services: [any PowerAuthFlutterService] = [
-            PowerAuthService(),
-            PowerAuthUtilsService()
+            PowerAuthService(register: register),
+            PowerAuthUtilsService(),
+            PowerAuthPasswordService(register: register)
         ]
         
         var handlers = [String: (service: any PowerAuthFlutterService, handler: Any)]()

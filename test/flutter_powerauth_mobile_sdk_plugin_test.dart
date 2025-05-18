@@ -27,8 +27,10 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
   Future<void> configure({
     required String instanceId,
     required PowerAuthConfiguration configuration,
+    PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) {
     // TODO: implement configure
     throw UnimplementedError();
