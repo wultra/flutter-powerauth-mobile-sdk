@@ -21,9 +21,12 @@ import PowerAuthCore
 
 internal class PowerAuthService: PowerAuthFlutterService {
     
-    // MARK: - PowerAuthFlutterService members
+    let name = "PowerAuth"
+    private let register: PowerAuthObjectRegister
     
-    var name: String { "PowerAuth" }
+    init(register: PowerAuthObjectRegister) {
+        self.register = register
+    }
     
     let handlers = [
         "configure": configure,
@@ -52,12 +55,14 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "authenticateWithBiometry": authenticateWithBiometry
     ]
     
-    // MARK: - POWERAUTH "BRIDGE" API CODE
-    
     // Possible Flutter call parameters
-    enum Args: String {
+    fileprivate enum Args: String {
         case instanceId
         case configuration
+        case clientConfiguration
+        case biometryConfiguration
+        case keychainConfiguration
+        case sharingConfiguration
         case activation
         case authentication
         case password
@@ -72,23 +77,18 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case signature
         case useMasterKey
         case prompt
+        case isReusable
     }
-    
-    private var instances = [String: PowerAuthSDK]() // TODO: replace with object register
-    private var biometricKeyCache = [String: (data: PowerAuthData, created: Date)]()
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(.instanceId)
-        result(instances[instanceId] != nil)
+        let sdk: PowerAuthSDK? = register.find(id: instanceId)
+        result(sdk != nil)
     }
     
     private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
         let instanceId: String = try call.requireParameter(.instanceId)
-        
-        guard instances[instanceId] == nil else {
-            throw PluginException(.wrongParameter, message: "PowerAuth instance is alread configured.")
-        }
         
         let configuration: FlutterMap = try call.requireParameter(.configuration)
         
@@ -96,13 +96,93 @@ internal class PowerAuthService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration parameters.")
         }
         
-        let pa = PowerAuthSDK(configuration: paConfig)
-        instances[instanceId] = pa
-        result(true)
+        if let sharingConfiguration: FlutterMap = call.getParameter(.sharingConfiguration) {
+            let sharingConfig = PowerAuthSharingConfiguration(
+                appGroup: try sharingConfiguration.require("appGroup"),
+                appIdentifier: try sharingConfiguration.require("appIdentifier"),
+                keychainAccessGroup: try sharingConfiguration.require("keychainAccessGroup")
+            )
+            sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get("sharedMemoryIdentifier")
+            paConfig.sharingConfiguration = sharingConfig
+        }
+        
+        guard paConfig.validate() else {
+            throw PluginException(.wrongParameter, message: "Provided configuration is invalid")
+        }
+        
+        let clientConfiguration: FlutterMap? = call.getParameter(.clientConfiguration)
+        let timeout: TimeInterval? = clientConfiguration?.get("connectionTimeout")
+        let enableUnsecureTraffic: Bool? = clientConfiguration?.get("enableUnsecureTraffic")
+        var clientConfig: PowerAuthClientConfiguration?
+        
+        if timeout != nil || enableUnsecureTraffic != nil {
+            let cc = PowerAuthClientConfiguration()
+            cc.defaultRequestTimeout = timeout ?? cc.defaultRequestTimeout
+            if enableUnsecureTraffic == true {
+                cc.sslValidationStrategy = PowerAuthClientSslNoValidationStrategy()
+            }
+            clientConfig = cc
+        }
+        
+        var interceptors = [PowerAuthCustomHeaderRequestInterceptor]()
+        
+        // http headers
+        if let httpHeaders: [FlutterMap] = clientConfiguration?.get("customHttpHeaders") {
+            for header in httpHeaders {
+                if
+                    let name: String = header.get("name"),
+                    let value: String = header.get("value") {
+                    interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: name, value: value))
+                }
+            }
+        }
+        
+        // Basic Authentication
+        if
+            let basicAuth: FlutterMap = clientConfiguration?.get("basicHttpAuthentication"),
+            let username: String = basicAuth.get("username"),
+            let password: String = basicAuth.get("password")
+        {
+            interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
+        }
+        
+        if interceptors.isEmpty == false {
+            clientConfig = clientConfig ?? PowerAuthClientConfiguration()
+            clientConfig!.requestInterceptors = interceptors
+        }
+        
+        var keychainConfig: PowerAuthKeychainConfiguration?
+        let keychainConfiguration: FlutterMap? = call.getParameter(.keychainConfiguration)
+        let biometryConfiguration: FlutterMap? = call.getParameter(.biometryConfiguration)
+        if keychainConfiguration != nil || biometryConfiguration != nil {
+            let kc = PowerAuthKeychainConfiguration()
+            // Keychain specific
+            kc.keychainAttribute_AccessGroup = keychainConfiguration?.get("accessGroupName")
+            kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration?.get("userDefaultsSuiteName")
+            
+            // Biometry
+            kc.linkBiometricItemsToCurrentSet = biometryConfiguration?.get("linkItemsToCurrentSet") ?? kc.linkBiometricItemsToCurrentSet
+            kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration?.get("fallbackToDevicePasscode") ?? kc.allowBiometricAuthenticationFallbackToDevicePasscode
+            keychainConfig = kc
+        }
+        
+        guard let sdk = PowerAuthSDK(configuration: paConfig, keychainConfiguration: keychainConfig, clientConfiguration: clientConfig) else {
+            throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
+        }
+        
+        let registered = register.add(id: instanceId, tag: instanceId, policies: [.manual()]) {
+            sdk
+        }
+        if registered {
+            result(true)
+        } else {
+            throw PluginException(.flutterError, message: "PowerAuth instance is alread configured.")
+        }
     }
     
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        instances.removeValue(forKey: try call.requireParameter(.instanceId))
+        let instanceId: String = try call.requireParameter(.instanceId)
+        register.remove(id: instanceId)
         result(true)
     }
     
@@ -417,6 +497,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, wrap in
             
             let prompt: FlutterMap = try call.requireParameter(.prompt)
+            let isReusable = call.getParameter(.isReusable) ?? false
             
             guard let promptMessage = prompt["promptMessage"] as? String else {
                 throw PluginException(.wrongParameter, message: "Missing 'promptMessage' in prompt parameter")
@@ -439,11 +520,17 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     // Allocate native object
                     let managedData = PowerAuthData(data: overridenBiometryKey, cleanup: true)
                     
-                    // TODO: implement with object register -> see PA JS OBJC impl.
-                    let keyId = UUID().uuidString
-                    let timestamp = Date()
-                    self.biometricKeyCache[keyId] = (managedData, timestamp)
-                    result(keyId)
+                    // If reusable authentication is going to be created, then "keep alive" release policy is applied.
+                    // Basically, the data will be available up to 10 seconds from the last access.
+                    // If authentication is not reusable, then dispose biometric key after its 1st use. We still need
+                    // to combine it with "expire" policy to make sure that key don't remain in memory forever.
+                    var policy = [ReleasePolicy.keepAlive(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)]
+                    if isReusable == false {
+                        policy.append(.afterUse(1))
+                    }
+                    
+                    let managedId = self.register.add(object: managedData, tag: sdk.configuration.instanceId, policies: policy)
+                    result(managedId)
                 }
             }
         }
@@ -455,7 +542,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
         
-        guard let instance = instances[try call.requireParameter(.instanceId)] else {
+        let instanceID: String = try call.requireParameter(.instanceId)
+        
+        guard let instance: PowerAuthSDK = register.find(id: instanceID) else {
             throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
         }
         
@@ -471,16 +560,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
     }
     
     private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        // TODO: we don't use object register yet, so just take plain password until implemented properly
-        guard let dict, let password: String = dict.get(.password) else {
-            throw PluginException(.wrongParameter, message: "Failed to parse provided password")
-        }
-        return PowerAuthCorePassword(string: password)
+        return try register.usePassword(dict: dict)
     }
     
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
-        
-        cleanupExpiredBiometricKeys()
         
         let dict: FlutterMap = try call.requireParameter(.authentication)
         let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
@@ -504,11 +587,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 return PowerAuthAuthentication.possessionWithPassword(password: password)
             } else if useBiometry {
                 if let biometryKeyId = dict["biometryKeyId"] as? String {
-                    guard let entry = biometricKeyCache[biometryKeyId] else {
+                    guard let biometryKeyData: PowerAuthData = register.use(id: biometryKeyId) else {
                         throw PluginException(.invalidNativeObject, message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
                     }
-                    biometricKeyCache.removeValue(forKey: biometryKeyId) // TODO: temp solution
-                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: entry.data.data, customPossessionKey: nil)
+                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: biometryKeyData.data, customPossessionKey: nil)
                 }
                 let prompt = dict["biometricPrompt"] as? [String: String]
                 let message = prompt?["promptMessage"]
@@ -523,18 +605,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 }
             } else {
                 return PowerAuthAuthentication.possession()
-            }
-        }
-    }
-    
-    private func cleanupExpiredBiometricKeys() {
-        let now = Date()
-        var iterator = biometricKeyCache.makeIterator()
-        
-        biometricKeyCache.keys.forEach { key in
-            let item = biometricKeyCache[key]!
-            if now.timeIntervalSince1970 - item.created.timeIntervalSince1970 >= 10_000 {
-                biometricKeyCache.removeValue(forKey: key)
             }
         }
     }
@@ -583,8 +653,6 @@ private extension FlutterMethodCall {
     }
 }
 
-
-// TODO: make sure this works properly
 private class PowerAuthData {
     
     private(set) var data: Data

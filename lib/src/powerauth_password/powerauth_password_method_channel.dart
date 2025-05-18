@@ -25,15 +25,24 @@ class PowerAuthPasswordMethodChannel extends PowerAuthPasswordPlatform
     with MethodChannelHelper {
   @override
   @visibleForTesting
-  final MethodChannel methodChannel = const MethodChannel(
-    'powerauth_password_plugin',
-  );
+  final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
   @override
-  Future<String> initialize({required bool destroyOnUse}) async {
-    return await invokeMethod<String>('password_initialize', {
-      'destroyOnUse': destroyOnUse,
-    });
+  Future<String> initialize({
+    required bool destroyOnUse,
+    String? powerAuthInstanceId,
+    int? autoReleaseTimeMillis,
+  }) async {
+    final Map<String, dynamic> args = {'destroyOnUse': destroyOnUse};
+    if (powerAuthInstanceId != null) {
+      args['ownerId'] = powerAuthInstanceId;
+    }
+
+    if (autoReleaseTimeMillis != null) {
+      args['autoreleaseTime'] = autoReleaseTimeMillis;
+    }
+
+    return await invokeMethod<String>('password_initialize', args);
   }
 
   @override
@@ -69,7 +78,7 @@ class PowerAuthPasswordMethodChannel extends PowerAuthPasswordPlatform
     return await invokeMethod<int>('password_insertCharacter', {
       'objectId': objectId,
       'character': character,
-      'at': at,
+      'position': at,
     });
   }
 

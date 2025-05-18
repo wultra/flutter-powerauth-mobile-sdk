@@ -15,9 +15,7 @@
  */
 
 import Flutter
-import UIKit
 import PowerAuth2
-import PowerAuthCore
 
 internal extension FlutterError {
     
@@ -107,32 +105,5 @@ internal struct PluginException: Error {
         self.code = code
         self.message = message
         self.details = details
-    }
-}
-
-internal typealias FlutterMap = [String: Any]
-
-internal extension FlutterMap {
-    
-    func get<T>(_ key: String) -> T? {
-        return self[key] as? T
-    }
-}
-
-internal extension FlutterMethodCall {
-    
-    func requireParameter<T>(_ key: String) throws -> T {
-        guard let parameter: T = getParameter(key) else {
-            throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
-        }
-        return parameter
-    }
-    
-    func getParameter<T>(_ key: String) -> T? {
-        guard let arguments = arguments as? FlutterMap else {
-            return nil
-        }
-        
-        return arguments.get(key)
     }
 }

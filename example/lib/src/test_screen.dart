@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
 
 import '../config.dart';
 
@@ -66,17 +67,21 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
       try {
         final powerAuthConfig = PowerAuthConfiguration(
-          configuration: AppConfig.powerAuthConfigString,
-          baseEndpointUrl: AppConfig.baseUrl,
+          configuration: AppConfig.sdkConfig,
+          baseEndpointUrl: AppConfig.enrollmentUrl,
         );
 
         final biometryConfig = PowerAuthBiometryConfiguration();
         final keychainConfig = PowerAuthKeychainConfiguration();
+        final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
+        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "tst1");
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
           biometryConfiguration: biometryConfig,
+          clientConfiguration: clientConfig,
           keychainConfiguration: keychainConfig,
+          sharingConfiguration: sharingConfig
         );
         print('PowerAuth configured successfully for instance: $_instanceId');
 
@@ -334,12 +339,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _validatePassword(String password) async {
-    if (!_isConfigured || _hasValidActivation != true)
+    if (!_isConfigured || _hasValidActivation != true) {
       return _setError('Instance not configured or no valid activation');
-
+    }
     _setLoading(true);
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       await _powerAuth.validatePassword(paPassword);
       print('Password validation successful.');
 
@@ -354,13 +359,13 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _changePassword(String oldPassword, String newPassword) async {
-    if (!_isConfigured || _hasValidActivation != true)
+    if (!_isConfigured || _hasValidActivation != true) {
       return _setError('Instance not configured or no valid activation');
-
+    }
     _setLoading(true);
     try {
-      final oldPaPassword = PowerAuthPassword.fromString(oldPassword);
-      final newPaPassword = PowerAuthPassword.fromString(newPassword);
+      final oldPaPassword = await PowerAuthPassword.fromString(oldPassword);
+      final newPaPassword = await PowerAuthPassword.fromString(newPassword);
 
       await _powerAuth.changePassword(oldPaPassword, newPaPassword);
       print('Password changed successfully (online).');
@@ -432,6 +437,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     });
   }
 
+  void _runTests() async {
+    Tests().run();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -458,7 +467,16 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: <Widget>[
+            const Text('Automatic tests:'),
+            ElevatedButton(
+              onPressed: () => _runTests(),
+              child: const Text('Run test'),
+            ),
+            const SizedBox(height: 12),
+            const Text('Manual testing:'),
+
             _buildInstanceSelector(),
+
             const SizedBox(height: 10),
 
             if (_errorMessage != null)
@@ -653,9 +671,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Persist Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _persistActivationWithPassword(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -671,9 +689,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Persist Activation (PWD+Bio)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _persistActivationWithPasswordAndBiometry(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -689,9 +707,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Remove Activation (PWD)',
                     label: 'Password',
                     isPassword: true,
-                    onSubmit: (password) {
+                    onSubmit: (password) async {
                       _removeActivationWithPassword(
-                        PowerAuthPassword.fromString(password),
+                        await PowerAuthPassword.fromString(password),
                       );
                     },
                   ),
@@ -1327,7 +1345,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _setLoading(true);
 
         try {
-          final paPassword = PowerAuthPassword.fromString(password);
+          final paPassword = await PowerAuthPassword.fromString(password);
           final prompt = PowerAuthBiometricPrompt(
             promptTitle: "Add Biometry",
             promptMessage: "Please authenticate to add biometry.",
@@ -1390,7 +1408,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     final fixedData = data.replaceAll("\\n", "\n");
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final signature = await _powerAuth.offlineSignature(
@@ -1416,9 +1434,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String nonce,
   ) async {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-    if (_hasBiometryFactor != true)
+    if (_hasBiometryFactor != true) {
       return _setError('Biometry factor not available');
-
+    }
     _setLoading(true);
     final fixedData = data.replaceAll("\\n", "\n");
     try {
@@ -1456,7 +1474,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(true);
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final header = await _powerAuth.requestGetSignature(
@@ -1513,7 +1531,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(true);
 
     try {
-      final paPassword = PowerAuthPassword.fromString(password);
+      final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
       final header = await _powerAuth.requestSignature(
@@ -1524,6 +1542,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
 
       print('POST Signature Header (PWD): ${header.key}: ${header.value}');
+      print('For payload: ${base64Encode(utf8.encode(body))}');
       _setError('POST Header (PWD): ${header.key}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (PWD) failed: ${e.message} (${e.code})');
@@ -1560,6 +1579,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
 
       print('POST Signature Header (Bio): ${header.key}: ${header.value}');
+      print('For payload: ${base64Encode(utf8.encode(body))}');
       _setError('POST Header (Bio): ${header.key}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (Bio) failed: ${e.message} (${e.code})');
