@@ -1,11 +1,13 @@
-import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configuration_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configuration_objects_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configure_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/password_tests.dart';
 
 class Tests {
   void run() async {
     var testSuites = [
       PowerAuthPasswordTests(),
-      ConfigurationTests()
+      ConfigureTests(),
+      ConfigurationObjectsTests()
     ];
     print("\n\n###  Test starting...");
     for (var testSuite in testSuites) {
