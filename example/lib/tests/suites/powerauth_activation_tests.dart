@@ -142,12 +142,7 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
       // Validate status
 
       if (state != PowerAuthActivationState.active) {
-        if (state == PowerAuthActivationState.pendingCommit) {
-          //this.reportWarning(`State should be ACTIVE but is PENDING_COMMIT`)
-        } else {
-          // TODO: do better error handling
-          throw Exception("State should be ACTIVE but is $state");
-        }
+        reportFailure("State should be ACTIVE but is $state");
       }
 
       await expect(await sdk.canStartActivation()).toBe(false);

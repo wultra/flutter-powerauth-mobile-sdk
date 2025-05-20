@@ -84,6 +84,14 @@ abstract class TestSuite {
     singleTestResults.add(result);
     return result;
   }
+
+  void reportFailure(String message) {
+    // TODO: this should be handled better
+    print("  Test $currentTestName failed with message: $message");
+    final result = ExpectResult(null, null);
+    result.isResultExpected = false;
+    singleTestResults.add(result);
+  }
 }
 
 abstract class TestSuiteWithActivation extends TestSuite {
@@ -118,7 +126,6 @@ class ExpectResult {
 }
 
 extension FutureExpectResult on Future<ExpectResult> {
-
 
   Future<void> toBeDefined({String message = ""}) async {
     var self = await this;
