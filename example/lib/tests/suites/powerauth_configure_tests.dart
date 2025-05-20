@@ -6,7 +6,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
-class ConfigureTests extends TestSuite {
+class PowerAuthConfigureTests extends TestSuite {
 
   @override 
   getTests() {

@@ -95,7 +95,7 @@ abstract class TestSuiteWithActivation extends TestSuite {
   @override
   Future<void> beforeEach() async {
     await super.beforeEach();
-    credentials = await generateActivationCredentials();
+    credentials = ActivationCredentials();
     sdk = PowerAuth("test_instance");
     helper = IntegrationHelper(sdk);
     await helper.configure();
@@ -105,24 +105,6 @@ abstract class TestSuiteWithActivation extends TestSuite {
   Future<void> afterEach() async {
     await helper.cleanup();
     await super.afterEach();
-  }
-
-  Future<ActivationCredentials> generateActivationCredentials() async {
-    final availablePasswords = [ "VerySecure", "1234", "nbusr123", "39h132v,kJdfvAl", "98765", "correct horse battery staple" ];
-    final validIndex = Random().nextInt(availablePasswords.length);
-    final validPassword = await PowerAuthPassword.fromString(availablePasswords[validIndex], destroyOnUse: false);
-    final invalidPassword = await PowerAuthPassword.fromString(availablePasswords[(validIndex + 1) % availablePasswords.length], destroyOnUse: false);
-    return ActivationCredentials(
-      possession: PowerAuthAuthentication.possession(),
-      knowledge: PowerAuthAuthentication.password(validPassword),
-      invalidKnowledge: PowerAuthAuthentication.password(invalidPassword),
-      biometry: PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(
-          promptTitle: 'Authenticate',
-          promptMessage: 'Please authenticate with biometry'
-      )),
-      validPassword: validPassword,
-      invalidPassword: invalidPassword
-    );
   }
 }
 
@@ -194,25 +176,25 @@ extension FutureExpectResult on Future<ExpectResult> {
 }
 
 class ActivationCredentials {
-    /// Authentication for possession factor only.
-    PowerAuthAuthentication possession;
-    /// Authentication for possession & knowledge factors.
-    PowerAuthAuthentication knowledge;
-    /// Authentication for possession & invalid knowledge factors.
-    PowerAuthAuthentication invalidKnowledge;
-    /// Authenticatio for posession & biometry factors.
-    PowerAuthAuthentication biometry;
     /// String with a valid password.
-    PowerAuthPassword validPassword;
+    late String validPassword;
     /// String with an invalid password.
-    PowerAuthPassword invalidPassword;
+    late String invalidPassword;
 
-    ActivationCredentials({
-        required this.possession,
-        required this.knowledge,
-        required this.invalidKnowledge,
-        required this.biometry,
-        required this.validPassword,
-        required this.invalidPassword
-    });
+    ActivationCredentials() {
+      final availablePasswords = [ "VerySecure", "1234", "nbusr123", "39h132v,kJdfvAl", "98765", "correct horse battery staple" ];
+      final validIndex = Random().nextInt(availablePasswords.length);
+      validPassword = availablePasswords[validIndex];
+      invalidPassword = availablePasswords[(validIndex + 1) % availablePasswords.length];
+    }
+
+    PowerAuthAuthentication possession() => PowerAuthAuthentication.possession();
+    PowerAuthAuthentication biometry() => PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(
+        promptTitle: 'Authenticate',
+        promptMessage: 'Please authenticate with biometry'
+    ));
+    Future<PowerAuthAuthentication> knowledge() async => PowerAuthAuthentication.password(await validPasswordObject());
+    Future<PowerAuthAuthentication> invalidKnowledge() async => PowerAuthAuthentication.password(await validPasswordObject());
+    Future<PowerAuthPassword> validPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(validPassword, destroyOnUse: destroyOnUse);
+    Future<PowerAuthPassword> invalidPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(invalidPassword, destroyOnUse: destroyOnUse);
 }

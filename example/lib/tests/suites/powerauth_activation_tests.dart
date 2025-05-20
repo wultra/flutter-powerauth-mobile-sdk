@@ -5,7 +5,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
-class ActivationTests extends TestSuiteWithActivation {
+class PowerAuthActivationTests extends TestSuiteWithActivation {
 
   @override
   List<Future<void> Function()> getTests() => [
@@ -28,7 +28,7 @@ class ActivationTests extends TestSuiteWithActivation {
 
   Future<void> testFetchActivationStatus() async {
 
-    await helper.prepareActiveActivation(credentials.validPassword);
+    await helper.prepareActiveActivation(await credentials.validPasswordObject());
 
     await expect(sdk.hasValidActivation()).toBe(true);
 
@@ -53,8 +53,8 @@ class ActivationTests extends TestSuiteWithActivation {
   }
 
   Future<void> testActivationRemove() async {
-    await helper.prepareActiveActivation(credentials.validPassword);
-    await sdk.removeActivationWithAuthentication(credentials.knowledge);
+    await helper.prepareActiveActivation(await credentials.validPasswordObject());
+    await sdk.removeActivationWithAuthentication(await credentials.knowledge());
     await expect(sdk.hasValidActivation()).toBe(false);
   }
 
@@ -86,7 +86,7 @@ class ActivationTests extends TestSuiteWithActivation {
       // await expect(sdk.getExternalPendingOperation()).toBeUndefined()
 
       await runFailingMethodsDuringActivation('BEGIN', PowerAuthErrorCode.missingActivation, PowerAuthErrorCode.missingActivation);
-      await expect(sdk.persistActivation(credentials.invalidKnowledge)).toThrow(PowerAuthErrorCode.invalidActivationState);
+      await expect(sdk.persistActivation(await credentials.invalidKnowledge())).toThrow(PowerAuthErrorCode.invalidActivationState);
 
       final activationData = await helper.createActivation(autoCommit: false);
       final code = useSignature 
@@ -119,7 +119,7 @@ class ActivationTests extends TestSuiteWithActivation {
 
       // Now we can persist activation add commit it on the server
       await helper.commitActivation();
-      await sdk.persistActivation(credentials.knowledge);
+      await sdk.persistActivation(await credentials.knowledge());
 
       activationId = await sdk.getActivationIdentifier();
       activationFingerprint = await sdk.getActivationFingerprint();
@@ -155,7 +155,7 @@ class ActivationTests extends TestSuiteWithActivation {
       await expect(await sdk.hasValidActivation()).toBe(true);
 
       await expect(sdk.createActivation(activation)).toThrow(PowerAuthErrorCode.invalidActivationState);
-      await expect(sdk.persistActivation(credentials.invalidKnowledge)).toThrow(PowerAuthErrorCode.invalidActivationState);
+      await expect(sdk.persistActivation(await credentials.invalidKnowledge())).toThrow(PowerAuthErrorCode.invalidActivationState);
 
       await expect(await sdk.canStartActivation()).toBe(false);
       await expect(await sdk.hasPendingActivation()).toBe(false);
@@ -166,15 +166,15 @@ class ActivationTests extends TestSuiteWithActivation {
     // Fetch has a slighgtly different error handling, so it needs a different error code than other API function.
     // TODO: This should be unified in future versions
     await expect(sdk.fetchActivationStatus()).toThrow(expectedFetchError);
-    await expect(sdk.removeActivationWithAuthentication(credentials.invalidKnowledge)).toThrow(expectedError);
-    await expect(sdk.requestGetSignature(credentials.knowledge, '/some/uriid', null)).toThrow(expectedError);
-    await expect(sdk.requestSignature(credentials.knowledge, 'POST', '/some/uriid')).toThrow(expectedError);
-    await expect(sdk.changePassword(credentials.validPassword, credentials.invalidPassword)).toThrow(expectedError);
-    await expect(sdk.addBiometryFactor(credentials.validPassword, PowerAuthBiometricPrompt(promptMessage: "desc"))).toThrow(expectedError);
+    await expect(sdk.removeActivationWithAuthentication(await credentials.invalidKnowledge())).toThrow(expectedError);
+    await expect(sdk.requestGetSignature(await credentials.knowledge(), '/some/uriid', null)).toThrow(expectedError);
+    await expect(sdk.requestSignature(await credentials.knowledge(), 'POST', '/some/uriid')).toThrow(expectedError);
+    await expect(sdk.changePassword(await credentials.validPasswordObject(), await credentials.invalidPasswordObject())).toThrow(expectedError);
+    await expect(sdk.addBiometryFactor(await credentials.validPasswordObject(), PowerAuthBiometricPrompt(promptMessage: "desc"))).toThrow(expectedError);
     // TODO: not available in the sdk yet
     // await expect(sdk.fetchEncryptionKey(credentials.knowledge, 99)).toThrow(expectedError);
     // await expect(sdk.signDataWithDevicePrivateKey(credentials.knowledge, 'Data')).toThrow(expectedError);
-    await expect(sdk.validatePassword(credentials.validPassword)).toThrow(expectedError);
+    await expect(sdk.validatePassword(await credentials.validPasswordObject())).toThrow(expectedError);
 
     // TODO: following functions should fail and not return false or some different error
     // expect(await sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false)).toBe(false);

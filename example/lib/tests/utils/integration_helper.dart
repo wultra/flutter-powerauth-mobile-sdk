@@ -111,6 +111,21 @@ class IntegrationHelper {
     await _makeCall("{\"change\":\"${change.toString()}\"}", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.put);
   }
 
+  Future<SignatureResponse> verifySignature(String method, String uriId, String authHeader, String body) async {
+    final payload = """
+        {
+          "method": "$method",
+          "uriId": "$uriId",
+          "authHeader": "${authHeader.replaceAll("\"", "\\\"")}",
+          "requestBody": "${base64Encode(utf8.encode(body))}"
+        }
+        """;
+    final resp = await _makeCall(payload, "${AppConfig.cloudUrl}/v2/signature/verify", method: HtptMethod.post);
+    return SignatureResponse.fromJson(resp);
+  }
+
+  // --- HELPER FUNCTIONS ---
+
   Future<Map<String, dynamic>> _makeCall(String? payload, String stringUrl, { HtptMethod method = HtptMethod.post}) async {
 
     final url = Uri.parse(stringUrl);
@@ -147,54 +162,6 @@ class IntegrationHelper {
     return List.generate(length, (index) => chars[Random().nextInt(chars.length)]).join();
   }
 }
-
-// interface RegistrationObject {
-//     activationCode: string
-//     activationCodeSignature: string
-//     activationQrCodeData: string
-//     registrationId: string
-// }
-
-// interface OperationObject {
-//     operationId: string
-//     userId: string
-//     status: string
-//     operationType: string
-//     // val parameters: [] // not needed for test right now
-//     failureCount: number
-//     maxFailureCount: number
-//     timestampCreated: number
-//     timestampExpires: number
-//     proximityOtp: string | undefined
-// }
-
-// interface QRData {
-//     operationQrCodeData: string,
-//     nonce: string
-// }
-
-// interface QROperationVerify {
-//     otpValid: boolean
-//     userId: string
-//     registrationId: string
-//     registrationStatus: string
-//     signatureType: string
-//     remainingAttempts: number
-//     // flags: []
-//     // application
-// }
-
-// import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-
-// export interface NewInboxMessage {
-//     id: string
-//     subject: string
-//     summary: string
-//     body: string
-//     read: boolean
-//     type: string
-//     timestamp: number
-// }
 
 enum HtptMethod {
   get,
@@ -299,5 +266,34 @@ enum ActivationChange {
       case ActivationChange.unblock:
         return "UNBLOCK";
     }
+  }
+}
+
+class SignatureResponse {
+  final bool signatureValid;
+  final String userId;
+  final String registrationId;
+  final String registrationStatus;
+  final String signatureType;
+  final int remainingAttempts;
+
+  SignatureResponse({
+    required this.signatureValid,
+    required this.userId,
+    required this.registrationId,
+    required this.registrationStatus,
+    required this.signatureType,
+    required this.remainingAttempts
+  });
+
+  factory SignatureResponse.fromJson(Map<String, dynamic> json) {
+    return SignatureResponse(
+      signatureValid: json['signatureValid'],
+      userId: json['userId'],
+      registrationId: json['registrationId'],
+      registrationStatus: json['registrationStatus'],
+      signatureType: json['signatureType'],
+      remainingAttempts: json['remainingAttempts']
+    );
   }
 }
