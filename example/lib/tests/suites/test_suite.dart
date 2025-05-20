@@ -1,4 +1,8 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
 abstract class TestSuite {
 
@@ -82,6 +86,46 @@ abstract class TestSuite {
   }
 }
 
+abstract class TestSuiteWithActivation extends TestSuite {
+  
+  @protected late IntegrationHelper helper;
+  @protected late PowerAuth sdk;
+  @protected late ActivationCredentials credentials;
+
+  @override
+  Future<void> beforeEach() async {
+    await super.beforeEach();
+    credentials = await generateActivationCredentials();
+    sdk = PowerAuth("test_instance");
+    helper = IntegrationHelper(sdk);
+    await helper.configure();
+  }
+
+  @override
+  Future<void> afterEach() async {
+    await helper.cleanup();
+    await super.afterEach();
+  }
+
+  Future<ActivationCredentials> generateActivationCredentials() async {
+    final availablePasswords = [ "VerySecure", "1234", "nbusr123", "39h132v,kJdfvAl", "98765", "correct horse battery staple" ];
+    final validIndex = Random().nextInt(availablePasswords.length);
+    final validPassword = await PowerAuthPassword.fromString(availablePasswords[validIndex], destroyOnUse: false);
+    final invalidPassword = await PowerAuthPassword.fromString(availablePasswords[(validIndex + 1) % availablePasswords.length], destroyOnUse: false);
+    return ActivationCredentials(
+      possession: PowerAuthAuthentication.possession(),
+      knowledge: PowerAuthAuthentication.password(validPassword),
+      invalidKnowledge: PowerAuthAuthentication.password(invalidPassword),
+      biometry: PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(
+          promptTitle: 'Authenticate',
+          promptMessage: 'Please authenticate with biometry'
+      )),
+      validPassword: validPassword,
+      invalidPassword: invalidPassword
+    );
+  }
+}
+
 class ExpectResult {
 
   Object? result;
@@ -125,7 +169,7 @@ extension FutureExpectResult on Future<ExpectResult> {
       if (self.exception != null) {
         print("expected $other, but got ${self.exception} instead");
       } else {
-        print("value ${self.result} does not equal $other - $message");
+        print("Retrieved value ${self.result} does not equal epected value $other - $message");
       }
     }
   }
@@ -147,4 +191,28 @@ extension FutureExpectResult on Future<ExpectResult> {
       print("expected to succeed, but got exception: ${self.exception}, value: ${self.result} - $message");
     }
   }
+}
+
+class ActivationCredentials {
+    /// Authentication for possession factor only.
+    PowerAuthAuthentication possession;
+    /// Authentication for possession & knowledge factors.
+    PowerAuthAuthentication knowledge;
+    /// Authentication for possession & invalid knowledge factors.
+    PowerAuthAuthentication invalidKnowledge;
+    /// Authenticatio for posession & biometry factors.
+    PowerAuthAuthentication biometry;
+    /// String with a valid password.
+    PowerAuthPassword validPassword;
+    /// String with an invalid password.
+    PowerAuthPassword invalidPassword;
+
+    ActivationCredentials({
+        required this.possession,
+        required this.knowledge,
+        required this.invalidKnowledge,
+        required this.biometry,
+        required this.validPassword,
+        required this.invalidPassword
+    });
 }

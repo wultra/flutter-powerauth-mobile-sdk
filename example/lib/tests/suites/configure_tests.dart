@@ -134,8 +134,8 @@ class ConfigureTests extends TestSuite {
     await expect(sharingConfig1).toBeNull();
     await expect(sharingConfig2).toBeNull();
 
-    await helper1.prepareActivation(password: await getPassword1());
-    await helper2.prepareActivation(password: await getPassword2());
+    await helper1.prepareActiveActivation(await getPassword1());
+    await helper2.prepareActiveActivation(await getPassword2());
 
     await expect(sdk1.hasValidActivation()).toBe(true);
     await expect(sdk2.hasValidActivation()).toBe(true);

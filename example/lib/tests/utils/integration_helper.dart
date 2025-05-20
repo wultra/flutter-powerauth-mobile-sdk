@@ -26,17 +26,16 @@ class IntegrationHelper {
 
     // REMOVE ACTIVATION ON THE SERVER
     if (activationId != null) {
-      await removeRegistration(activationId);
+      await removeRegistration(registrationId: activationId);
     }
+
+    await sdk.deconfigure();
   }
 
   // --- COMPLEX TASKS ---
 
   /// Creates a new activation on the server and locally.
-  Future<void> prepareActivation({
-    required PowerAuthPassword password,
-    String? userId
-  }) async {
+  Future<void> prepareActiveActivation(PowerAuthPassword password, {String? userId}) async {
         
     final resp = await createActivation(userId: userId);
 
@@ -99,13 +98,17 @@ class IntegrationHelper {
     await _makeCall("{}", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}/commit");
   }
 
-  Future<void> removeRegistration(String activationId) async {
-    await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/$activationId", method: HtptMethod.delete);
+  Future<void> removeRegistration({String? registrationId}) async {
+    await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.delete);
   }
 
   Future<RegistrationDetail> getRegistrationDetail({String? registrationId}) async {
     final resp = await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.get);
     return RegistrationDetail.fromJson(resp);
+  }
+
+  Future<void> changeActivation(ActivationChange change, {String? registrationId}) async {
+    await _makeCall("{\"change\":\"${change.toString()}\"}", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.put);
   }
 
   Future<Map<String, dynamic>> _makeCall(String? payload, String stringUrl, { HtptMethod method = HtptMethod.post}) async {
@@ -281,5 +284,20 @@ class RegistrationDetail {
       activationCodeSignature: json['activationCodeSignature'],
       activationFingerprint: json['activationFingerprint']
     );
+  }
+}
+
+enum ActivationChange {
+  block,
+  unblock;
+
+  @override
+  String toString() {
+    switch (this) {
+      case ActivationChange.block:
+        return "BLOCK";
+      case ActivationChange.unblock:
+        return "UNBLOCK";
+    }
   }
 }
