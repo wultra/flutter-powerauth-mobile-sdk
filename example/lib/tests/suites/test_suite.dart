@@ -118,7 +118,7 @@ extension FutureExpectResult on Future<ExpectResult> {
     }
   }
 
-  Future<void> toBe(Object other, {String message = ""}) async {
+  Future<void> toBe(Object? other, {String message = ""}) async {
     var self = await this;
     self.isResultExpected = self.result == other;
     if (!self.isResultExpected) {
