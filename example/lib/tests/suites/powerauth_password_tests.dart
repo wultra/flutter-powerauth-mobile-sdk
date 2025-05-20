@@ -9,7 +9,8 @@ class PowerAuthPasswordTests extends TestSuiteWithActivation {
     testChangePassword,
     testReuseUsedPasswordObject,
     testReusePasswordObjectInAuth,
-    testReuseUsedPasswordObjectInAuth
+    testReuseUsedPasswordObjectInAuth,
+    testWrongPassword
   ];
 
   @override
@@ -36,6 +37,20 @@ class PowerAuthPasswordTests extends TestSuiteWithActivation {
     await expect(sdk.changePassword(await credentials.invalidPasswordObject(), await credentials.validPasswordObject())).toSucceed();
     await expect(sdk.validatePassword(await credentials.validPasswordObject())).toSucceed();
     await expect(sdk.validatePassword(await credentials.invalidPasswordObject())).toThrow(PowerAuthErrorCode.authenticationError);
+  }
+
+  Future<void> testWrongPassword() async {
+    var status = await sdk.fetchActivationStatus();
+    final maxFailCount = status.maxFailCount;
+    for (var i = 1; i <= maxFailCount; i++) {
+      await expect(status.state).toBe(PowerAuthActivationState.active);
+      await expect(sdk.validatePassword(await credentials.invalidPasswordObject())).toThrow(PowerAuthErrorCode.authenticationError);
+      status = await sdk.fetchActivationStatus();
+      expect(status.failCount).toBe(i);
+      expect(status.remainingAttempts).toBe(maxFailCount - i);
+    }
+    await expect(status.state).toBe(PowerAuthActivationState.blocked);
+    await expect(status.remainingAttempts).toBe(0);
   }
 
   Future<void> testReuseUsedPasswordObject() async {

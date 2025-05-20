@@ -194,7 +194,7 @@ class ActivationCredentials {
         promptMessage: 'Please authenticate with biometry'
     ));
     Future<PowerAuthAuthentication> knowledge() async => PowerAuthAuthentication.password(await validPasswordObject());
-    Future<PowerAuthAuthentication> invalidKnowledge() async => PowerAuthAuthentication.password(await validPasswordObject());
+    Future<PowerAuthAuthentication> invalidKnowledge() async => PowerAuthAuthentication.password(await invalidPasswordObject());
     Future<PowerAuthPassword> validPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(validPassword, destroyOnUse: destroyOnUse);
     Future<PowerAuthPassword> invalidPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(invalidPassword, destroyOnUse: destroyOnUse);
 }
