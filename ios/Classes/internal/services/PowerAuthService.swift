@@ -496,6 +496,24 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func authenticateWithBiometry(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             
+            // validate if the biometry is available first
+            switch PowerAuthKeychain.biometricAuthenticationInfo.currentStatus {
+            case .available:
+                if sdk.hasValidActivation() && !sdk.hasBiometryFactor() {
+                    throw PluginException(.biometryNotConfigured, message: "Biometry factor is not configured")
+                }
+            case .notEnrolled:
+                throw PluginException(.biometryNotEnrolled, message: "Biometry is not enrolled on device")
+            case .notSupported:
+                throw PluginException(.biometryNotSupported, message: "Biometry is not supported")
+            case .notAvailable:
+                throw PluginException(.biometryNotAvailable, message: "Biometry is not available")
+            case .lockout:
+                throw PluginException(.biometryLockout, message: "Biometry is locked out")
+            default:
+                break
+            }
+            
             let prompt: FlutterMap = try call.requireParameter(.prompt)
             let isReusable = call.getParameter(.isReusable) ?? false
             
