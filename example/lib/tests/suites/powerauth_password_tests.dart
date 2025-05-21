@@ -57,7 +57,7 @@ class PowerAuthPasswordTests extends TestSuiteWithActivation {
     final pValid = await credentials.validPasswordObject();
     final pInvalid = await credentials.invalidPasswordObject();
 
-    await sdk.changePassword(pValid, pInvalid);
+    await expect(sdk.changePassword(pValid, pInvalid)).toSucceed();
     await expect(sdk.validatePassword(pInvalid)).toThrow(PowerAuthErrorCode.invalidNativeObject);
   }
 

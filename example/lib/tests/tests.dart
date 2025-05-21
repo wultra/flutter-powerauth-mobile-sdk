@@ -15,7 +15,7 @@ class Tests {
       ConfigurationObjectsTests(),
       PowerAuthActivationTests(),
       PowerAuthPasswordTests(),
-      PowerauthSignatureTests(),
+      PowerAuthSignatureTests(),
       UtilsTests(),
       PowerauthBiometricsTests()
     ];

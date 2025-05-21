@@ -1,7 +1,7 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 
-class PowerauthSignatureTests extends TestSuiteWithActivation {
+class PowerAuthSignatureTests extends TestSuiteWithActivation {
 
   @override
   List<Future<void> Function()> getTests() => [
