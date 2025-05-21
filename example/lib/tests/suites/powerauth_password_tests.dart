@@ -46,8 +46,8 @@ class PowerAuthPasswordTests extends TestSuiteWithActivation {
       await expect(status.state).toBe(PowerAuthActivationState.active);
       await expect(sdk.validatePassword(await credentials.invalidPasswordObject())).toThrow(PowerAuthErrorCode.authenticationError);
       status = await sdk.fetchActivationStatus();
-      expect(status.failCount).toBe(i);
-      expect(status.remainingAttempts).toBe(maxFailCount - i);
+      await expect(status.failCount).toBe(i);
+      await expect(status.remainingAttempts).toBe(maxFailCount - i);
     }
     await expect(status.state).toBe(PowerAuthActivationState.blocked);
     await expect(status.remainingAttempts).toBe(0);

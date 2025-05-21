@@ -1,6 +1,4 @@
 
-import 'dart:math';
-
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
@@ -14,7 +12,7 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
     testFetchActivationStatus,
     testActivationRemove,
     testVerifyActivationQrCode
-    ];
+  ];
 
   // --- ACTUAL TESTS STARTS HERE ---
 
@@ -59,7 +57,7 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
   }
 
   Future<void> testVerifyActivationQrCode() async {
-    expect(await sdk.canStartActivation()).toBe(true);
+    await expect(await sdk.canStartActivation()).toBe(true);
 
     // Prepare activation on the server
     await helper.createActivation();
