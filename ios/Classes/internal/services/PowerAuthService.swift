@@ -556,25 +556,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     // MARK: PowerAuth Helper methods
     
-    private typealias WrapThrowBlock = (() throws -> Void) -> Void
-    
     private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
-        
-        let instanceID: String = try call.requireParameter(.instanceId)
-        
-        guard let instance: PowerAuthSDK = register.find(id: instanceID) else {
-            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
-        }
-        
-        let wrapBlock: WrapThrowBlock = { (tryBlock: () throws -> Void) in
-            do {
-                try tryBlock()
-            } catch let e {
-                result(FlutterError(thrownByPlugin: e))
-            }
-        }
-        
-        try block(instance, wrapBlock)
+        try register.usePowerAuthSDK(id: try call.requireParameter(.instanceId), result, block)
     }
     
     private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {

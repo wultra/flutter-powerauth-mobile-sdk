@@ -25,9 +25,9 @@ internal class Constants {
     static let PASSWORD_KEY_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
 
     /// Time interval in milliseconds to keep encryptor object alive in memory
-    static let ENCRYPTOR_KEEP_ALIVE_TIME: Double = 5 * 60 * 1_000
+    static let ENCRYPTOR_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
     /// Time interval in milliseconds to keep decryptor object alive in memory
-    static let DECRYPTOR_KEEP_ALIVE_TIME: Double = 5 * 60 * 1_000
+    static let DECRYPTOR_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
 
     /// Upper limit for Unicode Code Point
     static let CODEPOINT_MAX = 0x10FFFF

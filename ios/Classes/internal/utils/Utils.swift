@@ -17,6 +17,8 @@
 import Foundation
 import Flutter
 
+internal typealias WrapThrowBlock = (() throws -> Void) -> Void
+
 internal typealias FlutterMap = [String: Any]
 
 internal extension FlutterMap {
@@ -54,8 +56,65 @@ internal extension FlutterMethodCall {
 internal class Utils {
     static func getRandomString() -> String {
         let count = Int(3 * (3 + arc4random_uniform(6)))
-        var data = NSMutableData(length: count)!
+        let data = NSMutableData(length: count)!
         arc4random_buf(data.mutableBytes, data.length)
         return data.base64EncodedString()
+    }
+    
+    /// Wraps a throw block. If exception is thrown, it properly calls the `result` with an error.
+    static func wrapThrowBlock(result: @escaping FlutterResult, _ block: () throws -> Void) {
+        do {
+            try block()
+        } catch let e {
+            result(FlutterError(thrownByPlugin: e))
+        }
+    }
+}
+
+internal enum PowerAuthDataFormat: String {
+    case UTF8
+    case BASE64
+    
+    static func fromString(_ string: String?) throws -> PowerAuthDataFormat {
+        
+        guard let string else {
+            return .UTF8
+        }
+        
+        guard let format =  PowerAuthDataFormat(rawValue: string) else {
+            throw PluginException(.wrongParameter, message: "Unsupported data format '\(string)'")
+        }
+        
+        return format
+    }
+}
+
+internal extension Data {
+    
+    static func decodeDataValue(_ dataValue: String, format: PowerAuthDataFormat) throws -> Data {
+        switch format {
+        case .UTF8:
+            guard let data = dataValue.data(using: .utf8) else {
+                throw PluginException(.wrongParameter, message: "Failed to decode data value using UTF-8 format")
+            }
+            return data
+        case .BASE64:
+            guard let data = Data(base64Encoded: dataValue) else {
+                throw PluginException(.wrongParameter, message: "Failed to decode data value using BASE64 format")
+            }
+            return data
+        }
+    }
+    
+    static func encodeDataValue(_ dataValue: Data, format: PowerAuthDataFormat) throws -> String {
+        switch format {
+        case .UTF8:
+            guard let value = String(data: dataValue, encoding: .utf8) else {
+                throw PluginException(.unknownError, message: "Failed to create string from UTF-8 encoded data")
+            }
+            return value
+        case .BASE64:
+            return dataValue.base64EncodedString()
+        }
     }
 }

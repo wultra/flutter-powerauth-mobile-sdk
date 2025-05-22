@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import PowerAuth2
 import PowerAuthCore
 import Flutter
 
@@ -399,7 +400,36 @@ internal class PowerAuthManagedObject {
     }
 }
 
+// Shortcut methods
 extension PowerAuthObjectRegister {
+
+    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: true)
+    }
+    
+    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: false)
+    }
+    
+    func getPowerAuthSDK(id: String) -> PowerAuthSDK? {
+        return find(id: id)
+    }
+    
+    func requirePowerAuthSDK(id: String) throws -> PowerAuthSDK {
+        guard let instance = getPowerAuthSDK(id: id) else {
+            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
+        }
+        return instance
+    }
+    
+    func usePowerAuthSDK(id: String, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
+        let instance = try requirePowerAuthSDK(id: id)
+        try block(instance) { tryBlock in
+            Utils.wrapThrowBlock(result: result, tryBlock)
+        }
+    }
+    
+    // - Helpers
     
     private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthCorePassword {
         
@@ -414,13 +444,5 @@ extension PowerAuthObjectRegister {
             throw PluginException(.invalidNativeObject, message: "PowerAuthPassword object is no longer valid")
         }
         return password
-    }
-
-    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        return try getPasswordImpl(dict: dict, use: true)
-    }
-    
-    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        return try getPasswordImpl(dict: dict, use: false)
     }
 }
