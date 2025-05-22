@@ -35,7 +35,7 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
     required String powerAuthInstanceId,
     int? autoReleaseTimeMillis,
   }) async {
-    final String objectId = await methodChannel.invokeMethod('initialize', {
+    final String objectId = await methodChannel.invokeMethod('encryptor_initialize', {
       'scope': scope.name,
       'powerAuthInstanceId': powerAuthInstanceId,
       'autoReleaseTimeMillis': autoReleaseTimeMillis,
@@ -46,12 +46,12 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
 
   @override
   Future<void> release(String objectId) async {
-    await methodChannel.invokeMethod('release', {'objectId': objectId});
+    await methodChannel.invokeMethod('encryptor_release', {'objectId': objectId});
   }
 
   @override
   Future<bool> canEncryptRequest(String objectId) async {
-    final bool result = await methodChannel.invokeMethod('canEncryptRequest', {
+    final bool result = await methodChannel.invokeMethod('encryptor_canEncryptRequest', {
       'objectId': objectId,
     });
 
@@ -65,7 +65,7 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
     PowerAuthDataFormat bodyFormat,
   ) async {
     final Map<dynamic, dynamic> result = await methodChannel.invokeMethod(
-      'encryptRequest',
+      'encryptor_encryptRequest',
       {'objectId': objectId, 'body': body, 'bodyFormat': bodyFormat.name},
     );
 
@@ -74,7 +74,7 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
 
   @override
   Future<bool> canDecryptResponse(String objectId) async {
-    final bool result = await methodChannel.invokeMethod('canDecryptResponse', {
+    final bool result = await methodChannel.invokeMethod('encryptor_canDecryptResponse', {
       'objectId': objectId,
     });
 
@@ -87,12 +87,12 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
     Map<String, dynamic> cryptogram,
     PowerAuthDataFormat outputDataFormat,
   ) async {
-    final String result = await methodChannel.invokeMethod('decryptResponse', {
+    final String result = await methodChannel.invokeMethod('encryptor_decryptResponse', {
       'objectId': objectId,
       'cryptogram': cryptogram,
       'outputDataFormat': outputDataFormat.name,
     });
-    
+
     return result;
   }
 }
