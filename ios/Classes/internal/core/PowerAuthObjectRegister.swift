@@ -68,6 +68,12 @@ internal class PowerAuthObjectRegister {
         }
     }
     
+    func useAny(id: String) -> Any? {
+        return lock.synchronized {
+            return findManagedObject(id: id, action: .use, validateType: false)
+        }
+    }
+    
     func find<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id)
@@ -77,6 +83,12 @@ internal class PowerAuthObjectRegister {
     func touch<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id, action: .touch)
+        }
+    }
+    
+    func touchAny(id: String) -> Any? {
+        return lock.synchronized {
+            return findManagedObject(id: id, action: .touch, validateType: false)
         }
     }
     
@@ -95,15 +107,22 @@ internal class PowerAuthObjectRegister {
         }
     }
     
+    func removeAll() {
+        lock.synchronized {
+            register.removeAll()
+        }
+    }
+    
     func remove<T>(id: String) -> T? {
         return lock.synchronized {
             return self.findManagedObject(id: id, action: .remove)
         }
     }
     
-    func remove(id: String) {
-        lock.synchronized {
-            self.findManagedObject(id: id, action: .remove, validateType: false)
+    @discardableResult
+    func removeAny(id: String) -> Any? {
+        return lock.synchronized {
+            return self.findManagedObject(id: id, action: .remove, validateType: false)
         }
     }
     
@@ -206,7 +225,7 @@ internal class PowerAuthObjectRegister {
 #if DEBUG
         return lock.synchronized {
             var content = [Dictionary<String, Any?>]()
-            for (key, obj) in register {
+            for (_, obj) in register {
                 if let tag, (obj.tag == nil || obj.tag != tag ) {
                     continue
                 }

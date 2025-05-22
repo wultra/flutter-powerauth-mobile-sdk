@@ -138,3 +138,23 @@ internal extension Data {
         }
     }
 }
+
+internal class PowerAuthData {
+    
+    private(set) var data: Data
+    private let cleanup: Bool
+    
+    init(data: Data, cleanup: Bool) {
+        self.data = data
+        self.cleanup = cleanup
+    }
+    
+    deinit {
+        if cleanup {
+            let count = data.count
+            _ = data.withUnsafeMutableBytes {
+                $0.baseAddress?.initializeMemory(as: UInt8.self, repeating: 0, count: count)
+            }
+        }
+    }
+}

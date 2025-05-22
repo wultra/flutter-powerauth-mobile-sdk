@@ -205,8 +205,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
-        register.remove(id: instanceId)
-        result(true)
+        let _: PowerAuthSDK? = register.remove(id: instanceId)
+        result(true) // return success regarding the remove operation
     }
     
     private func hasValidActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -654,26 +654,6 @@ private extension PowerAuthActivationState {
         case .removed: "removed"
         case .deadlock: "deadlock"
         @unknown default: fatalError("UNSUPPORTED POWERAUTH ACTIVATION STATE")
-        }
-    }
-}
-
-private class PowerAuthData {
-    
-    private(set) var data: Data
-    private let cleanup: Bool
-    
-    init(data: Data, cleanup: Bool) {
-        self.data = data
-        self.cleanup = cleanup
-    }
-    
-    deinit {
-        if cleanup {
-            let count = data.count
-            _ = data.withUnsafeMutableBytes {
-                $0.baseAddress?.initializeMemory(as: UInt8.self, repeating: 0, count: count)
-            }
         }
     }
 }
