@@ -30,6 +30,8 @@ import '../model/powerauth_authorization_http_header.dart';
 import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
 import '../powerauth_password/powerauth_password.dart';
+import '../model/powerauth_encryptor.dart';
+import '../powerauth_encryptor/powerauth_encryptor.dart';
 
 /// Internal helper class to hold the configuration set for a single PowerAuth instance.
 class _InstanceConfigurationHolder {
@@ -281,6 +283,29 @@ class PowerAuth {
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() =>
       _platform.removeBiometryFactor(instanceId);
+
+
+  /// Returns an encryptor for application scope.
+  ///
+  /// The encryptor is reusable and can be used to encrypt multiple requests.
+  /// The encryption is available without activation.
+  PowerAuthEncryptor getEncryptorForApplicationScope() {
+    return PowerAuthRequestEncryptor(
+      encryptorScope: PowerAuthEncryptorScope.application,
+      powerAuthInstanceId: instanceId,
+    );
+  }
+
+  /// Returns an encryptor for activation scope.
+  ///
+  /// The encryptor is reusable and can be used to encrypt multiple requests.
+  /// The encryption requires valid activation.
+  PowerAuthEncryptor getEncryptorForActivationScope() {
+    return PowerAuthRequestEncryptor(
+      encryptorScope: PowerAuthEncryptorScope.activation,
+      powerAuthInstanceId: instanceId,
+    );
+  }
 
   // TODO: remove this debug call before release!
   Future<String?> getPlatformVersion() => _platform.getPlatformVersion();
