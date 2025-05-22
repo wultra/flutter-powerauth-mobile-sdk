@@ -44,13 +44,13 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     }
     
     private func isValidNativeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let objectId: String = try call.requireParameter(.objectId)
+        let objectId: String = try call.requireParameter(Args.objectId)
         result(register.contains(id: objectId))
     }
     
     #if DEBUG
     private func debugDump(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let instanceId: String? = call.getParameter(.instanceId)
+        let instanceId: String? = call.getParameter(Args.instanceId)
         result(register.debugDumpObjectsWithTag(tag: instanceId))
     }
     
@@ -185,14 +185,4 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         result(nil)
     }
     #endif
-}
-
-private extension FlutterMethodCall {
-    func requireParameter<T>(_ key: PowerAuthRegisterService.Args) throws -> T {
-        return try requireParameter(key.rawValue)
-    }
-    
-    func getParameter<T>(_ key: PowerAuthRegisterService.Args) -> T? {
-        return getParameter(key.rawValue)
-    }
 }

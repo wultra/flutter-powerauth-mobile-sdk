@@ -40,12 +40,12 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
     }
     
     private func validateActivationCode(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let code: String = try call.requireParameter(.activationCode)
+        let code: String = try call.requireParameter(Args.activationCode)
         result(PowerAuthActivationCodeUtil.validateActivationCode(code))
     }
     
     private func parseActivationCode(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let code: String = try call.requireParameter(.activationCode)
+        let code: String = try call.requireParameter(Args.activationCode)
         if let parsed = PowerAuthActivationCodeUtil.parse(fromActivationCode: code) {
             result([
                 "activationCode": parsed.activationCode,
@@ -57,23 +57,13 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
     }
     
     private func validateTypedCharacter(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let char: Int = try call.requireParameter(.character)
+        let char: Int = try call.requireParameter(Args.character)
         result(PowerAuthActivationCodeUtil.validateTypedCharacter(UInt32(char)))
     }
     
     private func correctTypedCharacter(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let char: Int = try call.requireParameter(.character)
+        let char: Int = try call.requireParameter(Args.character)
         let validated = PowerAuthActivationCodeUtil.validateAndCorrectTypedCharacter(UInt32(char))
         result(validated)
-    }
-}
-
-private extension FlutterMethodCall {
-    func requireParameter<T>(_ key: PowerAuthUtilsService.Args) throws -> T {
-        return try requireParameter(key.rawValue)
-    }
-    
-    func getParameter<T>(_ key: PowerAuthUtilsService.Args) -> T? {
-        return getParameter(key.rawValue)
     }
 }

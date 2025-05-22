@@ -23,6 +23,10 @@ internal typealias FlutterMap = [String: Any]
 
 internal extension FlutterMap {
     
+    func get<T>(_ key: any RawRepresentable<String>) -> T? {
+        return get(key.rawValue)
+    }
+    
     func get<T>(_ key: String) -> T? {
         return self[key] as? T
     }
@@ -36,6 +40,14 @@ internal extension FlutterMap {
 }
 
 internal extension FlutterMethodCall {
+    
+    func requireParameter<T>(_ key: any RawRepresentable<String>) throws -> T {
+        return try requireParameter(key.rawValue)
+    }
+    
+    func getParameter<T>(_ key: any RawRepresentable<String>) -> T? {
+        getParameter(key.rawValue)
+    }
     
     func requireParameter<T>(_ key: String) throws -> T {
         guard let parameter: T = getParameter(key) else {

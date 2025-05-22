@@ -53,9 +53,9 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
     
     private func initialize(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        let scope: String = try call.requireParameter(.scope)
-        let ownerId: String = try call.requireParameter(.ownerId)
-        let autoreleaseTime: Int = try call.requireParameter(.autoreleaseTime)
+        let scope: String = try call.requireParameter(Args.scope)
+        let ownerId: String = try call.requireParameter(Args.ownerId)
+        let autoreleaseTime: Int = try call.requireParameter(Args.autoreleaseTime)
         
         let isActivationScope: Bool
         if scope == "APPLICATION" {
@@ -92,21 +92,21 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
     }
     
     private func release(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        register.remove(id: try call.requireParameter(.encryptorId))
+        register.remove(id: try call.requireParameter(Args.encryptorId))
         result(nil)
     }
     
     private func canEncryptRequest(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let id: String = try call.requireParameter(.encryptorId)
+        let id: String = try call.requireParameter(Args.encryptorId)
         let encryptor = try touchEcryptor(id: id)
         result(register.canEncrypt(with: encryptor) == .success)
     }
     
     private func encryptRequest(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        let encryptorId: String = try call.requireParameter(.encryptorId)
-        let body: String = try call.requireParameter(.body)
-        let bodyFormat: String = try call.requireParameter(.bodyFormat)
+        let encryptorId: String = try call.requireParameter(Args.encryptorId)
+        let body: String = try call.requireParameter(Args.body)
+        let bodyFormat: String = try call.requireParameter(Args.bodyFormat)
         
         let encryptor = try useEcryptor(id: encryptorId)
         
@@ -167,15 +167,15 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
     }
     
     private func canDecryptResponse(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let id: String = try call.requireParameter(.encryptorId)
+        let id: String = try call.requireParameter(Args.encryptorId)
         let encryptor = try touchEcryptor(id: id)
         result(register.canDecrypt(with: encryptor) == .success)
     }
     
     private func decryptResponse(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let encryptorId: String = try call.requireParameter(.encryptorId)
-        let cryptogramDict: FlutterMap = try call.requireParameter(.cryptogram)
-        let outputFormat: String = try call.requireParameter(.outputFormat)
+        let encryptorId: String = try call.requireParameter(Args.encryptorId)
+        let cryptogramDict: FlutterMap = try call.requireParameter(Args.cryptogram)
+        let outputFormat: String = try call.requireParameter(Args.outputFormat)
         
         let encryptor = try useEcryptor(id: encryptorId)
         
@@ -273,15 +273,5 @@ private extension PowerAuthObjectRegister {
             return .missingActivation
         }
         return encryptor.coreEncryptor.canDecryptResponse ? .success : .invalidEncryptor
-    }
-}
-
-private extension FlutterMethodCall {
-    func requireParameter<T>(_ key: PowerAuthEncryptorService.Args) throws -> T {
-        return try requireParameter(key.rawValue)
-    }
-    
-    func getParameter<T>(_ key: PowerAuthEncryptorService.Args) -> T? {
-        return getParameter(key.rawValue)
     }
 }
