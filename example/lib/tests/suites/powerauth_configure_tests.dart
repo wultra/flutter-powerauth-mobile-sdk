@@ -6,7 +6,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
-class ConfigurationTests extends TestSuite {
+class PowerAuthConfigureTests extends TestSuite {
 
   @override 
   getTests() {
@@ -134,8 +134,8 @@ class ConfigurationTests extends TestSuite {
     await expect(sharingConfig1).toBeNull();
     await expect(sharingConfig2).toBeNull();
 
-    await helper1.prepareActivation(password: await getPassword1());
-    await helper2.prepareActivation(password: await getPassword2());
+    await helper1.prepareActiveActivation(await getPassword1());
+    await helper2.prepareActiveActivation(await getPassword2());
 
     await expect(sdk1.hasValidActivation()).toBe(true);
     await expect(sdk2.hasValidActivation()).toBe(true);
@@ -143,8 +143,8 @@ class ConfigurationTests extends TestSuite {
     await expect(sdk1.validatePassword(await getPassword1())).toSucceed();
     await expect(sdk2.validatePassword(await getPassword2())).toSucceed();
 
-    sdk1.deconfigure();
-    sdk2.deconfigure();
+    await sdk1.deconfigure();
+    await sdk2.deconfigure();
 
     // // Now run all methods that must fail while instance is not configured
     await runMethodsThatMustFail(sdk1);

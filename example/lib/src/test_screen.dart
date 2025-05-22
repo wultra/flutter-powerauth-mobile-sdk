@@ -438,7 +438,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   void _runTests() async {
-    Tests().run();
+    _setError("Tests are running...");
+    final result = await Tests().run();
+    _setError(result.text);
   }
 
   @override
