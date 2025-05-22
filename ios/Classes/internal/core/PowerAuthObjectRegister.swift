@@ -297,10 +297,12 @@ internal class PowerAuthManagedObject {
     let object: Any
     let key: String
     let tag: String?
-    var usageCount: Int = 0
     let createDate: Date
+    
+    var usageCount: Int = 0
     var lastUseDate: Date
-    private let managedByOwner: Bool
+    
+    private lazy var managedByOwner = policies.contains(.manual())
     private let policies: [ReleasePolicy]
     
     init(object: Any, key: String, tag: String?, policies: [ReleasePolicy]) {
@@ -310,8 +312,7 @@ internal class PowerAuthManagedObject {
         self.tag = tag
         self.createDate = now
         self.lastUseDate = now
-        self.managedByOwner = policies.contains(.manual())
-        self.policies = policies // TODO: filter?
+        self.policies = policies
     }
     
     func setUsed() {
@@ -353,7 +354,7 @@ internal class PowerAuthManagedObject {
                     return false
                 }
             case .manual:
-                // ignore manual (also should never
+                // we cover this case earlier
                 break
             }
         }
@@ -433,7 +434,7 @@ extension PowerAuthObjectRegister {
     
     private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthCorePassword {
         
-        guard let objectId: String = dict?.get("objectId") else {
+        guard let objectId = dict?["objectId"] as? String else {
             // Object identifier is not present in the object. This means that wrong object is passed to call,
             // or PowerAuthPassword dart object is not initialized yet.
             throw PluginException(.wrongParameter, message: "PowerAuthPassword is not initialized")

@@ -78,6 +78,23 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case useMasterKey
         case prompt
         case isReusable
+        case isBiometry
+        case isPersist
+        case accessGroupName
+        case userDefaultsSuiteName
+        case linkItemsToCurrentSet
+        case fallbackToDevicePasscode
+        case appGroup
+        case appIdentifier
+        case keychainAccessGroup
+        case sharedMemoryIdentifier
+        case customHttpHeaders
+        case basicHttpAuthentication
+        case connectionTimeout
+        case enableUnsecureTraffic
+        case name
+        case value
+        case username
     }
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -98,11 +115,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
         
         if let sharingConfiguration: FlutterMap = call.getParameter(Args.sharingConfiguration) {
             let sharingConfig = PowerAuthSharingConfiguration(
-                appGroup: try sharingConfiguration.require("appGroup"),
-                appIdentifier: try sharingConfiguration.require("appIdentifier"),
-                keychainAccessGroup: try sharingConfiguration.require("keychainAccessGroup")
+                appGroup: try sharingConfiguration.require(Args.appGroup),
+                appIdentifier: try sharingConfiguration.require(Args.appIdentifier),
+                keychainAccessGroup: try sharingConfiguration.require(Args.keychainAccessGroup)
             )
-            sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get("sharedMemoryIdentifier")
+            sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get(Args.sharedMemoryIdentifier)
             paConfig.sharingConfiguration = sharingConfig
         }
         
@@ -111,8 +128,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
         }
         
         let clientConfiguration: FlutterMap? = call.getParameter(Args.clientConfiguration)
-        let timeout: TimeInterval? = clientConfiguration?.get("connectionTimeout")
-        let enableUnsecureTraffic: Bool? = clientConfiguration?.get("enableUnsecureTraffic")
+        let timeout: TimeInterval? = clientConfiguration?.get(Args.connectionTimeout)
+        let enableUnsecureTraffic: Bool? = clientConfiguration?.get(Args.enableUnsecureTraffic)
         var clientConfig: PowerAuthClientConfiguration?
         
         if timeout != nil || enableUnsecureTraffic != nil {
@@ -127,11 +144,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
         var interceptors = [PowerAuthCustomHeaderRequestInterceptor]()
         
         // http headers
-        if let httpHeaders: [FlutterMap] = clientConfiguration?.get("customHttpHeaders") {
+        if let httpHeaders: [FlutterMap] = clientConfiguration?.get(Args.customHttpHeaders) {
             for header in httpHeaders {
-                if
-                    let name: String = header.get("name"),
-                    let value: String = header.get("value") {
+                if let name: String = header.get(Args.name), let value: String = header.get(Args.value) {
                     interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: name, value: value))
                 }
             }
@@ -139,10 +154,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
         
         // Basic Authentication
         if
-            let basicAuth: FlutterMap = clientConfiguration?.get("basicHttpAuthentication"),
-            let username: String = basicAuth.get("username"),
-            let password: String = basicAuth.get("password")
-        {
+            let basicAuth: FlutterMap = clientConfiguration?.get(Args.basicHttpAuthentication),
+            let username: String = basicAuth.get(Args.username),
+            let password: String = basicAuth.get(Args.password) {
             interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
         }
         
@@ -154,15 +168,24 @@ internal class PowerAuthService: PowerAuthFlutterService {
         var keychainConfig: PowerAuthKeychainConfiguration?
         let keychainConfiguration: FlutterMap? = call.getParameter(Args.keychainConfiguration)
         let biometryConfiguration: FlutterMap? = call.getParameter(Args.biometryConfiguration)
+        
+        // only create PowerAuthKeychainConfiguration if one of the config is configured
         if keychainConfiguration != nil || biometryConfiguration != nil {
+            
             let kc = PowerAuthKeychainConfiguration()
+            
             // Keychain specific
-            kc.keychainAttribute_AccessGroup = keychainConfiguration?.get("accessGroupName")
-            kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration?.get("userDefaultsSuiteName")
+            if let keychainConfiguration {
+                kc.keychainAttribute_AccessGroup = keychainConfiguration.get(Args.accessGroupName)
+                kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration.get(Args.userDefaultsSuiteName)
+            }
             
             // Biometry
-            kc.linkBiometricItemsToCurrentSet = biometryConfiguration?.get("linkItemsToCurrentSet") ?? kc.linkBiometricItemsToCurrentSet
-            kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration?.get("fallbackToDevicePasscode") ?? kc.allowBiometricAuthenticationFallbackToDevicePasscode
+            if let biometryConfiguration {
+                kc.linkBiometricItemsToCurrentSet = biometryConfiguration.get(Args.linkItemsToCurrentSet, defaultValue: kc.linkBiometricItemsToCurrentSet)
+                kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration.get(Args.fallbackToDevicePasscode, defaultValue: kc.allowBiometricAuthenticationFallbackToDevicePasscode)
+            }
+            
             keychainConfig = kc
         }
         
@@ -382,14 +405,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let masterKey: Bool = call.getParameter(Args.useMasterKey) ?? false
             
             guard let data = stringData.data(using: .utf8) else {
-                // TODO: consider returning an error?
-                result(false)
-                return
+                throw PluginException(.unknownError, message: "Failed to convert string to data")
             }
             
             let verifyResult = sdk.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
             result(verifyResult)
-            
         }
     }
     
@@ -567,8 +587,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
         
         let dict: FlutterMap = try call.requireParameter(Args.authentication)
-        let useBiometry = dict["isBiometry"] as? Bool ?? false // TODO: fallback ok?
-        let persist = dict["isPersist"] as? Bool ?? false // TODO: fallback ok?
+        let useBiometry = dict.get(Args.isBiometry, defaultValue: false)
+        let persist = dict.get(Args.isPersist, defaultValue: false)
         
         let userPassword: FlutterMap? = dict.get(Args.password)
         

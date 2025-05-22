@@ -42,7 +42,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     fileprivate enum Args: String {
         case destroyOnUse
-        case powerAuthInstanceId // TODO: needed?
+        case powerAuthInstanceId
         case autoreleaseTime
         case objectId
         case otherObjectId
@@ -56,7 +56,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         let paInstanceId: String? = call.getParameter(Args.powerAuthInstanceId)
         let autoreleaseTime: Int? = call.getParameter(Args.autoreleaseTime)
         
-        // TODO: supported scenario? (is supported in JS, do we want it here?)
+        // this scenario not supported yet in the API, but lets keep it here in case is added in the future
         if let paInstanceId, !register.contains(id: paInstanceId) {
             throw PluginException(.instanceNotConfigured, message: "PowerAuth instance is not configured")
         }

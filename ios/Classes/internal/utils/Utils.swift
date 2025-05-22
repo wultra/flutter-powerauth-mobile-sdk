@@ -27,11 +27,19 @@ internal extension FlutterMap {
         return get(key.rawValue)
     }
     
-    func get<T>(_ key: String) -> T? {
+    func get<T>(_ key: any RawRepresentable<String>, defaultValue: T) -> T {
+        return get(key.rawValue) ?? defaultValue
+    }
+    
+    func require<T>(_ key: any RawRepresentable<String>) throws -> T {
+        return try require(key.rawValue)
+    }
+    
+    fileprivate func get<T>(_ key: String) -> T? {
         return self[key] as? T
     }
     
-    func require<T>(_ key: String) throws -> T {
+    fileprivate func require<T>(_ key: String) throws -> T {
         guard let parameter: T = get(key) else {
             throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
         }
@@ -49,14 +57,14 @@ internal extension FlutterMethodCall {
         getParameter(key.rawValue)
     }
     
-    func requireParameter<T>(_ key: String) throws -> T {
+    fileprivate func requireParameter<T>(_ key: String) throws -> T {
         guard let parameter: T = getParameter(key) else {
             throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
         }
         return parameter
     }
     
-    func getParameter<T>(_ key: String) -> T? {
+    fileprivate func getParameter<T>(_ key: String) -> T? {
         guard let arguments = arguments as? FlutterMap else {
             return nil
         }

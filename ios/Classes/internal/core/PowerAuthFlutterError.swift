@@ -75,9 +75,9 @@ internal enum PowerAuthFlutterError: String {
         case .biometryFailed: .biometryFailed
         case .biometryFallback: .biometryFallback
         case .timeSynchronization: .timeSynchronization
-        case .NA: .unknownError // TODO: other handling?
         case .externalPendingOperation: .externalPendingOperation
-        @unknown default: .unknownError // TODO: additional handling, maybe pass it to the message?
+        case .NA: .unknownError // should not happened - just a fallback
+        @unknown default: .unknownError
         }
     }
 }
