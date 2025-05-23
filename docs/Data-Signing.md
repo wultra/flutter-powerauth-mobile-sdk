@@ -3,7 +3,7 @@
 The main feature of the PowerAuth protocol is data signing. PowerAuth has three types of signatures:
 
 - **Symmetric Multi-Factor Signature**: Suitable for most operations, such as login, new payment, or confirming changes in settings.
-- **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired.
+<!-- - **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired. -->
 - **Symmetric Offline Multi-Factor Signature**: Suitable for very secure operations, where the signature is validated over the out-of-band channel.
 - **Verify server signed data**: Suitable for receiving arbitrary data from the server.
 
@@ -87,7 +87,7 @@ try {
 
 It is recommended that your application execute only one signed request at a time. The reason for that is that our signature scheme uses a counter as a representation of logical time. In other words, the order of request validation on the server is very important. If you issue more than one signed request at the same time, then the order is not guaranteed, and therefore, one of the requests may fail.
 
-## Asymmetric Private Key Signature
+<!-- ## Asymmetric Private Key Signature
 
 Asymmetric Private Key Signature uses a private key stored in the PowerAuth secure vault. In order to unlock the secure vault and retrieve the private key, the user has to first authenticate using the symmetric multi-factor signature with at least two factors. This mechanism protects the private key on the device - the server plays the role of a "doorkeeper" and holds the vault unlock key.
 
@@ -108,7 +108,7 @@ try {
 } catch(e) {
     // Authentication or network error
 }
-```
+``` -->
 
 ## Symmetric Offline Multi-Factor Signature
 

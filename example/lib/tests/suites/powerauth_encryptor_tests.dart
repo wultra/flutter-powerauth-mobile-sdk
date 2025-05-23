@@ -132,7 +132,7 @@ class PowerAuthEncryptorTests extends TestSuiteWithActivation {
       final decryptedObject = jsonDecode(utf8.decode(base64Decode(decrypted)));
       await expect(decryptedObject['sub']).toBe(helper.userId);
 
-      await expect(decryptor.canDecryptResponse()).toBe(false)    ;
+      await expect(decryptor.canDecryptResponse()).toBe(false);
     }
   }
 
