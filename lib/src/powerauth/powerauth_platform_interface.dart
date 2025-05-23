@@ -201,6 +201,34 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<bool> hasLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('hasLocalToken() has not been implemented.');
+  }
+
+  Future<Map> getLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('getLocalToken() has not been implemented.');
+  }
+
+  Future<void> removeLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeLocalToken() has not been implemented.');
+  }
+
+  Future<void> removeAllLocalTokens(String instanceId) {
+    throw UnimplementedError('removeAllLocalTokens() has not been implemented.');
+  }
+
+  Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) {
+    throw UnimplementedError('requestAccessToken() has not been implemented.');
+  }
+
+  Future<void> removeAccessToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeAccessToken() has not been implemented.');
+  }
+
+  Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
+    throw UnimplementedError('generateHeaderForToken() has not been implemented.');
+  }
+
   // TODO: remove this debug call before release!
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');

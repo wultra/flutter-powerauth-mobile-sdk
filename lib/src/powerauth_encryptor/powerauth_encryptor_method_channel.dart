@@ -28,6 +28,7 @@ import 'powerauth_encryptor_platform_interface.dart';
 class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform with MethodChannelHelper {
 
   @visibleForTesting
+  @override
   final methodChannel = const MethodChannel('powerauth_plugin');
 
   @override

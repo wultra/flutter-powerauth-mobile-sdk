@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_token_store.dart';
+
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
@@ -60,13 +62,16 @@ class PowerAuth {
   // Static registry to hold configurations for active instances
   static final Map<String, _InstanceConfigurationHolder> _configRegister = {};
 
+  PowerAuthTokenStore get tokenStore => _tokenStore;
+  final PowerAuthTokenStore _tokenStore;
+
   /// Creates an instance of the PowerAuth SDK client.
   ///
   /// Multiple PowerAuth SDK instances can be created, each identified by a unique [instanceId].
   ///  The bundle identifier/packagename is recommended.
   ///
   /// 2 instances with the same instanceId will be internaly the same object!
-  PowerAuth(this.instanceId) {
+  PowerAuth(this.instanceId): _tokenStore = PowerAuthTokenStore(instanceId) {
     if (instanceId.isEmpty) {
       throw ArgumentError.value(instanceId, 'instanceId', 'cannot be empty');
     }
@@ -266,8 +271,7 @@ class PowerAuth {
   );
 
   /// Gets information about the biometric capabilities of the device.
-  Future<PowerAuthBiometryInfo> getBiometryInfo() =>
-      _platform.getBiometryInfo(instanceId);
+  Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo(instanceId);
 
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
@@ -281,8 +285,7 @@ class PowerAuth {
   Future<bool> hasBiometryFactor() => _platform.hasBiometryFactor(instanceId);
 
   /// Removes the biometry key associated with the current activation locally.
-  Future<void> removeBiometryFactor() =>
-      _platform.removeBiometryFactor(instanceId);
+  Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);
 
 
   /// Returns an encryptor for application scope.

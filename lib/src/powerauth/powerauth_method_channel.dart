@@ -357,6 +357,62 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     });
   }
 
+  @override
+  Future<bool> hasLocalToken(String instanceId, String tokenName) async {
+    return await invokeMethod('hasLocalToken', {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+  }
+
+  @override
+  Future<Map> getLocalToken(String instanceId, String tokenName) async {
+    return await invokeMethod('getLocalToken', {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+  }
+
+  @override
+  Future<void> removeLocalToken(String instanceId, String tokenName) async {
+    await invokeMethod<void>('removeLocalToken', {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+  }
+
+  @override
+  Future<void> removeAllLocalTokens(String instanceId) async {
+    await invokeMethod<void>('removeAllLocalTokens', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
+  Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) async {
+    final args = await _prepareAuthArguments(instanceId, authentication, {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+    return await invokeMethod('requestAccessToken', args);
+  }
+
+  @override
+  Future<void> removeAccessToken(String instanceId, String tokenName) async {
+    await invokeMethod('removeAccessToken', {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+  }
+
+  @override
+  Future<Map> generateHeaderForToken(String instanceId, String tokenName) async {
+    return await invokeMethod('generateHeaderForToken', {
+      'instanceId': instanceId,
+      'tokenName': tokenName,
+    });
+  }
+
   // TODO: remove this debug call before release!
   @override
   Future<String?> getPlatformVersion() async {

@@ -52,7 +52,14 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "addBiometryFactor": addBiometryFactor,
         "hasBiometryFactor": hasBiometryFactor,
         "removeBiometryFactor": removeBiometryFactor,
-        "authenticateWithBiometry": authenticateWithBiometry
+        "authenticateWithBiometry": authenticateWithBiometry,
+        "requestAccessToken": requestAccessToken,
+        "removeAccessToken": removeAccessToken,
+        "hasLocalToken": hasLocalToken,
+        "getLocalToken": getLocalToken,
+        "removeLocalToken": removeLocalToken,
+        "removeAllLocalTokens": removeAllLocalTokens,
+        "generateHeaderForToken": generateHeaderForToken
     ]
     
     // Possible Flutter call parameters
@@ -95,6 +102,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case name
         case value
         case username
+        case tokenName
     }
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -571,6 +579,89 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     result(managedId)
                 }
             }
+        }
+    }
+    
+    private func requestAccessToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            let auth = try constructAuthentication(call)
+            sdk.tokenStore.requestAccessToken(withName: tokenName, authentication: auth) { token, error in
+                wrap {
+                    guard let token else {
+                        throw error ?? PluginException(.unknownError, message: "Failed to request access token")
+                    }
+                    result([
+                        "tokenName": token.tokenName,
+                        "tokenIdentifier": token.tokenIdentifier
+                    ])
+                }
+            }
+        }
+    }
+    
+    private func removeAccessToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            sdk.tokenStore.removeAccessToken(withName: tokenName) { removed, error in
+                wrap {
+                    guard removed else {
+                        throw error ?? PluginException(.unknownError, message: "Failed to remove access token")
+                    }
+                    result(nil)
+                }
+            }
+        }
+    }
+    
+    private func hasLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            result(sdk.tokenStore.hasLocalToken(withName: tokenName))
+        }
+    }
+    
+    private func getLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            guard let token = sdk.tokenStore.localToken(withName: tokenName) else {
+                throw PluginException(.localTokenNotAvailable, message: "Token with the name \(tokenName) is not in the local store.")
+            }
+            result([
+                "tokenName": token.tokenName,
+                "tokenIdentifier": token.tokenIdentifier
+            ])
+        }
+    }
+    
+    private func removeLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            sdk.tokenStore.removeLocalToken(withName: tokenName)
+            result(nil)
+        }
+    }
+    
+    private func removeAllLocalTokens(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            sdk.tokenStore.removeAllLocalTokens()
+            result(nil)
+        }
+    }
+    
+    private func generateHeaderForToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let tokenName: String = try call.requireParameter(Args.tokenName)
+            guard let token = sdk.tokenStore.localToken(withName: tokenName) else {
+                throw PluginException(.localTokenNotAvailable, message: "Token \(tokenName) is no longer available in the local store.")
+            }
+            guard token.canGenerateHeader, let header = token.generateHeader() else {
+                throw PluginException(.cannotGenerateToken, message: "Cannot generate header for the token \(tokenName).")
+            }
+            result([
+                "key": header.key,
+                "value": header.value
+            ])
         }
     }
     

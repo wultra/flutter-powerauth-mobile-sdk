@@ -1,5 +1,6 @@
 ## 1.0.0-beta.3
 * Implemented End-to-End Encryption
+* Token Based Authentication.
 * Improved stability and internals.
 
 ## 1.0.0-beta.2

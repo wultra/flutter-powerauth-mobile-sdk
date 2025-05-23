@@ -6,6 +6,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/passwor
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_encryptor_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_password_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_signature_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_token_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/utils_tests.dart';
 
 class Tests {
@@ -20,6 +21,7 @@ class Tests {
       UtilsTests(),
       PowerauthBiometricsTests(),
       PowerAuthEncryptorTests(),
+      PowerauthTokenTests()
     ];
     print("\n\n###  Test starting...");
     for (var testSuite in testSuites) {
