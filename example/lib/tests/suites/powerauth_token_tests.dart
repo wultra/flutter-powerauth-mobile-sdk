@@ -1,5 +1,4 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_signature_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 
 class PowerauthTokenTests extends TestSuiteWithActivation {

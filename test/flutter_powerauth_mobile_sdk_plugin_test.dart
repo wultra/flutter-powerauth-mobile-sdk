@@ -155,6 +155,41 @@ class MockFlutterPowerauthMobileSdkPluginPlatform
     // TODO: implement removeBiometryFactor
     throw UnimplementedError();
   }
+
+  @override
+  Future<bool> hasLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('hasLocalToken() has not been implemented.');
+  }
+
+  @override
+  Future<Map> getLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('getLocalToken() has not been implemented.');
+  }
+
+  @override
+  Future<void> removeLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeLocalToken() has not been implemented.');
+  }
+
+  @override
+  Future<void> removeAllLocalTokens(String instanceId) {
+    throw UnimplementedError('removeAllLocalTokens() has not been implemented.');
+  }
+
+  @override
+  Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) {
+    throw UnimplementedError('requestAccessToken() has not been implemented.');
+  }
+
+  @override
+  Future<void> removeAccessToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeAccessToken() has not been implemented.');
+  }
+
+  @override
+  Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
+    throw UnimplementedError('generateHeaderForToken() has not been implemented.');
+  }
 }
 
 void main() {
