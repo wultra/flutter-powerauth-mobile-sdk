@@ -26,7 +26,7 @@ class PowerAuthEncryptionHttpHeader {
   PowerAuthEncryptionHttpHeader({required this.name, required this.value});
 
   /// Creates a [PowerAuthEncryptionHttpHeader] from a map.
-  factory PowerAuthEncryptionHttpHeader.fromMap(Map<String, dynamic> map) {
+  factory PowerAuthEncryptionHttpHeader.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthEncryptionHttpHeader(
       name: map['name'] as String,
       value: map['value'] as String,

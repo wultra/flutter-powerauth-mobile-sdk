@@ -35,7 +35,7 @@ enum PowerAuthEncryptorScope {
 class PowerAuthCryptogram {
 
   /// Temporary key identifier.
-  final String temporaryKeyId;
+  final String? temporaryKeyId;
 
   /// Ephemeral public key, valid only for encrypted request.
   final String? ephemeralPublicKey;
@@ -62,9 +62,9 @@ class PowerAuthCryptogram {
   });
 
   /// Creates a [PowerAuthCryptogram] from a map.
-  factory PowerAuthCryptogram.fromMap(Map<String, dynamic> map) {
+  factory PowerAuthCryptogram.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthCryptogram(
-      temporaryKeyId: map['temporaryKeyId'] as String,
+      temporaryKeyId: map['temporaryKeyId'] as String?,
       ephemeralPublicKey: map['ephemeralPublicKey'] as String?,
       encryptedData: map['encryptedData'] as String,
       mac: map['mac'] as String,

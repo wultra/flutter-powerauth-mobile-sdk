@@ -101,9 +101,7 @@ internal class PowerAuthObjectRegister {
     
     func removeAll(tag: String) {
         lock.synchronized {
-            self.findAndRemoveObjects { key, value in
-                return tag == value.tag
-            }
+            self.findAndRemoveObjects { $1.tag == tag }
         }
     }
     
@@ -187,9 +185,7 @@ internal class PowerAuthObjectRegister {
         // Clear scheduled flag.
         scheduledCleanup = false
         // Remove all invalid objects
-        findAndRemoveObjects { _, obj in
-            obj.isStillValid() == false
-        }
+        findAndRemoveObjects { $1.isStillValid() == false }
         // Schedule cleanup for the next round
         scheduleClenaup()
     }

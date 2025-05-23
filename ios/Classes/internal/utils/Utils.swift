@@ -92,13 +92,13 @@ internal class Utils {
 }
 
 internal enum PowerAuthDataFormat: String {
-    case UTF8
-    case BASE64
+    case utf8
+    case base64
     
     static func fromString(_ string: String?) throws -> PowerAuthDataFormat {
         
         guard let string else {
-            return .UTF8
+            return .utf8
         }
         
         guard let format =  PowerAuthDataFormat(rawValue: string) else {
@@ -113,12 +113,12 @@ internal extension Data {
     
     static func decodeDataValue(_ dataValue: String, format: PowerAuthDataFormat) throws -> Data {
         switch format {
-        case .UTF8:
+        case .utf8:
             guard let data = dataValue.data(using: .utf8) else {
                 throw PluginException(.wrongParameter, message: "Failed to decode data value using UTF-8 format")
             }
             return data
-        case .BASE64:
+        case .base64:
             guard let data = Data(base64Encoded: dataValue) else {
                 throw PluginException(.wrongParameter, message: "Failed to decode data value using BASE64 format")
             }
@@ -128,12 +128,12 @@ internal extension Data {
     
     static func encodeDataValue(_ dataValue: Data, format: PowerAuthDataFormat) throws -> String {
         switch format {
-        case .UTF8:
+        case .utf8:
             guard let value = String(data: dataValue, encoding: .utf8) else {
                 throw PluginException(.unknownError, message: "Failed to create string from UTF-8 encoded data")
             }
             return value
-        case .BASE64:
+        case .base64:
             return dataValue.base64EncodedString()
         }
     }

@@ -17,6 +17,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/utils/method_channel_helper.dart';
 import 'package:meta/meta.dart';
 
 import '../model/powerauth_data_format.dart';
@@ -24,7 +25,7 @@ import '../model/powerauth_encryptor.dart';
 import 'powerauth_encryptor_platform_interface.dart';
 
 /// An implementation of [PowerAuthEncryptorPlatform] that uses method channels.
-class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
+class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform with MethodChannelHelper {
 
   @visibleForTesting
   final methodChannel = const MethodChannel('powerauth_plugin');
@@ -35,7 +36,7 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
     required String powerAuthInstanceId,
     int? autoReleaseTimeMillis,
   }) async {
-    final String objectId = await methodChannel.invokeMethod('encryptor_initialize', {
+    final objectId = await invokeMethod<String>('encryptor_initialize', {
       'scope': scope.name,
       'powerAuthInstanceId': powerAuthInstanceId,
       'autoReleaseTimeMillis': autoReleaseTimeMillis,
@@ -46,12 +47,12 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
 
   @override
   Future<void> release(String objectId) async {
-    await methodChannel.invokeMethod('encryptor_release', {'objectId': objectId});
+    await invokeMethod('encryptor_release', {'objectId': objectId});
   }
 
   @override
   Future<bool> canEncryptRequest(String objectId) async {
-    final bool result = await methodChannel.invokeMethod('encryptor_canEncryptRequest', {
+    final result = await invokeMethod<bool>('encryptor_canEncryptRequest', {
       'objectId': objectId,
     });
 
@@ -59,26 +60,24 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
   }
 
   @override
-  Future<Map<String, dynamic>> encryptRequest(
+  Future<Map> encryptRequest(
     String objectId,
     String body,
     PowerAuthDataFormat bodyFormat,
   ) async {
-    final Map<dynamic, dynamic> result = await methodChannel.invokeMethod(
+    final result = await invokeMethod<Map>(
       'encryptor_encryptRequest',
       {'objectId': objectId, 'body': body, 'bodyFormat': bodyFormat.name},
     );
 
-    return Map<String, dynamic>.from(result);
+    return result;
   }
 
   @override
   Future<bool> canDecryptResponse(String objectId) async {
-    final bool result = await methodChannel.invokeMethod('encryptor_canDecryptResponse', {
+    return await invokeMethod<bool>('encryptor_canDecryptResponse', {
       'objectId': objectId,
     });
-
-    return result;
   }
 
   @override
@@ -87,7 +86,7 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform {
     Map<String, dynamic> cryptogram,
     PowerAuthDataFormat outputDataFormat,
   ) async {
-    final String result = await methodChannel.invokeMethod('encryptor_decryptResponse', {
+    final result = await invokeMethod<String>('encryptor_decryptResponse', {
       'objectId': objectId,
       'cryptogram': cryptogram,
       'outputDataFormat': outputDataFormat.name,

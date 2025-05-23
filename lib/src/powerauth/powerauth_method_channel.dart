@@ -35,8 +35,7 @@ import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
 
 /// An implementation of [PowerAuthPlatform] that uses method channels.
-class PowerAuthMethodChannel extends PowerAuthPlatform
-    with MethodChannelHelper {
+class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper {
 
   // TODO: temp internal cache for the temporary biometric key handle - purge this with fire when we have ObjectRegister
   String? _cachedBiometryKeyId;

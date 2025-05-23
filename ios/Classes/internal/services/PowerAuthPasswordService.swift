@@ -71,7 +71,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func release(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        register.remove(id: objectId)
+        register.removeAny(id: objectId)
         result(nil)
     }
     

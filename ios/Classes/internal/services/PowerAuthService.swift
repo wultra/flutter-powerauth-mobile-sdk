@@ -205,8 +205,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
-        let _: PowerAuthSDK? = register.remove(id: instanceId)
-        result(true) // return success regarding the remove operation
+        register.removeAll(tag: instanceId)
+        result(true)
     }
     
     private func hasValidActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {

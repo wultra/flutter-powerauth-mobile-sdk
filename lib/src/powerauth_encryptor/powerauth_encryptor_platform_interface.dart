@@ -63,7 +63,7 @@ abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
   }
 
   /// Encrypt a request.
-  Future<Map<String, dynamic>> encryptRequest(
+  Future<Map> encryptRequest(
     String objectId,
     String body,
     PowerAuthDataFormat bodyFormat,

@@ -10,6 +10,7 @@ class IntegrationHelper {
   final jsonMediaType = "application/json; charset=UTF-8";
   final PowerAuth sdk;
   CreatedActivation? createdActivation;
+  String? userId;
 
   IntegrationHelper(this.sdk);
 
@@ -78,7 +79,8 @@ class IntegrationHelper {
 
   Future<CreatedActivation> createActivation({String? userId, bool autoCommit = true}) async {
 
-    final activationName = userId ?? _randomString(20);
+    final activationName = userId ?? randomString(20);
+    this.userId = activationName;
 
     final body = """
         {
@@ -126,6 +128,12 @@ class IntegrationHelper {
 
   // --- HELPER FUNCTIONS ---
 
+  Future<Map<String, dynamic>> callSDKEndpoint(String endpoint, String body, Map<String, String>? headers) async {
+    final url = Uri.parse("${sdk.configuration?.baseEndpointUrl}/$endpoint");
+    final response = await http.post(url, headers: headers, body: body);
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> _makeCall(String? payload, String stringUrl, { HtptMethod method = HtptMethod.post}) async {
 
     final url = Uri.parse(stringUrl);
@@ -157,7 +165,7 @@ class IntegrationHelper {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  String _randomString(int length) {
+  static String randomString(int length) {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return List.generate(length, (index) => chars[Random().nextInt(chars.length)]).join();
   }

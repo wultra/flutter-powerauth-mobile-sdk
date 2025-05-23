@@ -104,7 +104,7 @@ abstract class TestSuiteWithActivation extends TestSuite {
   Future<void> beforeEach() async {
     await super.beforeEach();
     credentials = ActivationCredentials();
-    sdk = PowerAuth("test_instance");
+    sdk = PowerAuth(IntegrationHelper.randomString(30));
     helper = IntegrationHelper(sdk);
     await helper.configure();
   }
@@ -158,14 +158,14 @@ extension FutureExpectResult on Future<ExpectResult> {
       if (self.exception != null) {
         print("expected $other, but got ${self.exception} instead");
       } else {
-        print("Retrieved value ${self.result} does not equal epected value $other - $message");
+        print("Retrieved value ${self.result} does not equal expected value $other - $message");
       }
     }
   }
 
   Future<void> toThrow(PowerAuthErrorCode code, {String message = ""}) async {
-    var self = await this;
-    var exception = self.exception;
+    final self = await this;
+    final exception = self.exception;
     self.isResultExpected = exception is PowerAuthException && exception.code == code;
 
     if (!self.isResultExpected) {
