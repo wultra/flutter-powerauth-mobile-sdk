@@ -404,8 +404,8 @@ internal class PowerAuthManagedObject {
             "id": key,
             "class": "\(object.self)",
             "tag": tag,
-            "createDate": createDate.timeIntervalSince1970,
-            "lastUseDate": printLastUseDate ? lastUseDate.timeIntervalSince1970 : nil,
+            "createDate": Int(createDate.timeIntervalSince1970),
+            "lastUseDate": printLastUseDate ? Int(lastUseDate.timeIntervalSince1970) : nil,
             "usageCount": printUsageCount ? usageCount : nil,
             "policies": policies,
             "isValid": isStillValid()

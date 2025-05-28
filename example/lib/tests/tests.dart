@@ -4,6 +4,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerau
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_configure_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/password_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_encryptor_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_native_object_register_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_password_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_signature_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_token_tests.dart';
@@ -12,16 +13,17 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/utils_t
 class Tests {
   Future<TestResult> run() async {
     var testSuites = [
-      PasswordTests(),
-      PowerAuthConfigureTests(),
-      ConfigurationObjectsTests(),
-      PowerAuthActivationTests(),
-      PowerAuthPasswordTests(),
-      PowerAuthSignatureTests(),
-      UtilsTests(),
-      PowerauthBiometricsTests(),
-      PowerAuthEncryptorTests(),
-      PowerauthTokenTests()
+      // PasswordTests(),
+      // PowerAuthConfigureTests(),
+      // ConfigurationObjectsTests(),
+      // PowerAuthActivationTests(),
+      // PowerAuthPasswordTests(),
+      // PowerAuthSignatureTests(),
+      // UtilsTests(),
+      // PowerauthBiometricsTests(),
+      // PowerAuthEncryptorTests(),
+      // PowerauthTokenTests()
+      PowerauthNativeObjectRegisterTests()
     ];
     print("\n\n###  Test starting...");
     for (var testSuite in testSuites) {

@@ -44,3 +44,6 @@ export 'src/model/powerauth_data_format.dart';
 export 'src/model/powerauth_encryptor.dart';
 export 'src/model/powerauth_encryption_http_header.dart';
 export 'src/powerauth_encryptor/powerauth_encryptor.dart';
+
+// Debug
+export 'src/powerauth_native_object_register/powerauth_native_object_register.dart';

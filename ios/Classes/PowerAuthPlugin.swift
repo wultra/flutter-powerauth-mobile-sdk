@@ -32,7 +32,8 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
             PowerAuthService(register: register),
             PowerAuthUtilsService(),
             PowerAuthPasswordService(register: register),
-            PowerAuthEncryptorService(register: register)
+            PowerAuthEncryptorService(register: register),
+            PowerAuthRegisterService(register: register)
         ]
         
         var handlers = [String: (service: any PowerAuthFlutterService, handler: Any)]()

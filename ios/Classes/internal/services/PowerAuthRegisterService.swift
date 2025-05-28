@@ -82,22 +82,6 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Unknown object type parameter")
         }
         
-//        if objectType == .data || objectType == .secureData {
-//            
-//        }
-        
-        
-//        Class objectClass = Nil;
-//        if ([@"data" isEqual:objectType] || [@"secure-data" isEqual:objectType]) {
-//            objectClass = [PowerAuthData class];
-//        } else if ([@"number" isEqual:objectType]) {
-//            objectClass = [NSNumber class];
-//        } else if ([@"password" isEqual:objectType]) {
-//            objectClass = [PowerAuthCoreMutablePassword class];
-//        } else if ([@"encryptor" isEqual:objectType]) {
-//            objectClass = [PowerAuthJsEncryptor class];
-//        }
-        
         if command == "create" {
             // The "create" command creates a new instance of managed object
             // and returns its ID to Flutter.
