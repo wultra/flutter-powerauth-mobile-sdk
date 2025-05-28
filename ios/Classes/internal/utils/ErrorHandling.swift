@@ -56,10 +56,10 @@ internal extension FlutterError {
                             newUserInfo["responseBody"] = jsonString
                         }
                     }
-                    if let serverResponseCode = responseObject.responseObject.code {
+                    if let serverResponseCode = responseObject.responseObject?.code {
                         newUserInfo["serverResponseCode"] = serverResponseCode
                     }
-                    if let serverResponseMessage = responseObject.responseObject.message {
+                    if let serverResponseMessage = responseObject.responseObject?.message {
                         newUserInfo["serverResponseMessage"] = serverResponseMessage
                     }
                 }
