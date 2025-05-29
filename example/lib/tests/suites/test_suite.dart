@@ -161,9 +161,21 @@ extension FutureExpectResult on Future<ExpectResult> {
     self.isResultExpected = self.result == other;
     if (!self.isResultExpected) {
       if (self.exception != null) {
-        print("expected $other, but got ${self.exception} instead");
+        print("expected $other, but got ${self.exception} instead - $message");
       } else {
         print("Retrieved value ${self.result} does not equal expected value $other - $message");
+      }
+    }
+  }
+
+  Future<void> notToBe(Object? other, {String message = ""}) async {
+    var self = await this;
+    self.isResultExpected = self.result != other;
+    if (!self.isResultExpected) {
+      if (self.exception != null) {
+        print("expected $other, but got ${self.exception} instead");
+      } else {
+        print("Retrieved value ${self.result} should differ, but it's the same - $message");
       }
     }
   }
