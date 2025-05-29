@@ -67,7 +67,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     
     enum NativeObjectType: String {
         case data
-        case secureData = "secure-data"
+        case secureData // "secure-data"
         case number
         case password
     }
@@ -112,7 +112,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     instance = PowerAuthData(data: td, cleanup: false)
                 case .secureData:
                     let td = "SECURE-DATA".data(using: .utf8)!
-                    instance = PowerAuthData(data: td, cleanup: false)
+                    instance = PowerAuthData(data: td, cleanup: true)
                 case .number:
                     instance = 42
                 case .password:
@@ -127,8 +127,20 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         } else if command == "release" {
             // The "release" command release object with given identifier and returns true / false whether object was removed.
             if let objectId {
-                // releaseAny allows to release any object
-                result(register.removeAny(id: objectId) != nil)
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.remove(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.remove(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.remove(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.remove(id: objectId)
+                    result(data != nil)
+                }
                 return
             }
         } else if command == "releaseAll" {
@@ -144,19 +156,58 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         } else if command == "use" {
             // The "use" command find object and mark it as used and returns true / false whether object was found.
             if let objectId {
-                result(register.useAny(id: objectId) != nil);
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.use(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.use(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.use(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.use(id: objectId)
+                    result(data != nil)
+                }
                 return
             }
         } else if command == "find" {
             // The "find" command just find the object in the register and returns true / false if object still exists.
             if let objectId {
-                result(register.contains(id: objectId))
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.find(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.find(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.find(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.find(id: objectId)
+                    result(data != nil)
+                }
                 return
             }
         } else if command == "touch" {
             // The "touch" command prolongs lifetime of object in the register and returns true / false if object still exists.
             if let objectId {
-                result(register.touchAny(id: objectId))
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.touch(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.touch(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.touch(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.touch(id: objectId)
+                    result(data != nil)
+                }
                 return
             }
         } else if command == "setPeriod" {
@@ -164,7 +215,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
             if let period = options["cleanupPeriod"] as? Int {
                 register.setCleanupPeriod(period)
             }
-            result(nil);
+            result(nil)
             return
         }
         throw PluginException(.wrongParameter, message: "Wrong parameter for cmd \(command), \(options)")

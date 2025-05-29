@@ -13,16 +13,16 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/utils_t
 class Tests {
   Future<TestResult> run() async {
     var testSuites = [
-      // PasswordTests(),
-      // PowerAuthConfigureTests(),
-      // ConfigurationObjectsTests(),
-      // PowerAuthActivationTests(),
-      // PowerAuthPasswordTests(),
-      // PowerAuthSignatureTests(),
-      // UtilsTests(),
-      // PowerauthBiometricsTests(),
-      // PowerAuthEncryptorTests(),
-      // PowerauthTokenTests()
+      PasswordTests(),
+      PowerAuthConfigureTests(),
+      ConfigurationObjectsTests(),
+      PowerAuthActivationTests(),
+      PowerAuthPasswordTests(),
+      PowerAuthSignatureTests(),
+      UtilsTests(),
+      PowerauthBiometricsTests(),
+      PowerAuthEncryptorTests(),
+      PowerauthTokenTests(),
       PowerauthNativeObjectRegisterTests()
     ];
     print("\n\n###  Test starting...");

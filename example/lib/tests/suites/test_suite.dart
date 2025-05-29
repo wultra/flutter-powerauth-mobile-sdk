@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -91,6 +92,10 @@ abstract class TestSuite {
     final result = ExpectResult(null, null);
     result.isResultExpected = false;
     singleTestResults.add(result);
+  }
+
+  Future<void> sleep(int milliseconds) async {
+    await Future.delayed(Duration(milliseconds: milliseconds));
   }
 }
 

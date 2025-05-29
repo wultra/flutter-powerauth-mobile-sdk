@@ -30,7 +30,6 @@ class NativeObjectRegister {
 
   static NativeObjectRegisterPlatform get _platform => NativeObjectRegisterPlatform.instance;
 
-  
   static Future<ObjectsCount> countObjects(String tag) async {
     final r = await _platform.debugDump(tag);
     final valid = r.where((x) => x.isValid).length;
@@ -39,6 +38,28 @@ class NativeObjectRegister {
       invalid: r.length - valid
     );
   }
+
+  static Future<String> createObject(NativeObjectCmdData data) async {
+    return await _platform.debugCommand(NativeObjectCmd.create, data);
+  }
+
+  static Future<bool> findObject(String objectId, NativeObjectType type) async {
+    return await _platform.debugCommand(NativeObjectCmd.find, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  }
+
+  static Future<bool> useObject(String objectId, NativeObjectType type) async {
+    return await _platform.debugCommand(NativeObjectCmd.use, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  }
+
+  static Future<bool> touchObject(String objectId, NativeObjectType type) async {
+    return await _platform.debugCommand(NativeObjectCmd.touch, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  }
+
+  static Future<bool> removeObject(String objectId, NativeObjectType type) async {
+    return await _platform.debugCommand(NativeObjectCmd.release, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  }
+
+  static Future<List<NativeObjectInfo>> debugDump(String? instanceId) => _platform.debugDump(instanceId);
 }
 
 class ObjectsCount {
@@ -51,4 +72,56 @@ class ObjectsCount {
     required this.valid,
     required this.invalid,
   });
+}
+
+/// Type of native object.
+enum NativeObjectType {
+  data,
+  secureData,
+  number,
+  password,
+}
+
+/// Data accepted in debugCommand() function.
+class NativeObjectCmdData {
+  final String? objectId; // object id, accepted in 'release', 'use', 'find', 'touch'
+  final String? objectTag; // object tag, accepted in 'create', 'releaseAll'
+  final NativeObjectType? objectType; // object type accepted in 'create', 'release', 'use', 'find', 'touch'
+  final List<String>? releasePolicy; // use 'manual', 'after_use N', 'keep_alive T', 'expire T', accepted in 'create'
+  final int? cleanupPeriod; // cleanup period in milliseconds <100, 60000>, accepted in 'setPeriod'
+
+  NativeObjectCmdData({
+    this.objectId,
+    this.objectTag,
+    this.objectType,
+    this.releasePolicy,
+    this.cleanupPeriod,
+  });
+
+  factory NativeObjectCmdData.fromMap(Map map) {
+    return NativeObjectCmdData(
+      objectId: map['objectId'] as String?,
+      objectTag: map['objectTag'] as String?,
+      objectType: map['objectType'] != null
+          ? NativeObjectType.values.firstWhere(
+              (e) => e.name == map['objectType'],
+              orElse: () => NativeObjectType.data,
+            )
+          : null,
+      releasePolicy: map['releasePolicy'] != null
+          ? List<String>.from(map['releasePolicy'] as List)
+          : null,
+      cleanupPeriod: map['cleanupPeriod'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'objectId': objectId,
+      'objectTag': objectTag,
+      'objectType': objectType?.name,
+      'releasePolicy': releasePolicy,
+      'cleanupPeriod': cleanupPeriod,
+    };
+  }
 }
