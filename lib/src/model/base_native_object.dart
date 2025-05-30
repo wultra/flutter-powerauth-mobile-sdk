@@ -78,7 +78,6 @@ abstract class BaseNativeObject {
       return id;
 
     } catch (e) {
-      _initCompleter.completeError(e);
       _isInitializing = false;
 
       rethrow;

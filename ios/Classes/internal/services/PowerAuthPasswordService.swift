@@ -42,7 +42,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     fileprivate enum Args: String {
         case destroyOnUse
-        case powerAuthInstanceId
+        case ownerId
         case autoreleaseTime
         case objectId
         case otherObjectId
@@ -53,12 +53,11 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     private func initialize(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
         let destroyOnUse: Bool = try call.requireParameter(Args.destroyOnUse)
-        let paInstanceId: String? = call.getParameter(Args.powerAuthInstanceId)
+        let paInstanceId: String? = call.getParameter(Args.ownerId)
         let autoreleaseTime: Int? = call.getParameter(Args.autoreleaseTime)
         
-        // this scenario not supported yet in the API, but lets keep it here in case is added in the future
         if let paInstanceId, !register.contains(id: paInstanceId) {
-            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance is not configured")
+            throw PluginException(.instanceNotConfigured, message: "Associated PowerAuth instance is not configured")
         }
         
         let releaseTime = ReleasePolicy.getTimeInterval(value: autoreleaseTime, defaultValue: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)

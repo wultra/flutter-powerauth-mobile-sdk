@@ -1,11 +1,21 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
 class PasswordTests extends TestSuite {
 
   @override 
   getTests() {
-    return [testAddCharacters, testRemoveCharacters, testInsertCharacters, testUnicode, testManualRelease];
+    return [
+      testAddCharacters, 
+      testRemoveCharacters, 
+      testInsertCharacters, 
+      testUnicode, 
+      testManualRelease,
+      testAutomaticCleanup,
+      testReleaseAfterUse,
+      testGlobalRelease
+      ];
   }
 
   Future<void> testAddCharacters() async {
@@ -191,10 +201,7 @@ Future<void> testInsertCharacters() async {
   }
   
   Future<void> testManualRelease() async {
-    // var p1CleanupCalled = 0;
-    // var p2CleanupCalled = 0;
-    // final p1 = PowerAuthPassword(false, () => { p1CleanupCalled += 1 }, undefined, 100)
-    // final p2 = PowerAuthPassword(true, () => { p2CleanupCalled += 1 }, undefined, 100)
+
     var p1 = PowerAuthPassword(destroyOnUse: false, powerAuthInstanceId: null, autoReleaseTimeMillis: 100);
     var p2 = PowerAuthPassword(destroyOnUse: true, powerAuthInstanceId: null, autoReleaseTimeMillis: 100);
     cleanup.addAll([p1, p2]);
@@ -203,20 +210,14 @@ Future<void> testInsertCharacters() async {
     await p1.release();
     await p2.release();
 
-    // await expect(p1CleanupCalled).toBe(0)
-    // await expect(p2CleanupCalled).toBe(0)
-
     await p1.addCodePoint(48);
     await expect(p1.isEmpty()).toBe(false);
     await expect(p2.isEmpty()).toBe(true);
 
-    var id1AfterAccess = p1.objectId;
-    var id2AfterAccess = p2.objectId;
+    var id1AfterAccess = p1.objectId!;
+    var id2AfterAccess = p2.objectId!;
     await expect(id1AfterAccess).toBeDefined();
     await expect(id2AfterAccess).toBeDefined();
-
-    // await expect(p1CleanupCalled).toBe(0);
-    // await expect(p2CleanupCalled).toBe(0);
 
     // Now manually release passwords
     await p1.release();
@@ -226,19 +227,13 @@ Future<void> testInsertCharacters() async {
     await expect(p1.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
     await expect(p2.addCharacter('1')).toThrow(PowerAuthErrorCode.invalidNativeObject);
 
-    // await expect(Register.findObject(id1AfterAccess, 'password')).toBe(false)
-    // await expect(Register.findObject(id2AfterAccess, 'password')).toBe(false)
+    // Instantiate again
+    p1 = PowerAuthPassword(destroyOnUse: false, powerAuthInstanceId: null, autoReleaseTimeMillis: 100);
+    p2 = PowerAuthPassword(destroyOnUse: true, powerAuthInstanceId: null, autoReleaseTimeMillis: 100);
 
-    // await expect(p1CleanupCalled).toBe(0);
-    // await expect(p2CleanupCalled).toBe(0);
-
-    // Instantiate again, this should not call onAutomaticCleanup, because 
-    // release was initiated by application
-    // await p1.addCodePoint(48);
-    // await expect(p1.isEmpty()).toBe(false);
-    // await expect(p2.isEmpty()).toBe(true);
-    // await expect(p1CleanupCalled).toBe(0)
-    // await expect(p2CleanupCalled).toBe(0)
+    await p1.addCodePoint(48);
+    await expect(p1.isEmpty()).toBe(false);
+    await expect(p2.isEmpty()).toBe(true);
 
     // Now release for multiple times, to make sure that function doesn't fail
     await p1.release();
@@ -247,64 +242,48 @@ Future<void> testInsertCharacters() async {
     await p2.release();
   }
 
-  // getRandomId(): string {
-  //     return 'instanceId_' + (Math.random() + 1).toString(36).substring(7)
-  // }
+  Future<void> testGlobalRelease() async {
+    // Dummy values for PA configuration
+    final config = PowerAuthConfiguration(configuration: "ARDUHbAKHLrIHQHyDWTQrA9SEDI7+KWhWMMnxWlNWpITDtsBAUEEJavzIZpq2wyAN5EOlGPK3XonwdDBWB1MHlEIGSPfahORoWH+wctzmJj8fSf/oO2Tbvy4ACC5sIu2HsCSz6+E8Q==", baseEndpointUrl: "http://localhost/wrong");
 
-  // async testGlobalRelease() {
-  //     // Dummy values for PA configuration
-  //     final config = new PowerAuthConfiguration('6NgAwrP3iLfbuN2S8vCyEw==', '6N6JAkZhTTmeDoJG0llXhA==', 'BCgc7k0uu5wjYdbRxObMCLr7vDD5JQW//C0kRZSUYlyixAj/fllAx3pbkHZhogTL42EBUbKZeVqtXsw2PE46SJs=', 'http://localhost/wrong')
+    // Owner object represents an instance of PowerAuth class that typically owns various object types
+    final powerAuthInstanceId = IntegrationHelper.randomString(10);
+    final powerAuth = PowerAuth(powerAuthInstanceId);
+    cleanup.add(powerAuth);
 
-  //     // Owner object represents an instance of PowerAuth class that typically owns various object types
-  //     final powerAuthInstanceId = this.getRandomId()
-  //     final powerAuth = new PowerAuth(powerAuthInstanceId)
-  //     this.cleanup.push(powerAuth)
+    // We can create passwords even in PA instance is not configured, but every call to password API will fail
+    final p1 = PowerAuthPassword(destroyOnUse: false, powerAuthInstanceId: powerAuthInstanceId);
+    final p2 = PowerAuthPassword(destroyOnUse: true, powerAuthInstanceId: powerAuthInstanceId);
+    cleanup.addAll([p1, p2]);
+    await expect(p1.powerAuthInstanceId).toBe(powerAuthInstanceId);
+    await expect(p2.powerAuthInstanceId).toBe(powerAuthInstanceId);
 
-  //     // We can create passwords even in PA instance is not configured, but every call to password API will fail
-  //     let p1CleanupCalled = 0
-  //     let p2CleanupCalled = 0
-  //     final p1 = powerAuth.createPassword(false, () => p2CleanupCalled += 1)
-  //     final p2 = powerAuth.createPassword(true, () => p2CleanupCalled += 1)
-  //     this.cleanup.push(p1, p2)
-  //     await expect((p1 as any).powerAuthInstanceId).toBe(powerAuthInstanceId)
-  //     await expect((p2 as any).powerAuthInstanceId).toBe(powerAuthInstanceId)
+    // PA instance is not configured yet, so the underlying password cannot be created.
+    await expect(p1.addCodePoint(48)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(p2.removeLastCharacter()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
 
-  //     // PA instance is not configured yet, so the underlying password cannot be created.
-  //     await expect(async () => p1.addCharacter(48)).toThrow({errorCode: PowerAuthErrorCode.INSTANCE_NOT_CONFIGURED })
-  //     await expect(async () => p2.removeLastCharacter()).toThrow({errorCode: PowerAuthErrorCode.INSTANCE_NOT_CONFIGURED })
+    // Configure PA instance
+    await powerAuth.configure(configuration: config);
 
-  //     // Configure PA instance
-  //     await powerAuth.configure(config)
+    // Now everything should work as expected
+    await p1.addCodePoint(48);
+    await expect(p1.isEmpty()).toBe(false);
+    await expect(p2.isEmpty()).toBe(true);
 
-  //     // Now everything should work as expected
-  //     await p1.addCharacter(48)
-  //     await expect(p1.isEmpty()).toBe(false)
-  //     await expect(p2.isEmpty()).toBe(true)
-  //     await expect(p1CleanupCalled).toBe(0)
-  //     await expect(p2CleanupCalled).toBe(0)
+    final id1AfterAccess = p1.objectId!;
+    final id2AfterAccess = p2.objectId!;
+    
+    await expect(NativeObjectRegister.findObject(id1AfterAccess, NativeObjectType.password)).toBe(true);
+    await expect(NativeObjectRegister.findObject(id2AfterAccess, NativeObjectType.password)).toBe(true);
 
-  //     final id1AfterAccess = ((p1 as any).objectId)!
-  //     final id2AfterAccess = ((p2 as any).objectId)!
-      
-  //     await expect(Register.findObject(id1AfterAccess, 'password')).toBe(true)
-  //     await expect(Register.findObject(id2AfterAccess, 'password')).toBe(true)
-
-  //     // Now deconfigure PA instance
-  //     await powerAuth.deconfigure()
-  //     // Both passwords should be released
-  //     await expect(Register.findObject(id1AfterAccess, 'password')).toBe(false)
-  //     await expect(Register.findObject(id2AfterAccess, 'password')).toBe(false)
-
-  //     // Now any access to password leads to the error, because parent object is not in the register
-  //     await expect(async () => p1.isEmpty()).toThrow({errorCode: PowerAuthErrorCode.INSTANCE_NOT_CONFIGURED })
-  //     await expect(async () => p2.length()).toThrow({errorCode: PowerAuthErrorCode.INSTANCE_NOT_CONFIGURED })
-
-  //     // Configure PA instance again
-  //     await powerAuth.configure(config)
-
-  //     await expect(p1.isEmpty()).toBe(true)
-  //     await expect(p2.isEmpty()).toBe(true)
-  // }
+    // Now deconfigure PA instance
+    await powerAuth.deconfigure();
+    // Both passwords should be released
+    await expect(NativeObjectRegister.findObject(id1AfterAccess, NativeObjectType.password)).toBe(false);
+    await expect(NativeObjectRegister.findObject(id2AfterAccess, NativeObjectType.password)).toBe(false);
+    await expect(p1.isEmpty()).toThrow(PowerAuthErrorCode.invalidNativeObject);
+    await expect(p2.length()).toThrow(PowerAuthErrorCode.invalidNativeObject);
+  }
 
   Future<PowerAuthPassword> importPassword(String password) {
     return PowerAuthPassword.fromString(password);

@@ -27,9 +27,9 @@ import '../model/base_native_object.dart';
 class PowerAuthPassword extends BaseNativeObject {
 
   // Configuration specific to password
-  final bool _destroyOnUse;
-  final String? _powerAuthInstanceId;
-  final int? _autoReleaseTimeMillis;
+  final bool destroyOnUse;
+  final String? powerAuthInstanceId;
+  final int? autoReleaseTimeMillis;
 
   // Platform instance accessor - static for easy access in overrides
   static PowerAuthPasswordPlatform get _platform =>
@@ -48,12 +48,10 @@ class PowerAuthPassword extends BaseNativeObject {
   /// - `autoReleaseTimeMillis`: Optional. Specifies a custom auto-release time in milliseconds
   ///                            for the native object. Platform defaults apply if not set.
   PowerAuthPassword({
-    bool destroyOnUse = true,
-    String? powerAuthInstanceId,
-    int? autoReleaseTimeMillis,
-  }) : _destroyOnUse = destroyOnUse,
-       _powerAuthInstanceId = powerAuthInstanceId,
-       _autoReleaseTimeMillis = autoReleaseTimeMillis;
+    this.destroyOnUse = true,
+    this.powerAuthInstanceId,
+    this.autoReleaseTimeMillis,
+  });
 
   static Future<PowerAuthPassword> fromString(
     String password, {
@@ -76,9 +74,9 @@ class PowerAuthPassword extends BaseNativeObject {
   @protected
   Future<String> createNativeObject() async {
     return _platform.initialize(
-      destroyOnUse: _destroyOnUse,
-      powerAuthInstanceId: _powerAuthInstanceId,
-      autoReleaseTimeMillis: _autoReleaseTimeMillis,
+      destroyOnUse: destroyOnUse,
+      powerAuthInstanceId: powerAuthInstanceId,
+      autoReleaseTimeMillis: autoReleaseTimeMillis,
     );
   }
 
@@ -101,28 +99,22 @@ class PowerAuthPassword extends BaseNativeObject {
 
   /// Appends a character to the end of the password.
   /// If more than one character is provided, only the first one is used.
-  Future<int> addCharacter(String character) async {
-    return addCodePoint(_getCodePoint(character));
-  }
+  Future<int> addCharacter(String character) => addCodePoint(_getCodePoint(character));
 
   /// Appends a character to the end of the password.
   /// If more than one character is provided, only the first one is used.
   Future<int> addCodePoint(int codePoint) => withObjectId((id) => _platform.addCharacter(id, codePoint));
 
   /// Inserts a character at the specified position.
-  Future<int> insertCharacter(String character, int at) async {
-    return insertCodePoint(_getCodePoint(character), at);
-  }
+  Future<int> insertCharacter(String character, int at) => insertCodePoint(_getCodePoint(character), at);
 
   Future<int> insertCodePoint(int codePoint, int at) => withObjectId((id) => _platform.insertCharacter(id, codePoint, at));
 
   /// Removes the character at the specified position.
-  Future<int> removeCharacterAt(int position) =>
-      withObjectId((id) => _platform.removeCharacterAt(id, position));
+  Future<int> removeCharacterAt(int position) => withObjectId((id) => _platform.removeCharacterAt(id, position));
 
   /// Removes the last character.
-  Future<int> removeLastCharacter() =>
-      withObjectId((id) => _platform.removeLastCharacter(id));
+  Future<int> removeLastCharacter() => withObjectId((id) => _platform.removeLastCharacter(id));
 
   /// Compares this password with another [PowerAuthPassword].
   Future<bool> isEqualTo(PowerAuthPassword other) async {
@@ -149,9 +141,9 @@ class PowerAuthPassword extends BaseNativeObject {
     return await withObjectId((id) async {
       return {
         'objectId': id,
-        'destroyOnUse': _destroyOnUse,
-        'ownerId': _powerAuthInstanceId,
-        'autoreleaseTime': _autoReleaseTimeMillis
+        'destroyOnUse': destroyOnUse,
+        'ownerId': powerAuthInstanceId,
+        'autoreleaseTime': autoReleaseTimeMillis
       }..removeWhere((key, value) => value == null);
     });
   }
