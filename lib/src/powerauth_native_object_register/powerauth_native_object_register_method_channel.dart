@@ -35,6 +35,14 @@ class NativeObjectRegisterMethodChannel extends NativeObjectRegisterPlatform
   );
 
   @override
+  Future<bool> isValidNativeObject(String objectId) async {
+    return await invokeMethod(
+      'register_isValidNativeObject',
+      {'objectId': objectId},
+    );
+  }
+
+  @override
   Future<List<NativeObjectInfo>> debugDump(String? instanceId) async {
     if (!kDebugMode) {
       throw PowerAuthException(

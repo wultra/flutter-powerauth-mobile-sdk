@@ -16,89 +16,57 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
 
-import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
-import '../model/powerauth_client_configuration.dart';
-import '../model/powerauth_keychain_configuration.dart';
-import '../model/powerauth_sharing_configuration.dart';
-import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
 
-import '../model/powerauth_activation.dart';
-import '../model/powerauth_activation_status.dart';
-import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
-import '../model/powerauth_configuration.dart';
-import '../model/powerauth_create_activation_result.dart';
 
 /// An implementation of [PowerAuthPlatform] that uses method channels.
 class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper {
-
-  // TODO: temp internal cache for the temporary biometric key handle - purge this with fire when we have ObjectRegister
-  String? _cachedBiometryKeyId;
 
   @override
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
-  static MethodChannel get sharedChannel =>
-      (PowerAuthPlatform.instance as PowerAuthMethodChannel).methodChannel;
+  static MethodChannel get sharedChannel => (PowerAuthPlatform.instance as PowerAuthMethodChannel).methodChannel;
 
-  // Hacky helper to prepare arguments, potentially triggering biometry and injecting key ID
-  Future<Map<String, dynamic>> _prepareAuthArguments(
-    String instanceId, // Need instanceId here
-    PowerAuthAuthentication authentication,
-    Map<String, dynamic> baseArgs,
-  ) async {
-    final args = Map<String, dynamic>.from(baseArgs);
-    final authMap = await authentication.toMap();
+  Future<PowerAuthAuthentication> _resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
 
-    // Trigger biometry and inject key ID if needed - this kinda mimics the AuthResolver from rN
-    if (authentication.useBiometry) {
-      if (_cachedBiometryKeyId == null) {
-        print(
-          "Biometry requested, but no cached key ID. Triggering native auth...",
-        );
+    final auth = authentication as InternalAuth?;
 
-        try {
-          final keyId =
-              await invokeNullableMethod<String>('authenticateWithBiometry', {
-                'instanceId': instanceId,
-                'prompt': authentication.biometricPrompt?.toMap(),
-              });
-
-          if (keyId != null) {
-            print("Native biometric auth successful, caching key ID: $keyId");
-            _cachedBiometryKeyId = keyId; // Cache the new key ID
-          } else {
-            print(
-              "Warning: Native biometric auth returned null key ID without throwing.",
-            );
-          }
-        } catch (e) {
-          print("Native biometric auth failed during argument preparation: $e");
-          _cachedBiometryKeyId = null;
-          rethrow;
-        }
-      }
-
-      // Inject the ID if we actually have it
-      if (_cachedBiometryKeyId != null) {
-        print("Injecting cached biometry key ID: $_cachedBiometryKeyId");
-
-        authMap['biometryKeyId'] = _cachedBiometryKeyId;
-        _cachedBiometryKeyId = null;
-      } else {
-        // TODO: not sure here, will this result in a simple possession? 
-        print("Proceeding with biometry request without a specific key ID.");
-      }
+    if (auth == null) {
+      throw PowerAuthException(code: PowerAuthErrorCode.unknownError, message: "PowerAuthAuthentication must be an InternalAuth instance for method channel operations.");
     }
 
-    args['authentication'] = authMap;
-    return args;
+    // Test whether previously fetched biometryKeyId is invalid. Reset biometry key's identifier
+    // if underlying data object is no longer valid.
+    if (auth.isReusable && auth.biometryKeyId != null) {
+      final isValid = await NativeObjectRegister.isValidNativeObject(auth.biometryKeyId!);
+      if (isValid == false) {
+        auth.biometryKeyId = null;
+      }
+    }
+    
+    // On both platforms we need to fetch the key for every biometric authentication.
+    // If the key is already set, use it.
+    if (auth.useBiometry && auth.biometryKeyId == null) {
+      try {
+        final isReusable = auth.isReusable || makeReusable;
+        auth.isReusable = isReusable;
+        auth.biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
+          'instanceId': instanceId,
+          'prompt': auth.biometricPrompt?.toMap(),
+          'isReusable': isReusable,
+        });
+      } catch (e) {
+        // TODO: better processing?
+        rethrow;
+      }
+    }
+    return auth;
   }
 
   @override
@@ -184,21 +152,14 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<void> removeActivationWithAuthentication(
-    String instanceId,
-    PowerAuthAuthentication authentication,
-  ) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
-      'instanceId': instanceId,
-    });
+  Future<void> removeActivationWithAuthentication(String instanceId, PowerAuthAuthentication authentication) async {
+    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final args = await resolvedAuth.prepareAuthArguments({'instanceId': instanceId});
     await invokeMethod<void>('removeActivationWithAuthentication', args);
   }
 
   @override
-  Future<PowerAuthCreateActivationResult> createActivation(
-    String instanceId,
-    PowerAuthActivation activation,
-  ) async {
+  Future<PowerAuthCreateActivationResult> createActivation(String instanceId, PowerAuthActivation activation) async {
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'createActivation',
       {'instanceId': instanceId, 'activation': activation.toMap()},
@@ -207,14 +168,9 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<void> persistActivation(
-    String instanceId,
-    PowerAuthAuthentication authentication,
-  ) async {
-    await invokeMethod<void>('persistActivation', {
-      'instanceId': instanceId,
-      'authentication': await authentication.toMap()
-    });
+  Future<void> persistActivation(String instanceId, PowerAuthAuthentication authentication) async {
+    final args = await authentication.prepareAuthArguments({'instanceId': instanceId});
+    await invokeMethod<void>('persistActivation', args);
   }
 
   @override
@@ -245,12 +201,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     Map<String, String>? queryParams,
   ]) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
+    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'uriId': uriId,
       'queryParams': queryParams
     });
-
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'requestGetSignature',
       args
@@ -266,13 +222,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     String? body
   ]) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
+    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'method': method,
       'uriId': uriId,
       'body': body
     });
-
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'requestSignature',
       args
@@ -288,7 +244,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String nonce, [
     String? body
   ]) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
+    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'uriId': uriId,
       'nonce': nonce,
@@ -315,8 +272,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) async {
-    _cachedBiometryKeyId = null;
-
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'getBiometryInfo',
       {'instanceId': instanceId},
@@ -330,8 +285,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     PowerAuthPassword password, [
     PowerAuthBiometricPrompt? prompt,
   ]) async {
-    _cachedBiometryKeyId = null;
-
     await invokeMethod<void>('addBiometryFactor', {
       'instanceId': instanceId,
       'password': await password.toRawPasswordMap(),
@@ -341,8 +294,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<bool> hasBiometryFactor(String instanceId) async {
-    // _cachedBiometryKeyId = null;
-
     return await invokeMethod<bool>('hasBiometryFactor', {
       'instanceId': instanceId,
     });
@@ -350,8 +301,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> removeBiometryFactor(String instanceId) async {
-    _cachedBiometryKeyId = null;
-
     await invokeMethod<void>('removeBiometryFactor', {
       'instanceId': instanceId,
     });
@@ -390,7 +339,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) async {
-    final args = await _prepareAuthArguments(instanceId, authentication, {
+    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'tokenName': tokenName,
     });

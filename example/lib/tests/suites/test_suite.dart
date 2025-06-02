@@ -7,12 +7,13 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integrat
 
 abstract class TestSuite {
 
+  // Metho to be implemented by subclasses to provide a list of tests.
+  List<Future<void> Function()> getTests();
+
   List<ExpectResult> singleTestResults = [];
   List<Object> cleanup = [];
   var testFailCount = 0;
-
-  List<Future<void> Function()> getTests();
-
+  bool isInteractive = false; // Set to true if the test suite expects user interaction)
   String? currentTestName;
 
   String get name {
@@ -96,6 +97,11 @@ abstract class TestSuite {
 
   Future<void> sleep(int milliseconds) async {
     await Future.delayed(Duration(milliseconds: milliseconds));
+  }
+
+  Future<void> showPrompt(String text) async {
+    // TODO: this should be displayed in the UI
+    print(text);
   }
 }
 

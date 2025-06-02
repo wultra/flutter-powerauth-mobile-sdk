@@ -437,9 +437,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     });
   }
 
-  void _runTests() async {
+  void _runTests({bool interactive = false}) async {
     _setError("Tests are running...");
-    final result = await Tests().run();
+    final result = await Tests().run(interactive: interactive);
     _setError(result.text);
   }
 
@@ -472,7 +472,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
             const Text('Automatic tests:'),
             ElevatedButton(
               onPressed: () => _runTests(),
-              child: const Text('Run test'),
+              child: const Text('Run tests'),
+            ),
+            ElevatedButton(
+              onPressed: () => _runTests(interactive: true),
+              child: const Text('Run interactive tests'),
             ),
             const SizedBox(height: 12),
             const Text('Manual testing:'),

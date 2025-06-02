@@ -1,5 +1,6 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_activation_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configuration_objects_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_interactive_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_configure_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/password_tests.dart';
@@ -11,8 +12,8 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerau
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/utils_tests.dart';
 
 class Tests {
-  Future<TestResult> run() async {
-    var testSuites = [
+
+  final _testSuites = [
       PasswordTests(),
       PowerAuthConfigureTests(),
       ConfigurationObjectsTests(),
@@ -20,12 +21,16 @@ class Tests {
       PowerAuthPasswordTests(),
       PowerAuthSignatureTests(),
       UtilsTests(),
-      PowerauthBiometricsTests(),
+      PowerAuthBiometricsTests(),
       PowerAuthEncryptorTests(),
-      PowerauthTokenTests(),
-      PowerauthNativeObjectRegisterTests()
+      PowerAuthTokenTests(),
+      PowerAuthNativeObjectRegisterTests(),
+      PowerauthBiometricsInteractiveTests()
     ];
-    print("\n\n###  Test starting...");
+
+  Future<TestResult> run({bool interactive = false}) async {
+    final testSuites = _testSuites.where((testSuite) => testSuite.isInteractive == interactive).toList();
+    print("\n\n### ${interactive ? "Interactive" : "Non-interactive"} tests starting...");
     for (var testSuite in testSuites) {
       await testSuite.runTests();
     }
