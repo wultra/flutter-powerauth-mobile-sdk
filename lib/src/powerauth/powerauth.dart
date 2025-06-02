@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_error.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_token_store.dart';
 
 import '../model/powerauth_biometry_configuration.dart';
@@ -144,29 +146,24 @@ class PowerAuth {
   Future<bool> canStartActivation() => _platform.canStartActivation(instanceId);
 
   /// Checks if this instance has an activation process already pending.
-  Future<bool> hasPendingActivation() =>
-      _platform.hasPendingActivation(instanceId);
+  Future<bool> hasPendingActivation() => _platform.hasPendingActivation(instanceId);
 
   /// Gets the current activation identifier for this instance, if activated.
   /// Returns `null` if no valid activation exists.
-  Future<String?> getActivationIdentifier() =>
-      _platform.getActivationIdentifier(instanceId);
+  Future<String?> getActivationIdentifier() => _platform.getActivationIdentifier(instanceId);
 
   /// Gets the fingerprint of the device's public key associated with the current activation.
   /// Returns `null` if no valid activation exists.
-  Future<String?> getActivationFingerprint() =>
-      _platform.getActivationFingerprint(instanceId);
+  Future<String?> getActivationFingerprint() => _platform.getActivationFingerprint(instanceId);
 
   /// Fetches the latest activation status from the PowerAuth server.
   /// This may involve network communication and potential protocol upgrades.
-  Future<PowerAuthActivationStatus> fetchActivationStatus() =>
-      _platform.fetchActivationStatus(instanceId);
+  Future<PowerAuthActivationStatus> fetchActivationStatus() => _platform.fetchActivationStatus(instanceId);
 
   /// Removes the activation state locally from the device.
   /// This does **not** inform the server. Use this only if the activation
   /// was removed externally (e.g., via web banking).
-  Future<void> removeActivationLocal() =>
-      _platform.removeActivationLocal(instanceId);
+  Future<void> removeActivationLocal() => _platform.removeActivationLocal(instanceId);
 
   /// Removes the activation from both the local device and the PowerAuth server.
   /// Requires [authentication] to authorize the removal on the server.
@@ -178,25 +175,20 @@ class PowerAuth {
   /// (activation code or custom attributes).
   ///
   /// Returns a [PowerAuthCreateActivationResult] containing the activation fingerprint.
-  Future<PowerAuthCreateActivationResult> createActivation(
-    PowerAuthActivation activation,
-  ) => _platform.createActivation(instanceId, activation);
+  Future<PowerAuthCreateActivationResult> createActivation(PowerAuthActivation activation,) => _platform.createActivation(instanceId, activation);
 
   /// Persists the activation data locally after a successful `createActivation` call.
   ///
   /// Requires [authentication] (password and optionally biometry) to secure the local activation state.
-  Future<void> persistActivation(PowerAuthAuthentication authentication) =>
-      _platform.persistActivation(instanceId, authentication);
+  Future<void> persistActivation(PowerAuthAuthentication authentication) => _platform.persistActivation(instanceId, authentication);
 
   /// Validates the provided [password] against the server.
   /// This typically involves computing a signature and verifying it server-side.
-  Future<void> validatePassword(PowerAuthPassword password) =>
-      _platform.validatePassword(instanceId, password);
+  Future<void> validatePassword(PowerAuthPassword password) => _platform.validatePassword(instanceId, password);
 
   /// Changes the user's password. Validates the [oldPassword] on the server before
   /// setting the [newPassword].
-  Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) =>
-      _platform.changePassword(instanceId, oldPassword, newPassword);
+  Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) => _platform.changePassword(instanceId, oldPassword, newPassword);
 
   /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
   ///
@@ -287,6 +279,34 @@ class PowerAuth {
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);
 
+  /// Helper method for grouping biometric authentications.
+  /// 
+  /// With this method, you can use 1 biometric authentication (dialog) for several operations.
+  /// Just use the `PowerAuthAuthentication` variable inside the `groupedAuthenticationCalls` callback.
+  /// 
+  /// Be aware, that you must not execute the next HTTP request signed with the same credentials when the previous one 
+  /// fails with the 401 HTTP status code. If you do, then you risk blocking the user's activation on the server.
+  /// 
+  /// - [authentication] authentication object
+  /// - [groupedAuthenticationCalls] call that will use reusable authentication object
+  Future<void> groupedBiometricAuthentication(
+    PowerAuthAuthentication authentication, 
+    Future<void> Function(PowerAuthAuthentication) groupedAuthenticationCalls) async {
+      if (!await isConfigured()) {
+        throw PowerAuthException(code: PowerAuthErrorCode.instanceNotConfigured, message: "Instance is not configured");
+      }
+      final reusable = (await _platform.resolveAuthentication(instanceId, authentication, makeReusable: true)) as InternalAuth;
+      if (reusable.useBiometry == false) {
+        throw PowerAuthException(code: PowerAuthErrorCode.wrongParameter, message: "Authentication object is not configured for biometric factor");
+      }
+      try {
+        // integrator defined chain of authorization calls with reusable authentication
+        await groupedAuthenticationCalls(reusable);
+      } catch (e) {
+        // rethrow the error with information that the integrator should handle errors by himself
+        throw PowerAuthException(code: PowerAuthErrorCode.unknownError, message: "Your 'groupedAuthenticationCalls' function threw an exception. Please make sure that you catch errors yourself.");
+      }  
+  }
 
   /// Returns an encryptor for application scope.
   ///

@@ -99,10 +99,15 @@ abstract class TestSuite {
     await Future.delayed(Duration(milliseconds: milliseconds));
   }
 
-  Future<void> showPrompt(String text) async {
+  Future<void> showPrompt(String text, {UserPromptDuration duration = UserPromptDuration.normal}) async {
     // TODO: this should be displayed in the UI
     print(text);
   }
+}
+
+enum UserPromptDuration {
+  quick,
+  normal
 }
 
 abstract class TestSuiteWithActivation extends TestSuite {

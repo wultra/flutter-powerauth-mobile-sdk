@@ -8,7 +8,12 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   @override
   List<Future<void> Function()> getTests() =>  [
     testBiometricSignature,
-    testCreateActivationWithSymmetricKey
+    testCreateActivationWithSymmetricKey,
+    testGroupedBiometricAuthentication,
+    testRemoveActivationWithBiometry,
+    testCancelBiometry,
+    testFailedBiometry,
+    iosTestFallbackButton
   ];
 
   @override
@@ -65,7 +70,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       )
     );
     final tokenName = 'biometric-token';
-    await showPrompt("using auth for the frist time");
+    await showPrompt("using auth for the first time");
     await expect(sdk.tokenStore.requestAccessToken(tokenName, auth)).toBeDefined();
     await expect(sdk.tokenStore.removeAccessToken(tokenName)).toSucceed();
     await showPrompt("using auth for the second time");
@@ -73,111 +78,114 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     await expect(sdk.tokenStore.requestAccessToken(tokenName, auth)).toThrow(PowerAuthErrorCode.invalidNativeObject);
   }
 
-    // async testGroupedBiometricAuthentication() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     await this.showPrompt('Please authenticate for group operation.')
-    //     await sdk.groupedBiometricAuthentication(this.credentials.biometry, async reusableAuth => {
-    //         //
-    //         await this.showPrompt('Biometric dialog should not be displayed.', UserPromptDuration.QUICK)
-    //         // Calculate signature 
-    //         let data = '{}'
-    //         let uriId = '/some/uriId'
-    //         let header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data)
-    //         // Verify signature
-    //         let result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, data, header.value)
-    //         await expect(result).toBe(true)
-    //         //
-    //         await this.showPrompt('Biometric dialog should not be displayed.', UserPromptDuration.QUICK)
-    //         // Calculate yet another signature and verify
-    //         data = '{"value":true}'
-    //         uriId = '/another/uriId'
+  Future<void> testGroupedBiometricAuthentication() async {
 
-    //         header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data)
-    //         result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, data, header.value)
-    //         await expect(result).toBe(true)
+    await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
 
-    //         await this.showPrompt('Biometric dialog should not be displayed.', UserPromptDuration.QUICK)
-    //         // Calculate yet another signature and verify
-    //         data = '{"value":false}'
-    //         uriId = '/another/uriId'
+    await expect(sdk.hasBiometryFactor()).toBe(true);
+    await showPrompt('Please authenticate for group operation.');
+    await sdk.groupedBiometricAuthentication(credentials.biometry(), (reusableAuth) async {
+      //
+      await showPrompt('Biometric dialog should not be displayed.', duration: UserPromptDuration.quick);
+      // Calculate signature 
+      var data = '{}';
+      var uriId = '/some/uriId';
+      var header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data);
+      // Verify signature
+      var result = await helper.verifySignature("POST", uriId, header.value, data);
+      await expect(result.signatureValid).toBe(true);
+      //
+      await showPrompt('Biometric dialog should not be displayed.', duration: UserPromptDuration.quick);
+      // Calculate yet another signature and verify
+      data = '{"value":true}';
+      uriId = '/another/uriId';
 
-    //         header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data)
-    //         result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, data, header.value)
-    //         await expect(result).toBe(true)
+      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data);
+      result = await helper.verifySignature("POST", uriId, header.value, data);
+      await expect(result.signatureValid).toBe(true);
 
-    //         // Now sleep for 10 seconds
+      await showPrompt('Biometric dialog should not be displayed.', duration: UserPromptDuration.quick);
+      // Calculate yet another signature and verify
+      data = '{"value":false}';
+      uriId = '/another/uriId';
 
-    //         await this.sleepWithProgress(10000)
+      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data);
+      result = await helper.verifySignature("POST", uriId, header.value, data);
+      await expect(result.signatureValid).toBe(true);
 
-    //         await this.showPrompt('Biometric dialog should be displayed again.')
+      // Now sleep for 10 seconds
 
-    //         // Calculate yet another signature and verify
-    //         data = '{"value":false, "something":true}'
-    //         uriId = '/another/uriId'
+      await showPrompt('Sleeping for 10 s....', duration: UserPromptDuration.quick);
+      await this.sleep(10_000);
 
-    //         header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data)
-    //         result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, data, header.value)
-    //         await expect(result).toBe(true)
+      await showPrompt('Biometric dialog should be displayed again.');
 
-    //         await this.showPrompt('Biometric dialog should not be displayed again.', UserPromptDuration.QUICK)
-    //         // Calculate yet another signature and verify
-    //         data = '{"value":false}'
-    //         uriId = '/another/uriId'
+      // Calculate yet another signature and verify
+      data = '{"value":false, "something":true}';
+      uriId = '/another/uriId';
 
-    //         header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data)
-    //         result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, data, header.value)
-    //         await expect(result).toBe(true)
-    //     })
-    // }
+      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data);
+      result = await helper.verifySignature("POST", uriId, header.value, data);
+      await expect(result.signatureValid).toBe(true);
 
-    // async testRemoveActivationWithBiometry() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     await this.showPrompt('Authenticate to remove activation')
-    //     await sdk.removeActivationWithAuthentication(this.credentials.biometry)
-    // }
+      await showPrompt('Biometric dialog should not be displayed again.', duration: UserPromptDuration.quick);
+      // Calculate yet another signature and verify
+      data = '{"value":false}';
+      uriId = '/another/uriId';
+
+      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, data);
+      result = await helper.verifySignature("POST", uriId, header.value, data);
+      await expect(result.signatureValid).toBe(true);
+    });
+  }
+
+  Future<void> testRemoveActivationWithBiometry() async {
+    await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
+    await expect(sdk.hasBiometryFactor()).toBe(true);
+    await showPrompt('Authenticate to remove activation');
+    await sdk.removeActivationWithAuthentication(credentials.biometry());
+  }
     
-    // async testCancelBiometry() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     await this.showPrompt('Please CANCEL authentication dialog')
-    //     final auth = PowerAuthAuthentication.biometry({promptTitle: "Please cancel", promptMessage: "Please CANCEL this dialog", cancelButton: "super cancel"})
-    //     await await expect(async () => sdk.requestSignature(auth, 'POST', '/some/uriId', '{}')).toThrow({ errorCode: PowerAuthErrorCode.BIOMETRY_CANCEL })
-    // }
+  Future<void> testCancelBiometry() async {
+    if (await _isFaceID()) {
+      await showPrompt('This test is not supported on FaceID');
+      return;
+    }
+    await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
+    await expect(sdk.hasBiometryFactor()).toBe(true);
+    await showPrompt('Please CANCEL authentication dialog');
+    final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Please CANCEL this dialog", promptTitle: "Please cancel", cancelButtonTitle: "super cancel"));
+    await expect(sdk.requestSignature(auth, 'POST', '/some/uriId', '{}')).toThrow(PowerAuthErrorCode.biometryCancel);
+  }
 
-    // async testFailedBiometry() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     final isFaceId = !this.isAndoid && (await sdk.getBiometryInfo()).biometryType == PowerAuthBiometryType.FACE
-    //     if (isFaceId) {
-    //         await this.showPrompt('This test is not supported on FaceID')
-    //         return
-    //     }
+  Future<void> testFailedBiometry() async {
+    if (await _isFaceID()) {
+      await showPrompt('This test is not supported on FaceID');
+      return;
+    }
+    await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
+    await expect(sdk.hasBiometryFactor()).toBe(true);
+    await showPrompt('Please FAIL authentication dialog');
+    
+    final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Please fail", promptMessage: "Please use wrong biometry to fail"));
+    // At biometry fail, the fake key is generated and the signature will be invalid
+    final uriId = '/some/failed/uriId';
+    final body = '{ failedApi: true }';
+    final header = await sdk.requestSignature(auth, 'POST', uriId, body);
+    final result = await helper.verifySignature("POST", uriId, header.value, body);
+    await expect(result.signatureValid).toBe(false);
+  }
 
-    //     await this.showPrompt('Please FAIL authentication dialog')
-        
-    //     final auth = PowerAuthAuthentication.biometry({promptTitle: "Please fail", promptMessage: "Please use wrong biometry to fail"})
-    //     // At biometry fail, the fake key is generated and the signature will be invalid
-    //     let uriId = '/some/failed/uriId'
-    //     let body = '{ failedApi: true }'
-    //     final header = await sdk.requestSignature(auth, 'POST', uriId, body)
-    //     final result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, body, header.value)
-    //     await expect(result).toBe(false)
-    // }
+  Future<void> iosTestFallbackButton() async {
+    if (Platform.isAndroid) return;
+    await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
+    await expect(sdk.hasBiometryFactor()).toBe(true);
+    await showPrompt('Please FAIL authentication and use fallback button');
+    final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Please fail", promptMessage: "Fail to show the fallback button", fallbackButtonTitle: 'Fallback button'));
+    await expect(sdk.requestSignature(auth, 'POST', '/some/uriId', '{}')).toThrow(PowerAuthErrorCode.biometryFallback);
+  }
 
-    // async iosTestFallbackToPasscode() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     await this.showPrompt('Please FAIL authentication and use device passcode')
-    //     final auth = PowerAuthAuthentication.biometry({promptTitle: "Please fail", promptMessage: "Please use fallback to passcode"})
-    //     // At biometry passcode fallback, everything should work properly
-    //     let uriId = '/some/fallback/uriId'
-    //     let body = '{ fallbackApi: true }'
-    //     final header = await sdk.requestSignature(auth, 'POST', uriId, body)
-    //     final result = await this.helper.signatureHelper.verifyOnlineSignature('POST', uriId, body, header.value)
-    //     await expect(result).toBe(true)
-    // }
-
-    // async iosTestFallbackButton() {
-    //     await expect(sdk.hasBiometryFactor()).toBe(true)
-    //     await this.showPrompt('Please FAIL authentication and use fallback button')
-    //     final auth = PowerAuthAuthentication.biometry({promptTitle: "Please fail", promptMessage: "Please use fallback to passcode", fallbackButton: 'fallback button'})
-    //     await await expect(async () => sdk.requestSignature(auth, 'POST', '/some/uriId', '{}')).toThrow({ errorCode: PowerAuthErrorCode.BIOMETRY_FALLBACK })
-    // }
+  Future<bool> _isFaceID() async {
+    return !Platform.isAndroid && (await sdk.getBiometryInfo()).biometryType == PowerAuthBiometryType.face;
+  }
 }

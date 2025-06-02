@@ -33,7 +33,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   static MethodChannel get sharedChannel => (PowerAuthPlatform.instance as PowerAuthMethodChannel).methodChannel;
 
-  Future<PowerAuthAuthentication> _resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
+  @override
+  Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
 
     final auth = authentication as InternalAuth?;
 
@@ -153,7 +154,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> removeActivationWithAuthentication(String instanceId, PowerAuthAuthentication authentication) async {
-    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     final args = await resolvedAuth.prepareAuthArguments({'instanceId': instanceId});
     await invokeMethod<void>('removeActivationWithAuthentication', args);
   }
@@ -201,7 +202,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     Map<String, String>? queryParams,
   ]) async {
-    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'uriId': uriId,
@@ -222,7 +223,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     String? body
   ]) async {
-    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'method': method,
@@ -244,7 +245,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String nonce, [
     String? body
   ]) async {
-    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'uriId': uriId,
@@ -339,7 +340,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) async {
-    final resolvedAuth = await _resolveAuthentication(instanceId, authentication);
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     final args = await resolvedAuth.prepareAuthArguments({
       'instanceId': instanceId,
       'tokenName': tokenName,

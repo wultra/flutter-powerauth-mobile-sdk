@@ -47,6 +47,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) {
+    throw UnimplementedError(
+      'resolveAuthentication() has not been implemented.',
+    );
+  }
+
   Future<void> configure({
     required String instanceId,
     required PowerAuthConfiguration configuration,
