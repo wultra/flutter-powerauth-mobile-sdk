@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 
 import 'powerauth_platform_interface.dart';
 
@@ -121,6 +122,17 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation(String instanceId) async {
+    final result = await invokeNullableMethod<Map<dynamic, dynamic>>('getExternalPendingOperation', {
+      'instanceId': instanceId,
+    });
+    if (result == null) {
+      return null;
+    }
+    return PowerAuthExternalPendingOperation.fromMap(result);
+  }
+
+  @override
   Future<String?> getActivationIdentifier(String instanceId) async {
     return await invokeNullableMethod<String>('getActivationIdentifier', {
       'instanceId': instanceId,
@@ -154,9 +166,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> removeActivationWithAuthentication(String instanceId, PowerAuthAuthentication authentication) async {
-    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
-    final args = await resolvedAuth.prepareAuthArguments({'instanceId': instanceId});
-    await invokeMethod<void>('removeActivationWithAuthentication', args);
+    await invokeMethod<void>('removeActivationWithAuthentication', await _authenticate(instanceId, authentication, {'instanceId': instanceId}));
   }
 
   @override
@@ -170,8 +180,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> persistActivation(String instanceId, PowerAuthAuthentication authentication) async {
-    final args = await authentication.prepareAuthArguments({'instanceId': instanceId});
-    await invokeMethod<void>('persistActivation', args);
+    await invokeMethod<void>('persistActivation', await _authenticate(instanceId, authentication, {'instanceId': instanceId}));
   }
 
   @override
@@ -202,15 +211,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     Map<String, String>? queryParams,
   ]) async {
-    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
-    final args = await resolvedAuth.prepareAuthArguments({
-      'instanceId': instanceId,
-      'uriId': uriId,
-      'queryParams': queryParams
-    });
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'requestGetSignature',
-      args
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'uriId': uriId,
+        'queryParams': queryParams
+      })
     );
     return PowerAuthAuthorizationHttpHeader.fromMap(result);
   }
@@ -223,16 +230,14 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String uriId, [
     String? body
   ]) async {
-    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
-    final args = await resolvedAuth.prepareAuthArguments({
-      'instanceId': instanceId,
-      'method': method,
-      'uriId': uriId,
-      'body': body
-    });
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'requestSignature',
-      args
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'method': method,
+        'uriId': uriId,
+        'body': body
+      })
     );
     return PowerAuthAuthorizationHttpHeader.fromMap(result);
   }
@@ -245,15 +250,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     String nonce, [
     String? body
   ]) async {
-    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
-    final args = await resolvedAuth.prepareAuthArguments({
+    return await invokeMethod<String>('offlineSignature', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'uriId': uriId,
       'nonce': nonce,
       'body': body
-    });
-
-    return await invokeMethod<String>('offlineSignature', args);
+    }));
   }
 
   @override
@@ -272,11 +274,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'getBiometryInfo',
-      {'instanceId': instanceId},
-    );
+  Future<PowerAuthBiometryInfo> getBiometryInfo() async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo');
     return PowerAuthBiometryInfo.fromMap(result);
   }
 
@@ -305,6 +304,23 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     await invokeMethod<void>('removeBiometryFactor', {
       'instanceId': instanceId,
     });
+  }
+
+  @override
+  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) async {
+    return await invokeMethod<String>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
+      'instanceId': instanceId,
+      'index': index
+    }));
+  }
+
+  @override
+  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) async {
+    return await invokeMethod<String>('signDataWithDevicePrivateKey', await _authenticate(instanceId, authentication, {
+      'instanceId': instanceId,
+      'data': data,
+      'dataFormat': dataFormat.name,
+    }));
   }
 
   @override
@@ -340,12 +356,10 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) async {
-    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
-    final args = await resolvedAuth.prepareAuthArguments({
+    return await invokeMethod('requestAccessToken', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'tokenName': tokenName,
-    });
-    return await invokeMethod('requestAccessToken', args);
+    }));
   }
 
   @override

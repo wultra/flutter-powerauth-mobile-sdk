@@ -87,7 +87,7 @@ try {
 
 It is recommended that your application execute only one signed request at a time. The reason for that is that our signature scheme uses a counter as a representation of logical time. In other words, the order of request validation on the server is very important. If you issue more than one signed request at the same time, then the order is not guaranteed, and therefore, one of the requests may fail.
 
-<!-- ## Asymmetric Private Key Signature
+## Asymmetric Private Key Signature
 
 Asymmetric Private Key Signature uses a private key stored in the PowerAuth secure vault. In order to unlock the secure vault and retrieve the private key, the user has to first authenticate using the symmetric multi-factor signature with at least two factors. This mechanism protects the private key on the device - the server plays the role of a "doorkeeper" and holds the vault unlock key.
 
@@ -97,18 +97,18 @@ This process is completely transparent on the SDK level. To compute an asymmetri
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 
 // Unlock the secure vault, fetch the private key, and perform data signing
 try {
     final dataToSign = "N9yHkF5zSks="; // base64 encoded data to sign
-    final dataFormat = "BASE64"; // data format, UTF8 in case of plain string
+    final dataFormat = PowerAuthDataFormat.utf8; // data format, UTF8 in case of plain string
     final signature = await powerAuth.signDataWithDevicePrivateKey(auth, dataToSign, dataFormat);
     // Send data and signature to the server
 } catch(e) {
     // Authentication or network error
 }
-``` -->
+```
 
 ## Symmetric Offline Multi-Factor Signature
 

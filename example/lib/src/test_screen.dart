@@ -130,7 +130,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.getActivationIdentifier(),
         _powerAuth.getActivationFingerprint(),
         _powerAuth.hasBiometryFactor(),
-        _powerAuth.getBiometryInfo(),
+        PowerAuth.getBiometryInfo(),
       ]);
 
       setState(() {

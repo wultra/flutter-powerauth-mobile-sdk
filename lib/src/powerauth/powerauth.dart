@@ -16,8 +16,10 @@
 
 import 'dart:async';
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_error.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_token_store.dart';
 
 import '../model/powerauth_biometry_configuration.dart';
@@ -148,6 +150,9 @@ class PowerAuth {
   /// Checks if this instance has an activation process already pending.
   Future<bool> hasPendingActivation() => _platform.hasPendingActivation(instanceId);
 
+  /// Check if there's an external pending operation started in another application.
+  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation() => _platform.getExternalPendingOperation(instanceId);
+
   /// Gets the current activation identifier for this instance, if activated.
   /// Returns `null` if no valid activation exists.
   Future<String?> getActivationIdentifier() => _platform.getActivationIdentifier(instanceId);
@@ -263,7 +268,7 @@ class PowerAuth {
   );
 
   /// Gets information about the biometric capabilities of the device.
-  Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo(instanceId);
+  static Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo();
 
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
@@ -278,6 +283,26 @@ class PowerAuth {
 
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);
+
+  /// Generate a derived encryption key with given index. The key is returned in form of base64 encoded string.
+  /// 
+  /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key used 
+  /// for subsequent key derivation using given index.
+  /// 
+  /// - [authentication] Authentication used for vault unlocking call.
+  /// - [index] Index of the derived key using KDF. 
+  Future<String> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
+
+  /// Sign given data with the original device private key (asymetric signature).
+  /// 
+  /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key 
+  /// used for private key decryption. Data is then signed using ECDSA algorithm with this key and can be validated on the server side.
+  /// 
+  /// - [authentication] Authentication used for vault unlocking call.
+  /// - [data] Data to be signed with the private key.
+  /// - [dataFormat] Specifies format of passed data. If not used, then [PowerAuthDataFormat.utf8] is applied.
+  Future<String> signDataWithDevicePrivateKey(PowerAuthAuthentication authentication, String data, {PowerAuthDataFormat dataFormat = PowerAuthDataFormat.utf8}) 
+  => _platform.signDataWithDevicePrivateKey(instanceId, authentication, data, dataFormat);
 
   /// Helper method for grouping biometric authentications.
   /// 

@@ -12,16 +12,16 @@ The secure vault mechanism does not support biometry by default. Use PIN code or
 
 In order to obtain an encryption key with a given index, use the following code:
 
-```javascript
+```dart
 // 2FA signature. It uses device-related key and user PIN code.
-const auth = PowerAuthAuthentication.password("1234");
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString('1234'));
 
 // Select custom key index
-const index = 1000;
+final index = 1000;
 
 try {
     // Fetch encryption key with given index
-    const r = await powerAuth.fetchEncryptionKey(auth, index);
+    final result = await powerAuth.fetchEncryptionKey(auth, index);
     // ... use encryption key to encrypt or decrypt data
 } catch (e) {
     // Report error
@@ -30,4 +30,4 @@ try {
 
 ## Read Next
 
-- [Recovery Codes](Recovery-Codes.md)
+- [Token Based Authentication](Token-Based-Authentication.md)

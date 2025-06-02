@@ -191,13 +191,13 @@ class PowerAuthConfigureTests extends TestSuite {
     await expect(sdk.addBiometryFactor(emptyPassword, null)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
     await expect(sdk.hasBiometryFactor()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
     await expect(sdk.removeBiometryFactor()).toThrow(PowerAuthErrorCode.instanceNotConfigured);
-    // await expect(sdk.fetchEncryptionKey(signAuth, 1000)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
-    // await expect(sdk.signDataWithDevicePrivateKey(signAuth, '')).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.fetchEncryptionKey(signAuth, 1000)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.signDataWithDevicePrivateKey(signAuth, '')).toThrow(PowerAuthErrorCode.instanceNotConfigured);
     await expect(sdk.validatePassword(emptyPassword)).toThrow(PowerAuthErrorCode.instanceNotConfigured);
-    // await expect(sdk.groupedBiometricAuthentication(signAuth, async auth => {})).toThrow(PowerAuthErrorCode.instanceNotConfigured);
+    await expect(sdk.groupedBiometricAuthentication(signAuth, (auth) async {  })).toThrow(PowerAuthErrorCode.instanceNotConfigured);
     
     // TODO: getBiometryInfo() doesn't depend on configuration. We should move this to separate class
-    // await expect(sdk.getBiometryInfo()).toThrow(PowerAuthErrorCode.instanceNotConfigured})
+    await expect(PowerAuth.getBiometryInfo()).toSucceed();
   }
 
   IntegrationHelper? helperInstance1;

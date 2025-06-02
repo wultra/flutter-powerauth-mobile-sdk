@@ -35,6 +35,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "hasValidActivation": hasValidActivation,
         "canStartActivation": canStartActivation,
         "hasPendingActivation": hasPendingActivation,
+        "getExternalPendingOperation": getExternalPendingOperation,
         "getActivationIdentifier": getActivationIdentifier,
         "getActivationFingerprint": getActivationFingerprint,
         "fetchActivationStatus": fetchActivationStatus,
@@ -53,6 +54,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "hasBiometryFactor": hasBiometryFactor,
         "removeBiometryFactor": removeBiometryFactor,
         "authenticateWithBiometry": authenticateWithBiometry,
+        "fetchEncryptionKey": fetchEncryptionKey,
+        "signDataWithDevicePrivateKey": signDataWithDevicePrivateKey,
         "requestAccessToken": requestAccessToken,
         "removeAccessToken": removeAccessToken,
         "hasLocalToken": hasLocalToken,
@@ -81,6 +84,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case body
         case nonce
         case data
+        case dataFormat
         case signature
         case useMasterKey
         case prompt
@@ -103,6 +107,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case value
         case username
         case tokenName
+        case index
     }
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -232,6 +237,19 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func hasPendingActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.hasPendingActivation())
+        }
+    }
+    
+    private func getExternalPendingOperation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            if let pendingOperation = sdk.externalPendingOperation {
+                result([
+                    "externalOperationType": pendingOperation.externalOperationType == .activation ? "activation" : "protocolUpgrade",
+                    "externalApplicationId": pendingOperation.externalApplicationId
+                ])
+            } else {
+                result(nil)
+            }
         }
     }
     
@@ -577,6 +595,40 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     
                     let managedId = self.register.add(object: managedData, tag: sdk.configuration.instanceId, policies: policy)
                     result(managedId)
+                }
+            }
+        }
+    }
+    
+    private func fetchEncryptionKey(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let index: Int = try call.requireParameter(Args.index)
+            let auth = try constructAuthentication(call)
+            
+            sdk.fetchEncryptionKey(auth, index: UInt64(index)) { key, error in
+                wrap {
+                    guard let key else {
+                        throw error ?? PluginException(.unknownError, message: "Failed to fetch encryption key")
+                    }
+                    result(key.base64EncodedString(options: .endLineWithLineFeed))
+                }
+            }
+        }
+    }
+    
+    private func signDataWithDevicePrivateKey(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            let data: String = try call.requireParameter(Args.data)
+            let dataFormat = try PowerAuthDataFormat.fromString(call.getParameter(Args.dataFormat))
+            let encodedData = try Data.decodeDataValue(data, format: dataFormat)
+            let auth = try constructAuthentication(call)
+            
+            sdk.signData(withDevicePrivateKey: auth, data: encodedData) { signature, error in
+                wrap {
+                    guard let signature else {
+                        throw error ?? PluginException(.unknownError, message: "Failed to sign data")
+                    }
+                    result(signature.base64EncodedString())
                 }
             }
         }

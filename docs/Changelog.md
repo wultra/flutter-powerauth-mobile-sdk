@@ -1,9 +1,13 @@
 # Changelog
 
 ## 1.0.0-beta.3 (TBA, 2025)
-* Implemented End-to-End Encryption
-* Token Based Authentication.
-* Improved stability and internals.
+
+* Added End-to-End Encryption support.
+* Introduced token-based authentication.
+* Enabled group authentication functionality.
+* Added data signing using the device's private key.
+* Implemented encryption key retrieval.
+* Enhanced overall stability and internal improvements.
 
 ## 1.0.0-beta.2 (May 18, 2025)
 

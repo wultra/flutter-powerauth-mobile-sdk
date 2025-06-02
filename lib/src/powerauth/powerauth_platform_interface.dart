@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../model/powerauth_activation.dart';
@@ -84,6 +86,10 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError(
       'hasPendingActivation() has not been implemented.',
     );
+  }
+
+  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation(String instanceId) {
+    throw UnimplementedError('getExternalPendingOperation() has not been implemented.');
   }
 
   Future<String?> getActivationIdentifier(String instanceId) {
@@ -185,7 +191,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) {
+  Future<PowerAuthBiometryInfo> getBiometryInfo() {
     throw UnimplementedError('getBiometryInfo() has not been implemented.');
   }
 
@@ -202,9 +208,15 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<void> removeBiometryFactor(String instanceId) {
-    throw UnimplementedError(
-      'removeBiometryFactor() has not been implemented.',
-    );
+    throw UnimplementedError('removeBiometryFactor() has not been implemented.');
+  }
+
+  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
+    throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
+  }
+
+  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) {
+    throw UnimplementedError('signDataWithDevicePrivateKey() has not been implemented.');
   }
 
   Future<bool> hasLocalToken(String instanceId, String tokenName) {
