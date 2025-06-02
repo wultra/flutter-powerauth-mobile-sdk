@@ -55,18 +55,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     // On both platforms we need to fetch the key for every biometric authentication.
     // If the key is already set, use it.
     if (auth.useBiometry && auth.biometryKeyId == null) {
-      try {
-        final isReusable = auth.isReusable || makeReusable;
-        auth.isReusable = isReusable;
-        auth.biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
-          'instanceId': instanceId,
-          'prompt': auth.biometricPrompt?.toMap(),
-          'isReusable': isReusable,
-        });
-      } catch (e) {
-        // TODO: better processing?
-        rethrow;
-      }
+      final isReusable = auth.isReusable || makeReusable;
+      auth.isReusable = isReusable;
+      auth.biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
+        'instanceId': instanceId,
+        'prompt': auth.biometricPrompt?.toMap(),
+        'isReusable': isReusable,
+      });
     }
     return auth;
   }
@@ -378,12 +373,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     });
   }
 
-  // TODO: remove this debug call before release!
-  @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>(
-      'getPlatformVersion',
-    );
-    return version;
+  Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {
+    final resolvedAuth = await resolveAuthentication(instanceId, authentication);
+    return await resolvedAuth.prepareAuthArguments(baseArgs);
   }
 }

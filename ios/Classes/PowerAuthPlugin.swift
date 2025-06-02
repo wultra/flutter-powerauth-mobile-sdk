@@ -71,12 +71,8 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     }
     
     private func defaultHandle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        if call.method == "getPlatformVersion" {
-            result("iOS " + UIDevice.current.systemVersion)
-        } else {
-            logger.info("PowerAuth plugin received unexpected method: \(call.method)")
-            result(FlutterMethodNotImplemented)
-        }
+        logger.info("PowerAuth plugin received unexpected method: \(call.method)")
+        result(FlutterMethodNotImplemented)
     }
 }
 

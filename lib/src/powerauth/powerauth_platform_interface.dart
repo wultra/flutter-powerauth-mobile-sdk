@@ -246,9 +246,4 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
     throw UnimplementedError('generateHeaderForToken() has not been implemented.');
   }
-
-  // TODO: remove this debug call before release!
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
 }

@@ -354,7 +354,4 @@ class PowerAuth {
       powerAuthInstanceId: instanceId,
     );
   }
-
-  // TODO: remove this debug call before release!
-  Future<String?> getPlatformVersion() => _platform.getPlatformVersion();
 }
