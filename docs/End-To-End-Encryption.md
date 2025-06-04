@@ -71,7 +71,7 @@ The following steps are typically required for a full E2EE request and response 
    final responseDataFormat = PowerAuthDataFormat.utf8;
    // 2nd parameter is optional, if not provided, then 'utf8' is applied.
    final decryptedData = await decryptor.decryptResponse(PowerAuthCryptogram.fromMap(response), responseDataFormat);
-   final decryptedObject = jsonDecode(decrypted);
+   final decryptedObject = jsonDecode(decryptedData);
    ```
 
 ## Sign encrypted request
