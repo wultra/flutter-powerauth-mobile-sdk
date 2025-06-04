@@ -1,4 +1,3 @@
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_activation_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configuration_objects_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_interactive_tests.dart';

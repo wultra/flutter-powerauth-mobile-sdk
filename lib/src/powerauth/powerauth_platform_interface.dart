@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';

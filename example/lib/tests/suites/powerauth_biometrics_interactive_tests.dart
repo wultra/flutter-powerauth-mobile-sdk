@@ -17,6 +17,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   ];
 
   @override
+  // ignore: overridden_fields
   bool isInteractive = true;
 
   Future<void> testCreateActivationWithSymmetricKey() async {

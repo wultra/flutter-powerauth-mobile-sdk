@@ -16,12 +16,6 @@
 
 import 'dart:async';
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_error.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_token_store.dart';
-
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
@@ -34,10 +28,15 @@ import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
 import '../model/powerauth_configuration.dart';
-import '../model/powerauth_create_activation_result.dart';
 import '../powerauth_password/powerauth_password.dart';
 import '../model/powerauth_encryptor.dart';
+import '../model/powerauth_external_pending_operation.dart';
 import '../powerauth_encryptor/powerauth_encryptor.dart';
+import 'powerauth_token_store.dart';
+import '../model/powerauth_create_activation_result.dart';
+import '../model/powerauth_data_format.dart';
+import '../model/powerauth_error.dart';
+import '../model/powerauth_authentication_internal.dart';
 
 /// Internal helper class to hold the configuration set for a single PowerAuth instance.
 class _InstanceConfigurationHolder {

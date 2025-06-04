@@ -18,8 +18,6 @@ import 'dart:async';
 
 import 'powerauth_activation_code_utils_platform_interface.dart';
 import '../model/powerauth_activation_code.dart';
-import '../model/powerauth_error.dart';
-import '../powerauth_password/powerauth_password.dart';
 
 /// Provides utility functions related to PowerAuth activation codes nd PIN strength.
 /// The `PowerAuthActivationCodeUtil` provides various set of methods for parsing and validating

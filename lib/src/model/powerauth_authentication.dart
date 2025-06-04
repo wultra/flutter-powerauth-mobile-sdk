@@ -15,7 +15,6 @@
  */
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
-import 'package:meta/meta.dart';
 
 import '../powerauth_password/powerauth_password.dart';
 
