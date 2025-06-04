@@ -21,8 +21,8 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   bool isInteractive = true;
 
   Future<void> testCreateActivationWithSymmetricKey() async {
-    final activatioData = await helper.createActivation();
-    final activation = PowerAuthActivation.fromActivationCode(activationCode: activatioData.activationCode, name: "Test");
+    final activationData = await helper.createActivation();
+    final activation = PowerAuthActivation.fromActivationCode(activationCode: activationData.activationCode, name: "Test");
     await expect(sdk.createActivation(activation)).toSucceed();
     // Now persist activation with a legacy authentication
 
