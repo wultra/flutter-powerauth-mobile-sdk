@@ -26,11 +26,9 @@ import '../model/powerauth_encryption_http_header.dart';
 import 'powerauth_encryptor_platform_interface.dart';
 
 /// Implementation of [PowerAuthEncryptor] that uses the platform interface.
-class PowerAuthRequestEncryptor extends BaseNativeObject
-    implements PowerAuthEncryptor {
+class PowerAuthRequestEncryptor extends BaseNativeObject implements PowerAuthEncryptor {
 
-  static PowerAuthEncryptorPlatform get _platform =>
-      PowerAuthEncryptorPlatform.instance;
+  static PowerAuthEncryptorPlatform get _platform => PowerAuthEncryptorPlatform.instance;
 
   /// Scope of this encryptor.
   @override
@@ -98,11 +96,9 @@ class PowerAuthRequestEncryptor extends BaseNativeObject
 }
 
 /// Implementation of [PowerAuthDecryptor] that uses the platform interface.
-class PowerAuthResponseDecryptor extends BaseReleasableObject
-    implements PowerAuthDecryptor {
+class PowerAuthResponseDecryptor extends BaseReleasableObject implements PowerAuthDecryptor {
 
-  static PowerAuthEncryptorPlatform get _platform =>
-      PowerAuthEncryptorPlatform.instance;
+  static PowerAuthEncryptorPlatform get _platform => PowerAuthEncryptorPlatform.instance;
 
   /// Scope of this decryptor.
   @override
@@ -139,9 +135,6 @@ class PowerAuthResponseDecryptor extends BaseReleasableObject
     PowerAuthCryptogram cryptogram, [
     PowerAuthDataFormat outputDataFormat = PowerAuthDataFormat.utf8,
   ]) async {
-    return await withObjectId(
-      (id) =>
-          _platform.decryptResponse(id, cryptogram.toMap(), outputDataFormat),
-    );
+    return await withObjectId((id) =>_platform.decryptResponse(id, cryptogram.toMap(), outputDataFormat));
   }
 }

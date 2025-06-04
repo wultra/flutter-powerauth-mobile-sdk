@@ -15,7 +15,7 @@
 
 **Additional Topics**
 
-<!--- [Troubleshooting](Troubleshooting.md)-->
+- [Troubleshooting](Troubleshooting.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
 

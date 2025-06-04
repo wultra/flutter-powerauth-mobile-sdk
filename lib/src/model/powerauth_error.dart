@@ -194,11 +194,7 @@ class PinTestResult {
       return issuesList
           .map((issueString) {
             try {
-              return PinTestIssue.values.firstWhere(
-                (e) =>
-                    e.name ==
-                    (issueString as String),
-              );
+              return PinTestIssue.values.firstWhere((e) => e.name == (issueString as String),);
             } catch (e) {
               print("Warning: Unknown PinTestIssue received: $issueString");
               // TODO: return null or a default?

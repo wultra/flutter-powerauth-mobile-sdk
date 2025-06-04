@@ -181,7 +181,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     await helper.prepareActiveActivation(await credentials.validPasswordObject(), setupBiometry: true);
     await expect(sdk.hasBiometryFactor()).toBe(true);
     await showPrompt('Please FAIL authentication and use fallback button');
-    final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Please fail", promptMessage: "Fail to show the fallback button", fallbackButtonTitle: 'Fallback button'));
+    final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Please fail", promptMessage: "Fail and then click the fallback button", fallbackButtonTitle: 'Fallback button'));
     await expect(sdk.requestSignature(auth, 'POST', '/some/uriId', '{}')).toThrow(PowerAuthErrorCode.biometryFallback);
   }
 

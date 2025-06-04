@@ -84,24 +84,19 @@ class PowerAuth {
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
 
   /// Returns the base configuration used for this instance, if configured.
-  PowerAuthConfiguration? get configuration =>
-      _configRegister[instanceId]?.configuration;
+  PowerAuthConfiguration? get configuration => _configRegister[instanceId]?.configuration;
 
   /// Returns the client configuration used for this instance, if configured.
-  PowerAuthClientConfiguration? get clientConfiguration =>
-      _configRegister[instanceId]?.clientConfiguration;
+  PowerAuthClientConfiguration? get clientConfiguration => _configRegister[instanceId]?.clientConfiguration;
 
   /// Returns the biometry configuration used for this instance, if configured.
-  PowerAuthBiometryConfiguration? get biometryConfiguration =>
-      _configRegister[instanceId]?.biometryConfiguration;
+  PowerAuthBiometryConfiguration? get biometryConfiguration => _configRegister[instanceId]?.biometryConfiguration;
 
   /// Returns the keychain configuration used for this instance, if configured.
-  PowerAuthKeychainConfiguration? get keychainConfiguration =>
-      _configRegister[instanceId]?.keychainConfiguration;
+  PowerAuthKeychainConfiguration? get keychainConfiguration => _configRegister[instanceId]?.keychainConfiguration;
 
   /// Returns the sharing configuration used for this instance (iOS only), if configured.
-  PowerAuthSharingConfiguration? get sharingConfiguration =>
-      _configRegister[instanceId]?.sharingConfiguration;
+  PowerAuthSharingConfiguration? get sharingConfiguration => _configRegister[instanceId]?.sharingConfiguration;
 
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///

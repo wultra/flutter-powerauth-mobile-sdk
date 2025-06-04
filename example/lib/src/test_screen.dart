@@ -621,11 +621,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     }
         
 
-    String formatBiometryType(PowerAuthBiometryInfo? info) =>
-        info?.biometryType.name ?? 'Unknown';
+    String formatBiometryType(PowerAuthBiometryInfo? info) => info?.biometryType.name ?? 'Unknown';
 
-    String formatBiometryStatus(PowerAuthBiometryInfo? info) =>
-        info?.canAuthenticate.name ?? 'Unknown';
+    String formatBiometryStatus(PowerAuthBiometryInfo? info) => info?.canAuthenticate.name ?? 'Unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

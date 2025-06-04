@@ -70,7 +70,7 @@ class NativeObjectRegisterMethodChannel extends NativeObjectRegisterPlatform
       {
         'command': command.name,
         'data': data.toMap(),
-      },
+      }
     );
     return result;
   }

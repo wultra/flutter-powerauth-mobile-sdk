@@ -7,6 +7,7 @@
 * Enabled group authentication functionality.
 * Added data signing using the device's private key.
 * Implemented encryption key retrieval.
+* Added `PowerAuthDebug` features.
 * Enhanced overall stability and internal improvements.
 
 ## 1.0.0-beta.2 (May 18, 2025)

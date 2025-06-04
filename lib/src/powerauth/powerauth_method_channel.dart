@@ -32,15 +32,20 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
-  static MethodChannel get sharedChannel => (PowerAuthPlatform.instance as PowerAuthMethodChannel).methodChannel;
-
   @override
   Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
 
+    // We expect that the authentication object is an instance of InternalAuth,
+    // which is used for method channel operations. If it's not, we throw an exception.
     final auth = authentication as InternalAuth?;
 
     if (auth == null) {
       throw PowerAuthException(code: PowerAuthErrorCode.unknownError, message: "PowerAuthAuthentication must be an InternalAuth instance for method channel operations.");
+    }
+
+    // If the authentication is for activation persist, we return it directly (persist does not need biometric authentication).
+    if (auth.forActivationPersist) {
+      return auth;
     }
 
     // Test whether previously fetched biometryKeyId is invalid. Reset biometry key's identifier
@@ -270,7 +275,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<PowerAuthBiometryInfo> getBiometryInfo() async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo');
+    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo', null);
     return PowerAuthBiometryInfo.fromMap(result);
   }
 

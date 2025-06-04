@@ -1,3 +1,4 @@
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_activation_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/configuration_objects_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_interactive_tests.dart';
@@ -30,6 +31,7 @@ class Tests {
 
   Future<TestResult> run({bool interactive = false}) async {
     final testSuites = _testSuites.where((testSuite) => testSuite.isInteractive == interactive).toList();
+    //PowerAuthDebug.traceNativeCodeCalls(traceEachCall: false, traceFailure: false);
     print("\n\n### ${interactive ? "Interactive" : "Non-interactive"} tests starting...");
     for (var testSuite in testSuites) {
       await testSuite.runTests();
