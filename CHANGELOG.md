@@ -1,3 +1,7 @@
+## 1.0.0-beta.3
+
+* Fixed crash on iOS when the device was offline.
+
 ## 1.0.0-beta.2
 
 * Advanced PowerAuth configuration.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0-beta.3 (June 5, 2025)
+
+* Fixed crash on iOS when the device was offline.
+
 ## 1.0.0-beta.2 (May 18, 2025)
 
 * Advanced PowerAuth configuration.
