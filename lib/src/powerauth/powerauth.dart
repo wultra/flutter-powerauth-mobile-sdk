@@ -59,7 +59,7 @@ class PowerAuth {
   /// Multiple PowerAuth SDK instances can be created, each identified by a unique [instanceId].
   ///  The bundle identifier/packagename is recommended.
   ///
-  /// Two instances with the same instanceId will be internaly the same object!
+  /// Two instances with the same instanceId will be internally the same object!
   PowerAuth(this.instanceId): _tokenStore = PowerAuthTokenStore(instanceId) {
     if (instanceId.isEmpty) {
       throw ArgumentError.value(instanceId, 'instanceId', 'cannot be empty');
