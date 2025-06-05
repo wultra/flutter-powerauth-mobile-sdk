@@ -1,7 +1,17 @@
+## 1.0.0-beta.4
+
+* Added End-to-End Encryption support.
+* Introduced token-based authentication.
+* Enabled group authentication functionality.
+* Added data signing using the device's private key.
+* Implemented encryption key retrieval.
+* Added User Info feature.
+* Added `PowerAuthDebug` features.
+* Enhanced overall stability and internal improvements.
+
 ## 1.0.0-beta.3
-* Implemented End-to-End Encryption
-* Token Based Authentication.
-* Improved stability and internals.
+
+* Fixed crash on iOS when the device was offline.
 
 ## 1.0.0-beta.2
 

@@ -6,7 +6,7 @@
 - [Requesting Device Activation Status](Requesting-Device-Activation-Status.md)
 - [Data Signing](Data-Signing.md)
 - [Password Change](Password-Change.md)
-- [Working with passwords securely](Secure-Password.md)
+- [Working With Passwords Securely](Secure-Password.md)
 - [Biometry Setup](Biometry-Setup.md)
 - [Device Activation Removal](Device-Activation-Removal.md)
 - [End-To-End Encryption](End-To-End-Encryption.md)
@@ -16,6 +16,7 @@
 **Additional Topics**
 
 - [Troubleshooting](Troubleshooting.md)
+- [User Info](User-Info.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
 

@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 
 import 'powerauth_platform_interface.dart';
 
@@ -376,6 +377,25 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
       'instanceId': instanceId,
       'tokenName': tokenName,
     });
+  }
+
+  @override
+  Future<PowerAuthUserInfo> fetchUserInfo(String instanceId) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('fetchUserInfo', {
+      'instanceId': instanceId,
+    });
+    return PowerAuthUserInfo(result['allClaims'] as Map?);
+  }
+
+  @override
+  Future<PowerAuthUserInfo?> getLastFetchedUserInfo(String instanceId) async {
+    final result = await invokeNullableMethod<Map<dynamic, dynamic>>('getLastFetchedUserInfo', {
+      'instanceId': instanceId,
+    });
+    if (result == null) {
+      return null;
+    }
+    return PowerAuthUserInfo(result['allClaims'] as Map?);
   }
 
   Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {

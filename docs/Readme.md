@@ -25,6 +25,7 @@ In order to connect to the [PowerAuth](https://www.wultra.com/mobile-security-su
 ## Additional Topics
 
 - [Troubleshooting](Troubleshooting.md)
+- [User Info](User-Info.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
 
