@@ -345,7 +345,7 @@ class PowerAuth {
   /// must be supported by the server. The value is updated during the activation process or by 
   /// calling [fetchUserInfo].
   /// 
-  /// Note that the user info is not cached between the app launches.
+  /// Note that the user info is not cached between app launches.
   Future<PowerAuthUserInfo?> getLastFetchedUserInfo() {
     return _platform.getLastFetchedUserInfo(instanceId);
   }
