@@ -48,7 +48,7 @@ The obtained `PowerAuthUserInfo` object contains the following properties:
 | `pictureUrl`            | `String` | The URL of the profile picture for the user |
 | `websiteUrl`            | `String` | The URL of the user's web page or blog |
 | `email`                 | `String` | The user's preferred email address |
-| `isEmailVerified`       | `Boolean`| True if the user's email address has been verified, else false<sup>1</sup> |
+| `isEmailVerified`       | `bool`| True if the user's email address has been verified, else false<sup>1</sup> |
 | `phoneNumber`           | `String` | The user's preferred telephone number<sup>2</sup> |
 | `isPhoneNumberVerified` | `bool`| True if the user's telephone number has been verified, else false<sup>1</sup> |
 | `gender`                | `String` | The user's gender |

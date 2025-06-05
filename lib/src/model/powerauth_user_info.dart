@@ -72,7 +72,7 @@ class PowerAuthUserInfo {
   /// Time the end-user's information was last updated.
   DateTime? get updatedAt => _parseTimestamp(_claims['updated_at']);
 
-  /// Time the end-user's information was last updated.
+  /// The end-user's birthdate.
   DateTime? get birthdate => _parseDate(_claims['birthdate']);
 }
 

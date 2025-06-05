@@ -335,7 +335,7 @@ class PowerAuth {
     );
   }
 
-  /// Fetch information about the user from the server. If operation succeed, then the user
+  /// Fetch information about the user from the server. If the operation succeeds, then the user
   /// information object is also internally stored and available in [getLastFetchedUserInfo] method.
   Future<PowerAuthUserInfo> fetchUserInfo() {
     return _platform.fetchUserInfo(instanceId);
