@@ -82,7 +82,7 @@ Note that by using weak identity attributes to create an activation, the resulti
 You may also create an activation using OIDC protocol:
 
 ```dart
-// Create a new activation with a OIDC parameters
+// Create a new activation with OIDC parameters
 final name = "Petr's iPhone"; // users phone name
 // Get the following information from your OpenID provider
 final oidcParameters = PowerAuthOIDCParameters(
