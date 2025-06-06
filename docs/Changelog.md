@@ -4,6 +4,7 @@
 
 * Added End-to-End Encryption support.
 * Introduced token-based authentication.
+* OIDC activation.
 * Enabled group authentication functionality.
 * Added data signing using the device's private key.
 * Implemented encryption key retrieval.

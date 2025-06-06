@@ -50,6 +50,9 @@ enum PowerAuthErrorCode {
   /// Error code for error that occurs when invalid activation code is provided.
   invalidActivationCode,
 
+  /// Error code for error that occurs when activation object is invalid.
+  invalidActivationObject,
+
   /// Error code for accessing an unknown token.
   invalidToken,
 
