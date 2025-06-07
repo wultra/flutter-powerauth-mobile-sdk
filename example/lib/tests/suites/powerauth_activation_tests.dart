@@ -11,7 +11,8 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
     testCreateActivationWithSignedCode,
     testFetchActivationStatus,
     testActivationRemove,
-    testVerifyActivationQrCode
+    testVerifyActivationQrCode,
+    testOIDCActivationData
   ];
 
   // --- ACTUAL TESTS STARTS HERE ---
@@ -63,6 +64,58 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
     await helper.createActivation();
     await expect(helper.createdActivation?.activationCode).toBeDefined();
     await expect(helper.createdActivation?.activationCodeSignature).toBeDefined();
+  }
+
+  Future<void> testOIDCActivationData() async {
+    
+    await expect(await sdk.canStartActivation()).toBe(true);
+
+    final oidcParameters = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "ABCDEFG1234567890",
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+      codeVerifier: "G3hsI1KZX1o~K0p-5lT3F7yZ4bC8dE2jX9aQ6nO2rP3uS7wT5mV8jW1oY6xB3sD09tR4vU3qM1nG7kL6hV5wY2pJ0aF3eK9dQ8xN4mS2zB7oU5tL1cJ3vX6yP8rE2wO9n"
+    );
+
+    final activation = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParameters,
+      name: 'Flutter SDK OIDC Test',
+      extras: 'Some extras',
+      customAttributes: {'key1': 'value1', 'key2': 2}
+    );
+
+    // We expect an error here from the server, becauase OIDC data are made up.
+    // If the oidc object would be invalid, then the error would be different.
+    await expect(sdk.createActivation(activation)).toThrow(PowerAuthErrorCode.responseError);
+
+    final oidcParametersWithoutCodeVerifier = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "ABCDEFG1234567890",
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+    );
+
+    final activation2 = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParametersWithoutCodeVerifier,
+      name: 'Flutter SDK OIDC Test'
+    );
+
+    // We expect an error here from the server, becauase OIDC data are made up.
+    // If the oidc object would be invalid, then the error would be different.
+    await expect(sdk.createActivation(activation2)).toThrow(PowerAuthErrorCode.responseError);
+
+    final oidcParametersInvalid = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "", // empty - invalid code
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+    );
+
+    final activation3 = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParametersInvalid,
+      name: 'Flutter SDK OIDC Test'
+    );
+
+    // We expect an error here from the native layer, becauase OIDC data are invalid (empty string).
+    await expect(sdk.createActivation(activation3)).toThrow(PowerAuthErrorCode.invalidActivationObject);
   }
 
   // --- HELPER FUNCTIONS ---

@@ -331,6 +331,21 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 } catch let e {
                     throw PluginException(.invalidActivationObject, message: "Invalid identity attributes provided", details: e.localizedDescription)
                 }
+            } else if let oidcParameters = activation["oidcParameters"] as? [String: String] {
+                
+                guard let providerId = oidcParameters["providerId"],
+                      let code = oidcParameters["code"],
+                      let nonce = oidcParameters["nonce"] else {
+                    throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided")
+                }
+                
+                let codeVerifier = oidcParameters["codeVerifier"]
+                
+                do {
+                    paActivation = try PowerAuthActivation(oidcProviderId: providerId, code: code, nonce: nonce, codeVerifier: codeVerifier)
+                } catch let e {
+                    throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided", details: e.localizedDescription)
+                }
             }
             
             guard let paActivation else {
