@@ -16,6 +16,8 @@
 
 import 'dart:async';
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
+
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
@@ -38,28 +40,12 @@ import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
 
-/// Internal helper class to hold the configuration set for a single PowerAuth instance.
-class _InstanceConfigurationHolder {
-  final PowerAuthConfiguration configuration;
-  final PowerAuthClientConfiguration? clientConfiguration;
-  final PowerAuthBiometryConfiguration? biometryConfiguration;
-  final PowerAuthKeychainConfiguration? keychainConfiguration;
-  final PowerAuthSharingConfiguration? sharingConfiguration;
-
-  _InstanceConfigurationHolder({
-    required this.configuration,
-    this.biometryConfiguration,
-    this.keychainConfiguration,
-    this.clientConfiguration,
-    this.sharingConfiguration
-  });
-}
-
-/// Main class for interacting with the PowerAuth Mobile SDK.
+/// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
 /// Use this class to manage activation, authentication, signatures, and other core features.
 class PowerAuth {
 
+  /// Unique identifier for this PowerAuth instance.
   final String instanceId;
 
   // Static registry to hold configurations for active instances
@@ -73,7 +59,7 @@ class PowerAuth {
   /// Multiple PowerAuth SDK instances can be created, each identified by a unique [instanceId].
   ///  The bundle identifier/packagename is recommended.
   ///
-  /// 2 instances with the same instanceId will be internaly the same object!
+  /// Two instances with the same instanceId will be internally the same object!
   PowerAuth(this.instanceId): _tokenStore = PowerAuthTokenStore(instanceId) {
     if (instanceId.isEmpty) {
       throw ArgumentError.value(instanceId, 'instanceId', 'cannot be empty');
@@ -178,7 +164,7 @@ class PowerAuth {
 
   /// Persists the activation data locally after a successful `createActivation` call.
   ///
-  /// Requires [authentication] (password and optionally biometry) to secure the local activation state.
+  /// Requires [authentication] (password and, optionally, biometry) to secure the local activation state.
   Future<void> persistActivation(PowerAuthAuthentication authentication) => _platform.persistActivation(instanceId, authentication);
 
   /// Validates the provided [password] against the server.
@@ -330,7 +316,7 @@ class PowerAuth {
   /// Returns an encryptor for application scope.
   ///
   /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// The encryption is available without activation.
+  /// Encryption is available without activation.
   PowerAuthEncryptor getEncryptorForApplicationScope() {
     return PowerAuthRequestEncryptor(
       encryptorScope: PowerAuthEncryptorScope.application,
@@ -341,11 +327,43 @@ class PowerAuth {
   /// Returns an encryptor for activation scope.
   ///
   /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// The encryption requires valid activation.
+  /// Encryption requires valid activation.
   PowerAuthEncryptor getEncryptorForActivationScope() {
     return PowerAuthRequestEncryptor(
       encryptorScope: PowerAuthEncryptorScope.activation,
       powerAuthInstanceId: instanceId,
     );
   }
+
+  /// Fetch information about the user from the server. If the operation succeeds, then the user
+  /// information object is also internally stored and available in [getLastFetchedUserInfo] method.
+  Future<PowerAuthUserInfo> fetchUserInfo() {
+    return _platform.fetchUserInfo(instanceId);
+  }
+
+  /// Returns the last fetched information about the user. The information about the user is optional and 
+  /// must be supported by the server. The value is updated during the activation process or by 
+  /// calling [fetchUserInfo].
+  /// 
+  /// Note that the user info is not cached between app launches.
+  Future<PowerAuthUserInfo?> getLastFetchedUserInfo() {
+    return _platform.getLastFetchedUserInfo(instanceId);
+  }
+}
+
+/// Internal helper class to hold the configuration set for a single PowerAuth instance.
+class _InstanceConfigurationHolder {
+  final PowerAuthConfiguration configuration;
+  final PowerAuthClientConfiguration? clientConfiguration;
+  final PowerAuthBiometryConfiguration? biometryConfiguration;
+  final PowerAuthKeychainConfiguration? keychainConfiguration;
+  final PowerAuthSharingConfiguration? sharingConfiguration;
+
+  _InstanceConfigurationHolder({
+    required this.configuration,
+    this.biometryConfiguration,
+    this.keychainConfiguration,
+    this.clientConfiguration,
+    this.sharingConfiguration
+  });
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_oidc_parameters.dart';
+
 /// Contains activation data required for the activation creation.
 /// Use one of the factory constructors to create an instance based on the activation type.
 class PowerAuthActivation {
@@ -40,11 +42,15 @@ class PowerAuthActivation {
   /// Additional activation OTP that can be used only with a regular activation (by activation code).
   final String? additionalActivationOtp;
 
+  /// OpenID Connect parameters for activation.
+  final PowerAuthOIDCParameters? oidcParameters;
+
   // Private constructor to enforce factory usage
   PowerAuthActivation._({
     required this.activationName,
     this.activationCode,
     this.identityAttributes,
+    this.oidcParameters,
     this.extras,
     this.customAttributes,
     this.additionalActivationOtp,
@@ -82,6 +88,21 @@ class PowerAuthActivation {
     );
   }
 
+  /// Creates an instance configured with OpenID Connect parameters for activation.
+  factory PowerAuthActivation.fromOIDC({
+    required PowerAuthOIDCParameters oidcParameters,
+    required String name,
+    String? extras,
+    Map<String, dynamic>? customAttributes,
+  }) {
+    return PowerAuthActivation._(
+      activationName: name,
+      oidcParameters: oidcParameters,
+      extras: extras,
+      customAttributes: customAttributes,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'activationName': activationName,
@@ -90,6 +111,7 @@ class PowerAuthActivation {
       'extras': extras,
       'customAttributes': customAttributes,
       'additionalActivationOtp': additionalActivationOtp,
+      'oidcParameters': oidcParameters?.toMap(),
     }..removeWhere((key, value) => value == null);
   }
 }

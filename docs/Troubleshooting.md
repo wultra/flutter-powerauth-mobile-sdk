@@ -32,4 +32,4 @@ await PowerAuthDebug.dumpNativeObjects(instanceId: powerAuth.instanceId);
 
 ## Read Next
 
-- [Sample Integration](Sample-Integration.md)
+- [User Info](User-Info.md)

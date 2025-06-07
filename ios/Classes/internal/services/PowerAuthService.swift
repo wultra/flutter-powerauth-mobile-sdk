@@ -62,7 +62,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "getLocalToken": getLocalToken,
         "removeLocalToken": removeLocalToken,
         "removeAllLocalTokens": removeAllLocalTokens,
-        "generateHeaderForToken": generateHeaderForToken
+        "generateHeaderForToken": generateHeaderForToken,
+        "fetchUserInfo": fetchUserInfo,
+        "getLastFetchedUserInfo": getLastFetchedUserInfo
     ]
     
     // Possible Flutter call parameters
@@ -329,6 +331,21 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 } catch let e {
                     throw PluginException(.invalidActivationObject, message: "Invalid identity attributes provided", details: e.localizedDescription)
                 }
+            } else if let oidcParameters = activation["oidcParameters"] as? [String: String] {
+                
+                guard let providerId = oidcParameters["providerId"],
+                      let code = oidcParameters["code"],
+                      let nonce = oidcParameters["nonce"] else {
+                    throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided")
+                }
+                
+                let codeVerifier = oidcParameters["codeVerifier"]
+                
+                do {
+                    paActivation = try PowerAuthActivation(oidcProviderId: providerId, code: code, nonce: nonce, codeVerifier: codeVerifier)
+                } catch let e {
+                    throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided", details: e.localizedDescription)
+                }
             }
             
             guard let paActivation else {
@@ -356,7 +373,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     
                     result([
                         "activationFingerprint": activationResult.activationFingerprint,
-                        "customAttributes": activationResult.customAttributes ?? [:]
+                        "customAttributes": activationResult.customAttributes ?? [:],
+                        "userInfoClaims": activationResult.userInfo?.allClaims as? Any
                     ])
                 }
             }
@@ -714,6 +732,29 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 "key": header.key,
                 "value": header.value
             ])
+        }
+    }
+    
+    private func fetchUserInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            sdk.fetchUserInfo { userInfo, error in
+                wrap {
+                    guard let userInfo else {
+                        throw error ?? PluginException(.unknownError, message: "Unknown error fetching user info.")
+                    }
+                    result(["allClaims": userInfo.allClaims])
+                }
+            }
+        }
+    }
+    
+    private func getLastFetchedUserInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            if let userInfo = sdk.lastFetchedUserInfo {
+                result(["allClaims": userInfo.allClaims])
+            } else {
+                result(nil)
+            }
         }
     }
     

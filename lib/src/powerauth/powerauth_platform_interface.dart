@@ -15,6 +15,7 @@
  */
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../model/powerauth_data_format.dart';
@@ -245,5 +246,13 @@ abstract class PowerAuthPlatform extends PlatformInterface {
 
   Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
     throw UnimplementedError('generateHeaderForToken() has not been implemented.');
+  }
+
+  Future<PowerAuthUserInfo> fetchUserInfo(String instanceId) {
+    throw UnimplementedError('fetchUserInfo() has not been implemented.');
+  }
+
+  Future<PowerAuthUserInfo?> getLastFetchedUserInfo(String instanceId) {
+    throw UnimplementedError('getLastFetchedUserInfo() has not been implemented.');
   }
 }
