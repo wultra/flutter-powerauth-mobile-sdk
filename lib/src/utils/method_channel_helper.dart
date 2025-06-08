@@ -15,7 +15,7 @@
  */
 
 import 'package:flutter/services.dart';
-import '../model/powerauth_error.dart'; // Assuming PowerAuthError definitions are here
+import '../model/powerauth_error.dart';
 
 /// Helper mixin for invoking methods on a provided MethodChannel and handling PowerAuth errors.
 mixin MethodChannelHelper {

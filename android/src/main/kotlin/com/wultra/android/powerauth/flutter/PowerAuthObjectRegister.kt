@@ -80,6 +80,12 @@ class PowerAuthObjectRegister {
             return policies == null
         }
 
+        // TODO: refactor the null-defaulting into this if it makes sense
+        val isManuallyManaged: Boolean
+            get() {
+               return (policies?.contains(ReleasePolicy.manual()) == true)
+            }
+
         /**
          * Determine whether this native object is still valid.
          */
@@ -197,31 +203,25 @@ class PowerAuthObjectRegister {
     </T> */
     private fun <T: Any> findAndProcessObject(id: String?, expectedClass: Class<T>?, options: Int): T? {
         val objectId = id ?: return null
-        val holder = managedObjects[objectId]
+        val holder = managedObjects[objectId] ?: return null
 
-        if (holder != null) {
-            val instance = holder.obj.managedInstance()
+        val instance = holder.obj.managedInstance()
 
-            if (expectedClass == null || expectedClass.isInstance(instance)) {
-                if (holder.isStillValid) {
-                    when (options) {
-                        OPT_SET_USE -> holder.setUsed()
-                        OPT_TOUCH -> holder.touch()
-                        OPT_REMOVE -> {
-                            if (holder.setRemoved()) {
-                                holder.obj.cleanup()
-                                managedObjects.remove(objectId)
-                            }
-                        }
-                    }
+        if (!holder.isStillValid ||
+            (expectedClass != null && !expectedClass.isInstance(instance))
+        ) return null
 
-                    @Suppress("UNCHECKED_CAST")
-                    return instance as T
-                }
+        when (options) {
+            OPT_SET_USE -> holder.setUsed()
+            OPT_TOUCH -> holder.touch()
+            OPT_REMOVE -> if (holder.setRemoved()) {
+                holder.obj.cleanup()
+                managedObjects.remove(id)
             }
         }
 
-        return null
+        @Suppress("UNCHECKED_CAST")
+        return instance as T
     }
 
     fun <T : Any> findObject(id: String, type: Class<T>): T? = lock.withLock {
@@ -257,21 +257,19 @@ class PowerAuthObjectRegister {
             val entry = iterator.next()
             val holder = entry.value
 
-            // TODO: this if makes no sense...
+            // TODO: implement proper filtering!
             if (tag == null || holder.tag == tag) {
-                if (tag != null) {
-                    if (holder.setRemoved()) {
-                        holder.obj.cleanup()
-                        iterator.remove()
+                if (holder.setRemoved()) {
+                    holder.obj.cleanup()
+                    iterator.remove()
 
-                        changed = true
-                    } else if (holder.isReadyForRemove) {
-                        iterator.remove()
-                        changed = true
-                    } else {
-                        // marked for later cleanup, ensure a job is scheduled
-                        changed = true
-                    }
+                    changed = true
+                } else if (holder.isReadyForRemove) {
+                    iterator.remove()
+                    changed = true
+                } else {
+                    // marked for later cleanup, ensure a job is scheduled
+                    changed = true
                 }
             }
         }
