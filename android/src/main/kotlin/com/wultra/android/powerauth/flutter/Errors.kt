@@ -32,6 +32,8 @@ object Errors {
     const val EC_BIOMETRY_FAILED: String = "biometryFailed"
     const val EC_INVALID_ACTIVATION_OBJECT: String = "invalidActivationObject"
     const val EC_INVALID_ENCRYPTOR: String = "invalidEncryptor"
+    const val EC_LOCAL_TOKEN_NOT_AVAILABLE: String = "localTokenNotAvailable"
+    const val EC_CANNOT_GENERATE_TOKEN: String = "cannotGenerateToken"
     const val EC_INVALID_NATIVE_OBJECT: String = "invalidNativeObject"
 
     const val EC_SUCCEED: String = "succeed"

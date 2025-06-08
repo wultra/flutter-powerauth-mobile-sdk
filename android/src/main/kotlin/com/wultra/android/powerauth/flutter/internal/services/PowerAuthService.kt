@@ -52,6 +52,9 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtil
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
+import io.getlime.security.powerauth.networking.response.IGetTokenListener
+import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
+import io.getlime.security.powerauth.sdk.PowerAuthToken
 
 class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val context: Context, private val getCurrentActivity: () -> Activity?) : BasePowerAuthService(objectRegister) {
 
@@ -97,6 +100,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
         const val OBJECT_ID = "objectId"
+        const val TOKEN_NAME = "tokenName"
     }
 
     private object HandlerNames {
@@ -124,6 +128,13 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         const val HAS_BIOMETRY_FACTOR = "hasBiometryFactor"
         const val REMOVE_BIOMETRY_FACTOR = "removeBiometryFactor"
         const val AUTHENTICATE_WITH_BIOMETRY = "authenticateWithBiometry"
+        const val REQUEST_ACCESS_TOKEN = "requestAccessToken"
+        const val REMOVE_ACCESS_TOKEN = "removeAccessToken"
+        const val HAS_LOCAL_TOKEN = "hasLocalToken"
+        const val GET_LOCAL_TOKEN = "getLocalToken"
+        const val REMOVE_LOCAL_TOKEN = "removeLocalToken"
+        const val REMOVE_ALL_LOCAL_TOKENS = "removeAllLocalTokens"
+        const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
     }
 
     override val handlers by lazy {
@@ -231,7 +242,14 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
                     call,
                     result
                 )
-            }
+            },
+            HandlerNames.REQUEST_ACCESS_TOKEN to MethodHandler { call, result -> requestAccessToken(call, result) },
+            HandlerNames.REMOVE_ACCESS_TOKEN to MethodHandler { call, result -> removeAccessToken(call, result) },
+            HandlerNames.HAS_LOCAL_TOKEN to MethodHandler { call, result -> hasLocalToken(call, result) },
+            HandlerNames.GET_LOCAL_TOKEN to MethodHandler { call, result -> getLocalToken(call, result) },
+            HandlerNames.REMOVE_LOCAL_TOKEN to MethodHandler { call, result -> removeLocalToken(call, result) },
+            HandlerNames.REMOVE_ALL_LOCAL_TOKENS to MethodHandler { call, result -> removeAllLocalTokens(call, result) },
+            HandlerNames.GENERATE_HEADER_FOR_TOKEN to MethodHandler { call, result -> generateHeaderForToken(call, result) }
         )
     }
 
@@ -520,8 +538,6 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         }
     }
 
-
-
     private fun addBiometryFactor(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
@@ -762,5 +778,117 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         }
 
         objectRegister.removeObject(instanceId)
+    }
+
+    private fun requestAccessToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+        val authentication = buildAuthenticationObject(call, persist = false)
+
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            sdk.tokenStore.requestAccessToken(
+                context,
+                tokenName,
+                authentication,
+                object : IGetTokenListener {
+                    override fun onGetTokenSucceeded(token: PowerAuthToken) {
+                        result.success(
+                            mapOf(
+                                "tokenName" to token.tokenName,
+                                "tokenIdentifier" to token.tokenIdentifier
+                            )
+                        )
+                    }
+                    override fun onGetTokenFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                }
+            )
+        }
+    }
+
+    private fun removeAccessToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            sdk.tokenStore.removeAccessToken(
+                context,
+                tokenName,
+                object : IRemoveTokenListener {
+                    override fun onRemoveTokenSucceeded() {
+                        result.success(null)
+                    }
+                    override fun onRemoveTokenFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                })
+        }
+    }
+
+    private fun hasLocalToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.tokenStore.hasLocalToken(context, tokenName))
+        }
+    }
+
+    private fun getLocalToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+
+        usePowerAuth(call, result) { sdk ->
+            val token = sdk.tokenStore.getLocalToken(context, tokenName)
+
+            if (token != null) {
+                result.success(
+                    mapOf(
+                        "tokenName" to token.tokenName,
+                        "tokenIdentifier" to token.tokenIdentifier
+                    )
+                )
+            } else {
+                result.error(
+                    Errors.EC_LOCAL_TOKEN_NOT_AVAILABLE,
+                    "Token with this name is not in the local store.",
+                    null
+                )
+            }
+        }
+    }
+
+    private fun removeLocalToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+
+        usePowerAuth(call, result) { sdk ->
+            sdk.tokenStore.removeLocalToken(context, tokenName)
+            result.success(null)
+        }
+    }
+
+    private fun removeAllLocalTokens(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            sdk.tokenStore.removeAllLocalTokens(context)
+            result.success(null)
+        }
+    }
+
+    private fun generateHeaderForToken(call: MethodCall, result: Result) {
+        val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
+
+        usePowerAuth(call, result) { sdk ->
+            val token = sdk.tokenStore.getLocalToken(context, tokenName)
+
+            if (token == null) {
+                result.error(
+                    Errors.EC_LOCAL_TOKEN_NOT_AVAILABLE,
+                    "This token is no longer available in the local store.",
+                    null
+                )
+            } else if (token.canGenerateHeader()) {
+                val header = token.generateHeader()
+                result.success(mapOf("key" to header.key, "value" to header.value))
+            } else {
+                result.error(Errors.EC_CANNOT_GENERATE_TOKEN, "Cannot generate header for this token.", null)
+            }
+        }
     }
 }
