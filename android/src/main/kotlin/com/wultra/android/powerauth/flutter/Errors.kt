@@ -31,6 +31,7 @@ object Errors {
     const val EC_INVALID_CHARACTER: String = "invalidCharacter"
     const val EC_BIOMETRY_FAILED: String = "biometryFailed"
     const val EC_INVALID_ACTIVATION_OBJECT: String = "invalidActivationObject"
+    const val EC_INVALID_ENCRYPTOR: String = "invalidEncryptor"
     const val EC_INVALID_NATIVE_OBJECT: String = "invalidNativeObject"
 
     const val EC_SUCCEED: String = "succeed"

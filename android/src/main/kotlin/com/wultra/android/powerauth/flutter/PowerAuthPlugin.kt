@@ -27,6 +27,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthEncryptorService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthPasswordService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthUtilsService
@@ -52,7 +53,8 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         serviceRegistry.registerAll(
             PowerAuthService(objectRegister, context, getCurrentActivity = { currentActivity }),
             PowerAuthPasswordService(objectRegister),
-            PowerAuthUtilsService()
+            PowerAuthUtilsService(),
+            PowerAuthEncryptorService(objectRegister, context)
         )
     }
 

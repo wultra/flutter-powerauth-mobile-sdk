@@ -283,6 +283,8 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             unregisterPowerAuthInstance(instanceId)
+            objectRegister.removeAllObjectsWithTag(instanceId)
+
             result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)

@@ -92,7 +92,7 @@ enum class DataFormat {
          */
         @Throws(WrapperException::class)
         fun fromString(format: String?): DataFormat {
-            return when (format) {
+            return when (format?.uppercase()) {
                 null -> UTF8
                 "UTF8" -> UTF8
                 "BASE64" -> BASE64
