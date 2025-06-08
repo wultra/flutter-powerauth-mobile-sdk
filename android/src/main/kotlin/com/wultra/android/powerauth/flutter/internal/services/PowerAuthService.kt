@@ -55,6 +55,7 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
+import java.nio.charset.StandardCharsets
 
 class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val context: Context, private val getCurrentActivity: () -> Activity?) : BasePowerAuthService(objectRegister) {
 
@@ -135,6 +136,8 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         const val REMOVE_LOCAL_TOKEN = "removeLocalToken"
         const val REMOVE_ALL_LOCAL_TOKENS = "removeAllLocalTokens"
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
+        const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
+        const val SIGN_DATA_WITH_DEVICE_PRIVATE_KEY = "signDataWithDevicePrivateKey"
     }
 
     override val handlers by lazy {
@@ -249,7 +252,9 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             HandlerNames.GET_LOCAL_TOKEN to MethodHandler { call, result -> getLocalToken(call, result) },
             HandlerNames.REMOVE_LOCAL_TOKEN to MethodHandler { call, result -> removeLocalToken(call, result) },
             HandlerNames.REMOVE_ALL_LOCAL_TOKENS to MethodHandler { call, result -> removeAllLocalTokens(call, result) },
-            HandlerNames.GENERATE_HEADER_FOR_TOKEN to MethodHandler { call, result -> generateHeaderForToken(call, result) }
+            HandlerNames.GENERATE_HEADER_FOR_TOKEN to MethodHandler { call, result -> generateHeaderForToken(call, result) },
+            HandlerNames.FETCH_ENCRYPTION_KEY to MethodHandler { call, result -> fetchEncryptionKey(call, result) },
+            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to MethodHandler { call, result -> signDataWithDevicePrivateKey(call, result) }
         )
     }
 
@@ -512,13 +517,18 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             val bodyString: String? = call.argument(BODY)
             val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
 
-            val signature: String? =
-                sdk.offlineSignatureWithAuthentication(context, authentication, uriId, requestData, nonce)
+            try {
+                val signature = sdk.offlineSignatureWithAuthentication(context, authentication, uriId, requestData, nonce)
 
-            if (signature != null) {
-                result.success(signature)
-            } else {
-                result.error(Errors.EC_SIGNATURE_ERROR, "Signature calculation failed", null)
+                if (signature != null) {
+                    result.success(signature)
+                } else {
+                    // TODO: tests required missing activation, however the SDK does not indicate and/or throw it
+                    result.error(Errors.EC_MISSING_ACTIVATION, "Signature calculation failed", null)
+                    // result.error(Errors.EC_SIGNATURE_ERROR, "Signature calculation failed", null)
+                }
+            } catch (e: PowerAuthMissingConfigException) {
+                Errors.error(result, e)
             }
         }
     }
@@ -889,6 +899,49 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             } else {
                 result.error(Errors.EC_CANNOT_GENERATE_TOKEN, "Cannot generate header for this token.", null)
             }
+        }
+    }
+
+    private fun fetchEncryptionKey(call: MethodCall, result: Result) {
+        val index: Int = call.getRequiredArgument("index")
+        val authentication = buildAuthenticationObject(call, persist = false)
+
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            sdk.fetchEncryptionKey(
+                context,
+                authentication,
+                index.toLong(),
+                object : IFetchEncryptionKeyListener {
+                    override fun onFetchEncryptionKeySucceed(key: ByteArray) {
+                        result.success(Base64.encodeToString(key, Base64.NO_WRAP))
+                    }
+                    override fun onFetchEncryptionKeyFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                }
+            )
+        }
+    }
+
+    private fun signDataWithDevicePrivateKey(call: MethodCall, result: Result) {
+        val data: String = call.getRequiredArgument(DATA)
+        val authentication = buildAuthenticationObject(call, persist = false)
+
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            sdk.signDataWithDevicePrivateKey(
+                context,
+                authentication,
+                data.toByteArray(StandardCharsets.UTF_8),
+                object : IDataSignatureListener {
+                    override fun onDataSignedSucceed(signature: ByteArray) {
+                        result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
+                    }
+
+                    override fun onDataSignedFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                }
+            )
         }
     }
 }
