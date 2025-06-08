@@ -102,6 +102,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         const val CONFIGURATION_STRING = "configuration"
         const val OBJECT_ID = "objectId"
         const val TOKEN_NAME = "tokenName"
+        const val OIDC_PARAMETERS = "oidcParameters"
     }
 
     private object HandlerNames {
@@ -138,6 +139,8 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
         const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
         const val SIGN_DATA_WITH_DEVICE_PRIVATE_KEY = "signDataWithDevicePrivateKey"
+        const val FETCH_USER_INFO = "fetchUserInfo"
+        const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
     }
 
     override val handlers by lazy {
@@ -254,7 +257,9 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             HandlerNames.REMOVE_ALL_LOCAL_TOKENS to MethodHandler { call, result -> removeAllLocalTokens(call, result) },
             HandlerNames.GENERATE_HEADER_FOR_TOKEN to MethodHandler { call, result -> generateHeaderForToken(call, result) },
             HandlerNames.FETCH_ENCRYPTION_KEY to MethodHandler { call, result -> fetchEncryptionKey(call, result) },
-            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to MethodHandler { call, result -> signDataWithDevicePrivateKey(call, result) }
+            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to MethodHandler { call, result -> signDataWithDevicePrivateKey(call, result) },
+            HandlerNames.FETCH_USER_INFO to MethodHandler { call, result -> fetchUserInfo(call, result) },
+            HandlerNames.GET_LAST_FETCHED_USER_INFO to MethodHandler { call, result -> getLastFetchedUserInfo(call, result) }
         )
     }
 
@@ -668,11 +673,26 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         val activationCode = map[ACTIVATION_CODE] as? String
         val identityAttributes = map[IDENTITY_ATTRIBUTES] as? Map<String, String>
         val name = map[ACTIVATION_NAME] as? String
+        val oidcParameters = map[OIDC_PARAMETERS] as? Map<String, String>
 
         val activationBuilder = when {
             activationCode != null -> PowerAuthActivation.Builder.activation(activationCode, name)
             identityAttributes != null -> PowerAuthActivation.Builder.customActivation(identityAttributes, name)
-            else -> throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing activationCode or identityAttributes")
+            oidcParameters != null -> {
+                val providerId = oidcParameters["providerId"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing providerId in oidcParameters")
+                val code = oidcParameters["code"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing code in oidcParameters")
+                val nonce = oidcParameters["nonce"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing nonce in oidcParameters")
+                val codeVerifier = oidcParameters["codeVerifier"]
+
+                try {
+                    PowerAuthActivation.Builder.oidcActivation(providerId, code, nonce, codeVerifier)
+                } catch (e: PowerAuthErrorException) {
+                    throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Invalid OIDC parameters provided")
+                }
+
+
+            }
+            else -> throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing activationCode, identityAttributes, or oidcParameters")
         }
 
         (map[EXTRAS] as? String)?.let { activationBuilder.setExtras(it) }
@@ -794,7 +814,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
         val authentication = buildAuthenticationObject(call, persist = false)
 
-        usePowerAuthOnMainThread(call, result) { sdk ->
+        usePowerAuth(call, result) { sdk ->
             sdk.tokenStore.requestAccessToken(
                 context,
                 tokenName,
@@ -819,7 +839,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
     private fun removeAccessToken(call: MethodCall, result: Result) {
         val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
 
-        usePowerAuthOnMainThread(call, result) { sdk ->
+        usePowerAuth(call, result) { sdk ->
             sdk.tokenStore.removeAccessToken(
                 context,
                 tokenName,
@@ -906,7 +926,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         val index: Int = call.getRequiredArgument("index")
         val authentication = buildAuthenticationObject(call, persist = false)
 
-        usePowerAuthOnMainThread(call, result) { sdk ->
+        usePowerAuth(call, result) { sdk ->
             sdk.fetchEncryptionKey(
                 context,
                 authentication,
@@ -927,7 +947,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
         val data: String = call.getRequiredArgument(DATA)
         val authentication = buildAuthenticationObject(call, persist = false)
 
-        usePowerAuthOnMainThread(call, result) { sdk ->
+        usePowerAuth(call, result) { sdk ->
             sdk.signDataWithDevicePrivateKey(
                 context,
                 authentication,
@@ -942,6 +962,31 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
                     }
                 }
             )
+        }
+    }
+
+    private fun fetchUserInfo(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            sdk.fetchUserInfo(context, object : IUserInfoListener {
+                override fun onUserInfoSucceed(userInfo: UserInfo) {
+                    result.success(mapOf("allClaims" to userInfo.allClaims))
+                }
+
+                override fun onUserInfoFailed(t: Throwable) {
+                    Errors.error(result, t)
+                }
+            })
+        }
+    }
+
+    private fun getLastFetchedUserInfo(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            val userInfo = sdk.lastFetchedUserInfo
+            if (userInfo != null) {
+                result.success(mapOf("allClaims" to userInfo.allClaims))
+            } else {
+                result.success(null)
+            }
         }
     }
 }

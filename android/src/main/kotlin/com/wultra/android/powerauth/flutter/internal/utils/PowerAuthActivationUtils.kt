@@ -36,7 +36,8 @@ object PowerAuthActivationUtils {
     fun createActivationResultToMap(activationResult: CreateActivationResult): Map<String, Any?> {
         return mapOf(
             "activationFingerprint" to activationResult.activationFingerprint,
-            "customAttributes" to activationResult.customActivationAttributes
+            "customAttributes" to activationResult.customActivationAttributes,
+            "userInfoClaims" to activationResult.userInfo?.allClaims
         )
     }
 
