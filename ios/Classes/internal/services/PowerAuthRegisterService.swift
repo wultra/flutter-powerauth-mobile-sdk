@@ -44,13 +44,13 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     }
     
     private func isValidNativeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let objectId: String = try call.requireParameter(.objectId)
+        let objectId: String = try call.requireParameter(Args.objectId)
         result(register.contains(id: objectId))
     }
     
     #if DEBUG
     private func debugDump(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-        let instanceId: String? = call.getParameter(.instanceId)
+        let instanceId: String? = call.getParameter(Args.instanceId)
         result(register.debugDumpObjectsWithTag(tag: instanceId))
     }
     
@@ -67,113 +67,158 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     
     enum NativeObjectType: String {
         case data
-        case secureData = "secure-data"
+        case secureData // "secure-data"
         case number
         case password
     }
     
     private func debugCommand(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
-//        let command: String = try call.requireParameter(.command)
-//        let data: FlutterMap = try call.requireParameter(.data)
-//        
-//        let objectId = data["objectId"] as? String
-//        let objectTag = data["objectTag"] as? String
-//        let objectType: NativeObjectType? = if let ot = data["objectType"] as? String {
-//            NativeObjectType(rawValue: ot)
-//        } else {
-//            nil
-//        }
-//        
-//        if objectType == .data || objectType == .secureData {
-//            
-//        }
-//        
-//        Class objectClass = Nil;
-//        if ([@"data" isEqual:objectType] || [@"secure-data" isEqual:objectType]) {
-//            objectClass = [PowerAuthData class];
-//        } else if ([@"number" isEqual:objectType]) {
-//            objectClass = [NSNumber class];
-//        } else if ([@"password" isEqual:objectType]) {
-//            objectClass = [PowerAuthCoreMutablePassword class];
-//        } else if ([@"encryptor" isEqual:objectType]) {
-//            objectClass = [PowerAuthJsEncryptor class];
-//        }
-//        if ([@"create" isEqual:command]) {
-//            // The "create" command creates a new instance of managed object
-//            // and returns its ID to JavaScript.
-//            
-//            // Prepare Release policy
-//            NSMutableArray * policies = [NSMutableArray array];
-//            [[RCTConvert NSStringArray:options[@"releasePolicy"]] enumerateObjectsUsingBlock:^(NSString * policy, NSUInteger idx, BOOL * stop) {
-//                NSArray * components = [policy componentsSeparatedByString:@" "];
-//                NSInteger param = [[components lastObject] integerValue];
-//                if ([@"manual" isEqualToString:policy]) {
-//                    [policies addObject:RP_MANUAL()];
-//                } else if ([policy hasPrefix:@"afterUse"]) {
-//                    [policies addObject:RP_AFTER_USE(param)];
-//                } else if ([policy hasPrefix:@"keepAlive"]) {
-//                    [policies addObject:RP_KEEP_ALIVE(param)];
-//                } else if ([policy hasPrefix:@"expire"]) {
-//                    [policies addObject:RP_EXPIRE(param)];
-//                }
-//            }];
-//            if (policies.count > 0) {
-//                // Create new object
-//                id instance = nil;
-//                if ([@"data" isEqual:objectType]) {
-//                    NSData * td = [@"TEST-DATA" dataUsingEncoding:NSUTF8StringEncoding];
-//                    instance = [[PowerAuthData alloc] initWithData:td cleanup:NO];
-//                } else if ([@"secure-data" isEqual:objectType]) {
-//                    NSData * td = [[@"SECURE-DATA" dataUsingEncoding:NSUTF8StringEncoding] mutableCopy];
-//                    instance = [[PowerAuthData alloc] initWithData:td cleanup:YES];
-//                } else if ([@"number" isEqual:objectType]) {
-//                    instance = [[NSNumber alloc] initWithInt:42];
-//                } else if ([@"password" isEqual:objectType]) {
-//                    instance = [PowerAuthCoreMutablePassword mutablePassword];
-//                }
-//                if (instance) {
-//                    NSString * objectId = [self registerObject:instance tag:objectTag policies:policies];
-//                    resolve(objectId);
-//                    return;
-//                }
-//            }
-//        } else if ([@"release" isEqual:command]) {
-//            // The "release" command release object with given identifier and returns true / false whether object was removed.
-//            if (objectId) {
-//                // release allows to release any object
-//                resolve([self removeObjectWithId:objectId expectedClass:objectClass] != nil ? @YES : @NO);
-//                return;
-//            }
-//        } else if ([@"releaseAll" isEqual:command]) {
-//            // The "releaseAll" command release all objects with a specified tag. If tag is nil, then releases all objects
-//            // from the register.
-//            [self removeAllObjectsWithTag:objectTag];
-//            resolve(nil);
-//            return;
-//        } else if ([@"use" isEqual:command]) {
-//            // The "use" command find object and mark it as used and returns true / false whether object was found.
-//            if (objectClass && objectId) {
-//                resolve([self useObjectWithId:objectId expectedClass:objectClass] != nil ? @YES : @NO);
-//                return;
-//            }
-//        } else if ([@"find" isEqual:command]) {
-//            // The "find" command just find the object in the register and returns true / false if object still exists.
-//            if (objectClass && objectId) {
-//                resolve([self findObjectWithId:objectId expectedClass:objectClass] != nil ? @YES : @NO);
-//                return;
-//            }
-//        } else if ([@"touch" isEqual:command]) {
-//            // The "touch" command prolongs lifetime of object in the register and returns true / false if object still exists.
-//            if (objectClass && objectId) {
-//                resolve([self touchObjectWithId:objectId expectedClass:objectClass] != nil ? @YES : @NO);
-//                return;
-//            }
-//        } else if ([@"setPeriod" isEqual:command]) {
-//            [self setCleanupPeriod:[[RCTConvert NSNumber:options[@"cleanupPeriod"]] integerValue]];
-//            resolve(nil);
-//            return;
-//        }
-//        reject(EC_WRONG_PARAMETER, [NSString stringWithFormat:@"Wrong parameter for cmd %@, %@", command, options], nil);
+        let command: String = try call.requireParameter(Args.command)
+        let options: FlutterMap = try call.requireParameter(Args.data)
+        
+        let objectId = options["objectId"] as? String
+        let objectTag = options["objectTag"] as? String
+        guard let ot = options["objectType"] as? String, let objectType = NativeObjectType(rawValue: ot) else {
+            throw PluginException(.wrongParameter, message: "Unknown object type parameter")
+        }
+        
+        if command == "create" {
+            // The "create" command creates a new instance of managed object
+            // and returns its ID to Flutter.
+            
+            // Prepare Release policy
+            
+            var policies = [ReleasePolicy]()
+            (options["releasePolicy"] as? [String])?.forEach { policy in
+                let components = policy.components(separatedBy: " ")
+                let param = Int(components.last ?? "") ?? 1 // TODO: fallback OK?
+                if policy == "manual" {
+                    policies.append(.manual())
+                } else if policy.starts(with: "afterUse") {
+                    policies.append(.afterUse(param))
+                } else if policy.starts(with: "keepAlive") {
+                    policies.append(.keepAlive(param))
+                } else if policy.starts(with: "expire") {
+                    policies.append(.expire(param))
+                }
+            }
+            
+            if policies.count > 0 {
+                // Create new object
+                let instance: Any?
+                switch objectType {
+                case .data:
+                    let td = "TEST-DATA".data(using: .utf8)!
+                    instance = PowerAuthData(data: td, cleanup: false)
+                case .secureData:
+                    let td = "SECURE-DATA".data(using: .utf8)!
+                    instance = PowerAuthData(data: td, cleanup: true)
+                case .number:
+                    instance = 42
+                case .password:
+                    instance = PowerAuthCoreMutablePassword()
+                }
+                if let instance {
+                    let objectId = register.add(object: instance, tag: objectTag, policies: policies)
+                    result(objectId)
+                    return
+                }
+            }
+        } else if command == "release" {
+            // The "release" command release object with given identifier and returns true / false whether object was removed.
+            if let objectId {
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.remove(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.remove(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.remove(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.remove(id: objectId)
+                    result(data != nil)
+                }
+                return
+            }
+        } else if command == "releaseAll" {
+            // The "releaseAll" command release all objects with a specified tag. If tag is nil, then releases all objects
+            // from the register.
+            if let objectTag {
+                register.removeAll(tag: objectTag)
+            } else {
+                register.removeAll()
+            }
+            result(nil)
+            return
+        } else if command == "use" {
+            // The "use" command find object and mark it as used and returns true / false whether object was found.
+            if let objectId {
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.use(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.use(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.use(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.use(id: objectId)
+                    result(data != nil)
+                }
+                return
+            }
+        } else if command == "find" {
+            // The "find" command just find the object in the register and returns true / false if object still exists.
+            if let objectId {
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.find(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.find(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.find(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.find(id: objectId)
+                    result(data != nil)
+                }
+                return
+            }
+        } else if command == "touch" {
+            // The "touch" command prolongs lifetime of object in the register and returns true / false if object still exists.
+            if let objectId {
+                switch objectType {
+                case .data:
+                    let data: PowerAuthData? = register.touch(id: objectId)
+                    result(data != nil)
+                case .number:
+                    let data: Int? = register.touch(id: objectId)
+                    result(data != nil)
+                case .password:
+                    let data: PowerAuthCorePassword? = register.touch(id: objectId)
+                    result(data != nil)
+                case .secureData:
+                    let data: PowerAuthData? = register.touch(id: objectId)
+                    result(data != nil)
+                }
+                return
+            }
+        } else if command == "setPeriod" {
+            // TODO: improve?
+            if let period = options["cleanupPeriod"] as? Int {
+                register.setCleanupPeriod(period)
+            }
+            result(nil)
+            return
+        }
+        throw PluginException(.wrongParameter, message: "Wrong parameter for cmd \(command), \(options)")
     }
     #else
     
@@ -185,14 +230,4 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         result(nil)
     }
     #endif
-}
-
-private extension FlutterMethodCall {
-    func requireParameter<T>(_ key: PowerAuthRegisterService.Args) throws -> T {
-        return try requireParameter(key.rawValue)
-    }
-    
-    func getParameter<T>(_ key: PowerAuthRegisterService.Args) -> T? {
-        return getParameter(key.rawValue)
-    }
 }

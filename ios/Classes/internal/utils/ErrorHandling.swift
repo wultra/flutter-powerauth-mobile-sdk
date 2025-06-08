@@ -56,10 +56,10 @@ internal extension FlutterError {
                             newUserInfo["responseBody"] = jsonString
                         }
                     }
-                    if let serverResponseCode = responseObject.responseObject.code {
+                    if let serverResponseCode = responseObject.responseObject?.code {
                         newUserInfo["serverResponseCode"] = serverResponseCode
                     }
-                    if let serverResponseMessage = responseObject.responseObject.message {
+                    if let serverResponseMessage = responseObject.responseObject?.message {
                         newUserInfo["serverResponseMessage"] = serverResponseMessage
                     }
                 }
@@ -73,6 +73,10 @@ internal extension FlutterError {
             } else {
                 // Other type of PowerAuthError. Just translate errorCode to string and keep NSError as it is.
                 errorCode = .from(paErrorCode)
+                if errorCode == .unknownError {
+                    // unknown error was passed, at least set the original raw value to the message
+                    message = "Unknown PowerAuthError code: \(paErrorCode.rawValue)"
+                }
                 //
             }
         } else if error.domain  == NSURLErrorDomain {

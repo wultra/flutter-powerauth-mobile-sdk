@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';
@@ -45,6 +48,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   static set instance(PowerAuthPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
+  }
+
+  Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) {
+    throw UnimplementedError(
+      'resolveAuthentication() has not been implemented.',
+    );
   }
 
   Future<void> configure({
@@ -78,6 +87,10 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError(
       'hasPendingActivation() has not been implemented.',
     );
+  }
+
+  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation(String instanceId) {
+    throw UnimplementedError('getExternalPendingOperation() has not been implemented.');
   }
 
   Future<String?> getActivationIdentifier(String instanceId) {
@@ -179,7 +192,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<PowerAuthBiometryInfo> getBiometryInfo(String instanceId) {
+  Future<PowerAuthBiometryInfo> getBiometryInfo() {
     throw UnimplementedError('getBiometryInfo() has not been implemented.');
   }
 
@@ -196,13 +209,50 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<void> removeBiometryFactor(String instanceId) {
-    throw UnimplementedError(
-      'removeBiometryFactor() has not been implemented.',
-    );
+    throw UnimplementedError('removeBiometryFactor() has not been implemented.');
   }
 
-  // TODO: remove this debug call before release!
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
+    throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
+  }
+
+  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) {
+    throw UnimplementedError('signDataWithDevicePrivateKey() has not been implemented.');
+  }
+
+  Future<bool> hasLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('hasLocalToken() has not been implemented.');
+  }
+
+  Future<Map> getLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('getLocalToken() has not been implemented.');
+  }
+
+  Future<void> removeLocalToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeLocalToken() has not been implemented.');
+  }
+
+  Future<void> removeAllLocalTokens(String instanceId) {
+    throw UnimplementedError('removeAllLocalTokens() has not been implemented.');
+  }
+
+  Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) {
+    throw UnimplementedError('requestAccessToken() has not been implemented.');
+  }
+
+  Future<void> removeAccessToken(String instanceId, String tokenName) {
+    throw UnimplementedError('removeAccessToken() has not been implemented.');
+  }
+
+  Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
+    throw UnimplementedError('generateHeaderForToken() has not been implemented.');
+  }
+
+  Future<PowerAuthUserInfo> fetchUserInfo(String instanceId) {
+    throw UnimplementedError('fetchUserInfo() has not been implemented.');
+  }
+
+  Future<PowerAuthUserInfo?> getLastFetchedUserInfo(String instanceId) {
+    throw UnimplementedError('getLastFetchedUserInfo() has not been implemented.');
   }
 }

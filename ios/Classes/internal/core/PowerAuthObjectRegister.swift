@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import PowerAuth2
 import PowerAuthCore
 import Flutter
 
@@ -67,6 +68,12 @@ internal class PowerAuthObjectRegister {
         }
     }
     
+    func useAny(id: String) -> Any? {
+        return lock.synchronized {
+            return findManagedObject(id: id, action: .use, validateType: false)
+        }
+    }
+    
     func find<T>(id: String) -> T? {
         return lock.synchronized {
             return findManagedObject(id: id)
@@ -79,6 +86,12 @@ internal class PowerAuthObjectRegister {
         }
     }
     
+    func touchAny(id: String) -> Any? {
+        return lock.synchronized {
+            return findManagedObject(id: id, action: .touch, validateType: false)
+        }
+    }
+    
     func contains(id: String) -> Bool {
         return lock.synchronized {
             let obj: Any? = self.findManagedObject(id: id, validateType: false)
@@ -88,9 +101,13 @@ internal class PowerAuthObjectRegister {
     
     func removeAll(tag: String) {
         lock.synchronized {
-            self.findAndRemoveObjects { key, value in
-                return tag == value.tag
-            }
+            self.findAndRemoveObjects { $1.tag == tag }
+        }
+    }
+    
+    func removeAll() {
+        lock.synchronized {
+            register.removeAll()
         }
     }
     
@@ -100,9 +117,10 @@ internal class PowerAuthObjectRegister {
         }
     }
     
-    func remove(id: String) {
-        lock.synchronized {
-            self.findManagedObject(id: id, action: .remove, validateType: false)
+    @discardableResult
+    func removeAny(id: String) -> Any? {
+        return lock.synchronized {
+            return self.findManagedObject(id: id, action: .remove, validateType: false)
         }
     }
     
@@ -167,9 +185,7 @@ internal class PowerAuthObjectRegister {
         // Clear scheduled flag.
         scheduledCleanup = false
         // Remove all invalid objects
-        findAndRemoveObjects { _, obj in
-            obj.isStillValid() == false
-        }
+        findAndRemoveObjects { $1.isStillValid() == false }
         // Schedule cleanup for the next round
         scheduleClenaup()
     }
@@ -205,7 +221,7 @@ internal class PowerAuthObjectRegister {
 #if DEBUG
         return lock.synchronized {
             var content = [Dictionary<String, Any?>]()
-            for (key, obj) in register {
+            for (_, obj) in register {
                 if let tag, (obj.tag == nil || obj.tag != tag ) {
                     continue
                 }
@@ -296,10 +312,12 @@ internal class PowerAuthManagedObject {
     let object: Any
     let key: String
     let tag: String?
-    var usageCount: Int = 0
     let createDate: Date
+    
+    var usageCount: Int = 0
     var lastUseDate: Date
-    private let managedByOwner: Bool
+    
+    private lazy var managedByOwner = policies.contains(.manual())
     private let policies: [ReleasePolicy]
     
     init(object: Any, key: String, tag: String?, policies: [ReleasePolicy]) {
@@ -309,8 +327,7 @@ internal class PowerAuthManagedObject {
         self.tag = tag
         self.createDate = now
         self.lastUseDate = now
-        self.managedByOwner = policies.contains(.manual())
-        self.policies = policies // TODO: filter?
+        self.policies = policies
     }
     
     func setUsed() {
@@ -352,7 +369,7 @@ internal class PowerAuthManagedObject {
                     return false
                 }
             case .manual:
-                // ignore manual (also should never
+                // we cover this case earlier
                 break
             }
         }
@@ -387,8 +404,8 @@ internal class PowerAuthManagedObject {
             "id": key,
             "class": "\(object.self)",
             "tag": tag,
-            "createDate": createDate.timeIntervalSince1970,
-            "lastUseDate": printLastUseDate ? lastUseDate.timeIntervalSince1970 : nil,
+            "createDate": Int(createDate.timeIntervalSince1970),
+            "lastUseDate": printLastUseDate ? Int(lastUseDate.timeIntervalSince1970) : nil,
             "usageCount": printUsageCount ? usageCount : nil,
             "policies": policies,
             "isValid": isStillValid()
@@ -399,11 +416,40 @@ internal class PowerAuthManagedObject {
     }
 }
 
+// Shortcut methods
 extension PowerAuthObjectRegister {
+
+    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: true)
+    }
+    
+    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+        return try getPasswordImpl(dict: dict, use: false)
+    }
+    
+    func getPowerAuthSDK(id: String) -> PowerAuthSDK? {
+        return find(id: id)
+    }
+    
+    func requirePowerAuthSDK(id: String) throws -> PowerAuthSDK {
+        guard let instance = getPowerAuthSDK(id: id) else {
+            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance not configured.")
+        }
+        return instance
+    }
+    
+    func usePowerAuthSDK(id: String, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
+        let instance = try requirePowerAuthSDK(id: id)
+        try block(instance) { tryBlock in
+            Utils.wrapThrowBlock(result: result, tryBlock)
+        }
+    }
+    
+    // - Helpers
     
     private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthCorePassword {
         
-        guard let objectId: String = dict?.get("objectId") else {
+        guard let objectId = dict?["objectId"] as? String else {
             // Object identifier is not present in the object. This means that wrong object is passed to call,
             // or PowerAuthPassword dart object is not initialized yet.
             throw PluginException(.wrongParameter, message: "PowerAuthPassword is not initialized")
@@ -414,13 +460,5 @@ extension PowerAuthObjectRegister {
             throw PluginException(.invalidNativeObject, message: "PowerAuthPassword object is no longer valid")
         }
         return password
-    }
-
-    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        return try getPasswordImpl(dict: dict, use: true)
-    }
-    
-    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
-        return try getPasswordImpl(dict: dict, use: false)
     }
 }

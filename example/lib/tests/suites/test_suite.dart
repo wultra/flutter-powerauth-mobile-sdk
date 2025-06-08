@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -6,12 +7,13 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integrat
 
 abstract class TestSuite {
 
+  // Metho to be implemented by subclasses to provide a list of tests.
+  List<Future<void> Function()> getTests();
+
   List<ExpectResult> singleTestResults = [];
   List<Object> cleanup = [];
   var testFailCount = 0;
-
-  List<Future<void> Function()> getTests();
-
+  bool isInteractive = false; // Set to true if the test suite expects user interaction)
   String? currentTestName;
 
   String get name {
@@ -92,6 +94,20 @@ abstract class TestSuite {
     result.isResultExpected = false;
     singleTestResults.add(result);
   }
+
+  Future<void> sleep(int milliseconds) async {
+    await Future.delayed(Duration(milliseconds: milliseconds));
+  }
+
+  Future<void> showPrompt(String text, {UserPromptDuration duration = UserPromptDuration.normal}) async {
+    // TODO: this should be displayed in the UI
+    print(text);
+  }
+}
+
+enum UserPromptDuration {
+  quick,
+  normal
 }
 
 abstract class TestSuiteWithActivation extends TestSuite {
@@ -104,7 +120,7 @@ abstract class TestSuiteWithActivation extends TestSuite {
   Future<void> beforeEach() async {
     await super.beforeEach();
     credentials = ActivationCredentials();
-    sdk = PowerAuth("test_instance");
+    sdk = PowerAuth(IntegrationHelper.randomString(30));
     helper = IntegrationHelper(sdk);
     await helper.configure();
   }
@@ -156,16 +172,28 @@ extension FutureExpectResult on Future<ExpectResult> {
     self.isResultExpected = self.result == other;
     if (!self.isResultExpected) {
       if (self.exception != null) {
+        print("expected $other, but got ${self.exception} instead - $message");
+      } else {
+        print("Retrieved value ${self.result} does not equal expected value $other - $message");
+      }
+    }
+  }
+
+  Future<void> notToBe(Object? other, {String message = ""}) async {
+    var self = await this;
+    self.isResultExpected = self.result != other;
+    if (!self.isResultExpected) {
+      if (self.exception != null) {
         print("expected $other, but got ${self.exception} instead");
       } else {
-        print("Retrieved value ${self.result} does not equal epected value $other - $message");
+        print("Retrieved value ${self.result} should differ, but it's the same - $message");
       }
     }
   }
 
   Future<void> toThrow(PowerAuthErrorCode code, {String message = ""}) async {
-    var self = await this;
-    var exception = self.exception;
+    final self = await this;
+    final exception = self.exception;
     self.isResultExpected = exception is PowerAuthException && exception.code == code;
 
     if (!self.isResultExpected) {

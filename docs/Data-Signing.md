@@ -3,7 +3,7 @@
 The main feature of the PowerAuth protocol is data signing. PowerAuth has three types of signatures:
 
 - **Symmetric Multi-Factor Signature**: Suitable for most operations, such as login, new payment, or confirming changes in settings.
-- **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired.
+<!-- - **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired. -->
 - **Symmetric Offline Multi-Factor Signature**: Suitable for very secure operations, where the signature is validated over the out-of-band channel.
 - **Verify server signed data**: Suitable for receiving arbitrary data from the server.
 
@@ -97,12 +97,12 @@ This process is completely transparent on the SDK level. To compute an asymmetri
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 
 // Unlock the secure vault, fetch the private key, and perform data signing
 try {
     final dataToSign = "N9yHkF5zSks="; // base64 encoded data to sign
-    final dataFormat = "BASE64"; // data format, UTF8 in case of plain string
+    final dataFormat = PowerAuthDataFormat.utf8; // data format, UTF8 in case of plain string
     final signature = await powerAuth.signDataWithDevicePrivateKey(auth, dataToSign, dataFormat);
     // Send data and signature to the server
 } catch(e) {

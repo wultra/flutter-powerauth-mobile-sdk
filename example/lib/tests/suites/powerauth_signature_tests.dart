@@ -5,7 +5,11 @@ class PowerAuthSignatureTests extends TestSuiteWithActivation {
 
   @override
   List<Future<void> Function()> getTests() => [
-    testSignatureCalculation
+    testSignatureCalculation,
+    testWrongPassword,
+    testDeviceSignedData,
+    // testServerSignedData_WithNoActivation,
+    // testServerSignedData_WithActivation
   ];
 
   @override
@@ -41,13 +45,68 @@ class PowerAuthSignatureTests extends TestSuiteWithActivation {
       // Let's validate signature on the server
       final parsed = SignatureHelper.parseHeader(header.value);
       await expect(parsed.activationId).toBe(activationId);
-      //expect(parsed.applicationKey).toBe(this.helper.appSetup.appKey);
+      // expect(parsed.applicationKey).toBe(this.helper.appSetup.appKey);
       await expect(SignatureType.fromString(parsed.signatureType.toUpperCase())).toBe(td.factors);
 
       final result = await helper.verifySignature(td.method, td.uriId, header.value, td.body ?? "");
       await expect(!td.shouldFail).toBe(result.signatureValid, message: "Signature verification failed for ${td.method} ${td.uriId} with body ${td.body}");
     }
   }
+
+  Future<void> testWrongPassword() async {
+    var status = await sdk.fetchActivationStatus();
+    final maxFailCount = status.maxFailCount;
+    for (var i = 1; i <= maxFailCount; i++) {
+        await expect(status.state).toBe(PowerAuthActivationState.active);
+        await expect(sdk.validatePassword(await credentials.invalidPasswordObject())).toThrow(PowerAuthErrorCode.authenticationError);
+        status = await sdk.fetchActivationStatus();
+        await expect(status.failCount).toBe(i);
+        await expect(status.remainingAttempts).toBe(maxFailCount - i);
+    }
+    await expect(status.state).toBe(PowerAuthActivationState.blocked);
+    await expect(status.remainingAttempts).toBe(0);
+  }
+
+  Future<void> testDeviceSignedData() async {
+      final dataToSign = 'This is a very sensitive information and must be signed.';
+      //final activationId = await sdk.getActivationIdentifier();
+      await expect(sdk.signDataWithDevicePrivateKey(await credentials.knowledge(), dataToSign)).toSucceed();
+      // Now verify signature on the server.
+      // TODO: missing verification API
+      //const result = await this.serverApi.verifyDeviceSignedData(activationId!, dataToSign, signature)
+      //expect(result).toBe(true)
+  }
+
+    // async testServerSignedData_WithNoActivation() {
+    //     const dataToSign = 'All your money are belong to us!'
+    //     let signedPayload = await this.serverApi.createNonPersonalizedOfflineSignature(this.helper.application, dataToSign)
+    //     let signedData = signedPayload.parsedSignedData
+    //     let signature = signedPayload.parsedSignature
+    //     expect(signedPayload.parsedData).toBe(dataToSign)
+    //     expect(signedData).toBeNotNullish()
+    //     expect(signature).toBeNotNullish()
+
+    //     let result = await this.sdk.verifyServerSignedData(signedData!, signature!, true)
+    //     expect(result).toBe(true)
+    //     result = await this.sdk.verifyServerSignedData(Base64.encode(`A${signedData!}`), signature!, true)
+    //     expect(result).toBe(false)
+    // }
+
+    // async testServerSignedData_WithActivation() {
+    //     const activationId = await this.sdk.getActivationIdentifier()
+    //     const dataToSign = 'All your money are belong to us!'
+    //     let signedPayload = await this.serverApi.createPersonalizedOfflineSignature(activationId!, dataToSign)
+    //     let signedData = signedPayload.parsedSignedData
+    //     let signature = signedPayload.parsedSignature
+    //     expect(signedPayload.parsedData).toBe(dataToSign)
+    //     expect(signedData).toBeNotNullish()
+    //     expect(signature).toBeNotNullish()
+
+    //     let result = await this.sdk.verifyServerSignedData(signedData!, signature!, false)
+    //     expect(result).toBe(true)
+    //     result = await this.sdk.verifyServerSignedData(Base64.encode(`A${signedData!}`), signature!, false)
+    //     expect(result).toBe(false)
+    // }
 }
 
 enum SignatureType {

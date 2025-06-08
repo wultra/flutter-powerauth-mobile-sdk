@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
+
 /// Success object returned by the `createActivation` call.
 class PowerAuthCreateActivationResult {
 
@@ -23,9 +25,14 @@ class PowerAuthCreateActivationResult {
   /// When available, the contents of this object depend on your enrollment server configuration.
   final Map<String, dynamic>? customAttributes;
 
+  /// Optional information about user. The value may be null in case that feature is not supported
+  /// on the server.
+  final PowerAuthUserInfo? userInfo;
+
   PowerAuthCreateActivationResult({
     required this.activationFingerprint,
     this.customAttributes,
+    this.userInfo,
   });
 
   factory PowerAuthCreateActivationResult.fromMap(Map<dynamic, dynamic> map) {
@@ -34,6 +41,10 @@ class PowerAuthCreateActivationResult {
       customAttributes:
           map['customAttributes'] != null
               ? Map<String, dynamic>.from(map['customAttributes'] as Map)
+              : null,
+      userInfo: 
+          map['userInfoClaims'] != null
+              ? PowerAuthUserInfo(map['userInfoClaims'] as Map)
               : null,
     );
   }
