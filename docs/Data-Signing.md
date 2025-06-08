@@ -97,12 +97,12 @@ This process is completely transparent on the SDK level. To compute an asymmetri
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 
 // Unlock the secure vault, fetch the private key, and perform data signing
 try {
     final dataToSign = "N9yHkF5zSks="; // base64 encoded data to sign
-    final dataFormat = "BASE64"; // data format, UTF8 in case of plain string
+    final dataFormat = PowerAuthDataFormat.utf8; // data format, UTF8 in case of plain string
     final signature = await powerAuth.signDataWithDevicePrivateKey(auth, dataToSign, dataFormat);
     // Send data and signature to the server
 } catch(e) {

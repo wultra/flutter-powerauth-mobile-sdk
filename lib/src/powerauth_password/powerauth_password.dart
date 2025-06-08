@@ -32,20 +32,19 @@ class PowerAuthPassword extends BaseNativeObject {
   final int? autoReleaseTimeMillis;
 
   // Platform instance accessor - static for easy access in overrides
-  static PowerAuthPasswordPlatform get _platform =>
-      PowerAuthPasswordPlatform.instance;
+  static PowerAuthPasswordPlatform get _platform => PowerAuthPasswordPlatform.instance;
 
   /// Creates a container for a secure password.
   ///
   /// The underlying native resources are allocated lazily when the password is first
   /// used in an operation (e.g., added characters, used for authentication).
   ///
-  /// - `destroyOnUse`: If `true`, the native password object is marked to be destroyed
+  /// - [destroyOnUse]: If `true`, the native password object is marked to be destroyed
   ///                   after its first use in a cryptographic operation (e.g., signing,
   ///                   vault unlock, password change). Defaults to `true`.
-  /// - `powerAuthInstanceId`: Optional. If provided, associates this password object with a
+  /// - [powerAuthInstanceId]: Optional. If provided, associates this password object with a
   ///                      specific `PowerAuth` instance ID for lifecycle management or debugging.
-  /// - `autoReleaseTimeMillis`: Optional. Specifies a custom auto-release time in milliseconds
+  /// - [autoReleaseTimeMillis]: Optional. Specifies a custom auto-release time in milliseconds
   ///                            for the native object. Platform defaults apply if not set.
   PowerAuthPassword({
     this.destroyOnUse = true,
@@ -64,6 +63,7 @@ class PowerAuthPassword extends BaseNativeObject {
       powerAuthInstanceId: powerAuthInstanceId,
       autoReleaseTimeMillis: autoReleaseTimeMillis,
     );
+    // TODO: consider using a more efficient way
     for (final character in password.runes) {
       await pass.addCodePoint(character);
     }
@@ -137,6 +137,7 @@ class PowerAuthPassword extends BaseNativeObject {
 
   /// Internal method for serialization.
   /// Ensures the native object is initialized.
+  @internal
   Future<Map<String, dynamic>> toRawPasswordMap() async {
     return await withObjectId((id) async {
       return {

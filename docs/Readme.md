@@ -18,13 +18,14 @@ In order to connect to the [PowerAuth](https://www.wultra.com/mobile-security-su
 - [Working with passwords securely](Secure-Password.md)
 - [Biometry Setup](Biometry-Setup.md)
 - [Device Activation Removal](Device-Activation-Removal.md)
-<!--- [End-To-End Encryption](End-To-End-Encryption.md)-->
-<!--- [Secure Vault](Secure-Vault.md)-->
-<!--- [Token Based Authentication](Token-Based-Authentication.md)-->
+- [End-To-End Encryption](End-To-End-Encryption.md)
+- [Secure Vault](Secure-Vault.md)
+- [Token Based Authentication](Token-Based-Authentication.md)
 
 ## Additional Topics
 
-<!--- [Troubleshooting](Troubleshooting.md)-->
+- [Troubleshooting](Troubleshooting.md)
+- [User Info](User-Info.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
 

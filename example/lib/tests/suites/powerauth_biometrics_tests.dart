@@ -1,7 +1,7 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 
-class PowerauthBiometricsTests extends TestSuiteWithActivation {
+class PowerAuthBiometricsTests extends TestSuiteWithActivation {
 
   @override
   List<Future<void> Function()> getTests() => [/*androidTestCreateActivationWithRSABiometryKey,*/testAddRemoveBiometryFactor];
@@ -10,7 +10,7 @@ class PowerauthBiometricsTests extends TestSuiteWithActivation {
     final activatioData = await helper.createActivation(autoCommit: true);
     final activation = PowerAuthActivation.fromActivationCode(activationCode: activatioData.activationCode, name: "Test");
     await expect(await sdk.createActivation(activation)).toSucceed();
-    final persistAuth = PowerAuthAuthentication.persistWithPasswordAndBiometry(password: await credentials.validPasswordObject());
+    final persistAuth = PowerAuthAuthentication.persistWithPasswordAndBiometry(password: await credentials.validPasswordObject(), biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Persist data pls"));
     await expect(sdk.persistActivation(persistAuth)).toSucceed();
     await expect(sdk.hasBiometryFactor()).toBe(true);
   }

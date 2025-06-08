@@ -15,7 +15,7 @@ PowerAuth SDK provides code for the first two of these checks.
 To check if you can use biometrics on the system, use the following code:
 
 ```dart
-final biometryStatus = await powerAuth.getBiometryInfo();
+final biometryStatus = await PowerAuth.getBiometryInfo();
 
 // Is biometric authentication supported on the system?
 // Note that the property contains "false" on iOS if biometry is not enrolled or if it has been locked down. 
@@ -71,7 +71,7 @@ You can remove biometric-related factor data by simply removing the related key 
 final result =  await powerAuth.removeBiometryFactor();
 ```
 
-<!--## Fetch Biometry Credentials In Advance
+## Fetch Biometry Credentials In Advance
 
 You can acquire biometry credentials in advance in case business processes require computing two or more different PowerAuth biometry signatures in one interaction with the user. To achieve this, the application must acquire the custom-created `PowerAuthAuthentication` object first and then use it for the required signature calculations. It's recommended to keep this instance referenced only for a limited time, required for all future signature calculations. If you don't reuse the instance within the 10-second expiration period, then the biometry key is released from memory, and the biometric authentication is displayed again.
 
@@ -81,27 +81,29 @@ In order to obtain biometric credentials for future signature calculations, call
 
 ```dart
 // Authenticate user with biometry and obtain PowerAuthAuthentication credentials for future signature calculation.
-const auth = PowerAuthAuthentication.biometry({
-    promptTitle: 'Grouped authentication',
-    promptMessage: 'One biometric authentication will be used for 2 operations.'
-}); 
+final auth = PowerAuthAuthentication.biometry(
+    biometricPrompt: PowerAuthBiometricPrompt(
+        promptTitle: 'Grouped authentication',
+        promptMessage: 'One biometric authentication will be used for 2 operations.'
+    )
+); 
 try {
-    await powerAuth.groupedBiometricAuthentication(auth, async (reusableAuth) => {
+    await powerAuth.groupedBiometricAuthentication(auth, (reusableAuth) async {
         try {
-            const r1 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test", "{jsonbody: \"test1\"}");
-            console.log(`r1 success`);
-            const r2 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test2", "{jsonbody: \"test2\"}");
-            console.log(`r2 success`);
+            final r1 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test", "{jsonbody: \"test1\"}");
+            print('r1 success');
+            final r2 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test2", "{jsonbody: \"test2\"}");
+            print('r2 success');
             // success
         } catch (e) {
             // reusableAuth usage failed    
         }
     });
-} catch(e) {
+} catch (e) {
     // failed to create grouped biometric authentication
 }
 ```
--->
+
 ## Biometry Factor-Related Key Lifetime
 
 By default, the biometry factor-related key is **NOT invalidated on Android** and **invalidated on iOS** after the biometry enrolled in the system is changed. For example, if the user adds or removes the finger or enrolls with a new face, then the biometry factor-related key is still available for the signing operation on Android but not on iOS. To change this behavior, see `linkItemsToCurrentSet` [in the advanced configuration](Configuration.md#advanced-configuration). 

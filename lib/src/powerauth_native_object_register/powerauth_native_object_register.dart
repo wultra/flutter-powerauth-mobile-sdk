@@ -30,6 +30,10 @@ class NativeObjectRegister {
 
   static NativeObjectRegisterPlatform get _platform => NativeObjectRegisterPlatform.instance;
 
+  static Future<bool> isValidNativeObject(String objectId) async {
+    return await _platform.isValidNativeObject(objectId);
+  }
+
   static Future<ObjectsCount> countObjects(String tag) async {
     final r = await _platform.debugDump(tag);
     final valid = r.where((x) => x.isValid).length;

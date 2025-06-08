@@ -11,7 +11,8 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
     testCreateActivationWithSignedCode,
     testFetchActivationStatus,
     testActivationRemove,
-    testVerifyActivationQrCode
+    testVerifyActivationQrCode,
+    testOIDCActivationData
   ];
 
   // --- ACTUAL TESTS STARTS HERE ---
@@ -63,14 +64,58 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
     await helper.createActivation();
     await expect(helper.createdActivation?.activationCode).toBeDefined();
     await expect(helper.createdActivation?.activationCodeSignature).toBeDefined();
-    
-    // final code = helper.createdActivation!.activationCode;
-    // final sign = helper.createdActivation!.activationCodeSignature;
+  }
 
-    // TODO: Missing API
-    //await expect(await sdk.verifyScannedActivationCode(`${code}#${sign}`)).toBe(true)
-    //await expect(await sdk.verifyScannedActivationCode(`${code}`)).toBe(false);
-    //await expect(await sdk.verifyScannedActivationCode(`VVVVV-VVVVV-VVVVV-VTFVA#${sign}`)).toBe(false)
+  Future<void> testOIDCActivationData() async {
+    
+    await expect(await sdk.canStartActivation()).toBe(true);
+
+    final oidcParameters = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "ABCDEFG1234567890",
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+      codeVerifier: "G3hsI1KZX1o~K0p-5lT3F7yZ4bC8dE2jX9aQ6nO2rP3uS7wT5mV8jW1oY6xB3sD09tR4vU3qM1nG7kL6hV5wY2pJ0aF3eK9dQ8xN4mS2zB7oU5tL1cJ3vX6yP8rE2wO9n"
+    );
+
+    final activation = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParameters,
+      name: 'Flutter SDK OIDC Test',
+      extras: 'Some extras',
+      customAttributes: {'key1': 'value1', 'key2': 2}
+    );
+
+    // We expect an error here from the server, becauase OIDC data are made up.
+    // If the oidc object would be invalid, then the error would be different.
+    await expect(sdk.createActivation(activation)).toThrow(PowerAuthErrorCode.responseError);
+
+    final oidcParametersWithoutCodeVerifier = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "ABCDEFG1234567890",
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+    );
+
+    final activation2 = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParametersWithoutCodeVerifier,
+      name: 'Flutter SDK OIDC Test'
+    );
+
+    // We expect an error here from the server, becauase OIDC data are made up.
+    // If the oidc object would be invalid, then the error would be different.
+    await expect(sdk.createActivation(activation2)).toThrow(PowerAuthErrorCode.responseError);
+
+    final oidcParametersInvalid = PowerAuthOIDCParameters(
+      providerId: "exampleProvider",
+      code: "", // empty - invalid code
+      nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+    );
+
+    final activation3 = PowerAuthActivation.fromOIDC(
+      oidcParameters: oidcParametersInvalid,
+      name: 'Flutter SDK OIDC Test'
+    );
+
+    // We expect an error here from the native layer, becauase OIDC data are invalid (empty string).
+    await expect(sdk.createActivation(activation3)).toThrow(PowerAuthErrorCode.invalidActivationObject);
   }
 
   // --- HELPER FUNCTIONS ---
@@ -81,7 +126,7 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
       await expect(sdk.hasValidActivation()).toBe(false);
       await expect(sdk.getActivationIdentifier()).toBeNull();
       await expect(sdk.getActivationFingerprint()).toBeNull();
-      // await expect(sdk.getExternalPendingOperation()).toBeUndefined()
+      await expect(sdk.getExternalPendingOperation()).toBeNull();
 
       await runFailingMethodsDuringActivation('BEGIN', PowerAuthErrorCode.missingActivation, PowerAuthErrorCode.missingActivation);
       await expect(sdk.persistActivation(await credentials.invalidKnowledge())).toThrow(PowerAuthErrorCode.invalidActivationState);
@@ -157,23 +202,20 @@ class PowerAuthActivationTests extends TestSuiteWithActivation {
 
   Future<void> runFailingMethodsDuringActivation(String stage, PowerAuthErrorCode expectedFetchError, PowerAuthErrorCode expectedError) async {
     // Fetch has a slighgtly different error handling, so it needs a different error code than other API function.
-    // TODO: This should be unified in future versions
+    
     await expect(sdk.fetchActivationStatus()).toThrow(expectedFetchError);
     await expect(sdk.removeActivationWithAuthentication(await credentials.invalidKnowledge())).toThrow(expectedError);
     await expect(sdk.requestGetSignature(await credentials.knowledge(), '/some/uriid', null)).toThrow(expectedError);
     await expect(sdk.requestSignature(await credentials.knowledge(), 'POST', '/some/uriid')).toThrow(expectedError);
     await expect(sdk.changePassword(await credentials.validPasswordObject(), await credentials.invalidPasswordObject())).toThrow(expectedError);
     await expect(sdk.addBiometryFactor(await credentials.validPasswordObject(), PowerAuthBiometricPrompt(promptMessage: "desc"))).toThrow(expectedError);
-    // TODO: not available in the sdk yet
-    // await expect(sdk.fetchEncryptionKey(credentials.knowledge, 99)).toThrow(expectedError);
-    // await expect(sdk.signDataWithDevicePrivateKey(credentials.knowledge, 'Data')).toThrow(expectedError);
+    
+    await expect(sdk.fetchEncryptionKey(await credentials.knowledge(), 99)).toThrow(expectedError);
+    await expect(sdk.signDataWithDevicePrivateKey(await credentials.knowledge(), 'Data')).toThrow(expectedError);
     await expect(sdk.validatePassword(await credentials.validPasswordObject())).toThrow(expectedError);
 
-    // TODO: following functions should fail and not return false or some different error
-    // expect(await sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false)).toBe(false);
-    // expect(await sdk.unsafeChangePassword(credentials.validPassword, credentials.invalidPassword)).toBe(false);
+    await expect(sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false)).toBe(false);
     await expect(sdk.removeBiometryFactor()).toThrow(PowerAuthErrorCode.biometryNotConfigured);
-    //await expect(async () => await sdk.offlineSignature(credentials.knowledge, '/some/uriid', 'MDEyMzQ1Njc=', undefined)).toThrow(PowerAuthErrorCode.MISSING_ACTIVATION})
-    //await expect(async () => await sdk.confirmRecoveryCode('R:ZKMVN-4IMFK-FLSYX-ARRGA', credentials.knowledge)).toThrow(expectedError);
+    await expect(sdk.offlineSignature(await credentials.knowledge(), '/some/uriid', 'MDEyMzQ1Njc=', null)).toThrow(PowerAuthErrorCode.missingActivation);
   }
 }

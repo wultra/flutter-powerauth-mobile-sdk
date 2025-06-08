@@ -2,7 +2,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
-class PowerauthNativeObjectRegisterTests extends TestSuite {
+class PowerAuthNativeObjectRegisterTests extends TestSuite {
 
   @override
   List<Future<void> Function()> getTests() => [

@@ -18,8 +18,6 @@ import 'dart:async';
 
 import 'powerauth_activation_code_utils_platform_interface.dart';
 import '../model/powerauth_activation_code.dart';
-import '../model/powerauth_error.dart';
-import '../powerauth_password/powerauth_password.dart';
 
 /// Provides utility functions related to PowerAuth activation codes nd PIN strength.
 /// The `PowerAuthActivationCodeUtil` provides various set of methods for parsing and validating
@@ -40,24 +38,19 @@ class PowerAuthActivationCodeUtil {
 
   PowerAuthActivationCodeUtil._();
 
-  static PowerAuthUtilsPlatform get _platform =>
-      PowerAuthUtilsPlatform.instance;
+  static PowerAuthUtilsPlatform get _platform => PowerAuthUtilsPlatform.instance;
 
   /// Parses an activation code string (e.g., "ABCDE-FGHIJ-KLMNO-PQRST#signature").
   /// Returns a [PowerAuthActivationCode] object containing the code and optional signature.
   /// Throws an exception if the format is invalid.
-  static Future<PowerAuthActivationCode> parseActivationCode(
-    String activationCode,
-  ) => _platform.parseActivationCode(activationCode);
+  static Future<PowerAuthActivationCode> parseActivationCode(String activationCode,) => _platform.parseActivationCode(activationCode);
 
   /// Validates the format of an activation code (must not contain the signature part).
-  static Future<bool> validateActivationCode(String activationCode) =>
-      _platform.validateActivationCode(activationCode);
+  static Future<bool> validateActivationCode(String activationCode) => _platform.validateActivationCode(activationCode);
 
   /// Checks if a character (given as Unicode code point) is a valid character
   /// for activation codes (Base32: A-Z, 2-7).
-  static Future<bool> validateTypedCharacter(int character) =>
-      _platform.validateTypedCharacter(character);
+  static Future<bool> validateTypedCharacter(int character) => _platform.validateTypedCharacter(character);
 
   /// Validates and potentially corrects a typed character (Unicode code point)
   /// for activation codes.
@@ -69,9 +62,9 @@ class PowerAuthActivationCodeUtil {
   ///
   /// Returns the corrected character code point.
   /// Throws if the character is invalid and cannot be corrected.
-  static Future<int> correctTypedCharacter(int character) =>
-      _platform.correctTypedCharacter(character);
+  static Future<int> correctTypedCharacter(int character) => _platform.correctTypedCharacter(character);
 
+  // TODO: implement!
   /// Tests the strength of a numeric PIN.
   ///
   /// Accepts a [String] or [PowerAuthPassword] containing only digits.
@@ -80,5 +73,5 @@ class PowerAuthActivationCodeUtil {
   /// if the PIN contains non-digit characters or its length is less than 4.
   ///
   /// Returns a [PinTestResult] indicating potential weaknesses.
-  static Future<PinTestResult> testPin(Object pin) => _platform.testPin(pin);
+  // static Future<PinTestResult> testPin(Object pin) => _platform.testPin(pin);
 }
