@@ -29,7 +29,7 @@ import com.wultra.android.powerauth.flutter.ReleasePolicy
 import com.wultra.android.powerauth.flutter.WrapperException
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
-class PowerAuthPasswordService(
+internal class PowerAuthPasswordService(
     private val objectRegister: PowerAuthObjectRegister
 ) : BasePowerAuthService(objectRegister) {
 
@@ -218,9 +218,9 @@ class PowerAuthPasswordService(
     private fun release(call: MethodCall, result: Result) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            val removed = objectRegister.removeObject(objectId)
+            objectRegister.removeObject(objectId, Password::class.java)
 
-            result.success(removed)
+            result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }

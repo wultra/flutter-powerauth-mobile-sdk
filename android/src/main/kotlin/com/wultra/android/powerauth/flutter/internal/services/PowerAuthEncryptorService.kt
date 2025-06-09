@@ -51,7 +51,7 @@ private data class PowerAuthFlutterEncryptor(
     }
 }
 
-class PowerAuthEncryptorService(
+internal class PowerAuthEncryptorService(
     private val objectRegister: PowerAuthObjectRegister,
     private val context: Context
 ) : BasePowerAuthService(objectRegister) {
@@ -140,7 +140,8 @@ class PowerAuthEncryptorService(
     private fun release(call: MethodCall, result: Result) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            objectRegister.removeObject(objectId)
+            objectRegister.removeObject(objectId, PowerAuthFlutterEncryptor::class.java)
+
             result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -162,7 +163,7 @@ class PowerAuthEncryptorService(
             val data = DataFormat.fromString(bodyFormat).decodeBytes(body)
 
             if (!canEncrypt(encryptor, sdk)) {
-                objectRegister.removeObject(objectId)
+                objectRegister.removeObject(objectId, PowerAuthFlutterEncryptor::class.java)
                 throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Encryptor is not constructed for request encryption.")
             }
 
@@ -220,7 +221,7 @@ class PowerAuthEncryptorService(
             val outputDataFormat: String = call.getRequiredArgument(OUTPUT_DATA_FORMAT)
 
             if (!canDecrypt(encryptor, sdk)) {
-                objectRegister.removeObject(objectId)
+                objectRegister.removeObject(objectId, PowerAuthFlutterEncryptor::class.java)
                 throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Encryptor is not constructed for response decryption.")
             }
 

@@ -29,8 +29,10 @@ import io.flutter.plugin.common.MethodChannel.Result
 import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthEncryptorService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthPasswordService
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthRegisterService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthUtilsService
+import io.flutter.BuildConfig
 
 // TODO: migrate method docs from RN
 class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -47,14 +49,15 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
 
-        objectRegister = PowerAuthObjectRegister()
+        objectRegister = PowerAuthObjectRegister(BuildConfig.DEBUG)
         serviceRegistry = PowerAuthServiceRegistry
 
         serviceRegistry.registerAll(
             PowerAuthService(objectRegister, context, getCurrentActivity = { currentActivity }),
             PowerAuthPasswordService(objectRegister),
             PowerAuthUtilsService(),
-            PowerAuthEncryptorService(objectRegister, context)
+            PowerAuthEncryptorService(objectRegister, context),
+            PowerAuthRegisterService(objectRegister)
         )
     }
 
@@ -91,7 +94,12 @@ class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val (serviceName, methodName) = if (methodServicePair.size == 1) {
                 "powerauth" to methodServicePair[0]
             } else {
-                methodServicePair[0] to methodServicePair[1]
+                methodServicePair.getOrNull(0) to methodServicePair.getOrNull(1)
+            }
+
+            if (serviceName == null || methodName == null) {
+                result.notImplemented()
+                return
             }
 
             serviceRegistry[serviceName]?.let { service ->

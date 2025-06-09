@@ -57,7 +57,7 @@ import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
 import java.nio.charset.StandardCharsets
 
-class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val context: Context, private val getCurrentActivity: () -> Activity?) : BasePowerAuthService(objectRegister) {
+internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val context: Context, private val getCurrentActivity: () -> Activity?) : BasePowerAuthService(objectRegister) {
 
     override val name = "powerauth"
 
@@ -466,8 +466,8 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
             val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
 
-            val oldPassword = buildPasswordObject(oldPasswordMap, use = false)
-            val newPassword = buildPasswordObject(newPasswordMap, use = false)
+            val oldPassword = buildPasswordObject(oldPasswordMap, use = true)
+            val newPassword = buildPasswordObject(newPasswordMap, use = true)
 
             sdk.changePassword(context, oldPassword, newPassword, object: IChangePasswordListener {
                 override fun onPasswordChangeSucceed() {
@@ -807,7 +807,7 @@ class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val 
             throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for unregistration.")
         }
 
-        objectRegister.removeObject(instanceId)
+        objectRegister.removeAllObjectsWithTag(instanceId)
     }
 
     private fun requestAccessToken(call: MethodCall, result: Result) {

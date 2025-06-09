@@ -25,7 +25,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.ActivationCode
 import io.getlime.security.powerauth.core.ActivationCodeUtil
 
-class PowerAuthUtilsService : BasePowerAuthService(null) {
+internal class PowerAuthUtilsService : BasePowerAuthService(null) {
 
     override val name = "util"
 
