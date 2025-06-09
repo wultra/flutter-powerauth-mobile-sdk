@@ -90,15 +90,7 @@ class PowerAuthLogger {
             return
         }
         
-        let prefix: String
-        switch level {
-        case .verbose: prefix = "V"
-        case .debug: prefix = "D"
-        case .info: prefix = "I"
-        case .warning: prefix = "W"
-        case .error: prefix = "E"
-        }
-        
-        print("PowerAuthSDK: \(prefix)/ \(message())")
+        // TODO: use the system Logger instead of printing?
+        print("PowerAuthSDK: \(message())")
     }
 } 
