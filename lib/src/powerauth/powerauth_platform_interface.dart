@@ -18,6 +18,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../logging/powerauth_logger.dart';
 import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
@@ -48,6 +49,16 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   static set instance(PowerAuthPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
+  }
+
+  Future<void> setNativeLogLevel(PowerAuthLogLevel level) {
+    throw UnimplementedError('setNativeLogLevel() has not been implemented.');
+  }
+
+  Future<void> setNativeLoggingEnabled(bool enabled) {
+    throw UnimplementedError(
+      'setNativeLoggingEnabled() has not been implemented.',
+    );
   }
 
   Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) {
