@@ -99,5 +99,4 @@ Both objects provide a `release()` function to release the underlying native obj
 
 ## Read Next
 
-- [Token Based Authentication](Token-Based-Authentication.md)
-<!-- - [Secure Vault](Secure-Vault.md) -->
+- [Secure Vault](Secure-Vault.md)

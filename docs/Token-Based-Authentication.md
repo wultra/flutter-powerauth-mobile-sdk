@@ -78,5 +78,4 @@ Note that by removing tokens locally, you will lose control of the tokens stored
 
 ## Read Next
 
-- [Sample Integration](Sample-Integration.md)
-<!-- - [Troubleshooting](Troubleshooting.md) -->
+- [Troubleshooting](Troubleshooting.md)
