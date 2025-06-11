@@ -63,7 +63,7 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         }
         
         do {
-            PowerAuthLogger.debug("Call \(call.method) being handeled by the \(service.name) service")
+            PowerAuthLogger.debug("Call \(call.method) being handled by the \(service.name) service")
             try service.handle(handler, call, result)
         } catch let e {
             result(FlutterError(thrownByPlugin: e))
