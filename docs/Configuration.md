@@ -80,7 +80,7 @@ In case you need an advanced configuration, you can import and use the following
 
 > Note 1: Setting `authenticateOnBiometricKeySetup` parameter to `true` leads to using symmetric AES cipher in the background, so both configuration and usage of biometric key require the biometric authentication. If set to `false`, then the RSA cipher is used, and only the usage of the biometric key requires the biometric authentication. This is due to the fact that the RSA cipher can encrypt data using its public key, available immediately after the key pair is created in Android KeyStore.
 
-> Note 2: You're responsible for migrating the keychain and `UserDefaults` data from non-shared storage to the shared one, before you configure the first `PowerAuth` instance. This is quite difficult to do in JavaScript, so it's recommended not to alter `PowerAuthKeychainConfiguration` once your application is already shipped in the App Store.
+> Note 2: You're responsible for migrating the keychain and `UserDefaults` data from non-shared storage to the shared one, before you configure the first `PowerAuth` instance. This is quite difficult to do in Flutter, so it's recommended not to alter `PowerAuthKeychainConfiguration` once your application is already shipped in the App Store.
 
 > Note 3: If you enforce the protection higher than `PowerAuthKeychainProtection.none`, then your application must target at least Android 6.0. Your application should also properly handle the `PowerAuthErrorCode.insufficientKeychainProtection` error code reported when the device has insufficient capabilities to run your application. You should properly inform the user about this situation.
 

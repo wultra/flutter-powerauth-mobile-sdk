@@ -130,7 +130,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.getActivationIdentifier(),
         _powerAuth.getActivationFingerprint(),
         _powerAuth.hasBiometryFactor(),
-        _powerAuth.getBiometryInfo(),
+        PowerAuth.getBiometryInfo(),
       ]);
 
       setState(() {
@@ -437,8 +437,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     });
   }
 
-  void _runTests() async {
-    Tests().run();
+  void _runTests({bool interactive = false}) async {
+    _setError("Tests are running...");
+    final result = await Tests().run(interactive: interactive);
+    _setError(result.text);
   }
 
   @override
@@ -470,7 +472,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
             const Text('Automatic tests:'),
             ElevatedButton(
               onPressed: () => _runTests(),
-              child: const Text('Run test'),
+              child: const Text('Run tests'),
+            ),
+            ElevatedButton(
+              onPressed: () => _runTests(interactive: true),
+              child: const Text('Run interactive tests'),
             ),
             const SizedBox(height: 12),
             const Text('Manual testing:'),
@@ -615,11 +621,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     }
         
 
-    String formatBiometryType(PowerAuthBiometryInfo? info) =>
-        info?.biometryType.name ?? 'Unknown';
+    String formatBiometryType(PowerAuthBiometryInfo? info) => info?.biometryType.name ?? 'Unknown';
 
-    String formatBiometryStatus(PowerAuthBiometryInfo? info) =>
-        info?.canAuthenticate.name ?? 'Unknown';
+    String formatBiometryStatus(PowerAuthBiometryInfo? info) => info?.canAuthenticate.name ?? 'Unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -9,7 +9,7 @@ The original activation method uses a one-time activation code generated in Powe
 Use the following code to create an activation once you have an activation code:
 
 ```dart
-final name = "Petr's iPhone 7"; // users phone name
+final name = "Petr's iPhone"; // users phone name
 final activationCode = "VVVVV-VVVVV-VVVVV-VTFVA"; // let user type or QR-scan this value
 
 // Create activation object with given activation code.
@@ -30,7 +30,7 @@ try {
 If an [additional activation OTP](https://github.com/wultra/powerauth-crypto/blob/develop/docs/Additional-Activation-OTP.md) is required to complete the activation, then use the following code to configure the `PowerAuthActivation` object:
 
 ```dart
-final name = "Petr's iPhone 7"; // users phone name
+final name = "Petr's iPhone"; // users phone name
 final activationCode = "VVVVV-VVVVV-VVVVV-VTFVA"; // let user type or QR-scan this value
 
 // Create activation object with given activation code.
@@ -54,7 +54,7 @@ Use the following code to create an activation using custom credentials:
 
 ```dart
 // Create a new activation with a given device name and custom login credentials
-final name = "Petr's iPhone 7"; // users phone name
+final name = "Petr's iPhone"; // users phone name
 final credentials = {
     "username": "john.doe@example.com",
     "password": "YBzBEM"
@@ -77,6 +77,34 @@ try {
 
 Note that by using weak identity attributes to create an activation, the resulting activation confirms a "blurry identity". This may greatly limit the legal weight and usability of a signature. We recommend using a strong identity verification before activation can actually be created.
 
+## Activation via OpenID Connect
+
+You may also create an activation using OIDC protocol:
+
+```dart
+// Create a new activation with OIDC parameters
+final name = "Petr's iPhone"; // users phone name
+// Get the following information from your OpenID provider
+final oidcParameters = PowerAuthOIDCParameters(
+  providerId: "my-provider-id", 
+  code: "1234567890abcdef",
+  nonce: "K1mP3rT9bQ8lV6zN7sW2xY4dJ5oU0fA1gH29o",
+  codeVerifier: "G3hsI1KZX1o~K0p-5lT3F7yZ4...6yP8rE2wO9n" // optional
+);
+
+// Create activation object with OIDC parameters.
+final activation = PowerAuthActivation.fromOIDCParameters(oidcParameters: oidcParameters, name: name);
+
+// Create a new activation with the just-created activation object
+try {
+    final result = await powerAuth.createActivation(activation);
+    // No error occurred, proceed to credentials entry (PIN prompt, Enable Biometry, ...) and persist the activation
+} on PowerAuthException catch (e) {
+    // handle powerauth exception
+} catch (e) {
+    // unknown exception
+}
+```
 
 ## Customize Activation
 

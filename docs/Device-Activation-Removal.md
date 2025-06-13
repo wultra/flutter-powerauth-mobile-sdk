@@ -52,6 +52,5 @@ httpClient.post(null, "/custom/activation/remove", async (error) => {
 
 ## Read Next
 
-- [Sample Integration](Sample-Integration.md)
-<!--- [End-To-End Encryption](End-To-End-Encryption.md)-->
+- [End-To-End Encryption](End-To-End-Encryption.md)
 

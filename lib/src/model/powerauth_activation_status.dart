@@ -15,6 +15,7 @@
  */
 
 import 'powerauth_activation_state.dart';
+import '../logging/powerauth_logger.dart';
 
 /// Represents the complete status of the activation.
 class PowerAuthActivationStatus {
@@ -47,7 +48,6 @@ class PowerAuthActivationStatus {
 
     PowerAuthActivationState parseState(String? stateString) {
       if (stateString == null) {
-        // TODO - default out or throw?
         return PowerAuthActivationState.removed;
       }
         
@@ -55,8 +55,9 @@ class PowerAuthActivationStatus {
         return PowerAuthActivationState.values.firstWhere((e) => e.name == stateString);
       } catch (e) {
         
-        // TODO - default out or throw?
-        print("Warning: Unknown PowerAuthActivationState received: $stateString");
+        PowerAuthLogger.warning(
+          () => "Unknown PowerAuthActivationState received: $stateString",
+        );
         return PowerAuthActivationState.removed;
       }
     }

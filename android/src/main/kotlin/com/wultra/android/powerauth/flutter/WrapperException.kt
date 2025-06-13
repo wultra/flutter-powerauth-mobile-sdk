@@ -21,11 +21,11 @@ package com.wultra.android.powerauth.flutter
  * to Flutter result.
  */
 class WrapperException :
-    /**
-     * Construct WrapperException with required error code and message.
-     * @param errorCode Error code that should be reported to promise as failure.
-     * @param message Message that should be reported to promise as failure.
-     */
+/**
+ * Construct WrapperException with required error code and message.
+ * @param errorCode Error code that should be reported to promise as failure.
+ * @param message Message that should be reported to promise as failure.
+ */
     Exception {
 
     val errorCode: String

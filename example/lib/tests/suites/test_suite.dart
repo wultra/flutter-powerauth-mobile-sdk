@@ -1,13 +1,19 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';
 
 abstract class TestSuite {
+
+  // Metho to be implemented by subclasses to provide a list of tests.
+  List<Future<void> Function()> getTests();
 
   List<ExpectResult> singleTestResults = [];
   List<Object> cleanup = [];
   var testFailCount = 0;
-
-  List<Future<void> Function()> getTests();
-
+  bool isInteractive = false; // Set to true if the test suite expects user interaction)
   String? currentTestName;
 
   String get name {
@@ -80,6 +86,50 @@ abstract class TestSuite {
     singleTestResults.add(result);
     return result;
   }
+
+  void reportFailure(String message) {
+    // TODO: this should be handled better
+    print("  Test $currentTestName failed with message: $message");
+    final result = ExpectResult(null, null);
+    result.isResultExpected = false;
+    singleTestResults.add(result);
+  }
+
+  Future<void> sleep(int milliseconds) async {
+    await Future.delayed(Duration(milliseconds: milliseconds));
+  }
+
+  Future<void> showPrompt(String text, {UserPromptDuration duration = UserPromptDuration.normal}) async {
+    // TODO: this should be displayed in the UI
+    print(text);
+  }
+}
+
+enum UserPromptDuration {
+  quick,
+  normal
+}
+
+abstract class TestSuiteWithActivation extends TestSuite {
+  
+  @protected late IntegrationHelper helper;
+  @protected late PowerAuth sdk;
+  @protected late ActivationCredentials credentials;
+
+  @override
+  Future<void> beforeEach() async {
+    await super.beforeEach();
+    credentials = ActivationCredentials();
+    sdk = PowerAuth(IntegrationHelper.randomString(30));
+    helper = IntegrationHelper(sdk);
+    await helper.configure();
+  }
+
+  @override
+  Future<void> afterEach() async {
+    await helper.cleanup();
+    await super.afterEach();
+  }
 }
 
 class ExpectResult {
@@ -92,7 +142,6 @@ class ExpectResult {
 }
 
 extension FutureExpectResult on Future<ExpectResult> {
-
 
   Future<void> toBeDefined({String message = ""}) async {
     var self = await this;
@@ -118,21 +167,33 @@ extension FutureExpectResult on Future<ExpectResult> {
     }
   }
 
-  Future<void> toBe(Object other, {String message = ""}) async {
+  Future<void> toBe(Object? other, {String message = ""}) async {
     var self = await this;
     self.isResultExpected = self.result == other;
     if (!self.isResultExpected) {
       if (self.exception != null) {
+        print("expected $other, but got ${self.exception} instead - $message");
+      } else {
+        print("Retrieved value ${self.result} does not equal expected value $other - $message");
+      }
+    }
+  }
+
+  Future<void> notToBe(Object? other, {String message = ""}) async {
+    var self = await this;
+    self.isResultExpected = self.result != other;
+    if (!self.isResultExpected) {
+      if (self.exception != null) {
         print("expected $other, but got ${self.exception} instead");
       } else {
-        print("value ${self.result} does not equal $other - $message");
+        print("Retrieved value ${self.result} should differ, but it's the same - $message");
       }
     }
   }
 
   Future<void> toThrow(PowerAuthErrorCode code, {String message = ""}) async {
-    var self = await this;
-    var exception = self.exception;
+    final self = await this;
+    final exception = self.exception;
     self.isResultExpected = exception is PowerAuthException && exception.code == code;
 
     if (!self.isResultExpected) {
@@ -147,4 +208,28 @@ extension FutureExpectResult on Future<ExpectResult> {
       print("expected to succeed, but got exception: ${self.exception}, value: ${self.result} - $message");
     }
   }
+}
+
+class ActivationCredentials {
+    /// String with a valid password.
+    late String validPassword;
+    /// String with an invalid password.
+    late String invalidPassword;
+
+    ActivationCredentials() {
+      final availablePasswords = [ "VerySecure", "1234", "nbusr123", "39h132v,kJdfvAl", "98765", "correct horse battery staple" ];
+      final validIndex = Random().nextInt(availablePasswords.length);
+      validPassword = availablePasswords[validIndex];
+      invalidPassword = availablePasswords[(validIndex + 1) % availablePasswords.length];
+    }
+
+    PowerAuthAuthentication possession() => PowerAuthAuthentication.possession();
+    PowerAuthAuthentication biometry() => PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(
+        promptTitle: 'Authenticate',
+        promptMessage: 'Please authenticate with biometry'
+    ));
+    Future<PowerAuthAuthentication> knowledge() async => PowerAuthAuthentication.password(await validPasswordObject());
+    Future<PowerAuthAuthentication> invalidKnowledge() async => PowerAuthAuthentication.password(await invalidPasswordObject());
+    Future<PowerAuthPassword> validPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(validPassword, destroyOnUse: destroyOnUse);
+    Future<PowerAuthPassword> invalidPasswordObject({bool destroyOnUse = true}) => PowerAuthPassword.fromString(invalidPassword, destroyOnUse: destroyOnUse);
 }

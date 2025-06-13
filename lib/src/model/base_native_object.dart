@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 
 import '../model/powerauth_error.dart';
+import '../logging/powerauth_logger.dart';
 
 /// Abstract base class for Dart objects that wrap a native counterpart
 /// identified by an object ID. Handles semi-lazy initialization and release.
@@ -78,7 +79,6 @@ abstract class BaseNativeObject {
       return id;
 
     } catch (e) {
-      _initCompleter.completeError(e);
       _isInitializing = false;
 
       rethrow;
@@ -95,8 +95,9 @@ abstract class BaseNativeObject {
     _isReleased = true;
 
     if (_isInitializing && !_initCompleter.isCompleted) {
-      print(
-        "${runtimeType.toString()}: Release called while initialization was pending.",
+      PowerAuthLogger.warning(
+        () =>
+            "${runtimeType.toString()}: Release called while initialization was pending.",
       );
       try {
   
@@ -108,8 +109,9 @@ abstract class BaseNativeObject {
   
         // Initialization failed or timed out, likely nothing to release on native side
         idToRelease = null;
-        print(
-          "${runtimeType.toString()}: Initialization failed or timed out before release.",
+        PowerAuthLogger.warning(
+          () =>
+              "${runtimeType.toString()}: Initialization failed or timed out before release.",
         );
       }
     }
@@ -121,8 +123,9 @@ abstract class BaseNativeObject {
       try {
         await releaseNativeObject(idToRelease);
       } catch (e) {
-        print(
-          "${runtimeType.toString()}: Error during native release for object $idToRelease: $e",
+        PowerAuthLogger.warning(
+          () =>
+              "${runtimeType.toString()}: Error during native release for object $idToRelease: $e",
         );
       }
     }
@@ -137,9 +140,9 @@ abstract class BaseNativeObject {
       _isInitializing = false; // Not initializing anymore
       _initCompleter.complete(initialObjectId);
     } else {
-      // TODO: do we also want to throw?
-      print(
-        "${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.",
+      PowerAuthLogger.warning(
+        () =>
+            "${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.",
       );
     }
   }

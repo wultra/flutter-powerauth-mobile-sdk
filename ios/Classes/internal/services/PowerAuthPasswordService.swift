@@ -42,7 +42,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     fileprivate enum Args: String {
         case destroyOnUse
-        case powerAuthInstanceId // TODO: needed?
+        case ownerId
         case autoreleaseTime
         case objectId
         case otherObjectId
@@ -52,13 +52,12 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func initialize(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         
-        let destroyOnUse: Bool = try call.requireParameter(.destroyOnUse)
-        let paInstanceId: String? = call.getParameter(.powerAuthInstanceId)
-        let autoreleaseTime: Int? = call.getParameter(.autoreleaseTime)
+        let destroyOnUse: Bool = try call.requireParameter(Args.destroyOnUse)
+        let paInstanceId: String? = call.getParameter(Args.ownerId)
+        let autoreleaseTime: Int? = call.getParameter(Args.autoreleaseTime)
         
-        // TODO: supported scenario? (is supported in JS, do we want it here?)
         if let paInstanceId, !register.contains(id: paInstanceId) {
-            throw PluginException(.instanceNotConfigured, message: "PowerAuth instance is not configured")
+            throw PluginException(.instanceNotConfigured, message: "Associated PowerAuth instance is not configured")
         }
         
         let releaseTime = ReleasePolicy.getTimeInterval(value: autoreleaseTime, defaultValue: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
@@ -71,7 +70,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func release(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        register.remove(id: objectId)
+        register.removeAny(id: objectId)
         result(nil)
     }
     
@@ -92,7 +91,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func isEqual(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let otherObjectId: String = try call.requireParameter(.otherObjectId)
+        let otherObjectId: String = try call.requireParameter(Args.otherObjectId)
         try withPassword(id: objectId) { password in
             try self.withPassword(id: otherObjectId) { otherPassword in
                 result(password.isEqual(to: otherPassword))
@@ -102,7 +101,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func addCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let character: Int = try call.requireParameter(.character)
+        let character: Int = try call.requireParameter(Args.character)
         try withPassword(id: objectId, character: character) { password, char in
             password.addCharacter(char)
             result(password.length())
@@ -111,8 +110,8 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func insertCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let character: Int = try call.requireParameter(.character)
-        let at: Int = try call.requireParameter(.position)
+        let character: Int = try call.requireParameter(Args.character)
+        let at: Int = try call.requireParameter(Args.position)
         
         try withPassword(id: objectId, character: character) { password, char in
             if at >= 0 && at <= password.length() {
@@ -126,7 +125,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func removeCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let at: Int = try call.requireParameter(.position)
+        let at: Int = try call.requireParameter(Args.position)
         
         try withPassword(id: objectId) { password in
             if at >= 0 && at < password.length() {
@@ -172,23 +171,8 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     }
 }
 
-private extension FlutterMap {
-    func get<T>(_ key: PowerAuthPasswordService.Args) -> T? {
-        return get(key.rawValue)
-    }
-}
-
 private extension FlutterMethodCall {
-    
     func getObjectId() throws -> String {
-        return try requireParameter(.objectId)
-    }
-    
-    func requireParameter<T>(_ key: PowerAuthPasswordService.Args) throws -> T {
-        return try requireParameter(key.rawValue)
-    }
-    
-    func getParameter<T>(_ key: PowerAuthPasswordService.Args) -> T? {
-        return getParameter(key.rawValue)
+        return try requireParameter(PowerAuthPasswordService.Args.objectId)
     }
 }

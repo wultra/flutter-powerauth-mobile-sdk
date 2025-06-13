@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
+
 import '../powerauth_password/powerauth_password.dart';
 
 /// Defines strings used to display the platform-specific biometric authentication dialog.
@@ -56,63 +58,43 @@ class PowerAuthBiometricPrompt {
 
 /// Represents a multi-factor authentication object specifying which factors to use for an operation.
 /// Use the factory constructors to create instances for different factor combinations.
-class PowerAuthAuthentication {
+abstract class PowerAuthAuthentication {
 
   /// Password used for the knowledge factor.
   /// Set only if the knowledge factor is required.
-  final PowerAuthPassword? password;
+  abstract final PowerAuthPassword? password;
 
   /// Configuration for the biometric prompt, if biometry factor is used.
-  final PowerAuthBiometricPrompt? biometricPrompt;
-
-  /// Indicates that this authentication object is intended for persisting an activation.
-  final bool forActivationPersist;
-
-  /// Indicates if the biometry factor should be used.
-  final bool useBiometry;
-
-  // Internal constructor
-  PowerAuthAuthentication._({
-    this.password,
-    this.biometricPrompt,
-    required this.forActivationPersist,
-    required this.useBiometry,
-  });
+  abstract final PowerAuthBiometricPrompt? biometricPrompt;
 
   /// Creates an authentication object configured for possession factor only.
   factory PowerAuthAuthentication.possession() {
-    return PowerAuthAuthentication._(
-      forActivationPersist: false,
-      useBiometry: false,
+    return InternalAuth(
+      forActivationPersist: false
     );
   }
 
   /// Creates an authentication object configured for possession and biometry factors.
-  factory PowerAuthAuthentication.biometry({
-    required PowerAuthBiometricPrompt biometricPrompt,
-  }) {
-    return PowerAuthAuthentication._(
+  factory PowerAuthAuthentication.biometry({required PowerAuthBiometricPrompt biometricPrompt}) {
+    return InternalAuth(
       biometricPrompt: biometricPrompt,
-      forActivationPersist: false,
-      useBiometry: true,
+      forActivationPersist: false
     );
   }
 
   /// Creates an authentication object configured for possession and knowledge (password) factors.
   factory PowerAuthAuthentication.password(PowerAuthPassword password) {
-    return PowerAuthAuthentication._(
+    return InternalAuth(
       password: password,
-      forActivationPersist: false,
-      useBiometry: false,
+      forActivationPersist: false
     );
   }
 
   /// Creates an object configured to persist activation with password.
   factory PowerAuthAuthentication.persistWithPassword(PowerAuthPassword password) {
-    return PowerAuthAuthentication._(
+    return InternalAuth(
       password: password,
-      forActivationPersist: true,
-      useBiometry: false,
+      forActivationPersist: true
     );
   }
 
@@ -121,27 +103,15 @@ class PowerAuthAuthentication {
   /// [biometricPrompt] is required on Android only when biometry config has `authenticateOnBiometricKeySetup` set to `true`.
   factory PowerAuthAuthentication.persistWithPasswordAndBiometry({
     required PowerAuthPassword password,
-    PowerAuthBiometricPrompt? biometricPrompt,
+    required PowerAuthBiometricPrompt biometricPrompt,
   }) {
-    return PowerAuthAuthentication._(
+    return InternalAuth(
       password: password,
       biometricPrompt: biometricPrompt,
       forActivationPersist: true,
-      useBiometry: true,
     );
   }
 
-  /// Converts this object into a map suitable for sending over the method channel.
-  /// Handles converting PowerAuthPassword to its raw representation.
-  Future<Map<String, dynamic>> toMap() async {
-    
-    var rawPassword = await password?.toRawPasswordMap();
-
-    return {
-      'password': rawPassword,
-      'biometricPrompt': biometricPrompt?.toMap(),
-      'isPersist': forActivationPersist,
-      'isBiometry': useBiometry,
-    }..removeWhere((key, value) => value == null);
-  }
+  /// Helper to prepare authentication arguments.
+  Future<Map<String, dynamic>> prepareAuthArguments(Map<String, dynamic> baseArgs);
 }

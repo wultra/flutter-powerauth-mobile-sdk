@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import '../logging/powerauth_logger.dart';
+
 /// Error codes that can be reported by the PowerAuth SDK.
 enum PowerAuthErrorCode {
 
@@ -49,6 +51,9 @@ enum PowerAuthErrorCode {
 
   /// Error code for error that occurs when invalid activation code is provided.
   invalidActivationCode,
+
+  /// Error code for error that occurs when activation object is invalid.
+  invalidActivationObject,
 
   /// Error code for accessing an unknown token.
   invalidToken,
@@ -194,13 +199,11 @@ class PinTestResult {
       return issuesList
           .map((issueString) {
             try {
-              return PinTestIssue.values.firstWhere(
-                (e) =>
-                    e.name ==
-                    (issueString as String),
-              );
+              return PinTestIssue.values.firstWhere((e) => e.name == (issueString as String),);
             } catch (e) {
-              print("Warning: Unknown PinTestIssue received: $issueString");
+              PowerAuthLogger.warning(
+                () => "Unknown PinTestIssue received: $issueString",
+              );
               // TODO: return null or a default?
               return null;
             }

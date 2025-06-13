@@ -9,40 +9,48 @@ class IntegrationHelper {
     
   final jsonMediaType = "application/json; charset=UTF-8";
   final PowerAuth sdk;
+  CreatedActivation? createdActivation;
+  String? userId;
 
   IntegrationHelper(this.sdk);
 
-  Future<void> prepareActivation({
-    required PowerAuthPassword password,
-    String? userId
-  }) async {
+  Future<void> cleanup() async {
 
-    // Be sure that each activation has its own user
-    final activationName = userId ?? _randomString(20);
+    if (await sdk.isConfigured() == false) {
+      return;
+    }
 
-    // CREATE ACTIVATION ON THE SERVER
+    final activationId = await sdk.getActivationIdentifier();
 
-    final body = """
-        {
-          "userId": "$activationName",
-          "flags": [],
-          "appId": "${AppConfig.cloudApplicationId}"
-        }
-        """;
+    // REMOVE ACTIVATION LOCALLY
+    await sdk.removeActivationLocal();
+
+    // REMOVE ACTIVATION ON THE SERVER
+    if (activationId != null) {
+      await removeRegistration(registrationId: activationId);
+    }
+
+    await sdk.deconfigure();
+  }
+
+  // --- COMPLEX TASKS ---
+
+  /// Creates a new activation on the server and locally.
+  Future<void> prepareActiveActivation(PowerAuthPassword password, {String? userId, bool setupBiometry = false}) async {
         
-    final resp = await _makeCall(body,"${AppConfig.cloudUrl}/v2/registrations");
+    final resp = await createActivation(userId: userId);
 
     // CREATE ACTIVATION LOCALLY
 
-    await sdk.createActivation(PowerAuthActivation.fromActivationCode(activationCode: resp["activationCode"], name: "tests"));
+    await sdk.createActivation(PowerAuthActivation.fromActivationCode(activationCode: resp.activationCode, name: "tests"));
 
     // PERSIST ACTIVATION LOCALLY
 
-    await sdk.persistActivation(PowerAuthAuthentication.persistWithPassword(password));
+    await sdk.persistActivation(setupBiometry ? PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password, biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Persist data pls")) : PowerAuthAuthentication.persistWithPassword(password));
 
     // COMMIT ACTIVATION ON THE SERVER
 
-    await _makeCall('{ "externalUserId": "test" }', "${AppConfig.cloudUrl}/v2/registrations/${resp["registrationId"]}/commit");
+    await _makeCall('{ "externalUserId": "test" }', "${AppConfig.cloudUrl}/v2/registrations/${resp.registrationId}/commit");
   }
 
   Future<void> configure({
@@ -67,86 +75,64 @@ class IntegrationHelper {
     await sdk.removeActivationLocal();
   }
 
-  Future<void> removeRegistration(String activationId) async {
-    await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/$activationId", method: HtptMethod.delete);
+  // --- SERVER CALLS ---
+
+  Future<CreatedActivation> createActivation({String? userId, bool autoCommit = true}) async {
+
+    final activationName = userId ?? randomString(20);
+    this.userId = activationName;
+
+    final body = """
+        {
+          "userId": "$activationName",
+          "flags": [],
+          "appId": "${AppConfig.cloudApplicationId}",
+          "commitPhase": "${autoCommit ? "ON_KEY_EXCHANGE" : "ON_COMMIT"}"
+        }
+        """;
+    final resp = await _makeCall(body, "${AppConfig.cloudUrl}/v2/registrations");
+    final created = CreatedActivation.fromJson(resp);
+    createdActivation = created;
+    return created;
   }
 
-    // async createOperation(): Promise<OperationObject> {
-    //     const opBody = `
-    //         {
-    //           "userId": "${this.activationName}",
-    //           "template": "login",
-    //            "parameters": {
-    //              "party.id": "666",
-    //              "party.name": "Datová schránka",
-    //                  "session.id": "123",
-    //                  "session.ip-address": "192.168.0.1"
-    //            }
-    //         }
-    //         `
+  Future<void> commitActivation({String? registrationId}) async {
+    await _makeCall("{}", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}/commit");
+  }
 
-    //     // create an operation on the nextstep server
-    //     return await this.makeCall(opBody, `${this.cloudServerUrl}/v2/operations`)
-    // }
+  Future<void> removeRegistration({String? registrationId}) async {
+    await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.delete);
+  }
 
-    // async cancelOperation(operationId: string, reason: string): Promise<any> {
-    //     return await this.makeCall("", `${this.cloudServerUrl}/v2/operations/${operationId}?statusReason=${reason}`, "DELETE")
-    // }
+  Future<RegistrationDetail> getRegistrationDetail({String? registrationId}) async {
+    final resp = await _makeCall("", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.get);
+    return RegistrationDetail.fromJson(resp);
+  }
 
-    // async createNonPersonalizedPACOperation(): Promise<OperationObject> {
-    //     const opBody = `
-    //         {
-    //           "template": "login_preApproval",
-    //           "proximityCheckEnabled": true,
-    //            "parameters": {
-    //              "party.id": "666",
-    //              "party.name": "Datová schránka",
-    //                  "session.id": "123",
-    //                  "session.ip-address": "192.168.0.1"
-    //            }
-    //         }
-    //         `
-    //     // create an operation on the nextstep server
-    //     return await this.makeCall(opBody, `${this.cloudServerUrl}/v2/operations`)
-    // }
+  Future<void> changeActivation(ActivationChange change, {String? registrationId}) async {
+    await _makeCall("{\"change\":\"${change.toString()}\"}", "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}", method: HtptMethod.put);
+  }
 
-    // async getOperation(operationId: string): Promise<OperationObject> {
-    //     return await this.makeCall(undefined, `${this.cloudServerUrl}/v2/operations/${operationId}`, "GET")
-    // }
+  Future<SignatureResponse> verifySignature(String method, String uriId, String authHeader, String body) async {
+    final payload = """
+        {
+          "method": "$method",
+          "uriId": "$uriId",
+          "authHeader": "${authHeader.replaceAll("\"", "\\\"")}",
+          "requestBody": "${base64Encode(utf8.encode(body))}"
+        }
+        """;
+    final resp = await _makeCall(payload, "${AppConfig.cloudUrl}/v2/signature/verify", method: HtptMethod.post);
+    return SignatureResponse.fromJson(resp);
+  }
 
-    // async getQROperation(operationId: string): Promise<QRData> {
-    //     return await this.makeCall(undefined, `${this.cloudServerUrl}/v2/operations/${operationId}/offline/qr?registrationId=${this.registrationId}`, "GET")
-    // }
+  // --- HELPER FUNCTIONS ---
 
-    // async verifyQROperation(operation: OperationObject, qrData: QRData, otp: string): Promise<QROperationVerify> {
-    //     const body = `
-    //         {
-    //           "otp": "${otp}",
-    //           "nonce": "${qrData.nonce}",
-    //           "registrationId": "${this.registrationId}"
-    //         }
-    //     `
-    //     return this.makeCall(body, `${this.cloudServerUrl}/v2/operations/${operation.operationId}/offline/otp`)
-    // }
-
-    // async createInboxMessages(count: number, type: string = "text"): Promise<NewInboxMessage[]> {
-    //     const result: NewInboxMessage[] = []
-    //     for (let i = 0; i < count; i++) {
-    //         const body = `
-    //             {
-    //                 "userId":"${this.activationName}",
-    //                 "subject":"Message #${i}",
-    //                 "summary":"This is body for message ${i}",
-    //                 "body":"This is body for message ${i}",
-    //                 "type":"${type}",
-    //                 "silent":true
-    //             }
-    //         `
-    //         const newMessage = await this.makeCall(body, `${this.cloudServerUrl}/v2/inbox/messages`)
-    //         result.push(newMessage)
-    //     }
-    //     return result
-    // }
+  Future<Map<String, dynamic>> callSDKEndpoint(String endpoint, String body, Map<String, String>? headers) async {
+    final url = Uri.parse("${sdk.configuration?.baseEndpointUrl}/$endpoint");
+    final response = await http.post(url, headers: headers, body: body);
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 
   Future<Map<String, dynamic>> _makeCall(String? payload, String stringUrl, { HtptMethod method = HtptMethod.post}) async {
 
@@ -179,59 +165,11 @@ class IntegrationHelper {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  String _randomString(int length) {
+  static String randomString(int length) {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return List.generate(length, (index) => chars[Random().nextInt(chars.length)]).join();
   }
 }
-
-// interface RegistrationObject {
-//     activationCode: string
-//     activationCodeSignature: string
-//     activationQrCodeData: string
-//     registrationId: string
-// }
-
-// interface OperationObject {
-//     operationId: string
-//     userId: string
-//     status: string
-//     operationType: string
-//     // val parameters: [] // not needed for test right now
-//     failureCount: number
-//     maxFailureCount: number
-//     timestampCreated: number
-//     timestampExpires: number
-//     proximityOtp: string | undefined
-// }
-
-// interface QRData {
-//     operationQrCodeData: string,
-//     nonce: string
-// }
-
-// interface QROperationVerify {
-//     otpValid: boolean
-//     userId: string
-//     registrationId: string
-//     registrationStatus: string
-//     signatureType: string
-//     remainingAttempts: number
-//     // flags: []
-//     // application
-// }
-
-// import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-
-// export interface NewInboxMessage {
-//     id: string
-//     subject: string
-//     summary: string
-//     body: string
-//     read: boolean
-//     type: string
-//     timestamp: number
-// }
 
 enum HtptMethod {
   get,
@@ -239,4 +177,131 @@ enum HtptMethod {
   put,
   delete,
   patch,
+}
+
+class CreatedActivation {
+  final String activationCode;
+  final String activationCodeSignature;
+  final String activationQrCodeData;
+  final String registrationId;
+
+  CreatedActivation({
+    required this.activationCode,
+    required this.activationCodeSignature,
+    required this.activationQrCodeData,
+    required this.registrationId
+  });
+
+  factory CreatedActivation.fromJson(Map<String, dynamic> json) {
+    return CreatedActivation(
+      activationCode: json['activationCode'],
+      activationCodeSignature: json['activationCodeSignature'],
+      activationQrCodeData: json['activationQrCodeData'],
+      registrationId: json['registrationId']
+    );
+  }
+}
+
+class RegistrationDetail {
+  String? registrationId;
+  String? registrationStatus;
+  String? blockedReason;
+  String? applicationId;
+  String? name;
+  String? platform;
+  String? deviceInfo;
+  List<String>? flags;
+  int? timestampCreated;
+  int? timestampLastUsed;
+  String? userId;
+  String? activationQrCodeData;
+  String? activationCode;
+  String? activationCodeSignature;
+  String? activationFingerprint;
+
+  RegistrationDetail({
+    this.registrationId,
+    this.registrationStatus,
+    this.blockedReason,
+    this.applicationId,
+    this.name,
+    this.platform,
+    this.deviceInfo,
+    this.flags,
+    this.timestampCreated,
+    this.timestampLastUsed,
+    this.userId,
+    this.activationQrCodeData,
+    this.activationCode,
+    this.activationCodeSignature,
+    this.activationFingerprint
+  });
+
+  factory RegistrationDetail.fromJson(Map<String, dynamic> json) {
+    List<String>? flags;
+    if (json['flags'] != null) {
+      flags = List<String>.from(json['flags']);
+    }
+    return RegistrationDetail(
+      registrationId: json['registrationId'],
+      registrationStatus: json['registrationStatus'],
+      blockedReason: json['blockedReason'],
+      applicationId: json['applicationId'],
+      name: json['name'],
+      platform: json['platform'],
+      deviceInfo: json['deviceInfo'],
+      flags: flags,
+      timestampCreated: json['timestampCreated'],
+      timestampLastUsed: json['timestampLastUsed'],
+      userId: json['userId'],
+      activationQrCodeData: json['activationQrCodeData'],
+      activationCode: json['activationCode'],
+      activationCodeSignature: json['activationCodeSignature'],
+      activationFingerprint: json['activationFingerprint']
+    );
+  }
+}
+
+enum ActivationChange {
+  block,
+  unblock;
+
+  @override
+  String toString() {
+    switch (this) {
+      case ActivationChange.block:
+        return "BLOCK";
+      case ActivationChange.unblock:
+        return "UNBLOCK";
+    }
+  }
+}
+
+class SignatureResponse {
+  final bool signatureValid;
+  final String userId;
+  final String registrationId;
+  final String registrationStatus;
+  final String signatureType;
+  final int remainingAttempts;
+
+  SignatureResponse({
+    required this.signatureValid,
+    required this.userId,
+    required this.registrationId,
+    required this.registrationStatus,
+    required this.signatureType,
+    required this.remainingAttempts
+  });
+
+  factory SignatureResponse.fromJson(Map<String, dynamic> json) {
+    return SignatureResponse(
+      signatureValid: json['signatureValid'],
+      userId: json['userId'],
+      registrationId: json['registrationId'],
+      registrationStatus: json['registrationStatus'],
+      signatureType: json['signatureType'],
+      remainingAttempts: json['remainingAttempts']
+    );
+  }
 }

@@ -40,11 +40,13 @@ sealed class ReleasePolicy(private val type: Int, internal val param: Int = 0) {
             require(count > 0) { "AfterUse policy count must be positive." }
         }
     }
+
     class KeepAlive(timeIntervalMs: Int) : ReleasePolicy(TYPE_KEEP_ALIVE, timeIntervalMs) {
         init {
             require(timeIntervalMs > 0) { "KeepAlive timeIntervalMs must be positive." }
         }
     }
+
     class Expire(timeIntervalMs: Int) : ReleasePolicy(TYPE_EXPIRE, timeIntervalMs) {
         init {
             require(timeIntervalMs > 0) { "Expire timeIntervalMs must be positive." }

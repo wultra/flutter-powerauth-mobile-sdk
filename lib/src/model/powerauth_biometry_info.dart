@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import '../logging/powerauth_logger.dart';
+
 /// Defines biometry types supported on the system.
 /// In case a device supports multiple biometry types, then [generic] is returned.
 enum PowerAuthBiometryType {
@@ -85,7 +87,9 @@ class PowerAuthBiometryInfo {
           (e) => e.name == typeString,
         );
       } catch (e) {
-        print("Warning: Unknown PowerAuthBiometryType received: $typeString");
+        PowerAuthLogger.warning(
+          () => "Unknown PowerAuthBiometryType received: $typeString",
+        );
 
         return PowerAuthBiometryType.none;
       }
@@ -101,8 +105,8 @@ class PowerAuthBiometryInfo {
           (e) => e.name == statusString,
         );
       } catch (e) {
-        print(
-          "Warning: Unknown PowerAuthBiometryStatus received: $statusString",
+        PowerAuthLogger.warning(
+          () => "Unknown PowerAuthBiometryStatus received: $statusString",
         );
 
         return PowerAuthBiometryStatus.notSupported;
