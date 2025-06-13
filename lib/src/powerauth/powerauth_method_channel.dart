@@ -21,6 +21,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authenti
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 
+import '../logging/powerauth_logger.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -32,6 +33,16 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @override
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
+
+  @override
+  Future<void> setNativeLogLevel(PowerAuthLogLevel level) async {
+    await invokeMethod<void>('logging_setNativeLogLevel', {'level': level.name});
+  }
+
+  @override
+  Future<void> setNativeLoggingEnabled(bool enabled) async {
+    await invokeMethod<void>('logging_setNativeLoggingEnabled', {'enabled': enabled});
+  }
 
   @override
   Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {

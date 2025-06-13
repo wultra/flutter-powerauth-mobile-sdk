@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package com.wultra.android.powerauth.flutter
+package com.wultra.android.powerauth.flutter.internal.core
 
-/**
- * Interface for objects stored in the objects register.
- */
-interface IManagedObject<T : Any> {
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel.Result
+import kotlin.reflect.KFunction2
 
-    /**
-     * Do cleanup when object is being removed from the register.
-     */
-    fun cleanup()
+typealias MethodHandler = KFunction2<MethodCall, Result, Unit>
 
-    /**
-     * Return actual object stored in the register.
-     */
-    fun managedInstance(): T
+sealed interface PowerAuthFlutterService {
+    val name: String
+    val handlers: Map<String, MethodHandler>
 }

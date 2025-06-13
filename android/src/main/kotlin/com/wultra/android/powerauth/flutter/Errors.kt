@@ -31,7 +31,11 @@ object Errors {
     const val EC_INVALID_CHARACTER: String = "invalidCharacter"
     const val EC_BIOMETRY_FAILED: String = "biometryFailed"
     const val EC_INVALID_ACTIVATION_OBJECT: String = "invalidActivationObject"
+    const val EC_INVALID_ENCRYPTOR: String = "invalidEncryptor"
+    const val EC_LOCAL_TOKEN_NOT_AVAILABLE: String = "localTokenNotAvailable"
+    const val EC_CANNOT_GENERATE_TOKEN: String = "cannotGenerateToken"
     const val EC_INVALID_NATIVE_OBJECT: String = "invalidNativeObject"
+    const val EC_INVALID_LOG_LEVEL: String = "invalidLogLevel"
 
     const val EC_SUCCEED: String = "succeed"
     const val EC_NETWORK_ERROR: String = "networkError"
@@ -93,14 +97,17 @@ object Errors {
             is WrapperException -> {
                 code = t.errorCode
             }
+
             is PowerAuthErrorException -> {
                 code = getErrorCodeFromError(t.powerAuthErrorCode)
                 // Add PowerAuth error details if available
-                val errorDetails = mutableMapOf<String, Any?>("originalCode" to t.powerAuthErrorCode)
+                val errorDetails =
+                    mutableMapOf<String, Any?>("originalCode" to t.powerAuthErrorCode)
 
                 t.message?.let { errorDetails["originalMessage"] = it }
                 details = errorDetails
             }
+
             is FailedApiException -> {
                 val httpStatusCode: Int = t.responseCode
                 if (httpStatusCode == 401) {
@@ -122,9 +129,11 @@ object Errors {
 
                 details = errorDetails
             }
+
             is IOException -> {
                 code = EC_NETWORK_ERROR
             }
+
             else -> {
                 details = mapOf("nativeExceptionType" to t.javaClass.simpleName)
             }

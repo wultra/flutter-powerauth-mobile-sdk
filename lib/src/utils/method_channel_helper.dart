@@ -17,7 +17,8 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import '../model/powerauth_error.dart'; // Assuming PowerAuthError definitions are here
+import '../model/powerauth_error.dart';
+import '../logging/powerauth_logger.dart';
 
 /// Helper mixin for invoking methods on a provided MethodChannel and handling PowerAuth errors.
 mixin MethodChannelHelper {
@@ -100,18 +101,21 @@ class DebugCallTracer implements CallTracer {
   Future<T?> traceCall<T>(String method, Map<String, dynamic>? arguments, Future<T?> Function() call) async {
     final msg = "PowerAuth.$method(${arguments?.entries.map((e) => '${e.key}: ${e.value}').join(', ')})";
     if (_traceCall) {
-      print("call $msg");
+      PowerAuthLogger.debug(() => "call $msg");
     }
+
     try {
       final result = await call();
       if (_traceCall) {
-        print("ret $msg => ${jsonEncode(result)}");
+        PowerAuthLogger.debug(() => "ret $msg => ${jsonEncode(result)}");
       }
+
       return result;
     } catch (e) {
       if (_traceFail) {
-        print("fail $msg => $e");
+        PowerAuthLogger.debug(() => "fail $msg => $e");
       }
+
       rethrow;
     }
   }

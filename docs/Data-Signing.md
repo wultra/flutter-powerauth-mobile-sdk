@@ -3,7 +3,7 @@
 The main feature of the PowerAuth protocol is data signing. PowerAuth has three types of signatures:
 
 - **Symmetric Multi-Factor Signature**: Suitable for most operations, such as login, new payment, or confirming changes in settings.
-<!-- - **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired. -->
+- **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired.
 - **Symmetric Offline Multi-Factor Signature**: Suitable for very secure operations, where the signature is validated over the out-of-band channel.
 - **Verify server signed data**: Suitable for receiving arbitrary data from the server.
 

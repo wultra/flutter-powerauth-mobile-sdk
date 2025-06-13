@@ -17,6 +17,7 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+import '../logging/powerauth_logger.dart';
 
 /// Base class for objects that need to be released but don't require
 /// full native object lifecycle management.
@@ -43,8 +44,9 @@ abstract class BaseReleasableObject {
     try {
       await releaseNativeObject(objectId!);
     } catch (e) {
-      print(
-        '${runtimeType.toString()}: Error during native release for object $objectId: $e',
+      PowerAuthLogger.warning(
+        () =>
+            '${runtimeType.toString()}: Error during native release for object $objectId: $e',
       );
     } finally {
       objectId = null;

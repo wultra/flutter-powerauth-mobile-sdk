@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import '../logging/powerauth_logger.dart';
+
 /// Error codes that can be reported by the PowerAuth SDK.
 enum PowerAuthErrorCode {
 
@@ -199,7 +201,9 @@ class PinTestResult {
             try {
               return PinTestIssue.values.firstWhere((e) => e.name == (issueString as String),);
             } catch (e) {
-              print("Warning: Unknown PinTestIssue received: $issueString");
+              PowerAuthLogger.warning(
+                () => "Unknown PinTestIssue received: $issueString",
+              );
               // TODO: return null or a default?
               return null;
             }

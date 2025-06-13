@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package com.wultra.android.powerauth.flutter
+package com.wultra.android.powerauth.flutter.internal.core
 
-/**
- * Interface for objects stored in the objects register.
- */
-interface IManagedObject<T : Any> {
+object PowerAuthServiceRegistry {
+    private val services = mutableMapOf<String, PowerAuthFlutterService>()
 
-    /**
-     * Do cleanup when object is being removed from the register.
-     */
-    fun cleanup()
+    operator fun plusAssign(service: PowerAuthFlutterService) {
+        services[service.name] = service
+    }
 
-    /**
-     * Return actual object stored in the register.
-     */
-    fun managedInstance(): T
+    operator fun get(name: String): PowerAuthFlutterService? = services[name]
+
+    fun registerAll(vararg services: PowerAuthFlutterService) {
+        services.forEach { this += it }
+    }
 }
