@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0-beta.4 (TBA, 2025)
+## 1.0.0-beta.4 (June 13, 2025)
 
 * Added End-to-End Encryption support.
 * Introduced token-based authentication.

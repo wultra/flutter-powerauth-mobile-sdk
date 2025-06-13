@@ -1,6 +1,6 @@
 name: flutter_powerauth_mobile_sdk_plugin
 description: "Flutter Mobile SDK for PowerAuth Protocol (iOS, Android)."
-version: 1.0.0-beta.3
+version: 1.0.0-beta.4
 homepage: https://www.wultra.com/products/mobile-first-authentication
 
 environment:
