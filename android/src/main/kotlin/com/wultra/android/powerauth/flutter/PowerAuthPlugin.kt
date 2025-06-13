@@ -105,7 +105,7 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             serviceRegistry[serviceName]?.let { service ->
-                service.handlers[methodName]?.handle(call, result)
+                service.handlers[methodName]?.invoke(call, result)
                     ?: result.notImplemented()
             } ?: result.notImplemented()
         } catch (e: Exception) {
