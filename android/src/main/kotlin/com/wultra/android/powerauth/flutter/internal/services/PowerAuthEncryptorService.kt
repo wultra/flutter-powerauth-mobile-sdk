@@ -34,13 +34,12 @@ import io.getlime.security.powerauth.networking.response.IGetEciesEncryptorListe
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 import com.wultra.android.powerauth.flutter.DataFormat
 import com.wultra.android.powerauth.flutter.IManagedObject
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 
 private data class PowerAuthFlutterEncryptor(
     val activationScoped: Boolean,
     val coreEncryptor: EciesEncryptor,
     val powerAuthInstanceId: String
-): IManagedObject<Any> {
+) : IManagedObject<Any> {
 
     override fun cleanup() {
         coreEncryptor.destroy()
@@ -80,17 +79,12 @@ internal class PowerAuthEncryptorService(
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.INITIALIZE to MethodHandler { call, result ->
-                initialize(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.RELEASE to MethodHandler { call, result -> release(call, result) },
-            HandlerNames.CAN_ENCRYPT_REQUEST to MethodHandler { call, result -> canEncryptRequest(call, result) },
-            HandlerNames.ENCRYPT_REQUEST to MethodHandler { call, result -> encryptRequest(call, result) },
-            HandlerNames.CAN_DECRYPT_RESPONSE to MethodHandler { call, result -> canDecryptResponse(call, result) },
-            HandlerNames.DECRYPT_RESPONSE to MethodHandler { call, result -> decryptResponse(call, result) }
+            HandlerNames.INITIALIZE to this::initialize,
+            HandlerNames.RELEASE to this::release,
+            HandlerNames.CAN_ENCRYPT_REQUEST to this::canEncryptRequest,
+            HandlerNames.ENCRYPT_REQUEST to this::encryptRequest,
+            HandlerNames.CAN_DECRYPT_RESPONSE to this::canDecryptResponse,
+            HandlerNames.DECRYPT_RESPONSE to this::decryptResponse
         )
     }
 
@@ -103,24 +97,39 @@ internal class PowerAuthEncryptorService(
             val isActivationScope = when (scope) {
                 "application" -> false
                 "activation" -> true
-                else -> throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown scope value: $scope")
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Unknown scope value: $scope"
+                )
             }
 
             val sdk = objectRegister.findObject(powerAuthInstanceId, PowerAuthSDK::class.java)
-                ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$powerAuthInstanceId' not configured.")
+                ?: throw WrapperException(
+                    Errors.EC_INSTANCE_NOT_CONFIGURED,
+                    "PowerAuth instance '$powerAuthInstanceId' not configured."
+                )
 
             val listener = object : IGetEciesEncryptorListener {
                 override fun onGetEciesEncryptorSuccess(encryptor: EciesEncryptor) {
-                    val flutterEncryptor = PowerAuthFlutterEncryptor(isActivationScope, encryptor, powerAuthInstanceId)
-                    val releaseTime = autoReleaseTimeMillis ?: Constants.ENCRYPTOR_KEY_KEEP_ALIVE_TIME
+                    val flutterEncryptor =
+                        PowerAuthFlutterEncryptor(isActivationScope, encryptor, powerAuthInstanceId)
+                    val releaseTime =
+                        autoReleaseTimeMillis ?: Constants.ENCRYPTOR_KEY_KEEP_ALIVE_TIME
                     val policies = listOf(ReleasePolicy.keepAlive(releaseTime))
-                    val objectId = objectRegister.registerObject(flutterEncryptor, powerAuthInstanceId, policies)
+                    val objectId = objectRegister.registerObject(
+                        flutterEncryptor,
+                        powerAuthInstanceId,
+                        policies
+                    )
                     result.success(objectId)
                 }
 
                 override fun onGetEciesEncryptorFailed(t: Throwable) {
                     if (isActivationScope && !sdk.hasValidActivation()) {
-                        Errors.error(result, PowerAuthErrorException(PowerAuthErrorCodes.MISSING_ACTIVATION))
+                        Errors.error(
+                            result,
+                            PowerAuthErrorException(PowerAuthErrorCodes.MISSING_ACTIVATION)
+                        )
                     } else {
                         Errors.error(result, t)
                     }
@@ -164,7 +173,10 @@ internal class PowerAuthEncryptorService(
 
             if (!canEncrypt(encryptor, sdk)) {
                 objectRegister.removeObject(objectId, PowerAuthFlutterEncryptor::class.java)
-                throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Encryptor is not constructed for request encryption.")
+                throw WrapperException(
+                    Errors.EC_INVALID_ENCRYPTOR,
+                    "Encryptor is not constructed for request encryption."
+                )
             }
 
             val encryptionResult = encryptor.coreEncryptor.encryptRequestSynchronized(data)
@@ -176,14 +188,19 @@ internal class PowerAuthEncryptorService(
             val metadata: EciesMetadata = decryptorEncryptor.metadata
                 ?: throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Incompatible native SDK")
 
-            val decryptor = PowerAuthFlutterEncryptor(encryptor.activationScoped, decryptorEncryptor, encryptor.powerAuthInstanceId)
+            val decryptor = PowerAuthFlutterEncryptor(
+                encryptor.activationScoped,
+                decryptorEncryptor,
+                encryptor.powerAuthInstanceId
+            )
 
             val policies = listOf(
                 ReleasePolicy.afterUse(1),
                 ReleasePolicy.keepAlive(Constants.DECRYPTOR_KEY_KEEP_ALIVE_TIME)
             )
 
-            val decryptorId = objectRegister.registerObject(decryptor, encryptor.powerAuthInstanceId, policies)
+            val decryptorId =
+                objectRegister.registerObject(decryptor, encryptor.powerAuthInstanceId, policies)
 
             val cryptogramMap = mapOf(
                 "temporaryKeyId" to cryptogram.temporaryKeyId,
@@ -199,11 +216,13 @@ internal class PowerAuthEncryptorService(
                 "value" to metadata.httpHeaderValue
             )
 
-            result.success(mapOf(
-                "cryptogram" to cryptogramMap,
-                "header" to headerMap,
-                "decryptorId" to decryptorId
-            ))
+            result.success(
+                mapOf(
+                    "cryptogram" to cryptogramMap,
+                    "header" to headerMap,
+                    "decryptorId" to decryptorId
+                )
+            )
         }
     }
 
@@ -222,7 +241,10 @@ internal class PowerAuthEncryptorService(
 
             if (!canDecrypt(encryptor, sdk)) {
                 objectRegister.removeObject(objectId, PowerAuthFlutterEncryptor::class.java)
-                throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Encryptor is not constructed for response decryption.")
+                throw WrapperException(
+                    Errors.EC_INVALID_ENCRYPTOR,
+                    "Encryptor is not constructed for response decryption."
+                )
             }
 
             val cryptogram = EciesCryptogram(
@@ -241,17 +263,29 @@ internal class PowerAuthEncryptorService(
         }
     }
 
-    private fun withEncryptor(call: MethodCall, result: Result, touch: Boolean, block: (PowerAuthFlutterEncryptor, PowerAuthSDK) -> Unit) {
+    private fun withEncryptor(
+        call: MethodCall,
+        result: Result,
+        touch: Boolean,
+        block: (PowerAuthFlutterEncryptor, PowerAuthSDK) -> Unit
+    ) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
             val encryptor = if (touch) {
                 objectRegister.touchObject(objectId, PowerAuthFlutterEncryptor::class.java)
             } else {
                 objectRegister.useObject(objectId, PowerAuthFlutterEncryptor::class.java)
-            } ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Encryptor object '$objectId' is no longer valid.")
+            } ?: throw WrapperException(
+                Errors.EC_INVALID_NATIVE_OBJECT,
+                "Encryptor object '$objectId' is no longer valid."
+            )
 
-            val sdk = objectRegister.findObject(encryptor.powerAuthInstanceId, PowerAuthSDK::class.java)
-                ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '${encryptor.powerAuthInstanceId}' not configured.")
+            val sdk =
+                objectRegister.findObject(encryptor.powerAuthInstanceId, PowerAuthSDK::class.java)
+                    ?: throw WrapperException(
+                        Errors.EC_INSTANCE_NOT_CONFIGURED,
+                        "PowerAuth instance '${encryptor.powerAuthInstanceId}' not configured."
+                    )
 
             block(encryptor, sdk)
         } catch (t: Throwable) {

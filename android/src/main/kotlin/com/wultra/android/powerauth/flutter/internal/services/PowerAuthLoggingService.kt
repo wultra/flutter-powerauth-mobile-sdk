@@ -19,11 +19,10 @@ import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogLevel
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 
-class PowerAuthLoggingService: BasePowerAuthService(null) {
+class PowerAuthLoggingService : BasePowerAuthService(null) {
 
     override val name = "logging"
 
@@ -39,36 +38,28 @@ class PowerAuthLoggingService: BasePowerAuthService(null) {
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.SET_NATIVE_LOG_LEVEL to MethodHandler { call, result -> setNativeLogLevel(call, result) },
-            HandlerNames.SET_NATIVE_LOGGING_ENABLED to MethodHandler { call, result -> setNativeLoggingEnabled(call, result) }
+            HandlerNames.SET_NATIVE_LOG_LEVEL to this::setNativeLogLevel,
+            HandlerNames.SET_NATIVE_LOGGING_ENABLED to this::setNativeLoggingEnabled
         )
     }
 
     private fun setNativeLogLevel(call: MethodCall, result: Result) {
-        val levelString = call.argument<String>(LEVEL)?.uppercase()
+        val levelString = call.getRequiredArgument<String>(LEVEL).uppercase()
 
-        if (levelString != null) {
-            try {
-                val level = PowerAuthLogLevel.valueOf(levelString)
-                PowerAuthLogger.level = level
+        try {
+            val level = PowerAuthLogLevel.valueOf(levelString)
+            PowerAuthLogger.level = level
 
-                result.success(null)
-            } catch (e: IllegalArgumentException) {
-                result.error("INVALID_LOG_LEVEL", "Invalid log level: $levelString", null)
-            }
-        } else {
-            result.error(Errors.EC_WRONG_PARAMETER, "Missing 'level' argument", null)
+            result.success(null)
+        } catch (e: IllegalArgumentException) {
+            result.error(Errors.EC_INVALID_LOG_LEVEL, "Invalid log level: $levelString", null)
         }
     }
 
     private fun setNativeLoggingEnabled(call: MethodCall, result: Result) {
-        val enabled = call.argument<Boolean>(ENABLED)
+        val enabled = call.getRequiredArgument<Boolean>(ENABLED)
 
-        if (enabled != null) {
-            PowerAuthLogger.enabled = enabled
-            result.success(null)
-        } else {
-            result.error(Errors.EC_WRONG_PARAMETER, "Missing 'enabled' argument", null)
-        }
+        PowerAuthLogger.enabled = enabled
+        result.success(null)
     }
 } 

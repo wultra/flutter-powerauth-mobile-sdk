@@ -18,11 +18,11 @@ package com.wultra.android.powerauth.flutter.internal.services
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 
-internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObjectRegister) : BasePowerAuthService(objectRegister) {
+internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObjectRegister) :
+    BasePowerAuthService(objectRegister) {
 
     override val name: String = "register"
 
@@ -41,9 +41,9 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.DEBUG_DUMP to MethodHandler { call, result -> debugDump(call, result) },
-            HandlerNames.DEBUG_COMMAND to MethodHandler { call, result -> debugCommand(call, result) },
-            HandlerNames.IS_VALID_NATIVE_OBJECT to MethodHandler { call, result -> isValidNativeObject(call, result) }
+            HandlerNames.DEBUG_DUMP to this::debugDump,
+            HandlerNames.DEBUG_COMMAND to this::debugCommand,
+            HandlerNames.IS_VALID_NATIVE_OBJECT to this::isValidNativeObject
         )
     }
 

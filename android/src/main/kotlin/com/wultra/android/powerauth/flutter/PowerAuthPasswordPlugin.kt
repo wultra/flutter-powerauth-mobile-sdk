@@ -25,15 +25,15 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
-class PowerAuthPasswordPlugin: FlutterPlugin, MethodCallHandler {
+class PowerAuthPasswordPlugin : FlutterPlugin, MethodCallHandler {
 
-    private lateinit var channel : MethodChannel
+    private lateinit var channel: MethodChannel
 
-    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) { 
+    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "powerauth_password_plugin")
         channel.setMethodCallHandler(this)
     }
-    
+
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
     }
@@ -44,30 +44,39 @@ class PowerAuthPasswordPlugin: FlutterPlugin, MethodCallHandler {
             "initialize" -> {
                 result.success(null)
             }
+
             "release" -> {
                 result.success(null)
             }
+
             "length" -> {
                 result.success(null)
             }
+
             "clear" -> {
                 result.success(null)
             }
+
             "addCharacter" -> {
                 result.success(null)
             }
+
             "insertCharacter" -> {
                 result.success(null)
             }
+
             "removeCharacterAt" -> {
                 result.success(null)
             }
+
             "removeLastCharacter" -> {
                 result.success(null)
             }
+
             "isEqualTo" -> {
                 result.success(null)
             }
+
             else -> result.notImplemented()
         }
     }

@@ -79,6 +79,7 @@ enum class DataFormat {
                     t
                 )
             }
+
             BASE64 -> Base64.encodeToString(value, Base64.NO_WRAP)
         }
     }
@@ -96,7 +97,10 @@ enum class DataFormat {
                 null -> UTF8
                 "UTF8" -> UTF8
                 "BASE64" -> BASE64
-                else -> throw WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid data format specified")
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Invalid data format specified"
+                )
             }
         }
     }

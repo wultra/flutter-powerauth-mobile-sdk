@@ -19,7 +19,6 @@ package com.wultra.android.powerauth.flutter.internal.services
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.ActivationCode
@@ -44,37 +43,18 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.UTIL_PARSE_ACTIVATION_CODE to MethodHandler { call, result ->
-                parseActivationCode(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.UTIL_VALIDATE_ACTIVATION_CODE to MethodHandler { call, result ->
-                validateActivationCode(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.UTIL_VALIDATE_TYPED_CHARACTER to MethodHandler { call, result ->
-                validateTypedCharacter(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.UTIL_CORRECT_TYPED_CHARACTER to MethodHandler { call, result ->
-                correctTypedCharacter(
-                    call,
-                    result
-                )
-            },
+            HandlerNames.UTIL_PARSE_ACTIVATION_CODE to this::parseActivationCode,
+            HandlerNames.UTIL_VALIDATE_ACTIVATION_CODE to this::validateActivationCode,
+            HandlerNames.UTIL_VALIDATE_TYPED_CHARACTER to this::validateTypedCharacter,
+            HandlerNames.UTIL_CORRECT_TYPED_CHARACTER to this::correctTypedCharacter
         )
     }
 
     private fun parseActivationCode(call: MethodCall, result: Result) {
         try {
             val activationCodeString: String = call.getRequiredArgument(ACTIVATION_CODE)
-            val ac: ActivationCode? = ActivationCodeUtil.parseFromActivationCode(activationCodeString)
+            val ac: ActivationCode? =
+                ActivationCodeUtil.parseFromActivationCode(activationCodeString)
 
             if (ac != null) {
                 val response = mutableMapOf<String, String?>(
@@ -85,7 +65,11 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
 
                 result.success(response)
             } else {
-                result.error(Errors.EC_INVALID_ACTIVATION_CODE, "Invalid activation code provided.", null)
+                result.error(
+                    Errors.EC_INVALID_ACTIVATION_CODE,
+                    "Invalid activation code provided.",
+                    null
+                )
             }
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -107,7 +91,14 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
             val characterInt: Int = call.getRequiredArgument(CHARACTER)
             result.success(ActivationCodeUtil.validateTypedCharacter(characterInt))
         } catch (e: NumberFormatException) {
-            Errors.error(result, WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid character format, expected Int", e))
+            Errors.error(
+                result,
+                WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Invalid character format, expected Int",
+                    e
+                )
+            )
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
@@ -119,12 +110,23 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
             val corrected: Int = ActivationCodeUtil.validateAndCorrectTypedCharacter(characterInt)
 
             if (corrected == 0) {
-                result.error(Errors.EC_INVALID_CHARACTER, "Invalid character that cannot be corrected.", null)
+                result.error(
+                    Errors.EC_INVALID_CHARACTER,
+                    "Invalid character that cannot be corrected.",
+                    null
+                )
             } else {
                 result.success(corrected)
             }
         } catch (e: NumberFormatException) {
-            Errors.error(result, WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid character format, expected Int", e))
+            Errors.error(
+                result,
+                WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Invalid character format, expected Int",
+                    e
+                )
+            )
         } catch (t: Throwable) {
             Errors.error(result, t)
         }

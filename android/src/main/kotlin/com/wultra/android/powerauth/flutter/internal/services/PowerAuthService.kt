@@ -23,7 +23,6 @@ import android.util.Base64
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.biometry.*
@@ -57,7 +56,11 @@ import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
 import java.nio.charset.StandardCharsets
 
-internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, private val context: Context, private val getCurrentActivity: () -> Activity?) : BasePowerAuthService(objectRegister) {
+internal class PowerAuthService(
+    val objectRegister: PowerAuthObjectRegister,
+    private val context: Context,
+    private val getCurrentActivity: () -> Activity?
+) : BasePowerAuthService(objectRegister) {
 
     override val name = "powerauth"
 
@@ -145,121 +148,41 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.CONFIGURE to MethodHandler { call, result ->
-                configure(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.IS_CONFIGURED to MethodHandler { call, result -> isConfigured(call, result) },
-            HandlerNames.DECONFIGURE to MethodHandler { call, result -> deconfigure(call, result) },
-            HandlerNames.HAS_VALID_ACTIVATION to MethodHandler { call, result ->
-                hasValidActivation(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.CAN_START_ACTIVATION to MethodHandler { call, result ->
-                canStartActivation(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.HAS_PENDING_ACTIVATION to MethodHandler { call, result ->
-                hasPendingActivation(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.GET_ACTIVATION_IDENTIFIER to MethodHandler { call, result ->
-                getActivationIdentifier(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.GET_ACTIVATION_FINGERPRINT to MethodHandler { call, result ->
-                getActivationFingerprint(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.FETCH_ACTIVATION_STATUS to MethodHandler { call, result ->
-                fetchActivationStatus(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.REMOVE_ACTIVATION_LOCAL to MethodHandler { call, result ->
-                removeActivationLocal(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION to MethodHandler { call, result ->
-                removeActivationWithAuthentication(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.CREATE_ACTIVATION to MethodHandler { call, result -> createActivation(call, result) },
-            HandlerNames.PERSIST_ACTIVATION to MethodHandler { call, result ->
-                persistActivation(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.VALIDATE_PASSWORD to MethodHandler { call, result -> validatePassword(call, result) },
-            HandlerNames.CHANGE_PASSWORD to MethodHandler { call, result -> changePassword(call, result) },
-            HandlerNames.REQUEST_GET_SIGNATURE to MethodHandler { call, result ->
-                requestGetSignature(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.REQUEST_SIGNATURE to MethodHandler { call, result -> requestSignature(call, result) },
-            HandlerNames.OFFLINE_SIGNATURE to MethodHandler { call, result -> offlineSignature(call, result) },
-            HandlerNames.VERIFY_SERVER_SIGNED_DATA to MethodHandler { call, result ->
-                verifyServerSignedData(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.GET_BIOMETRY_INFO to MethodHandler { _, result -> getBiometryInfo(context, result) },
-            HandlerNames.ADD_BIOMETRY_FACTOR to MethodHandler { call, result ->
-                addBiometryFactor(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.HAS_BIOMETRY_FACTOR to MethodHandler { call, result ->
-                hasBiometryFactor(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.REMOVE_BIOMETRY_FACTOR to MethodHandler { call, result ->
-                removeBiometryFactor(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.AUTHENTICATE_WITH_BIOMETRY to MethodHandler { call, result ->
-                authenticateWithBiometry(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.REQUEST_ACCESS_TOKEN to MethodHandler { call, result -> requestAccessToken(call, result) },
-            HandlerNames.REMOVE_ACCESS_TOKEN to MethodHandler { call, result -> removeAccessToken(call, result) },
-            HandlerNames.HAS_LOCAL_TOKEN to MethodHandler { call, result -> hasLocalToken(call, result) },
-            HandlerNames.GET_LOCAL_TOKEN to MethodHandler { call, result -> getLocalToken(call, result) },
-            HandlerNames.REMOVE_LOCAL_TOKEN to MethodHandler { call, result -> removeLocalToken(call, result) },
-            HandlerNames.REMOVE_ALL_LOCAL_TOKENS to MethodHandler { call, result -> removeAllLocalTokens(call, result) },
-            HandlerNames.GENERATE_HEADER_FOR_TOKEN to MethodHandler { call, result -> generateHeaderForToken(call, result) },
-            HandlerNames.FETCH_ENCRYPTION_KEY to MethodHandler { call, result -> fetchEncryptionKey(call, result) },
-            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to MethodHandler { call, result -> signDataWithDevicePrivateKey(call, result) },
-            HandlerNames.FETCH_USER_INFO to MethodHandler { call, result -> fetchUserInfo(call, result) },
-            HandlerNames.GET_LAST_FETCHED_USER_INFO to MethodHandler { call, result -> getLastFetchedUserInfo(call, result) }
+            HandlerNames.CONFIGURE to this::configure,
+            HandlerNames.IS_CONFIGURED to this::isConfigured,
+            HandlerNames.DECONFIGURE to this::deconfigure,
+            HandlerNames.HAS_VALID_ACTIVATION to this::hasValidActivation,
+            HandlerNames.CAN_START_ACTIVATION to this::canStartActivation,
+            HandlerNames.HAS_PENDING_ACTIVATION to this::hasPendingActivation,
+            HandlerNames.GET_ACTIVATION_IDENTIFIER to this::getActivationIdentifier,
+            HandlerNames.GET_ACTIVATION_FINGERPRINT to this::getActivationFingerprint,
+            HandlerNames.FETCH_ACTIVATION_STATUS to this::fetchActivationStatus,
+            HandlerNames.REMOVE_ACTIVATION_LOCAL to this::removeActivationLocal,
+            HandlerNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION to this::removeActivationWithAuthentication,
+            HandlerNames.CREATE_ACTIVATION to this::createActivation,
+            HandlerNames.PERSIST_ACTIVATION to this::persistActivation,
+            HandlerNames.VALIDATE_PASSWORD to this::validatePassword,
+            HandlerNames.CHANGE_PASSWORD to this::changePassword,
+            HandlerNames.REQUEST_GET_SIGNATURE to this::requestGetSignature,
+            HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
+            HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
+            HandlerNames.VERIFY_SERVER_SIGNED_DATA to this::verifyServerSignedData,
+            HandlerNames.GET_BIOMETRY_INFO to this::getBiometryInfo,
+            HandlerNames.ADD_BIOMETRY_FACTOR to this::addBiometryFactor,
+            HandlerNames.HAS_BIOMETRY_FACTOR to this::hasBiometryFactor,
+            HandlerNames.REMOVE_BIOMETRY_FACTOR to this::removeBiometryFactor,
+            HandlerNames.AUTHENTICATE_WITH_BIOMETRY to this::authenticateWithBiometry,
+            HandlerNames.REQUEST_ACCESS_TOKEN to this::requestAccessToken,
+            HandlerNames.REMOVE_ACCESS_TOKEN to this::removeAccessToken,
+            HandlerNames.HAS_LOCAL_TOKEN to this::hasLocalToken,
+            HandlerNames.GET_LOCAL_TOKEN to this::getLocalToken,
+            HandlerNames.REMOVE_LOCAL_TOKEN to this::removeLocalToken,
+            HandlerNames.REMOVE_ALL_LOCAL_TOKENS to this::removeAllLocalTokens,
+            HandlerNames.GENERATE_HEADER_FOR_TOKEN to this::generateHeaderForToken,
+            HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
+            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to this::signDataWithDevicePrivateKey,
+            HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
+            HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo
         )
     }
 
@@ -271,13 +194,16 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val clientConfigMap = call.argument<Map<String, Any>>(CLIENT_CONFIGURATION)
             val biometryConfigMap = call.argument<Map<String, Any>>(BIOMETRY_CONFIGURATION)
             val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
+
             @Suppress("UNUSED_VARIABLE")
             val sharingConfigMap = call.argument<Map<String, Any>>(SHARING_CONFIGURATION)
 
             val registered = registerPowerAuthInstance(instanceId) {
-                val powerAuthConfiguration = buildPowerAuthConfiguration(instanceId, configurationMap)
+                val powerAuthConfiguration =
+                    buildPowerAuthConfiguration(instanceId, configurationMap)
                 val clientConfiguration = buildPowerAuthClientConfiguration(clientConfigMap)
-                val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
+                val keychainConfiguration =
+                    buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
 
                 val sdkBuilder = PowerAuthSDK.Builder(powerAuthConfiguration)
                     .clientConfiguration(clientConfiguration)
@@ -291,7 +217,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             if (registered) {
                 result.success(null)
             } else {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "PowerAuth instance '$instanceId' is already configured or registration failed.")
+                throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "PowerAuth instance '$instanceId' is already configured or registration failed."
+                )
             }
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -355,6 +284,7 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                 override fun onActivationStatusSucceed(status: ActivationStatus) {
                     result.success(activationStatusToMap(status))
                 }
+
                 override fun onActivationStatusFailed(t: Throwable) {
                     Errors.error(result, t)
                 }
@@ -373,14 +303,18 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
         usePowerAuth(call, result) { sdk ->
             val authentication = buildAuthenticationObject(call, persist = false)
 
-            sdk.removeActivationWithAuthentication(context, authentication, object: IActivationRemoveListener {
-                override fun onActivationRemoveSucceed() {
-                    result.success(null)
-                }
-                override fun onActivationRemoveFailed(t: Throwable) {
-                    Errors.error(result, t)
-                }
-            })
+            sdk.removeActivationWithAuthentication(
+                context,
+                authentication,
+                object : IActivationRemoveListener {
+                    override fun onActivationRemoveSucceed() {
+                        result.success(null)
+                    }
+
+                    override fun onActivationRemoveFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                })
         }
     }
 
@@ -389,10 +323,11 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val activationMap: Map<String, Any> = call.getRequiredArgument(ACTIVATION)
             val activation = buildActivationObject(activationMap)
 
-            sdk.createActivation(activation, object: ICreateActivationListener {
+            sdk.createActivation(activation, object : ICreateActivationListener {
                 override fun onActivationCreateSucceed(activationResult: CreateActivationResult) {
                     result.success(createActivationResultToMap(activationResult))
                 }
+
                 override fun onActivationCreateFailed(t: Throwable) {
                     Errors.error(result, t)
                 }
@@ -409,9 +344,13 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && useBiometryActual) {
                 val corePassword = authenticationObject.password
-                    ?: throw WrapperException(Errors.EC_FLUTTER_ERROR, "Password could not be retrieved from authentication object for biometric persist.")
+                    ?: throw WrapperException(
+                        Errors.EC_FLUTTER_ERROR,
+                        "Password could not be retrieved from authentication object for biometric persist."
+                    )
 
-                val promptMap: Map<String, String>? = authMap[BIOMETRIC_PROMPT] as? Map<String, String>
+                val promptMap: Map<String, String>? =
+                    authMap[BIOMETRIC_PROMPT] as? Map<String, String>
                 val (title, description) = extractPromptStrings(promptMap)
 
                 val activity = validateFragmentActivity(getCurrentActivity())
@@ -424,18 +363,24 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                     corePassword,
                     object : IPersistActivationWithBiometricsListener {
                         override fun onBiometricDialogCancelled() {
-                            Errors.error(result, PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL))
+                            Errors.error(
+                                result,
+                                PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
+                            )
                         }
+
                         override fun onBiometricDialogSuccess() {
                             result.success(null)
                         }
+
                         override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
                             Errors.error(result, error)
                         }
                     }
                 )
             } else {
-                val resultCode = sdk.persistActivationWithAuthentication(context, authenticationObject)
+                val resultCode =
+                    sdk.persistActivationWithAuthentication(context, authenticationObject)
                 if (resultCode == PowerAuthErrorCodes.SUCCEED) {
                     result.success(null)
                 } else {
@@ -450,10 +395,11 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val password = buildPasswordObject(passwordMap, use = true)
 
-            sdk.validatePassword(context, password, object: IValidatePasswordListener {
+            sdk.validatePassword(context, password, object : IValidatePasswordListener {
                 override fun onPasswordValid() {
                     result.success(null)
                 }
+
                 override fun onPasswordValidationFailed(t: Throwable) {
                     Errors.error(result, t)
                 }
@@ -469,10 +415,11 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val oldPassword = buildPasswordObject(oldPasswordMap, use = true)
             val newPassword = buildPasswordObject(newPasswordMap, use = true)
 
-            sdk.changePassword(context, oldPassword, newPassword, object: IChangePasswordListener {
+            sdk.changePassword(context, oldPassword, newPassword, object : IChangePasswordListener {
                 override fun onPasswordChangeSucceed() {
                     result.success(null)
                 }
+
                 override fun onPasswordChangeFailed(t: Throwable) {
                     Errors.error(result, t)
                 }
@@ -486,7 +433,12 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val uriId: String = call.getRequiredArgument(URI_ID)
             val queryParams: Map<String, String>? = call.argument(QUERY_PARAMS)
 
-            val header = sdk.requestGetSignatureWithAuthentication(context, authentication, uriId, queryParams)
+            val header = sdk.requestGetSignatureWithAuthentication(
+                context,
+                authentication,
+                uriId,
+                queryParams
+            )
 
             if (header.powerAuthErrorCode == PowerAuthErrorCodes.SUCCEED) {
                 result.success(authorizationHeaderToMap(header))
@@ -504,7 +456,13 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val bodyString: String? = call.argument(BODY)
             val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
 
-            val header = sdk.requestSignatureWithAuthentication(context, authentication, method, uriId, requestData)
+            val header = sdk.requestSignatureWithAuthentication(
+                context,
+                authentication,
+                method,
+                uriId,
+                requestData
+            )
 
             if (header.powerAuthErrorCode == PowerAuthErrorCodes.SUCCEED) {
                 result.success(authorizationHeaderToMap(header))
@@ -523,7 +481,13 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
 
             try {
-                val signature = sdk.offlineSignatureWithAuthentication(context, authentication, uriId, requestData, nonce)
+                val signature = sdk.offlineSignatureWithAuthentication(
+                    context,
+                    authentication,
+                    uriId,
+                    requestData,
+                    nonce
+                )
 
                 if (signature != null) {
                     result.success(signature)
@@ -607,13 +571,22 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                     result.success(null)
                 } else {
                     if (!sdk.hasBiometryFactor(context)) {
-                        throw WrapperException(Errors.EC_BIOMETRY_NOT_CONFIGURED, "Biometry factor was not configured.")
+                        throw WrapperException(
+                            Errors.EC_BIOMETRY_NOT_CONFIGURED,
+                            "Biometry factor was not configured."
+                        )
                     } else {
-                        throw WrapperException(Errors.EC_FLUTTER_ERROR, "Failed to remove biometry factor for unknown reason.")
+                        throw WrapperException(
+                            Errors.EC_FLUTTER_ERROR,
+                            "Failed to remove biometry factor for unknown reason."
+                        )
                     }
                 }
             } else {
-                throw WrapperException(Errors.EC_BIOMETRY_NOT_SUPPORTED, "Biometry requires Android 6.0 (API 23) or higher")
+                throw WrapperException(
+                    Errors.EC_BIOMETRY_NOT_SUPPORTED,
+                    "Biometry requires Android 6.0 (API 23) or higher"
+                )
             }
         }
     }
@@ -636,13 +609,22 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                     description,
                     object : IAuthenticateWithBiometricsListener {
                         override fun onBiometricDialogCancelled(userCancel: Boolean) {
-                            Errors.error(result, PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL))
+                            Errors.error(
+                                result,
+                                PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
+                            )
                         }
 
                         override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
                             val key = authentication.biometryFactorRelatedKey
                             if (key == null) {
-                                Errors.error(result, WrapperException(Errors.EC_FLUTTER_ERROR, "Biometric key missing after success."))
+                                Errors.error(
+                                    result,
+                                    WrapperException(
+                                        Errors.EC_FLUTTER_ERROR,
+                                        "Biometric key missing after success."
+                                    )
+                                )
                                 return
                             }
 
@@ -677,32 +659,68 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
 
         val activationBuilder = when {
             activationCode != null -> PowerAuthActivation.Builder.activation(activationCode, name)
-            identityAttributes != null -> PowerAuthActivation.Builder.customActivation(identityAttributes, name)
+            identityAttributes != null -> PowerAuthActivation.Builder.customActivation(
+                identityAttributes,
+                name
+            )
+
             oidcParameters != null -> {
-                val providerId = oidcParameters["providerId"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing providerId in oidcParameters")
-                val code = oidcParameters["code"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing code in oidcParameters")
-                val nonce = oidcParameters["nonce"] ?: throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing nonce in oidcParameters")
+                val providerId = oidcParameters["providerId"] ?: throw WrapperException(
+                    Errors.EC_INVALID_ACTIVATION_OBJECT,
+                    "Missing providerId in oidcParameters"
+                )
+                val code = oidcParameters["code"] ?: throw WrapperException(
+                    Errors.EC_INVALID_ACTIVATION_OBJECT,
+                    "Missing code in oidcParameters"
+                )
+                val nonce = oidcParameters["nonce"] ?: throw WrapperException(
+                    Errors.EC_INVALID_ACTIVATION_OBJECT,
+                    "Missing nonce in oidcParameters"
+                )
                 val codeVerifier = oidcParameters["codeVerifier"]
 
                 try {
-                    PowerAuthActivation.Builder.oidcActivation(providerId, code, nonce, codeVerifier)
+                    PowerAuthActivation.Builder.oidcActivation(
+                        providerId,
+                        code,
+                        nonce,
+                        codeVerifier
+                    )
                 } catch (e: PowerAuthErrorException) {
-                    throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Invalid OIDC parameters provided")
+                    throw WrapperException(
+                        Errors.EC_INVALID_ACTIVATION_OBJECT,
+                        "Invalid OIDC parameters provided"
+                    )
                 }
 
 
             }
-            else -> throw WrapperException(Errors.EC_INVALID_ACTIVATION_OBJECT, "Missing activationCode, identityAttributes, or oidcParameters")
+
+            else -> throw WrapperException(
+                Errors.EC_INVALID_ACTIVATION_OBJECT,
+                "Missing activationCode, identityAttributes, or oidcParameters"
+            )
         }
 
         (map[EXTRAS] as? String)?.let { activationBuilder.setExtras(it) }
-        (map[ADDITIONAL_ACTIVATION_OTP] as? String)?.let { activationBuilder.setAdditionalActivationOtp(it) }
-        (map[CUSTOM_ATTRIBUTES] as? Map<String, Any>)?.let { activationBuilder.setCustomAttributes(it) }
+        (map[ADDITIONAL_ACTIVATION_OTP] as? String)?.let {
+            activationBuilder.setAdditionalActivationOtp(
+                it
+            )
+        }
+        (map[CUSTOM_ATTRIBUTES] as? Map<String, Any>)?.let {
+            activationBuilder.setCustomAttributes(
+                it
+            )
+        }
 
         return activationBuilder.build()
     }
 
-    private fun buildAuthenticationObject(call: MethodCall, persist: Boolean): PowerAuthAuthentication {
+    private fun buildAuthenticationObject(
+        call: MethodCall,
+        persist: Boolean
+    ): PowerAuthAuthentication {
         val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
@@ -717,7 +735,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
 
         return if (persist) {
             if (password == null) {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Password is required for persisting activation.")
+                throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Password is required for persisting activation."
+                )
             }
 
             if (useBiometry) {
@@ -730,7 +751,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                 }
 
                 if (biometricKeyBytes != null) {
-                    PowerAuthAuthentication.persistWithPasswordAndBiometry(password, biometricKeyBytes)
+                    PowerAuthAuthentication.persistWithPasswordAndBiometry(
+                        password,
+                        biometricKeyBytes
+                    )
                 } else {
                     PowerAuthAuthentication.persistWithPassword(password)
                 }
@@ -772,13 +796,19 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
             }
         }
 
-        throw WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid password argument. Expected a map with 'objectId' string.")
+        throw WrapperException(
+            Errors.EC_WRONG_PARAMETER,
+            "Invalid password argument. Expected a map with 'objectId' string."
+        )
     }
 
     @Throws(PowerAuthErrorException::class)
     private fun getPowerAuthInstance(instanceId: String): PowerAuthSDK? {
         if (!objectRegister.isValidObjectId(instanceId)) {
-            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid.")
+            throw PowerAuthErrorException(
+                PowerAuthErrorCodes.WRONG_PARAMETER,
+                "Instance ID is missing or invalid."
+            )
         }
 
         return objectRegister.findObject(instanceId, PowerAuthSDK::class.java)
@@ -790,7 +820,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
         factory: PowerAuthObjectRegister.ObjectFactory<PowerAuthSDK>
     ): Boolean {
         if (!objectRegister.isValidObjectId(instanceId)) {
-            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for registration.")
+            throw PowerAuthErrorException(
+                PowerAuthErrorCodes.WRONG_PARAMETER,
+                "Instance ID is missing or invalid for registration."
+            )
         }
 
         return objectRegister.registerObjectWithId(
@@ -804,7 +837,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
     @Throws(PowerAuthErrorException::class)
     private fun unregisterPowerAuthInstance(instanceId: String) {
         if (!objectRegister.isValidObjectId(instanceId)) {
-            throw PowerAuthErrorException(PowerAuthErrorCodes.WRONG_PARAMETER, "Instance ID is missing or invalid for unregistration.")
+            throw PowerAuthErrorException(
+                PowerAuthErrorCodes.WRONG_PARAMETER,
+                "Instance ID is missing or invalid for unregistration."
+            )
         }
 
         objectRegister.removeAllObjectsWithTag(instanceId)
@@ -828,6 +864,7 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                             )
                         )
                     }
+
                     override fun onGetTokenFailed(t: Throwable) {
                         Errors.error(result, t)
                     }
@@ -847,6 +884,7 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                     override fun onRemoveTokenSucceeded() {
                         result.success(null)
                     }
+
                     override fun onRemoveTokenFailed(t: Throwable) {
                         Errors.error(result, t)
                     }
@@ -917,7 +955,11 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                 val header = token.generateHeader()
                 result.success(mapOf("key" to header.key, "value" to header.value))
             } else {
-                result.error(Errors.EC_CANNOT_GENERATE_TOKEN, "Cannot generate header for this token.", null)
+                result.error(
+                    Errors.EC_CANNOT_GENERATE_TOKEN,
+                    "Cannot generate header for this token.",
+                    null
+                )
             }
         }
     }
@@ -935,6 +977,7 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                     override fun onFetchEncryptionKeySucceed(key: ByteArray) {
                         result.success(Base64.encodeToString(key, Base64.NO_WRAP))
                     }
+
                     override fun onFetchEncryptionKeyFailed(t: Throwable) {
                         Errors.error(result, t)
                     }
@@ -988,5 +1031,10 @@ internal class PowerAuthService(val objectRegister: PowerAuthObjectRegister, pri
                 result.success(null)
             }
         }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun getBiometryInfo(call: MethodCall, result: Result) {
+        getBiometryInfo(context, result)
     }
 }

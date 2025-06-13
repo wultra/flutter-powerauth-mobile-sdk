@@ -19,7 +19,7 @@ package com.wultra.android.powerauth.flutter
 /**
  * Interface for objects stored in the objects register.
  */
-interface IManagedObject<T: Any> {
+interface IManagedObject<T : Any> {
 
     /**
      * Do cleanup when object is being removed from the register.

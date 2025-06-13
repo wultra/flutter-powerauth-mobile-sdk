@@ -18,7 +18,6 @@ package com.wultra.android.powerauth.flutter.internal.services
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthFlutterService.MethodHandler
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.Password
@@ -59,42 +58,33 @@ internal class PowerAuthPasswordService(
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.PASSWORD_INITIALIZE to MethodHandler { call, result -> initialize(call, result) },
-            HandlerNames.PASSWORD_RELEASE to MethodHandler { call, result -> release(call, result) },
-            HandlerNames.PASSWORD_CLEAR to MethodHandler { call, result -> clear(call, result) },
-            HandlerNames.PASSWORD_LENGTH to MethodHandler { call, result -> length(call, result) },
-            HandlerNames.PASSWORD_ADD_CHARACTER to MethodHandler { call, result -> addCharacter(call, result) },
-            HandlerNames.PASSWORD_INSERT_CHARACTER to MethodHandler { call, result ->
-                insertCharacter(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.PASSWORD_REMOVE_LAST_CHARACTER to MethodHandler { call, result ->
-                removeLastCharacter(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.PASSWORD_REMOVE_CHARACTER_AT to MethodHandler { call, result ->
-                removeCharacterAt(
-                    call,
-                    result
-                )
-            },
-            HandlerNames.PASSWORD_IS_EQUAL to MethodHandler { call, result -> isEqual(call, result) }
+            HandlerNames.PASSWORD_INITIALIZE to this::initialize,
+            HandlerNames.PASSWORD_RELEASE to this::release,
+            HandlerNames.PASSWORD_CLEAR to this::clear,
+            HandlerNames.PASSWORD_LENGTH to this::length,
+            HandlerNames.PASSWORD_ADD_CHARACTER to this::addCharacter,
+            HandlerNames.PASSWORD_INSERT_CHARACTER to this::insertCharacter,
+            HandlerNames.PASSWORD_REMOVE_LAST_CHARACTER to this::removeLastCharacter,
+            HandlerNames.PASSWORD_REMOVE_CHARACTER_AT to this::removeCharacterAt,
+            HandlerNames.PASSWORD_IS_EQUAL to this::isEqual
         )
     }
 
-    private fun <R> withPassword(call: MethodCall, result: Result, block: (password: Password) -> R) {
+    private fun <T> withPassword(
+        call: MethodCall,
+        result: Result,
+        block: (password: Password) -> T
+    ) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
             val password = objectRegister.touchObject(objectId, Password::class.java)
-                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$objectId' is no longer valid or not found.")
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Password object '$objectId' is no longer valid or not found."
+                )
 
             val blockResult = block(password)
 
-            // TODO: double-check whether we should always result strongly or whether to move this into the block
             if (blockResult is Unit) {
                 result.success(null)
             } else {
@@ -105,21 +95,30 @@ internal class PowerAuthPasswordService(
         }
     }
 
-    private fun <R> withPasswordAndCharacter(call: MethodCall, result: Result, block: (password: Password, codePoint: Int) -> R) {
+    private fun <T> withPasswordAndCharacter(
+        call: MethodCall,
+        result: Result,
+        block: (password: Password, codePoint: Int) -> T
+    ) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
             val characterInt: Int = call.getRequiredArgument(CHARACTER)
 
             if (characterInt < 0 || characterInt > Constants.CODEPOINT_MAX) {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Invalid CodePoint: $characterInt")
+                throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Invalid CodePoint: $characterInt"
+                )
             }
 
             val password = objectRegister.touchObject(objectId, Password::class.java)
-                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$objectId' is no longer valid or not found.")
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Password object '$objectId' is no longer valid or not found."
+                )
 
             val blockResult = block(password, characterInt)
 
-            // TODO: double-check whether we should always result strongly or whether to move this into the block
             if (blockResult is Unit) {
                 result.success(null)
             } else {
@@ -134,10 +133,18 @@ internal class PowerAuthPasswordService(
         try {
             val destroyOnUse: Boolean = call.argument<Boolean>(DESTROY_ON_USE) ?: false
             val ownerId: String? = call.argument<String>(OWNER_ID)
-            val autoreleaseTimeMs: Int = call.argument<Int>(AUTORELEASE_TIME) ?: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
+            val autoreleaseTimeMs: Int =
+                call.argument<Int>(AUTORELEASE_TIME) ?: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
 
-            if (ownerId != null && objectRegister.findObject(ownerId, PowerAuthSDK::class.java) == null) {
-                throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance for ownerId '$ownerId' is not configured.")
+            if (ownerId != null && objectRegister.findObject(
+                    ownerId,
+                    PowerAuthSDK::class.java
+                ) == null
+            ) {
+                throw WrapperException(
+                    Errors.EC_INSTANCE_NOT_CONFIGURED,
+                    "PowerAuth instance for ownerId '$ownerId' is not configured."
+                )
             }
 
             var actualReleaseTime = Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
@@ -179,9 +186,15 @@ internal class PowerAuthPasswordService(
             val id2: String = call.getRequiredArgument(OTHER_OBJECT_ID)
 
             val p1 = objectRegister.touchObject(id1, Password::class.java)
-                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$id1' is no longer valid or not found.")
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Password object '$id1' is no longer valid or not found."
+                )
             val p2 = objectRegister.touchObject(id2, Password::class.java)
-                ?: throw WrapperException(Errors.EC_INVALID_NATIVE_OBJECT, "Password object '$id2' is no longer valid or not found.")
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Password object '$id2' is no longer valid or not found."
+                )
 
             result.success(p1.isEqualToPassword(p2))
         } catch (t: Throwable) {
@@ -207,7 +220,10 @@ internal class PowerAuthPasswordService(
 
                     return@withPasswordAndCharacter password.length()
                 } else {
-                    throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
+                    throw WrapperException(
+                        Errors.EC_WRONG_PARAMETER,
+                        "Position $position is out of range for password length ${password.length()}."
+                    )
                 }
             }
         } catch (t: Throwable) {
@@ -236,7 +252,10 @@ internal class PowerAuthPasswordService(
 
                     return@withPassword password.length()
                 }
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Position $position is out of range for password length ${password.length()}.")
+                throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Position $position is out of range for password length ${password.length()}."
+                )
             }
         } catch (t: Throwable) {
             Errors.error(result, t)

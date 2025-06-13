@@ -47,7 +47,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     /**
      * Factory that creates an object on demand.
      */
-    fun interface ObjectFactory<T: Any> {
+    fun interface ObjectFactory<T : Any> {
         @Throws(Throwable::class)
         fun create(): IManagedObject<T>
     }
@@ -128,7 +128,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                 // This means that object is expired or was used for a limited number of times.
                 // On other side, if time is specified then the object was explicitly removed, so
                 // it should be ready for remove after a short delay period.
-                val readyNow = removeOrderTime == 0L || (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
+                val readyNow =
+                    removeOrderTime == 0L || (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
 
                 if (readyNow) {
                     obj.cleanup()
@@ -153,7 +154,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     /**
      * Registers an object and returns its unique identifier.
      */
-    fun <T: Any> registerObject(
+    fun <T : Any> registerObject(
         objectWrapper: IManagedObject<T>,
         tag: String?,
         releasePolicies: List<ReleasePolicy>
@@ -169,7 +170,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     /**
      * Registers an object with an application-provided identifier.
      */
-    fun <T: Any> registerObjectWithId(
+    fun <T : Any> registerObjectWithId(
         id: String,
         objectWrapper: IManagedObject<T>,
         tag: String?,
@@ -189,7 +190,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      * Registers an object provided by a factory with an application-provided identifier.
      */
     @Throws(Throwable::class)
-    fun <T: Any> registerObjectWithId(
+    fun <T : Any> registerObjectWithId(
         id: String,
         tag: String?,
         releasePolicies: List<ReleasePolicy>,
@@ -215,7 +216,11 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      * @param <T> Expected object's type.
      * @return instance of object with given identifier or null if no such object exists in register.
     </T> */
-    private fun <T: Any> findAndProcessObject(id: String?, expectedClass: Class<T>?, options: Int): T? {
+    private fun <T : Any> findAndProcessObject(
+        id: String?,
+        expectedClass: Class<T>?,
+        options: Int
+    ): T? {
         val objectId = id ?: return null
         val holder = managedObjects[objectId] ?: return null
 
@@ -250,7 +255,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return findAndProcessObject(id, type, OPT_TOUCH)
     }
 
-    fun <T: Any> removeObject(id: String, type: Class<T>): T? = lock.withLock {
+    fun <T : Any> removeObject(id: String, type: Class<T>): T? = lock.withLock {
         return@withLock findAndProcessObject(id, type, OPT_REMOVE)
     }
 
@@ -298,7 +303,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return !id.isNullOrEmpty()
     }
 
-    fun setCleanupPeriod(periodMs: Long) = lock.withLock {
+    private fun setCleanupPeriod(periodMs: Long) = lock.withLock {
         cleanupPeriodMs = if (periodMs in CLEANUP_PERIOD_MIN..CLEANUP_PERIOD_MAX) {
             periodMs
         } else {
@@ -346,7 +351,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     lock.withLock { performCleanup() }
                 }
             }, cleanupPeriodMs, cleanupPeriodMs)
-        } catch (_: IllegalStateException) {}
+        } catch (_: IllegalStateException) {
+        }
     }
 
     private fun stopCleanupJob() {
@@ -382,6 +388,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         if (!isDebug) {
             return emptyList()
         }
+
         return lock.withLock {
             val result = mutableListOf<Map<String, Any?>>()
             for ((key, value) in managedObjects) {
@@ -391,7 +398,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     result.add(dump)
                 }
             }
-            result
+
+            return@withLock result
         }
     }
 
@@ -399,85 +407,137 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         if (!isDebug) {
             return null
         }
-            val objectId = data["objectId"] as? String
-            when (command) {
-                "create" -> {
-                    val objectType = data["objectType"] as? String
-                    val objectTag = data["objectTag"] as? String
-                    val releasePolicyDescription = data["releasePolicy"] as? List<String>
-                    val policies = mutableListOf<ReleasePolicy>()
-                    if (releasePolicyDescription != null) {
-                        for (policy in releasePolicyDescription) {
-                            val components = policy.split(" ".toRegex()).toTypedArray()
-                            val param = if (components.size > 1) components[1].toInt() else 1
-                            when {
-                                policy.startsWith("manual") -> policies.add(ReleasePolicy.manual())
-                                policy.startsWith("afterUse") -> policies.add(ReleasePolicy.afterUse(param))
-                                policy.startsWith("keepAlive") -> policies.add(ReleasePolicy.keepAlive(param))
-                                policy.startsWith("expire") -> policies.add(ReleasePolicy.expire(param))
-                            }
-                        }
-                    }
-                    if (policies.isNotEmpty()) {
-                        val newObject: IManagedObject<out Any>? = when (objectType) {
-                            "data" -> {
-                                val td = "TEST-DATA".toByteArray(StandardCharsets.UTF_8)
-                                ManagedAny.wrap(td, null)
-                            }
-                            "secureData" -> {
-                                val td = "SECURE-DATA".toByteArray(StandardCharsets.UTF_8)
-                                ManagedAny.wrap(td)
-                            }
-                            "number" -> ManagedAny.wrap(42)
-                            "password" -> ManagedAny.wrap(Password(), cleanupAction = { password -> password.destroy() })
-                            else -> null
-                        }
-                        if (newObject != null) {
-                            return registerObject(newObject, objectTag, policies)
-                        }
-                    }
-                    return null
-                }
-                "release" -> {
-                    val objectIdNonNull = objectId ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing objectId")
-                    val objectType = data["objectType"] as? String
-                    val clazz = getClassForObjectType(objectType) ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                    val removedInstance = removeObject(objectIdNonNull, clazz)
 
-                    return removedInstance != null
-                }
-                "releaseAll" -> {
-                    val tag = data["objectTag"] as? String
-                    removeAllObjectsWithTag(tag)
-                    return null
-                }
-                "use" -> {
-                    val objectIdNonNull = objectId ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing objectId")
-                    val objectType = data["objectType"] as? String
-                    val clazz = getClassForObjectType(objectType) ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                    return useObject(objectIdNonNull, clazz) != null
-                }
-                "find" -> {
-                    val objectIdNonNull = objectId ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing objectId")
-                    val objectType = data["objectType"] as? String
-                    val clazz = getClassForObjectType(objectType) ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                    return findObject(objectIdNonNull, clazz) != null
-                }
-                "touch" -> {
-                    val objectIdNonNull = objectId ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing objectId")
-                    val objectType = data["objectType"] as? String
-                    val clazz = getClassForObjectType(objectType) ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                    return touchObject(objectIdNonNull, clazz) != null
-                }
-                "setPeriod" -> {
-                    val period = data["cleanupPeriod"] as? Int
-                    if (period != null) {
-                        setCleanupPeriod(period.toLong())
+        val objectId = data["objectId"] as? String
+        when (command) {
+            "create" -> {
+                val objectType = data["objectType"] as? String
+                val objectTag = data["objectTag"] as? String
+                val releasePolicyDescription = data["releasePolicy"] as? List<String>
+
+                val policies = mutableListOf<ReleasePolicy>()
+
+                if (releasePolicyDescription != null) {
+                    for (policy in releasePolicyDescription) {
+                        val components = policy.split(" ".toRegex()).toTypedArray()
+                        val param = if (components.size > 1) components[1].toInt() else 1
+
+                        when {
+                            policy.startsWith("manual") -> policies.add(ReleasePolicy.manual())
+                            policy.startsWith("afterUse") -> policies.add(
+                                ReleasePolicy.afterUse(
+                                    param
+                                )
+                            )
+
+                            policy.startsWith("keepAlive") -> policies.add(
+                                ReleasePolicy.keepAlive(
+                                    param
+                                )
+                            )
+
+                            policy.startsWith("expire") -> policies.add(ReleasePolicy.expire(param))
+                        }
                     }
-                    return null
                 }
-                else -> throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unsupported debug command: $command")
+
+                if (policies.isNotEmpty()) {
+                    val newObject: IManagedObject<out Any>? = when (objectType) {
+                        "data" -> {
+                            val td = "TEST-DATA".toByteArray(StandardCharsets.UTF_8)
+                            ManagedAny.wrap(td, null)
+                        }
+
+                        "secureData" -> {
+                            val td = "SECURE-DATA".toByteArray(StandardCharsets.UTF_8)
+                            ManagedAny.wrap(td)
+                        }
+
+                        "number" -> ManagedAny.wrap(42)
+                        "password" -> ManagedAny.wrap(
+                            Password(),
+                            cleanupAction = { password -> password.destroy() })
+
+                        else -> null
+                    }
+                    if (newObject != null) {
+                        return registerObject(newObject, objectTag, policies)
+                    }
+                }
+
+                return null
             }
+
+            "release" -> {
+                val objectIdNonNull = objectId ?: throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Missing objectId"
+                )
+                val objectType = data["objectType"] as? String
+                val clazz = getClassForObjectType(objectType)
+                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+                val removedInstance = removeObject(objectIdNonNull, clazz)
+
+                return removedInstance != null
+            }
+
+            "releaseAll" -> {
+                val tag = data["objectTag"] as? String
+                removeAllObjectsWithTag(tag)
+
+                return null
+            }
+
+            "use" -> {
+                val objectIdNonNull = objectId ?: throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Missing objectId"
+                )
+                val objectType = data["objectType"] as? String
+                val clazz = getClassForObjectType(objectType)
+                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+
+                return useObject(objectIdNonNull, clazz) != null
+            }
+
+            "find" -> {
+                val objectIdNonNull = objectId ?: throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Missing objectId"
+                )
+                val objectType = data["objectType"] as? String
+                val clazz = getClassForObjectType(objectType)
+                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+
+                return findObject(objectIdNonNull, clazz) != null
+            }
+
+            "touch" -> {
+                val objectIdNonNull = objectId ?: throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Missing objectId"
+                )
+                val objectType = data["objectType"] as? String
+                val clazz = getClassForObjectType(objectType)
+                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+
+                return touchObject(objectIdNonNull, clazz) != null
+            }
+
+            "setPeriod" -> {
+                val period = data["cleanupPeriod"] as? Int
+                if (period != null) {
+                    setCleanupPeriod(period.toLong())
+                }
+
+                return null
+            }
+
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Unsupported debug command: $command"
+            )
+        }
     }
 
     private fun getClassForObjectType(objectType: String?): Class<out Any>? {

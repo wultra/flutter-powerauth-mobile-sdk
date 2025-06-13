@@ -35,13 +35,23 @@ import io.getlime.security.powerauth.sdk.PowerAuthKeychainConfiguration
 
 object PowerAuthConfigurationUtils {
 
-    fun buildPowerAuthConfiguration(instanceId: String, map: Map<String, Any>): PowerAuthConfiguration {
+    fun buildPowerAuthConfiguration(
+        instanceId: String,
+        map: Map<String, Any>
+    ): PowerAuthConfiguration {
         val baseEndpointUrl = map[BASE_ENDPOINT_URL] as? String
-            ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing '$BASE_ENDPOINT_URL' in configuration map")
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Missing '$BASE_ENDPOINT_URL' in configuration map"
+            )
         val configurationString = map[CONFIGURATION_STRING] as? String
-            ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Missing '$CONFIGURATION_STRING' string in configuration map")
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Missing '$CONFIGURATION_STRING' string in configuration map"
+            )
 
-        return PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString).build()
+        return PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
+            .build()
     }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
@@ -56,8 +66,9 @@ object PowerAuthConfigurationUtils {
                 builder.allowUnsecuredConnection(true)
             }
 
-            val connectionTimeoutMs = (map["connectionTimeout"] as? Double)?.let { (it * 1000).toInt() }
-                ?: PowerAuthClientConfiguration.DEFAULT_CONNECTION_TIMEOUT
+            val connectionTimeoutMs =
+                (map["connectionTimeout"] as? Double)?.let { (it * 1000).toInt() }
+                    ?: PowerAuthClientConfiguration.DEFAULT_CONNECTION_TIMEOUT
             val readTimeoutMs = (map["readTimeout"] as? Double)?.let { (it * 1000).toInt() }
                 ?: PowerAuthClientConfiguration.DEFAULT_READ_TIMEOUT
 
@@ -79,7 +90,12 @@ object PowerAuthConfigurationUtils {
                 val password = authMap["password"]
 
                 if (username != null && password != null) {
-                    builder.requestInterceptor(BasicHttpAuthenticationRequestInterceptor(username, password))
+                    builder.requestInterceptor(
+                        BasicHttpAuthenticationRequestInterceptor(
+                            username,
+                            password
+                        )
+                    )
                 }
             }
         }
@@ -94,10 +110,26 @@ object PowerAuthConfigurationUtils {
         val builder = PowerAuthKeychainConfiguration.Builder()
 
         biometryMap?.let {
-            (it[LINK_ITEMS_TO_CURRENT_SET] as? Boolean)?.let { v -> builder.linkBiometricItemsToCurrentSet(v) }
-            (it[CONFIRM_BIOMETRIC_AUTHENTICATION] as? Boolean)?.let { v -> builder.confirmBiometricAuthentication(v) }
-            (it[AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP] as? Boolean)?.let { v -> builder.authenticateOnBiometricKeySetup(v) }
-            (it[FALLBACK_TO_SHARED_BIOMETRY_KEY] as? Boolean)?.let { v -> builder.enableFallbackToSharedBiometryKey(v) }
+            (it[LINK_ITEMS_TO_CURRENT_SET] as? Boolean)?.let { v ->
+                builder.linkBiometricItemsToCurrentSet(
+                    v
+                )
+            }
+            (it[CONFIRM_BIOMETRIC_AUTHENTICATION] as? Boolean)?.let { v ->
+                builder.confirmBiometricAuthentication(
+                    v
+                )
+            }
+            (it[AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP] as? Boolean)?.let { v ->
+                builder.authenticateOnBiometricKeySetup(
+                    v
+                )
+            }
+            (it[FALLBACK_TO_SHARED_BIOMETRY_KEY] as? Boolean)?.let { v ->
+                builder.enableFallbackToSharedBiometryKey(
+                    v
+                )
+            }
         }
 
         keychainMap?.let {

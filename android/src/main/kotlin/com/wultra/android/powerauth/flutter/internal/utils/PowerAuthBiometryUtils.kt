@@ -70,7 +70,8 @@ object PowerAuthBiometryUtils {
 
     fun extractPromptStrings(promptMap: Map<String, Any>?): Pair<String, String> {
         val title = promptMap?.get(PROMPT_TITLE) as? String ?: Constants.MISSING_REQUIRED_STRING
-        val description = promptMap?.get(PROMPT_MESSAGE) as? String ?: Constants.MISSING_REQUIRED_STRING
+        val description =
+            promptMap?.get(PROMPT_MESSAGE) as? String ?: Constants.MISSING_REQUIRED_STRING
         return Pair(title, description)
     }
 
@@ -80,16 +81,38 @@ object PowerAuthBiometryUtils {
             when (val status = BiometricAuthentication.canAuthenticate(context)) {
                 BiometricStatus.OK -> {
                     if (sdk.hasValidActivation() && !sdk.hasBiometryFactor(context)) {
-                        throw WrapperException(Errors.EC_BIOMETRY_NOT_CONFIGURED, "Biometry factor is not configured for this activation.")
+                        throw WrapperException(
+                            Errors.EC_BIOMETRY_NOT_CONFIGURED,
+                            "Biometry factor is not configured for this activation."
+                        )
                     }
                 }
-                BiometricStatus.NOT_AVAILABLE -> throw WrapperException(Errors.EC_BIOMETRY_NOT_AVAILABLE, "Biometry is not available on this device currently.")
-                BiometricStatus.NOT_ENROLLED -> throw WrapperException(Errors.EC_BIOMETRY_NOT_ENROLLED, "No biometry enrolled on the device.")
-                BiometricStatus.NOT_SUPPORTED -> throw WrapperException(Errors.EC_BIOMETRY_NOT_SUPPORTED, "Biometry is not supported on this device.")
-                else -> throw WrapperException(Errors.EC_BIOMETRY_NOT_AVAILABLE, "Biometry check failed with status: $status")
+
+                BiometricStatus.NOT_AVAILABLE -> throw WrapperException(
+                    Errors.EC_BIOMETRY_NOT_AVAILABLE,
+                    "Biometry is not available on this device currently."
+                )
+
+                BiometricStatus.NOT_ENROLLED -> throw WrapperException(
+                    Errors.EC_BIOMETRY_NOT_ENROLLED,
+                    "No biometry enrolled on the device."
+                )
+
+                BiometricStatus.NOT_SUPPORTED -> throw WrapperException(
+                    Errors.EC_BIOMETRY_NOT_SUPPORTED,
+                    "Biometry is not supported on this device."
+                )
+
+                else -> throw WrapperException(
+                    Errors.EC_BIOMETRY_NOT_AVAILABLE,
+                    "Biometry check failed with status: $status"
+                )
             }
         } else {
-            throw WrapperException(Errors.EC_BIOMETRY_NOT_SUPPORTED, "Biometry requires Android 6.0 (API 23) or higher")
+            throw WrapperException(
+                Errors.EC_BIOMETRY_NOT_SUPPORTED,
+                "Biometry requires Android 6.0 (API 23) or higher"
+            )
         }
     }
 
@@ -107,11 +130,17 @@ object PowerAuthBiometryUtils {
     @Throws(WrapperException::class)
     fun validateFragmentActivity(activity: Activity?): FragmentActivity {
         if (activity == null) {
-            throw WrapperException(Errors.EC_FLUTTER_ERROR, "FragmentActivity is not available for biometry.")
+            throw WrapperException(
+                Errors.EC_FLUTTER_ERROR,
+                "FragmentActivity is not available for biometry."
+            )
         }
 
         if (activity !is FragmentActivity) {
-            throw WrapperException(Errors.EC_FLUTTER_ERROR, "Attached Android Activity is not a FragmentActivity, which is required for biometry.")
+            throw WrapperException(
+                Errors.EC_FLUTTER_ERROR,
+                "Attached Android Activity is not a FragmentActivity, which is required for biometry."
+            )
         }
 
         return activity

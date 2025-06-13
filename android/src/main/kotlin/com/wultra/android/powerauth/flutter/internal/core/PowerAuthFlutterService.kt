@@ -18,12 +18,11 @@ package com.wultra.android.powerauth.flutter.internal.core
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlin.reflect.KFunction2
+
+typealias MethodHandler = KFunction2<MethodCall, Result, Unit>
 
 sealed interface PowerAuthFlutterService {
     val name: String
     val handlers: Map<String, MethodHandler>
-
-    fun interface MethodHandler {
-        fun handle(call: MethodCall, result: Result)
-    }
 }

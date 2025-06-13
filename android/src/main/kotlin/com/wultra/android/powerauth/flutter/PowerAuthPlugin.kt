@@ -36,8 +36,8 @@ import com.wultra.android.powerauth.flutter.internal.services.PowerAuthUtilsServ
 import io.flutter.BuildConfig
 
 // TODO: migrate method docs from RN
-class PowerAuthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
-    private lateinit var channel : MethodChannel
+class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+    private lateinit var channel: MethodChannel
     private lateinit var context: Context
 
     private var currentActivity: Activity? = null

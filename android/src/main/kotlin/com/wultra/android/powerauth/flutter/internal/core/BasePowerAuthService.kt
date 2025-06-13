@@ -21,7 +21,6 @@ import android.os.Looper
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.WrapperException
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
@@ -31,7 +30,7 @@ abstract class BasePowerAuthService(
 ) : PowerAuthFlutterService {
 
     companion object ArgKeys {
-       const val INSTANCE_ID = "instanceId"
+        const val INSTANCE_ID = "instanceId"
     }
 
     protected fun usePowerAuth(
@@ -42,7 +41,10 @@ abstract class BasePowerAuthService(
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             val sdkForBlock = register?.useObject(instanceId, PowerAuthSDK::class.java)
-                ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured or no longer valid.")
+                ?: throw WrapperException(
+                    Errors.EC_INSTANCE_NOT_CONFIGURED,
+                    "PowerAuth instance '$instanceId' not configured or no longer valid."
+                )
 
             block(sdkForBlock)
         } catch (t: Throwable) {
@@ -50,16 +52,14 @@ abstract class BasePowerAuthService(
         }
     }
 
-    protected fun usePowerAuthOnMainThread(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
+    protected fun usePowerAuthOnMainThread(
+        call: MethodCall,
+        result: Result,
+        block: (sdk: PowerAuthSDK) -> Unit
+    ) {
         Handler(Looper.getMainLooper()).post {
-            try {
-                val instanceId: String = call.getRequiredArgument(PowerAuthService.INSTANCE_ID)
-                val sdkForBlock = register?.useObject(instanceId, PowerAuthSDK::class.java)
-                    ?: throw WrapperException(Errors.EC_INSTANCE_NOT_CONFIGURED, "PowerAuth instance '$instanceId' not configured or no longer valid.")
-
-                block(sdkForBlock)
-            } catch (t: Throwable) {
-                Errors.error(result, t)
+            usePowerAuth(call, result) { sdk ->
+                block(sdk)
             }
         }
     }

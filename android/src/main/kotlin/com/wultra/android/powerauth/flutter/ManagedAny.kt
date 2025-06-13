@@ -20,7 +20,7 @@ package com.wultra.android.powerauth.flutter
  * A generic wrapper for objects stored in [PowerAuthObjectRegister]
  * that implements [IManagedObject].
  */
-class ManagedAny<T: Any> private constructor(
+class ManagedAny<T : Any> private constructor(
     private val instance: T,
     private val cleanupAction: ((T) -> Unit)? = null
 ) : IManagedObject<T> {
@@ -42,7 +42,7 @@ class ManagedAny<T: Any> private constructor(
          * @return An [IManagedObject] wrapping the instance.
          */
         @JvmStatic
-        fun <T: Any> wrap(instance: T, cleanupAction: ((T) -> Unit)? = null): IManagedObject<T> {
+        fun <T : Any> wrap(instance: T, cleanupAction: ((T) -> Unit)? = null): IManagedObject<T> {
             return ManagedAny(instance, cleanupAction)
         }
     }
