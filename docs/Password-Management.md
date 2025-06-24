@@ -7,7 +7,7 @@ Since the device does not know the password and is unable to verify the password
 ```dart
 // Change password from "oldPassword" to "newPassword".
 try {
-    await powerAuth.changePassword(PowerAuthPassword.fromString("oldPassword"), PowerAuthPassword.fromString("newPassword"));
+    await powerAuth.changePassword(await PowerAuthPassword.fromString("oldPassword"), await PowerAuthPassword.fromString("newPassword"));
 } on PowerAuthException catch (e) {
     print('Change failed: ${e.code}');
 } catch (e) {
@@ -23,7 +23,7 @@ You can validate a password by calling the `validatePassword` method.
 
 ```dart
 // Ask for a password
-final password = PowerAuthPassword.fromString("1234");
+final password = await PowerAuthPassword.fromString("1234");
 
 // Validate password on the server
 try {
@@ -42,7 +42,7 @@ If a user enters a wrong PIN should be handled in the calculation call itself an
 Example where validation is **not needed**:
 
 1. Call `requestSignature` with a wrong password
-2. The call will fail with the `AUTHENTICATION_ERROR` error
+2. The call will fail with the `PowerAuthErrorCode.authenticationError` error
 3. This means most likely the user entered the wrong password
 4. Call `fetchActivationStatus` to verify how many attempts are left or if the activation is blocked.
 <!-- end -->
