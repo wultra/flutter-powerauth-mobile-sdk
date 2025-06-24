@@ -5,7 +5,7 @@ Since the device does not know the password and is unable to verify the password
 ```dart
 // Change password from "oldPassword" to "newPassword".
 try {
-    await powerAuth.changePassword(PowerAuthPassword.fromString("oldPassword"), PowerAuthPassword.fromString("newPassword"));
+    await powerAuth.changePassword(await PowerAuthPassword.fromString("oldPassword"), await PowerAuthPassword.fromString("newPassword"));
 } on PowerAuthException catch (e) {
     print('Change failed: ${e.code}');
 } catch (e) {

@@ -13,14 +13,14 @@ To sign request data, you need to first obtain user credentials (password, PIN c
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 ```
 
 When signing `POST`, `PUT`, or `DELETE` requests, use request body bytes (UTF-8) as request data and the following code:
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 
 // Sign POST call with provided data made to URI with custom identifier "/payment/create"
 try {
@@ -36,7 +36,7 @@ When signing `GET` requests, use the same code as above with normalized request 
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 
 // Sign GET call with provided query parameters made to URI with custom identifier "/payment/create"
 const params = {
@@ -116,7 +116,7 @@ This type of signature is very similar to [Symmetric Multi-Factor Signature](#sy
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 try {
     final signature = await _powerAuth.offlineSignature(auth, "/confirm/offline/operation", data, nonce);
     print("Signature is " + signature);
