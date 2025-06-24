@@ -5,7 +5,7 @@
 - [Device Activation](Device-Activation.md)
 - [Requesting Device Activation Status](Requesting-Device-Activation-Status.md)
 - [Data Signing](Data-Signing.md)
-- [Password Change](Password-Change.md)
+- [Password Management](Password-Management.md)
 - [Working With Passwords Securely](Secure-Password.md)
 - [Biometry Setup](Biometry-Setup.md)
 - [Device Activation Removal](Device-Activation-Removal.md)
