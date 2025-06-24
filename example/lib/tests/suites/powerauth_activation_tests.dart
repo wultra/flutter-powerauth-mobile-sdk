@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/test_suite.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/utils/integration_helper.dart';

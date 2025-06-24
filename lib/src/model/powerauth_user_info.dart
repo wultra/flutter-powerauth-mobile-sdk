@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 /// The `PowerAuthUserInfo` object contains additional information about the end-user.
 class PowerAuthUserInfo {
 

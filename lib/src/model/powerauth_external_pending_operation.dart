@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 /// ### iOS specific
 /// 
 /// The `PowerAuthExternalPendingOperationType` defines types of operation
