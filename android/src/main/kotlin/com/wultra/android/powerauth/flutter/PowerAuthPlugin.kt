@@ -27,6 +27,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthBackgroundIsolateService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthEncryptorService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthLoggingService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthPasswordService
@@ -50,7 +51,9 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
 
-        objectRegister = PowerAuthObjectRegister(BuildConfig.DEBUG)
+        objectRegister = PowerAuthObjectRegister.getInstance(BuildConfig.DEBUG)
+        PowerAuthObjectRegister.onPluginAttached()
+
         serviceRegistry = PowerAuthServiceRegistry
 
         serviceRegistry.registerAll(
@@ -59,17 +62,15 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             PowerAuthUtilsService(),
             PowerAuthEncryptorService(objectRegister, context),
             PowerAuthRegisterService(objectRegister),
-            PowerAuthLoggingService()
+            PowerAuthLoggingService(),
+            PowerAuthBackgroundIsolateService(context, getCurrentActivity = { currentActivity })
         )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
 
-        // TODO(post-beta): Flutter can destroy / recreate the plugin object if the engine detaches.
-        // This can happen f.e. with the back button press on the first screen (app keeps running, but plugins re-attach.
-        // We should explore this more (and cache the state?).
-        objectRegister.invalidate()
+        PowerAuthObjectRegister.onPluginDetached()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {

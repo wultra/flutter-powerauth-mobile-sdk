@@ -175,6 +175,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
+  Future<void> _startBackgroundIsolate() async {
+    await _powerAuth.startBackgroundIsolate();
+  }
+
+  Future<void> _removeBackgroundIsolate() async {
+    await _powerAuth.removeBackgroundIsolate();
+  }
+
   Future<void> _setInstanceId(String newInstanceId) async {
     if (_instanceId == newInstanceId) return;
 
@@ -519,6 +527,18 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _refreshState,
                 child: const Text('Refresh Status'),
+              ),
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: _isLoading ? null : _startBackgroundIsolate,
+                child: const Text('Start background isolate'),
+              ),
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: _isLoading ? null : _removeBackgroundIsolate,
+                child: const Text('Remove background isolate'),
               ),
               const SizedBox(height: 20),
 
