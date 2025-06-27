@@ -1,3 +1,8 @@
+## 1.0.0-beta.5
+
+* Fixed issue on Android when the plugin was invoked from multiple isolates
+* Improved biometrics handling
+
 ## 1.0.0-beta.4
 
 * Added End-to-End Encryption support.

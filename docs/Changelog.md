@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0-beta.5 (TBA, 2025)
+## 1.0.0-beta.5 (June 27, 2025)
 
 * Fixed issue on Android when the plugin was invoked from multiple isolates
 * Improved biometrics handling
