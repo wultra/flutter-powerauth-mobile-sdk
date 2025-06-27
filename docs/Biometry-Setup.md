@@ -47,7 +47,7 @@ In case an activation does not yet have biometry-related factor data, and you wo
 Use the following code to enable biometric authentication:
 
 ```dart
-final password = PowerAuthPassword.fromString("1234");
+final password = await PowerAuthPassword.fromString("1234");
 try {
     // Establish biometric data using provided password
     await powerAuth.addBiometryFactor(password, {
