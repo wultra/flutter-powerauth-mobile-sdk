@@ -71,4 +71,8 @@ abstract class BasePowerAuthService(
             "Missing required argument: '$key'"
         )
     }
+
+    override fun cleanUp() {
+        // Default implementation does nothing, but can be overridden by services that need to clean up.
+    }
 }

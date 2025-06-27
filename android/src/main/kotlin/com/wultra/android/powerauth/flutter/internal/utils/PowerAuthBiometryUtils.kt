@@ -128,18 +128,11 @@ object PowerAuthBiometryUtils {
     }
 
     @Throws(WrapperException::class)
-    fun validateFragmentActivity(activity: Activity?): FragmentActivity {
+    fun validateFragmentActivity(activity: FragmentActivity?): FragmentActivity {
         if (activity == null) {
             throw WrapperException(
                 Errors.EC_FLUTTER_ERROR,
                 "FragmentActivity is not available for biometry."
-            )
-        }
-
-        if (activity !is FragmentActivity) {
-            throw WrapperException(
-                Errors.EC_FLUTTER_ERROR,
-                "Attached Android Activity is not a FragmentActivity, which is required for biometry."
             )
         }
 

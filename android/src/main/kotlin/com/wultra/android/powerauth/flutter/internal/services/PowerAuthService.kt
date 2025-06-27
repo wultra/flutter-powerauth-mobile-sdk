@@ -16,7 +16,6 @@
 
 package com.wultra.android.powerauth.flutter.internal.services
 
-import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.util.Base64
@@ -36,6 +35,7 @@ import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 
 import androidx.core.util.component1
 import androidx.core.util.component2
+import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Constants
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.ManagedAny
@@ -59,7 +59,7 @@ import java.nio.charset.StandardCharsets
 internal class PowerAuthService(
     val objectRegister: PowerAuthObjectRegister,
     private val context: Context,
-    private val getCurrentActivity: () -> Activity?
+    private val getCurrentActivity: () -> FragmentActivity?
 ) : BasePowerAuthService(objectRegister) {
 
     override val name = "powerauth"

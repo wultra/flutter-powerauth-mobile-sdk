@@ -16,12 +16,11 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_authentication_internal.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 
+import '../../flutter_powerauth_mobile_sdk_plugin.dart';
 import '../logging/powerauth_logger.dart';
+import '../model/powerauth_authentication_internal.dart';
+import '../model/powerauth_external_pending_operation.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -407,6 +406,38 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
       return null;
     }
     return PowerAuthUserInfo(result['allClaims'] as Map?);
+  }
+
+  @override
+  Future<void> startBackgroundIsolate() async {
+    if (!kDebugMode) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'startBackgroundIsolate is only available in DEBUG builds of the library.',
+      );
+    }
+
+    final result = await invokeMethod<void>(
+      'isolate_startBackgroundIsolate', null
+    );
+
+    return result;
+  }
+
+  @override
+  Future<void> removeBackgroundIsolate() async {
+    if (!kDebugMode) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'removeBackgroundIsolate is only available in DEBUG builds of the library.',
+      );
+    }
+
+    final result = await invokeMethod<void>(
+      'isolate_removeBackgroundIsolate', null
+    );
+
+    return result;
   }
 
   Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {

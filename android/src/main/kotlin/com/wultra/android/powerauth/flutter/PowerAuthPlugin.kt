@@ -16,8 +16,7 @@
 
 package com.wultra.android.powerauth.flutter
 
-import android.app.Activity
-import android.content.Context
+import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -26,66 +25,45 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
-import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthEncryptorService
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthLoggingService
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthPasswordService
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthRegisterService
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthUtilsService
-import io.flutter.BuildConfig
-
-// TODO: migrate method docs from RN
+/**
+ * PowerAuthPlugin integrates the PowerAuth SDK with Flutter, enabling secure authentication and authorization
+ * features in Flutter apps by bridging native Android functionality to Dart code via method channels.
+ */
 class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+
     private lateinit var channel: MethodChannel
-    private lateinit var context: Context
-
-    private var currentActivity: Activity? = null
-
-    private lateinit var objectRegister: PowerAuthObjectRegister
     private lateinit var serviceRegistry: PowerAuthServiceRegistry
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
 
-        objectRegister = PowerAuthObjectRegister(BuildConfig.DEBUG)
-        serviceRegistry = PowerAuthServiceRegistry
-
-        serviceRegistry.registerAll(
-            PowerAuthService(objectRegister, context, getCurrentActivity = { currentActivity }),
-            PowerAuthPasswordService(objectRegister),
-            PowerAuthUtilsService(),
-            PowerAuthEncryptorService(objectRegister, context),
-            PowerAuthRegisterService(objectRegister),
-            PowerAuthLoggingService()
-        )
+        // Initialize the service registry (or get the existing one)
+        serviceRegistry = PowerAuthServiceRegistry.getInstance(flutterPluginBinding.applicationContext)
+        // Tell the registry that the plugin is attached to keep track of the plugin lifecycle
+        PowerAuthServiceRegistry.onPluginAttached()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
-
-        // TODO(post-beta): Flutter can destroy / recreate the plugin object if the engine detaches.
-        // This can happen f.e. with the back button press on the first screen (app keeps running, but plugins re-attach.
-        // We should explore this more (and cache the state?).
-        objectRegister.invalidate()
+        // Tell the registry that the plugin is detached so it can clean up resources
+        PowerAuthServiceRegistry.onPluginDetached()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        currentActivity = binding.activity
+        serviceRegistry.addActivity(binding.activity)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        currentActivity = null
+        // Activity will be removed automatically when deallocated
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        currentActivity = binding.activity
+        serviceRegistry.addActivity(binding.activity)
     }
 
     override fun onDetachedFromActivity() {
-        currentActivity = null
+        // Activity will be removed automatically when deallocated
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
