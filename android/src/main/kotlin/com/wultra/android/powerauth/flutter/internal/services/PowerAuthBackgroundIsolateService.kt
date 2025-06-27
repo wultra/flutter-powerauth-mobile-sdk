@@ -70,13 +70,7 @@ internal class PowerAuthBackgroundIsolateService(
                     null,
                     mainHandler
                 ) {
-                    backgroundFlutterEngine = if (shellArgs != null) {
-                        FlutterEngine(
-                            context.applicationContext, shellArgs.toArray()
-                        )
-                    } else {
-                        FlutterEngine(context.applicationContext)
-                    }
+                    backgroundFlutterEngine = FlutterEngine(context.applicationContext, shellArgs?.toArray())
                 }
             }
 
@@ -86,9 +80,18 @@ internal class PowerAuthBackgroundIsolateService(
     }
 
     fun removeBackgroundIsolate(call: MethodCall, result: Result) {
+        clearFlutterEngine()
+        result.success(null)
+    }
+
+    override fun cleanUp() {
+        // Clean up the background isolate if it exists
+        clearFlutterEngine()
+        super.cleanUp()
+    }
+
+    private fun clearFlutterEngine() {
         backgroundFlutterEngine?.destroy()
         backgroundFlutterEngine = null
-
-        result.success(null)
     }
 }

@@ -132,7 +132,7 @@ object PowerAuthBiometryUtils {
         if (activity == null) {
             throw WrapperException(
                 Errors.EC_FLUTTER_ERROR,
-                "FragmentActivity is not available for biometry - running from a background thread?."
+                "FragmentActivity is not available for biometry."
             )
         }
 
