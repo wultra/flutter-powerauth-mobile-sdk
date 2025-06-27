@@ -151,4 +151,4 @@ try {
 
 ## Read Next
 
-- [Password Change](Password-Change.md)
+- [Password Management](Password-Management.md)
