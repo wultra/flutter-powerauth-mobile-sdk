@@ -36,64 +36,13 @@ import java.nio.charset.StandardCharsets
  * The object is identified by a unique identifier created at the time of registration
  * or by an application-provided identifier.
  */
-class PowerAuthObjectRegister private constructor(private val isDebug: Boolean) {
+class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
     companion object {
-        @Volatile
-        private var INSTANCE: PowerAuthObjectRegister? = null
-
-        @Volatile
-        private var attachmentCount = 0
-
         private const val OPT_NONE = 0
         private const val OPT_SET_USE = 1
         private const val OPT_TOUCH = 2
         private const val OPT_REMOVE = 3
-
-        @JvmStatic
-        fun getInstance(isDebug: Boolean = false): PowerAuthObjectRegister {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: PowerAuthObjectRegister(isDebug).also { INSTANCE = it }
-            }
-        }
-
-        @JvmStatic
-        internal fun onPluginAttached() {
-            synchronized(this) {
-                attachmentCount++
-            }
-        }
-
-        @JvmStatic
-        internal fun onPluginDetached() {
-            synchronized(this) {
-                attachmentCount = maxOf(0, attachmentCount - 1)
-
-                // If no more plugins / engines are attached, we can clean up the register.
-                // TODO: do we want to keep the singleton instance for potential re-init?
-                if (attachmentCount == 0) {
-                    INSTANCE?.removeAllObjects()
-                }
-            }
-        }
-
-
-        // For testing purposes - TODO: remove before release
-        @JvmStatic
-        internal fun resetForTesting() {
-            synchronized(this) {
-                INSTANCE?.removeAllObjects()
-                INSTANCE = null
-                attachmentCount = 0
-            }
-        }
-
-        @JvmStatic
-        internal fun getAttachmentCount(): Int {
-            synchronized(this) {
-                return attachmentCount
-            }
-        }
     }
 
     private val lock = ReentrantLock(false)
@@ -351,7 +300,7 @@ class PowerAuthObjectRegister private constructor(private val isDebug: Boolean) 
     /**
      * Removes all objects from the register, regardless of policy.
      */
-    internal fun removeAllObjects() = lock.withLock {
+    private fun removeAllObjects() = lock.withLock {
         managedObjects.values.forEach { it.obj.cleanup() }
         managedObjects.clear()
         stopCleanupJob()
@@ -435,8 +384,8 @@ class PowerAuthObjectRegister private constructor(private val isDebug: Boolean) 
         scheduleCleanupJob()
     }
 
-    // Called by PowerAuthPlugin when detaching from Flutter
-    fun invalidate() {
+    // Called when detaching from Flutter
+    fun cleanup() {
         lock.withLock {
             removeAllObjects()
         }

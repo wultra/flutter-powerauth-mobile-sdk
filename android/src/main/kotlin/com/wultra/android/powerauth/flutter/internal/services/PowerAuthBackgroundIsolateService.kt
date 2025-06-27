@@ -15,10 +15,10 @@
  */
 package com.wultra.android.powerauth.flutter.internal.services
 
-import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import io.flutter.FlutterInjector
@@ -27,10 +27,9 @@ import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 
-
 internal class PowerAuthBackgroundIsolateService(
     private val context: Context,
-    private val getCurrentActivity: () -> Activity?
+    private val getCurrentActivity: () -> FragmentActivity?
 ) : BasePowerAuthService(null) {
 
     override val name: String = "isolate"

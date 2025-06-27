@@ -25,4 +25,5 @@ typealias MethodHandler = KFunction2<MethodCall, Result, Unit>
 sealed interface PowerAuthFlutterService {
     val name: String
     val handlers: Map<String, MethodHandler>
+    fun cleanUp()
 }
