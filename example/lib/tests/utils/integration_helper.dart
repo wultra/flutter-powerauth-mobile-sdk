@@ -52,7 +52,7 @@ class IntegrationHelper {
   // --- COMPLEX TASKS ---
 
   /// Creates a new activation on the server and locally.
-  Future<void> prepareActiveActivation(PowerAuthPassword password, {String? userId, bool setupBiometry = false}) async {
+  Future<void> prepareActiveActivation(PowerAuthPassword password, {String? userId, bool setupBiometry = false, String biometryPrompt = "Create activation with biometrics"}) async {
         
     final resp = await createActivation(userId: userId);
 
@@ -62,7 +62,7 @@ class IntegrationHelper {
 
     // PERSIST ACTIVATION LOCALLY
 
-    await sdk.persistActivation(setupBiometry ? PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password, biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Persist data pls")) : PowerAuthAuthentication.persistWithPassword(password));
+    await sdk.persistActivation(setupBiometry ? PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password, biometricPrompt: PowerAuthBiometricPrompt(promptMessage: biometryPrompt)) : PowerAuthAuthentication.persistWithPassword(password));
 
     // COMMIT ACTIVATION ON THE SERVER
 

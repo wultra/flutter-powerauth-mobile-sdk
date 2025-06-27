@@ -38,6 +38,13 @@ import java.nio.charset.StandardCharsets
  */
 class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
+    companion object {
+        private const val OPT_NONE = 0
+        private const val OPT_SET_USE = 1
+        private const val OPT_TOUCH = 2
+        private const val OPT_REMOVE = 3
+    }
+
     private val lock = ReentrantLock(false)
     private val managedObjects = mutableMapOf<String, ManagedObjectHolder>()
     private val randomGenerator: Random = Random()
@@ -377,8 +384,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         scheduleCleanupJob()
     }
 
-    // Called by PowerAuthPlugin when detaching from Flutter
-    fun invalidate() {
+    // Called when detaching from Flutter
+    fun cleanup() {
         lock.withLock {
             removeAllObjects()
         }
@@ -547,12 +554,5 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
             "password" -> Password::class.java
             else -> null
         }
-    }
-
-    companion object {
-        private const val OPT_NONE = 0
-        private const val OPT_SET_USE = 1
-        private const val OPT_TOUCH = 2
-        private const val OPT_REMOVE = 3
     }
 }
