@@ -20,7 +20,7 @@ Use the following code for an activation removal using a signed request:
 
 ```dart
 // 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(PowerAuthPassword.fromString("1234"));
+final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
 try {
     await powerAuth.removeActivationWithAuthentication(auth);
     // activation removed

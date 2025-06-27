@@ -143,7 +143,7 @@ After you create an activation using one of the methods mentioned above, you nee
 
 ```dart
 final auth = PowerAuthAuthentication.persistWithPasswordAndBiometry(
-    password: PowerAuthPassword.fromString("1234"), 
+    password: await PowerAuthPassword.fromString("1234"), 
     biometricPrompt: {
         // The `PowerAuthBiometricPrompt` object is required on the Android platform in case that
         // `biometryConfiguration.authenticateOnBiometricKeySetup` is true.
