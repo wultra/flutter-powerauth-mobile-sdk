@@ -1,3 +1,7 @@
+## 1.0.0
+
+* First stable release of our PowerAuth Mobile Flutter SDK – v1.0.0! 🎉
+
 ## 1.0.0-beta.5
 
 * Fixed issue on Android when the plugin was invoked from multiple isolates

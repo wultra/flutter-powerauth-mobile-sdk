@@ -1,9 +1,5 @@
 # PowerAuth Mobile Flutter SDK
 
-<!-- begin box warning -->
-This library is in active development. A stable release is planned for Q2 2025.
-<!-- end -->
-
 In order to connect to the [PowerAuth](https://www.wultra.com/mobile-security-suite) service, mobile applications need to perform the required network and cryptographic processes, as described in the PowerAuth documentation. To simplify the implementation of these processes, developers can use the PowerAuth Flutter SDK library (for Android and iOS) from this repository.
 
 <!-- begin remove -->
