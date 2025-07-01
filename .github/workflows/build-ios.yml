@@ -12,10 +12,8 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
-      - name: Install Flutter
-        run: brew install --cask flutter
-      - name: Get Flutter Dependencies
-        run: pushd example && flutter pub get && popd
+      - name: Setup
+        uses: ./.github/actions/setup
       - name: Install Pods
         run: pod install --project-directory=example/ios
       - name: Build iOS App

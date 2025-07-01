@@ -1,0 +1,12 @@
+name: Setup
+description: Install Flutter and create .env file for the PowerAuth Flutter SDK example app.
+
+runs:
+  using: composite
+  steps:
+    - name: Create .env file
+      run: echo -e "${{ secrets.ENV_FILE }}" > example/.env
+    - name: Install Flutter
+      run: brew install --cask flutter
+    - name: Get Flutter Dependencies
+      run: pushd example && flutter pub get && popd
