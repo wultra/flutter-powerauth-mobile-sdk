@@ -1,0 +1,19 @@
+name: "Analyze Flutter Code"
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+
+jobs:
+  analyze-flutter:
+    name: Analyze
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+      - name: Install Flutter
+        run: brew install --cask flutter
+      - name: Analyze Code
+        run: flutter analyze --fatal-warnings
