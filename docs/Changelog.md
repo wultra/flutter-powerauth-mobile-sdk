@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (July TBA, 2025)
+## 1.0.0 (July 1, 2025)
 
 * First stable release of our PowerAuth Mobile Flutter SDK – v1.0.0! 🎉
 
