@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 (July TBA, 2025)
+
+* First stable release of our PowerAuth Mobile Flutter SDK – v1.0.0! 🎉
+
 ## 1.0.0-beta.5 (June 27, 2025)
 
 * Fixed issue on Android when the plugin was invoked from multiple isolates
