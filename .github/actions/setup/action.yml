@@ -6,5 +6,7 @@ runs:
   steps:
     - name: Install Flutter
       run: brew install --cask flutter
+      shell: bash
     - name: Get Flutter Dependencies
       run: pushd example && flutter pub get && popd
+      shell: bash
