@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  build-ios:
+  build-android:
     name: Build Android App
     runs-on: macos-latest
     steps:

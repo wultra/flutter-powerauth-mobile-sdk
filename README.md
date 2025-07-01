@@ -4,7 +4,7 @@
 [![Pub Version](https://img.shields.io/pub/v/flutter_powerauth_mobile_sdk_plugin)](https://pub.dev/packages/flutter_powerauth_mobile_sdk_plugin)
 [![Pub Points](https://img.shields.io/pub/points/flutter_powerauth_mobile_sdk_plugin)](https://pub.dev/packages/flutter_powerauth_mobile_sdk_plugin)
 [![Pub Monthly Downloads](https://img.shields.io/pub/dm/flutter_powerauth_mobile_sdk_plugin)](https://pub.dev/packages/flutter_powerauth_mobile_sdk_plugin)
-[![license](https://img.shields.io/github/license/wultra/flutter-powerauth-mobile-sdk)](LICENSE)  
+[![License](https://img.shields.io/github/license/wultra/flutter-powerauth-mobile-sdk)](LICENSE)  
 
 In order to connect to the [PowerAuth](https://www.wultra.com/mobile-security-suite) service, mobile applications need to perform the required network and cryptographic processes, as described in the PowerAuth documentation. To simplify the implementation of these processes, developers can use the PowerAuth Flutter SDK library (for Android and iOS) from this repository.
 
