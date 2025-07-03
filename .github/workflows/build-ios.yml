@@ -1,0 +1,22 @@
+name: "Build iOS"
+
+on:
+  push:
+    branches:
+      - develop
+      - release/*
+  pull_request:
+
+jobs:
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+      - name: Create .env file
+        run: echo -e "${{ secrets.ENV_FILE }}" > example/.env
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Build iOS App
+        run: pushd example && flutter build ios --release --no-codesign --no-tree-shake-icons && popd
