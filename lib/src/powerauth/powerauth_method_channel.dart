@@ -34,13 +34,14 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
   @override
-  Future<void> setNativeLogLevel(PowerAuthLogLevel level) async {
-    await invokeMethod<void>('logging_setNativeLogLevel', {'level': level.name});
-  }
-
-  @override
-  Future<void> setNativeLoggingEnabled(bool enabled) async {
-    await invokeMethod<void>('logging_setNativeLoggingEnabled', {'enabled': enabled});
+  Future<void> configureNativeLogging({
+    required bool enabled,
+    required PowerAuthLogLevel logLevel,
+  }) async {
+    await invokeMethod<void>('logging_configure', {
+      'enabled': enabled,
+      'level': logLevel.name,
+    });
   }
 
   @override

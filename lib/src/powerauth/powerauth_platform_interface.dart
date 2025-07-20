@@ -51,13 +51,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<void> setNativeLogLevel(PowerAuthLogLevel level) {
-    throw UnimplementedError('setNativeLogLevel() has not been implemented.');
-  }
-
-  Future<void> setNativeLoggingEnabled(bool enabled) {
+  Future<void> configureNativeLogging({
+    required bool enabled,
+    required PowerAuthLogLevel logLevel,
+  }) {
     throw UnimplementedError(
-      'setNativeLoggingEnabled() has not been implemented.',
+      'configureNativeLogging() has not been implemented.',
     );
   }
 

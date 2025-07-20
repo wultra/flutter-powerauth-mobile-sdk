@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/utils/method_channel_helper.dart';
+import 'package:flutter/services.dart';
+import '../logging/powerauth_logger.dart';
+import '../powerauth/powerauth_platform_interface.dart';
+import '../powerauth_native_object_register/powerauth_native_object_register.dart';
+import '../utils/method_channel_helper.dart';
 
 /// This class provides debug features for the PowerAuth SDK.
 /// It allows enabling detailed logging of native code calls and dumping the contents of the native object register.
@@ -28,6 +32,76 @@ class PowerAuthDebug {
   /// Indicates whether the debug features are enabled.
   /// Value is `true` in debug builds and `false` in release builds (comes from the kDebugMode value).
   static final bool isEnabled = kDebugMode;
+
+  // Logging Configuration
+
+  static PowerAuthLogLevel _logLevel = PowerAuthLogLevel.info;
+  static bool _loggingEnabled = kDebugMode;
+  static bool _isLogListenerInitialized = false;
+
+  // TODO: discuss whether we should use kDebugMode here or keep this to enable logging in production?
+  /// Indicated whether logging is currently enabled.
+  static bool get loggingEnabled => _loggingEnabled;
+
+  /// The current log level.
+  static PowerAuthLogLevel get logLevel => _logLevel;
+
+  static final StreamController<PowerAuthLog> _logController =
+      StreamController<PowerAuthLog>.broadcast();
+
+  /// A stream of all logs produced by the PowerAuth SDK.
+  ///
+  /// Listening to this stream will automatically initialize the native log listeners.
+  static Stream<PowerAuthLog> get logStream {
+    _ensureLogListenerInitialized();
+    return _logController.stream;
+  }
+
+  static const EventChannel _nativeLogChannel = EventChannel(
+    'com.wultra.powerauth.flutter/logging',
+  );
+
+  static void _ensureLogListenerInitialized() {
+    if (!_isLogListenerInitialized) {
+      _listenToNativeLogs();
+      _isLogListenerInitialized = true;
+    }
+  }
+
+  static void _listenToNativeLogs() {
+    _nativeLogChannel.receiveBroadcastStream().listen((logData) {
+      if (logData is Map) {
+        final level = PowerAuthLogLevel.values.firstWhere(
+          (e) => e.toString() == 'PowerAuthLogLevel.${logData['level']}',
+        );
+        final message = logData['message'] as String;
+        final tag = logData['tag'] as String?;
+        _logController.add(PowerAuthLog(level, message, tag: tag));
+      }
+    });
+  }
+
+  /// Configures the logging functionality.
+  ///
+  /// - [enabled] enables or disables logging.
+  /// - [logLevel] sets the minimum level of logs to be processed.
+  static Future<void> configureLogging({
+    required bool enabled,
+    required PowerAuthLogLevel logLevel,
+  }) async {
+    _ensureLogListenerInitialized();
+    _loggingEnabled = enabled;
+    _logLevel = logLevel;
+    await PowerAuthPlatform.instance.configureNativeLogging(
+      enabled: enabled,
+      logLevel: logLevel,
+    );
+  }
+
+  /// Pushes a log entry to the central log stream. For internal use by PowerAuthLogger.
+  static void pushLog(PowerAuthLog log) {
+    _logController.add(log);
+  }
 
   /// Enable or disable detailed log with calls to native code. Be aware that this feature is
   /// effective only if `isEnabled` static property is `true`.
