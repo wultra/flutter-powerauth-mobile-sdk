@@ -22,6 +22,7 @@ import PowerAuthCore
 public class PowerAuthPlugin: NSObject, FlutterPlugin {
     
     private let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)]
+    private let logger = PowerAuthLogger()
     
     public override init() {
         
@@ -47,12 +48,23 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         self.handlers = handlers
         
         super.init()
+        
+        // Set the delegate for native PowerAuth SDK logs
+        PowerAuthLogSetDelegate(logger)
+    }
+    
+    deinit {
+        // Remove the delegate when the plugin is deallocated
+        PowerAuthLogSetDelegate(nil)
     }
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "powerauth_plugin", binaryMessenger: registrar.messenger())
         let instance = PowerAuthPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+
+        let loggingChannel = FlutterEventChannel(name: "com.wultra.powerauth.flutter/logging", binaryMessenger: registrar.messenger())
+        loggingChannel.setStreamHandler(instance.logger)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

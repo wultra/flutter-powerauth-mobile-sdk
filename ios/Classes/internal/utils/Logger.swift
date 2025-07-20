@@ -16,6 +16,7 @@
 
 import PowerAuth2
 import Foundation
+import Flutter
 
 /**
  An enumeration of all possible logging levels used in the PowerAuth SDK.
@@ -35,7 +36,7 @@ enum PowerAuthLogLevel: Int, Comparable {
 /**
  A simple logger for internal SDK usage.
  */
-class PowerAuthLogger {
+class PowerAuthLogger: NSObject, FlutterStreamHandler, PowerAuthLogDelegate {
 
     /// The current logging level.
     static var level: PowerAuthLogLevel = .info {
@@ -85,12 +86,55 @@ class PowerAuthLogger {
     }
     
     /// Central logging method.
-    private static func log(_ message: () -> String, level: PowerAuthLogLevel) {
+    private static func log(_ message: () -> String, level: PowerAuthLogLevel, tag: String? = nil) {
         guard enabled, self.level <= level else {
             return
         }
         
+        let logMessage = message()
+
         // TODO: use the system Logger instead of printing?
-        print("PowerAuthSDK: \(message())")
+        print("PowerAuthSDK: \(logMessage)")
+        
+        let logData: [String: Any] = [
+            "level": level.stringValue,
+            "message": logMessage,
+            "tag": tag ?? "PowerAuthSDK"
+        ]
+        
+        DispatchQueue.main.async {
+            Self.eventSink?(logData)
+        }
     }
-} 
+    
+    // MARK: - PowerAuthLogDelegate
+    
+    func powerAuthLog(_ message: String) {
+        // Default to .debug as we don't get the level info from the native SDK
+        PowerAuthLogger.log({ message }, level: .debug, tag: "PowerAuthNativeSDK")
+    }
+    
+    private static var eventSink: FlutterEventSink?
+    
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        PowerAuthLogger.eventSink = events
+        return nil
+    }
+    
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        PowerAuthLogger.eventSink = nil
+        return nil
+    }
+}
+
+private extension PowerAuthLogLevel {
+    var stringValue: String {
+        switch self {
+        case .verbose: return "verbose"
+        case .debug: return "debug"
+        case .info: return "info"
+        case .warning: return "warning"
+        case .error: return "error"
+        }
+    }
+}
