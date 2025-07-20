@@ -95,10 +95,7 @@ abstract class BaseNativeObject {
     _isReleased = true;
 
     if (_isInitializing && !_initCompleter.isCompleted) {
-      PowerAuthLogger.warning(
-        () =>
-            "${runtimeType.toString()}: Release called while initialization was pending.",
-      );
+      PowerAuthLogger.warning("${runtimeType.toString()}: Release called while initialization was pending.");
       try {
   
         // Wait a short time for initialization to potentially finish
@@ -109,10 +106,7 @@ abstract class BaseNativeObject {
   
         // Initialization failed or timed out, likely nothing to release on native side
         idToRelease = null;
-        PowerAuthLogger.warning(
-          () =>
-              "${runtimeType.toString()}: Initialization failed or timed out before release.",
-        );
+        PowerAuthLogger.warning("${runtimeType.toString()}: Initialization failed or timed out before release.");
       }
     }
 
@@ -123,10 +117,7 @@ abstract class BaseNativeObject {
       try {
         await releaseNativeObject(idToRelease);
       } catch (e) {
-        PowerAuthLogger.warning(
-          () =>
-              "${runtimeType.toString()}: Error during native release for object $idToRelease: $e",
-        );
+        PowerAuthLogger.warning("${runtimeType.toString()}: Error during native release for object $idToRelease: $e");
       }
     }
   }
@@ -140,10 +131,7 @@ abstract class BaseNativeObject {
       _isInitializing = false; // Not initializing anymore
       _initCompleter.complete(initialObjectId);
     } else {
-      PowerAuthLogger.warning(
-        () =>
-            "${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.",
-      );
+      PowerAuthLogger.warning("${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.");
     }
   }
 

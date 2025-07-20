@@ -201,9 +201,7 @@ class PinTestResult {
             try {
               return PinTestIssue.values.firstWhere((e) => e.name == (issueString as String),);
             } catch (e) {
-              PowerAuthLogger.warning(
-                () => "Unknown PinTestIssue received: $issueString",
-              );
+              PowerAuthLogger.warning("Unknown PinTestIssue received: $issueString");
               // TODO: return null or a default?
               return null;
             }

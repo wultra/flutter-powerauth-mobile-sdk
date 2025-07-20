@@ -44,10 +44,7 @@ abstract class BaseReleasableObject {
     try {
       await releaseNativeObject(objectId!);
     } catch (e) {
-      PowerAuthLogger.warning(
-        () =>
-            '${runtimeType.toString()}: Error during native release for object $objectId: $e',
-      );
+      PowerAuthLogger.warning('${runtimeType.toString()}: Error during native release for object $objectId: $e');
     } finally {
       objectId = null;
     }
