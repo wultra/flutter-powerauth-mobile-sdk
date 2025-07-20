@@ -18,6 +18,7 @@
 - [PowerAuth Server Compatibility](PowerAuth-Server-Compatibility.md)
 - [Troubleshooting](Troubleshooting.md)
 - [User Info](User-Info.md)
+- [Logging](Logging.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
 
