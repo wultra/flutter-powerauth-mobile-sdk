@@ -21,6 +21,7 @@ export 'src/powerauth/powerauth.dart';
 
 // Utilities
 export 'src/powerauth_activation_code_utils/powerauth_activation_code_utils.dart';
+export 'src/powerauth_utils/powerauth_utils.dart';
 
 // Models
 export 'src/model/powerauth_activation.dart';

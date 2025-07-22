@@ -31,7 +31,8 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         "util_parseActivationCode": parseActivationCode,
         "util_validateActivationCode": validateActivationCode,
         "util_validateTypedCharacter": validateTypedCharacter,
-        "util_correctTypedCharacter": correctTypedCharacter
+        "util_correctTypedCharacter": correctTypedCharacter,
+        "util_getEnvironmentInfo": getEnvironmentInfo
     ]
     
     fileprivate enum Args: String {
@@ -65,5 +66,24 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         let char: Int = try call.requireParameter(Args.character)
         let validated = PowerAuthActivationCodeUtil.validateAndCorrectTypedCharacter(UInt32(char))
         result(validated)
+    }
+
+    private func getEnvironmentInfo(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        let currentDevice = UIDevice.current
+        let mainBundle = Bundle.main
+        let mainDictionary = mainBundle.infoDictionary
+        let appVersion = mainDictionary?["CFBundleShortVersionString"] as? String
+        let appId = mainDictionary?["CFBundleIdentifier"] as? String
+        
+        result([
+            "systemName": currentDevice.systemName,
+            "systemVersion": currentDevice.systemVersion,
+            
+            "applicationVersion": appVersion,
+            "applicationIdentifier": appId,
+            
+            "deviceManufacturer": "apple",
+            "deviceId": currentDevice.model
+        ])
     }
 }

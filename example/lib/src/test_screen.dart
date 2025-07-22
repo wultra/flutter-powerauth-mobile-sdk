@@ -598,6 +598,19 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               const SizedBox(height: 10),
               _buildValidationButtons(),
               const SizedBox(height: 20),
+              Text(
+                'PowerAuth Utils',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  final envInfo = await PowerAuthUtils.getEnvironmentInfo();
+                  print(jsonEncode(envInfo));
+                },
+                child: const Text('Fetch environment info'),
+              ),
+              const SizedBox(height: 20),
             ],
           ],
         ),
