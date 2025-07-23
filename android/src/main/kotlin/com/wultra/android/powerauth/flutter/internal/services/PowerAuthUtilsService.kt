@@ -16,6 +16,10 @@
 
 package com.wultra.android.powerauth.flutter.internal.services
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PackageInfoFlags
+import android.os.Build
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
@@ -24,7 +28,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.ActivationCode
 import io.getlime.security.powerauth.core.ActivationCodeUtil
 
-internal class PowerAuthUtilsService : BasePowerAuthService(null) {
+internal class PowerAuthUtilsService(private val context: Context) : BasePowerAuthService(null) {
 
     override val name = "util"
 
@@ -39,6 +43,7 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
         const val UTIL_VALIDATE_ACTIVATION_CODE = "validateActivationCode"
         const val UTIL_VALIDATE_TYPED_CHARACTER = "validateTypedCharacter"
         const val UTIL_CORRECT_TYPED_CHARACTER = "correctTypedCharacter"
+        const val UTIL_GET_ENVIRONMENT_INFO = "getEnvironmentInfo"
     }
 
     override val handlers by lazy {
@@ -46,7 +51,8 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
             HandlerNames.UTIL_PARSE_ACTIVATION_CODE to this::parseActivationCode,
             HandlerNames.UTIL_VALIDATE_ACTIVATION_CODE to this::validateActivationCode,
             HandlerNames.UTIL_VALIDATE_TYPED_CHARACTER to this::validateTypedCharacter,
-            HandlerNames.UTIL_CORRECT_TYPED_CHARACTER to this::correctTypedCharacter
+            HandlerNames.UTIL_CORRECT_TYPED_CHARACTER to this::correctTypedCharacter,
+            HandlerNames.UTIL_GET_ENVIRONMENT_INFO to this::getEnvironmentInfo
         )
     }
 
@@ -130,5 +136,32 @@ internal class PowerAuthUtilsService : BasePowerAuthService(null) {
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
+    }
+
+    private fun getEnvironmentInfo(@Suppress("UNUSED_PARAMETER") call: MethodCall, result: Result) {
+
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            @Suppress("DEPRECATION")
+            PackageManager.GET_SIGNATURES
+        }
+        val appInfo = try {
+            @Suppress("DEPRECATION")
+            this.context.packageManager.getPackageInfo(this.context.packageName, flags)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+
+        result.success(mapOf(
+            "systemName" to "android",
+            "systemVersion" to Build.VERSION.RELEASE,
+            
+            "applicationVersion" to appInfo?.versionName,
+            "applicationIdentifier" to appInfo?.packageName,
+
+            "deviceManufacturer" to Build.BRAND,
+            "deviceId" to Build.MODEL,
+        ))
     }
 }

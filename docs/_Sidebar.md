@@ -20,6 +20,7 @@
 - [User Info](User-Info.md)
 <!--- [Migration Instructions](Migration-Instructions.md)-->
 - [Sample Integration](Sample-Integration.md)
+- [Additional Utilities](Additional-Utilities.md)
 
 **Other**
 - [Changelog](Changelog.md)

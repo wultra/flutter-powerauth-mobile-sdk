@@ -72,7 +72,7 @@ class PowerAuthEnvironmentInfo {
         applicationIdentifier: json['applicationIdentifier'] as String?,
         deviceManufacturer: json['deviceManufacturer'] as String,
         deviceId: json['deviceId'] as String,
-        sdkVersion: libraryVersion, // Use the library version defined in version.dart
+        sdkVersion: powerAuthFlutterVersion, // Use the library version defined in version.dart
       );
     }
 
