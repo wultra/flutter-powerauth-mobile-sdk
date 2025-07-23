@@ -18,7 +18,6 @@ package com.wultra.android.powerauth.flutter.internal.services
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.pm.PackageManager.PackageInfoFlags
 import android.os.Build
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException

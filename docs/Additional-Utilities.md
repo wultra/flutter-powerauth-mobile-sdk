@@ -14,7 +14,7 @@ Returns information about the current environment, including system details, dev
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
 final envInfo = await PowerAuthUtils.getEnvironmentInfo();
-print("Device manufacturer: ${envInfo.deviceId}");
+print("Device manufacturer: ${envInfo.deviceManufacturer}");
 ```
 
 **Response:**
