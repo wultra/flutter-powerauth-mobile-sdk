@@ -55,7 +55,7 @@ class PowerAuth {
   PowerAuthTokenStore get tokenStore => _tokenStore;
   final PowerAuthTokenStore _tokenStore;
 
-  /// Object providing functions to sychronize time with the server.
+  /// Object providing functions to synchronize time with the server.
   PowerAuthTimeSynchronizationService get timeSynchronizationService => _timeSynchronizationService;
   final PowerAuthTimeSynchronizationService _timeSynchronizationService;
 
