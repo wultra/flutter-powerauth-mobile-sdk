@@ -895,7 +895,6 @@ private extension PowerAuthActivationState {
 }
 
 private extension TimeInterval {
-    var milliseconds: Int {
-        return Int(self * 1000)
-    }
+    // TimeInterval is in seconds, but we need milliseconds for Flutter
+    var milliseconds: Int { Int(self * 1000) }
 }

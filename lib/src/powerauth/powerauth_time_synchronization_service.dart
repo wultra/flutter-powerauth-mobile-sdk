@@ -16,7 +16,7 @@
 
 import 'powerauth_platform_interface.dart';
 
-/// The `PowerAuthTimeSynchronizationService` protocol defines interface that allows you to synchronize the
+/// The `PowerAuthTimeSynchronizationService` allows you to synchronize the
 /// local device time with the PowerAuth Server and then get the synchronized time.
 class PowerAuthTimeSynchronizationService {
 

@@ -34,15 +34,15 @@ To get the synchronized time, use the following code:
 
 ```dart
 if (await timeService.isTimeSynchronized()) {
-    // Get synchronized timestamp (in milliseconds)
-    final timestamp = await timeService.currentTime();
-    // If a date object is required, then use the following snippet
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  // Get synchronized timestamp (in milliseconds)
+  final timestamp = await timeService.currentTime();
+  // If a date object is required, then use the following snippet
+  final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
 } else {
-    // Time is not synchronized yet. If you call currentTime() then 
-    // the returned timestamp is similar to Date().timeIntervalSince1970 * 1000 on iOS
-    // or System.currentTimeMillis() on Android
-    final timestamp = await timeService.currentTime();
+  // Time is not synchronized yet. If you call currentTime() then 
+  // the returned timestamp is similar to Date().timeIntervalSince1970 * 1000 on iOS
+  // or System.currentTimeMillis() on Android
+  final timestamp = await timeService.currentTime();
 }
 ```
 
@@ -50,8 +50,8 @@ The time service provides additional information about time, such as how precise
 
 ```dart
 if (await timeService.isTimeSynchronized()) {
-    final precision = await timeService.localTimeAdjustmentPrecision();
-    print("Time is synchronized with $precision ms precision");
+  final precision = await timeService.localTimeAdjustmentPrecision();
+  print("Time is synchronized with $precision ms precision");
 }
 ```
 
