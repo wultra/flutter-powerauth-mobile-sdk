@@ -64,7 +64,13 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "removeAllLocalTokens": removeAllLocalTokens,
         "generateHeaderForToken": generateHeaderForToken,
         "fetchUserInfo": fetchUserInfo,
-        "getLastFetchedUserInfo": getLastFetchedUserInfo
+        "getLastFetchedUserInfo": getLastFetchedUserInfo,
+        "isTimeSynchronized": isTimeSynchronized,
+        "localTimeAdjustment": localTimeAdjustment,
+        "localTimeAdjustmentPrecision": localTimeAdjustmentPrecision,
+        "currentTime": currentTime,
+        "synchronizeTime": synchronizeTime,
+        "resetTimeSynchronization": resetTimeSynchronization
     ]
     
     // Possible Flutter call parameters
@@ -758,6 +764,52 @@ internal class PowerAuthService: PowerAuthFlutterService {
         }
     }
     
+    private func isTimeSynchronized(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            result(sdk.timeSynchronizationService.isTimeSynchronized)
+        }
+    }
+    
+    private func localTimeAdjustment(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            result(sdk.timeSynchronizationService.localTimeAdjustment.milliseconds)
+        }
+    }
+    
+    private func localTimeAdjustmentPrecision(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            result(sdk.timeSynchronizationService.localTimeAdjustmentPrecision.milliseconds)
+        }
+    }
+    
+    private func currentTime(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            // the native SDK returns time in seconds, but we need milliseconds
+            result(sdk.timeSynchronizationService.currentTime().milliseconds)
+        }
+    }
+    
+    private func synchronizeTime(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            sdk.timeSynchronizationService.synchronizeTime( callback: { error in
+                wrap {
+                    if let error {
+                        throw error
+                    } else {
+                        result(nil)
+                    }
+                }
+            }, callbackQueue: nil)
+        }
+    }
+    
+    private func resetTimeSynchronization(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, wrap in
+            sdk.timeSynchronizationService.resetTimeSynchronization()
+            result(nil)
+        }
+    }
+    
     // MARK: PowerAuth Helper methods
     
     private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
@@ -839,5 +891,11 @@ private extension PowerAuthActivationState {
         case .deadlock: "deadlock"
         @unknown default: fatalError("UNSUPPORTED POWERAUTH ACTIVATION STATE")
         }
+    }
+}
+
+private extension TimeInterval {
+    var milliseconds: Int {
+        return Int(self * 1000)
     }
 }

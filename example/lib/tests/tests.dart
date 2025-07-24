@@ -24,6 +24,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerau
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_native_object_register_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_password_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_signature_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_time_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_token_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_userinfo_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/utils_tests.dart';
@@ -41,6 +42,7 @@ class Tests {
       PowerAuthBiometricsTests(),
       PowerAuthEncryptorTests(),
       PowerAuthTokenTests(),
+      PowerAuthTimeTests(),
       PowerAuthNativeObjectRegisterTests(),
       PowerauthBiometricsInteractiveTests(),
       PowerAuthUserInfoTests(),
