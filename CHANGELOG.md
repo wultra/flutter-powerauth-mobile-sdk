@@ -1,3 +1,7 @@
+## 1.1.0 (TBD)
+
+* Added `PowerAuthUtils` that provides `getEnvironmentInfo` with device, system and app info
+
 ## 1.0.0
 
 * First stable release of our PowerAuth Mobile Flutter SDK – v1.0.0! 🎉
