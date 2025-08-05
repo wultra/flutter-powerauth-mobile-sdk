@@ -590,6 +590,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               _buildSignatureButtons(),
               const SizedBox(height: 20),
 
+              Text(
+                'Time Synchronization',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              _buildTimeSyncButtons(),
+              const SizedBox(height: 20),
+
               // Validation Section
               Text(
                 'Validation Utilities',
@@ -802,6 +810,114 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
           child: const Text('Remove Activation (Local Only)'),
         ),
+      ],
+    );
+  }
+
+  /// Builds the time synchronization buttons.
+  Widget _buildTimeSyncButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    final isSynchronized = await _powerAuth.timeSynchronizationService.isTimeSynchronized();
+                    await _showSimpleDialog(
+                      "Time Synchronization",
+                      isSynchronized ? "The time is synchronized." : "The time is NOT synchronized."
+                    );
+                  },
+          child: const Text('Is Time Synchronized'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    final localTimeAdjustment = await _powerAuth.timeSynchronizationService.localTimeAdjustment();
+                    await _showSimpleDialog(
+                      "Local Time Adjustment",
+                      "Local time adjustment is: $localTimeAdjustment ms",
+                    );
+                  },
+          child: const Text('Get Local Time Adjustment'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    final localTimeAdjustmentPrecision = await _powerAuth.timeSynchronizationService.localTimeAdjustmentPrecision();
+                    await _showSimpleDialog(
+                      "Local Time Adjustment Precision",
+                      "Local time adjustment precision is: $localTimeAdjustmentPrecision ms",
+                    );
+                  },
+          child: const Text('Get Local Time Adjustment Precision'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    final currentTime = await _powerAuth.timeSynchronizationService.currentTime();
+                    final date = DateTime.fromMillisecondsSinceEpoch(currentTime);
+                    await _showSimpleDialog(
+                      "Current Time",
+                      "Current time is: $currentTime, which is ${date.toIso8601String()}",
+                    );
+                  },
+          child: const Text('Get Current Time'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    var isSuccess = false;
+                    try {
+                      await _powerAuth.timeSynchronizationService.synchronizeTime();
+                      isSuccess = true;
+                    } catch (e) {
+                      print(e);
+                      isSuccess = false;
+                    }
+                    await _showSimpleDialog(
+                      "Time Synchronization",
+                      isSuccess ? "Time synchronized successfully." : "Failed to synchronize time.",
+                    );
+                  },
+          child: const Text('Synchronize Time'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () async {
+                    var isSuccess = false;
+                    try {
+                      await _powerAuth.timeSynchronizationService.resetTimeSynchronization();
+                      isSuccess = true;
+                    } catch (e) {
+                      print(e);
+                      isSuccess = false;
+                    }
+                    await _showSimpleDialog(
+                      "Reset Time Synchronization",
+                      isSuccess ? "Time reset successfully." : "Failed to reset time.",
+                    );
+                  },
+          child: const Text('Reset Time Synchronization'),
+        ),
+        const SizedBox(height: 8),
       ],
     );
   }
@@ -1163,6 +1279,22 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
           child: const Text('Correct Typed Character'),
         ),
       ],
+    );
+  }
+
+  Future<void> _showSimpleDialog(String title, String content) {
+    return showDialog(
+      context: context, 
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 

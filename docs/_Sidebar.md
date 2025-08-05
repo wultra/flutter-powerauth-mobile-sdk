@@ -18,7 +18,7 @@
 - [PowerAuth Server Compatibility](PowerAuth-Server-Compatibility.md)
 - [Troubleshooting](Troubleshooting.md)
 - [User Info](User-Info.md)
-<!--- [Migration Instructions](Migration-Instructions.md)-->
+- [Time Synchronization](Time-Synchronization.md)
 - [Sample Integration](Sample-Integration.md)
 - [Additional Utilities](Additional-Utilities.md)
 
