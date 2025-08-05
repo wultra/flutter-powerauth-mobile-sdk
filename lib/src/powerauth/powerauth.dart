@@ -349,14 +349,6 @@ class PowerAuth {
   Future<PowerAuthUserInfo?> getLastFetchedUserInfo() {
     return _platform.getLastFetchedUserInfo(instanceId);
   }
-
-  Future<void> startBackgroundIsolate() {
-    return _platform.startBackgroundIsolate();
-  }
-
-  Future<void> removeBackgroundIsolate() {
-    return _platform.removeBackgroundIsolate();
-  }
 }
 
 /// Internal helper class to hold the configuration set for a single PowerAuth instance.
