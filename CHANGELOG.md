@@ -1,6 +1,7 @@
-## 1.1.0 (TBD)
+## 1.1.0
 
-* Added `PowerAuthUtils` that provides `getEnvironmentInfo` with device, system and app info
+* Added `PowerAuthUtils` that provides `getEnvironmentInfo` with device, system and app info.
+* Added `PowerAuthTimeSynchronizationService` that provides time synchronization with the server.
 
 ## 1.0.0
 
