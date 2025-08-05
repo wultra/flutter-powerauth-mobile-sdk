@@ -24,29 +24,18 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     private let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)]
     
     public override init() {
+        // Notify the registry that a new plugin instance has been attached.
+        PowerAuthServiceRegistry.onPluginAttached()
         
-        let register = PowerAuthObjectRegister()
-        
-        let services: [any PowerAuthFlutterService] = [
-            PowerAuthService(register: register),
-            PowerAuthUtilsService(),
-            PowerAuthPasswordService(register: register),
-            PowerAuthEncryptorService(register: register),
-            PowerAuthRegisterService(register: register),
-            PowerAuthLoggingService()
-        ]
-        
-        var handlers = [String: (service: any PowerAuthFlutterService, handler: Any)]()
-        
-        services.forEach { service in
-            service.opaqueHandlers.forEach { k, v in
-                handlers[k] = (service, v)
-            }
-        }
-        
-        self.handlers = handlers
+        // Fetch the already-initialised (or freshly created) registry instance and take a reference
+        // to its handlers map.
+        self.handlers = PowerAuthServiceRegistry.shared.handlers
         
         super.init()
+    }
+    
+    deinit {
+        PowerAuthServiceRegistry.onPluginDetached()
     }
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -79,9 +68,5 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
 private extension PowerAuthFlutterService {
     func handle(_ handler: Any, _ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try (handler as! Handler)(self)(call, result)
-    }
-    
-    var opaqueHandlers: [String: Any] {
-        return handlers.mapValues { $0 }
     }
 }
