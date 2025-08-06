@@ -18,6 +18,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../model/powerauth_activation_code.dart';
 import '../model/powerauth_error.dart';
+import '../powerauth_utils/powerauth_utils.dart';
 
 import 'powerauth_activation_code_utils_method_channel.dart';
 
@@ -56,6 +57,10 @@ abstract class PowerAuthUtilsPlatform extends PlatformInterface {
     throw UnimplementedError(
       'correctTypedCharacter() has not been implemented.',
     );
+  }
+
+  Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() {
+    throw UnimplementedError('getEnvironmentInfo() has not been implemented.');
   }
 
   // TODO: do we want to move this to a dedicated PassphraseMeter module?

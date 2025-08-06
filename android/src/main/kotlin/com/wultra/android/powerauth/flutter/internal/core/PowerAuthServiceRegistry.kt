@@ -19,9 +19,7 @@ package com.wultra.android.powerauth.flutter.internal.core
 import android.app.Activity
 import android.content.Context
 import androidx.fragment.app.FragmentActivity
-import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
-import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.*
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthBackgroundIsolateService
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthEncryptorService
@@ -102,7 +100,7 @@ class PowerAuthServiceRegistry private constructor(appContext: Context) {
         registerAll(
             PowerAuthService(objectRegister, appContext, getCurrentActivity = { activities.getFirstAvailable() }),
             PowerAuthPasswordService(objectRegister),
-            PowerAuthUtilsService(),
+            PowerAuthUtilsService(appContext),
             PowerAuthEncryptorService(objectRegister, appContext),
             PowerAuthRegisterService(objectRegister),
             PowerAuthLoggingService(),

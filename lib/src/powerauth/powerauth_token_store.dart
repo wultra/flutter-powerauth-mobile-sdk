@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_platform_interface.dart';
+import '../model/powerauth_authentication.dart';
+import '../model/powerauth_authorization_http_header.dart';
+import 'powerauth_platform_interface.dart';
 
 /// The PowerAuthTokenStore provides interface for managing access tokens. The class is using Keychain as 
 /// underlying storage for received data. Note that the whole store's interface is thread safe, but it's 
