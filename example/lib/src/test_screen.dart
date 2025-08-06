@@ -90,7 +90,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         final biometryConfig = PowerAuthBiometryConfiguration();
         final keychainConfig = PowerAuthKeychainConfiguration();
         final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
-        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "tst1");
+        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "fapp");
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
