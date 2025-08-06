@@ -3,15 +3,13 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 
 class LoggingSection extends StatelessWidget {
   final List<PowerAuthLog> logs;
-  final bool isLoggingEnabled;
-  final PowerAuthLogLevel logLevel;
-  final Function(bool, PowerAuthLogLevel) onConfigurationChanged;
+  final PowerAuthLoggingConfig loggingConfig;
+  final Function(PowerAuthLoggingConfig) onConfigurationChanged;
 
   const LoggingSection({
     super.key,
     required this.logs,
-    required this.isLoggingEnabled,
-    required this.logLevel,
+    required this.loggingConfig,
     required this.onConfigurationChanged,
   });
 
@@ -25,13 +23,11 @@ class LoggingSection extends StatelessWidget {
           children: [
             const Text('Enable Logging:'),
             Switch(
-              value: isLoggingEnabled,
+              value: loggingConfig.enabled,
               onChanged: (value) async {
-                onConfigurationChanged(value, logLevel);
-                await PowerAuthDebug.configureLogging(
-                  enabled: value,
-                  logLevel: logLevel,
-                );
+                final newConfig = loggingConfig.copyWith(enabled: value);
+                onConfigurationChanged(newConfig);
+                await PowerAuthDebug.configureLogging(newConfig);
               },
             ),
           ],
@@ -41,14 +37,12 @@ class LoggingSection extends StatelessWidget {
           children: [
             const Text('Log Level:'),
             DropdownButton<PowerAuthLogLevel>(
-              value: logLevel,
+              value: loggingConfig.level,
               onChanged: (PowerAuthLogLevel? newValue) async {
                 if (newValue != null) {
-                  onConfigurationChanged(isLoggingEnabled, newValue);
-                  await PowerAuthDebug.configureLogging(
-                    enabled: isLoggingEnabled,
-                    logLevel: newValue,
-                  );
+                  final newConfig = loggingConfig.copyWith(level: newValue);
+                  onConfigurationChanged(newConfig);
+                  await PowerAuthDebug.configureLogging(newConfig);
                 }
               },
               items:
@@ -63,12 +57,19 @@ class LoggingSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: () {
-            PowerAuthLogger.info('This is a test log from the example app.');
-          },
-          child: const Text('Generate Test Log'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Log to Console:'),
+            Switch(
+              value: loggingConfig.logToConsole,
+              onChanged: (value) async {
+                final newConfig = loggingConfig.copyWith(logToConsole: value);
+                onConfigurationChanged(newConfig);
+                await PowerAuthDebug.configureLogging(newConfig);
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -81,10 +82,13 @@ class LoggingSection extends StatelessWidget {
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];
+              final timestamp = log.timestamp;
+              final formattedTime =
+                  '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
               return ListTile(
                 title: Text(log.message),
                 subtitle: Text(
-                  '${log.level.name.toUpperCase()} - ${log.tag ?? 'No Tag'}',
+                  '$formattedTime - ${log.level.name.toUpperCase()} - ${log.tag ?? 'No Tag'}',
                 ),
               );
             },

@@ -75,15 +75,15 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         }
         
         do {
-            PowerAuthLogger.debug("Call \(call.method) being handled by the \(service.name) service")
             try service.handle(handler, call, result)
         } catch let e {
+            PowerAuthLogger.error("PowerAuth plugin with method \(call.method) threw an error: \(e.localizedDescription)")
             result(FlutterError(thrownByPlugin: e))
         }
     }
     
     private func defaultHandle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        PowerAuthLogger.info("PowerAuth plugin received unexpected method: \(call.method)")
+        PowerAuthLogger.warning("PowerAuth plugin received unexpected method: \(call.method)")
         result(FlutterMethodNotImplemented)
     }
 }

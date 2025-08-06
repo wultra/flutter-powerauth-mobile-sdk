@@ -29,6 +29,7 @@ class PowerAuthLoggingService : BasePowerAuthService(null) {
     private companion object ArgKeys {
         const val LEVEL = "level"
         const val ENABLED = "enabled"
+        const val CONSOLE = "console"
     }
 
     private object HandlerNames {
@@ -44,11 +45,13 @@ class PowerAuthLoggingService : BasePowerAuthService(null) {
     private fun configure(call: MethodCall, result: Result) {
         val enabled = call.getRequiredArgument<Boolean>(ENABLED)
         val levelString = call.getRequiredArgument<String>(LEVEL).uppercase()
+        val logToConsole = call.getRequiredArgument<Boolean>(CONSOLE)
 
         try {
             val level = PowerAuthLogLevel.valueOf(levelString)
             PowerAuthLogger.level = level
             PowerAuthLogger.enabled = enabled
+            PowerAuthLogger.logToConsole = logToConsole
             result.success(null)
         } catch (e: IllegalArgumentException) {
             result.error(Errors.EC_INVALID_LOG_LEVEL, "Invalid log level: $levelString", null)

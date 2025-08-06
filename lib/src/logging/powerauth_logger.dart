@@ -17,43 +17,10 @@
 import 'package:flutter/foundation.dart';
 
 import '../debug/powerauth_debug.dart';
-
-/// An enumeration of all possible logging levels used in the PowerAuth SDK.
-enum PowerAuthLogLevel {
-
-  /// Log everything.
-  verbose,
-
-  /// Log debug messages.
-  debug,
-
-  /// Log informational messages.
-  info,
-
-  /// Log warnings.
-  warning,
-
-  /// Log errors.
-  error,
-}
-
-/// A class that represents a single log message.
-class PowerAuthLog {
-  /// The level of the log message.
-  final PowerAuthLogLevel level;
-
-  /// The log message.
-  final String message;
-
-  /// An optional tag for the log message.
-  final String? tag;
-
-  PowerAuthLog(this.level, this.message, {this.tag});
-}
+import 'powerauth_log_types.dart';
 
 /// A simple Logger class.
 class PowerAuthLogger {
-
   static void _log({
     required PowerAuthLogLevel level,
     required String message,
@@ -61,13 +28,15 @@ class PowerAuthLogger {
   }) {
     if (PowerAuthDebug.loggingEnabled &&
         level.index >= PowerAuthDebug.logLevel.index) {
-        final prefix = _logPrefix(level);
+      final prefix = _logPrefix(level);
 
-        // Log the actual message
-        debugPrint("$prefix/$tag: $message");
+      // Optionally print to the Dart console
+      if (PowerAuthDebug.logToConsole) {
+        debugPrint("$prefix/${tag ?? 'SDK'}: $message");
+      }
 
-        // Forward the log the the public log stream
-        PowerAuthDebug.pushLog(PowerAuthLog(level, message, tag: tag));
+      // Forward the log the the public log stream
+      PowerAuthDebug.pushLog(PowerAuthLog(level, message, tag: tag));
     }
   }
 

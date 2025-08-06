@@ -90,7 +90,9 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             if (serviceName == null || methodName == null) {
+                PowerAuthLogger.warning { "PowerAuth plugin received unexpected method: ${call.method}" }
                 result.notImplemented()
+
                 return
             }
 
@@ -99,6 +101,7 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     ?: result.notImplemented()
             } ?: result.notImplemented()
         } catch (e: Exception) {
+            PowerAuthLogger.error { "PowerAuth plugin with method ${call.method} threw an error: ${e.localizedMessage}" }
             Errors.error(result, e)
         }
     }

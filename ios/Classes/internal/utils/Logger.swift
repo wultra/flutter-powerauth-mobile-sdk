@@ -17,6 +17,7 @@
 import PowerAuth2
 import Foundation
 import Flutter
+import os.log
 
 /**
  An enumeration of all possible logging levels used in the PowerAuth SDK.
@@ -37,6 +38,13 @@ enum PowerAuthLogLevel: Int, Comparable {
  A simple logger for internal SDK usage.
  */
 class PowerAuthLogger: NSObject, FlutterStreamHandler, PowerAuthLogDelegate {
+
+    /// Determines whether log messages are also printed to the Xcode / device console.
+    static var logToConsole: Bool = true
+    
+    /// System logger for console output
+    @available(iOS 14.0, *)
+    private static let systemLogger = Logger(subsystem: "com.wultra.powerauth.flutter", category: "SDK")
 
     /// The current logging level.
     static var level: PowerAuthLogLevel = .info {
@@ -93,13 +101,28 @@ class PowerAuthLogger: NSObject, FlutterStreamHandler, PowerAuthLogDelegate {
         
         let logMessage = message()
 
-        // TODO: use the system Logger instead of printing?
-        print("PowerAuthSDK: \(logMessage)")
+        if logToConsole {
+            if #available(iOS 14.0, *) {
+                switch level {
+                case .verbose, .debug:
+                    systemLogger.debug("\(logMessage)")
+                case .info:
+                    systemLogger.info("\(logMessage)")
+                case .warning:
+                    systemLogger.warning("\(logMessage)")
+                case .error:
+                    systemLogger.error("\(logMessage)")
+                }
+            } else {
+                print("PowerAuthSDK: \(logMessage)")
+            }
+        }
         
         let logData: [String: Any] = [
             "level": level.stringValue,
             "message": logMessage,
-            "tag": tag ?? "PowerAuthSDK"
+            "tag": tag ?? "PowerAuthSDK",
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
         ]
         
         DispatchQueue.main.async {

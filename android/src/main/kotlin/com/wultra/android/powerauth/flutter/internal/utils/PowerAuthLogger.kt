@@ -60,6 +60,13 @@ object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
             updateNativeSdkLogging()
         }
 
+    /** Determines whether logs are also printed Log. */
+    var logToConsole: Boolean = true
+        set(value) {
+            field = value
+            updateNativeSdkLogging()
+        }
+
     /** Logs a verbose message. */
     fun verbose(message: () -> String) = log(PowerAuthLogLevel.VERBOSE, message)
 
@@ -111,12 +118,15 @@ object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
             PowerAuthLogLevel.ERROR -> Log.ERROR
         }
 
-        Log.println(priority, "PowerAuthSDK", logMessage)
+        if (logToConsole) {
+            Log.println(priority, "PowerAuthSDK", logMessage)
+        }
 
         val logData = mapOf(
             "level" to messageLevel.name.lowercase(),
             "message" to logMessage,
-            "tag" to (tag ?: "PowerAuthSDK")
+            "tag" to (tag ?: "PowerAuthSDK"),
+            "timestamp" to System.currentTimeMillis()
         )
 
         mainThreadHandler.post {

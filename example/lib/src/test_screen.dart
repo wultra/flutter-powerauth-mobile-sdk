@@ -63,8 +63,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   // Logging related state
   final List<PowerAuthLog> _logs = [];
-  bool _isLoggingEnabled = PowerAuthDebug.loggingEnabled;
-  PowerAuthLogLevel _logLevel = PowerAuthLogLevel.info;
+  PowerAuthLoggingConfig _loggingConfig = const PowerAuthLoggingConfig(level: PowerAuthLogLevel.debug);
 
   @override
   void initState() {
@@ -618,12 +617,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               const SizedBox(height: 10),
               LoggingSection(
                 logs: _logs,
-                isLoggingEnabled: _isLoggingEnabled,
-                logLevel: _logLevel,
-                onConfigurationChanged: (enabled, level) {
+                loggingConfig: _loggingConfig,
+                onConfigurationChanged: (config) {
                   setState(() {
-                    _isLoggingEnabled = enabled;
-                    _logLevel = level;
+                    _loggingConfig = config;
                   });
                 },
               ),

@@ -19,7 +19,8 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import '../logging/powerauth_logger.dart';
+import '../logging/powerauth_log_types.dart';
+import '../logging/powerauth_logging_config.dart';
 import '../powerauth/powerauth_platform_interface.dart';
 import '../powerauth_native_object_register/powerauth_native_object_register.dart';
 import '../utils/method_channel_helper.dart';
@@ -35,16 +36,17 @@ class PowerAuthDebug {
 
   // Logging Configuration
 
-  static PowerAuthLogLevel _logLevel = PowerAuthLogLevel.info;
-  static bool _loggingEnabled = kDebugMode;
+  static PowerAuthLoggingConfig _loggingConfig = const PowerAuthLoggingConfig();
   static bool _isLogListenerInitialized = false;
 
-  // TODO: discuss whether we should use kDebugMode here or keep this to enable logging in production?
-  /// Indicated whether logging is currently enabled.
-  static bool get loggingEnabled => _loggingEnabled;
+  /// Indicates whether logging is currently enabled.
+  static bool get loggingEnabled => _loggingConfig.enabled;
+
+  /// Whether logs are also printed to the platform console.
+  static bool get logToConsole => _loggingConfig.logToConsole;
 
   /// The current log level.
-  static PowerAuthLogLevel get logLevel => _logLevel;
+  static PowerAuthLogLevel get logLevel => _loggingConfig.level;
 
   static final StreamController<PowerAuthLog> _logController =
       StreamController<PowerAuthLog>.broadcast();
@@ -73,29 +75,32 @@ class PowerAuthDebug {
       if (logData is Map) {
         final level = PowerAuthLogLevel.values.firstWhere(
           (e) => e.toString() == 'PowerAuthLogLevel.${logData['level']}',
+          orElse: () => PowerAuthLogLevel.info,
         );
         final message = logData['message'] as String;
         final tag = logData['tag'] as String?;
-        _logController.add(PowerAuthLog(level, message, tag: tag));
+        final timestamp =
+            logData['timestamp'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(
+                  logData['timestamp'] as int,
+                )
+                : null;
+
+        _logController.add(
+          PowerAuthLog(level, message, tag: tag, timestamp: timestamp),
+        );
       }
     });
   }
 
   /// Configures the logging functionality.
   ///
-  /// - [enabled] enables or disables logging.
-  /// - [logLevel] sets the minimum level of logs to be processed.
-  static Future<void> configureLogging({
-    required bool enabled,
-    required PowerAuthLogLevel logLevel,
-  }) async {
+  /// - [config] the logging configuration to apply.
+  static Future<void> configureLogging(PowerAuthLoggingConfig config) async {
     _ensureLogListenerInitialized();
-    _loggingEnabled = enabled;
-    _logLevel = logLevel;
-    await PowerAuthPlatform.instance.configureNativeLogging(
-      enabled: enabled,
-      logLevel: logLevel,
-    );
+    _loggingConfig = config;
+
+    await PowerAuthPlatform.instance.configureNativeLogging(config);
   }
 
   /// Pushes a log entry to the central log stream. For internal use by PowerAuthLogger.

@@ -52,4 +52,5 @@ export 'src/powerauth_encryptor/powerauth_encryptor.dart';
 export 'src/debug/powerauth_debug.dart';
 export 'src/powerauth_native_object_register/powerauth_native_object_register.dart';
 
-export 'src/logging/powerauth_logger.dart';
+export 'src/logging/powerauth_log_types.dart';
+export 'src/logging/powerauth_logging_config.dart';

@@ -24,7 +24,6 @@ import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
 
-
 /// An implementation of [PowerAuthPlatform] that uses method channels.
 class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper {
 
@@ -33,14 +32,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
   @override
-  Future<void> configureNativeLogging({
-    required bool enabled,
-    required PowerAuthLogLevel logLevel,
-  }) async {
-    await invokeMethod<void>('logging_configure', {
-      'enabled': enabled,
-      'level': logLevel.name,
-    });
+  Future<void> configureNativeLogging(PowerAuthLoggingConfig config) async {
+    await invokeMethod<void>('logging_configure', config.toMap());
   }
 
   @override
@@ -67,7 +60,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         auth.biometryKeyId = null;
       }
     }
-    
+
     // On both platforms we need to fetch the key for every biometric authentication.
     // If the key is already set, use it.
     if (auth.useBiometry && auth.biometryKeyId == null) {
