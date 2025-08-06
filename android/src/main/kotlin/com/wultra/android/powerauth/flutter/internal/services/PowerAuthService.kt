@@ -144,6 +144,12 @@ internal class PowerAuthService(
         const val SIGN_DATA_WITH_DEVICE_PRIVATE_KEY = "signDataWithDevicePrivateKey"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
+        const val IS_TIME_SYNCHRONIZED = "isTimeSynchronized"
+        const val LOCAL_TIME_ADJUSTMENT = "localTimeAdjustment"
+        const val LOCAL_TIME_ADJUSTMENT_PRECISION = "localTimeAdjustmentPrecision"
+        const val CURRENT_TIME = "currentTime"
+        const val SYNCHRONIZE_TIME = "synchronizeTime"
+        const val RESET_TIME_SYNCHRONIZATION = "resetTimeSynchronization"
     }
 
     override val handlers by lazy {
@@ -182,7 +188,13 @@ internal class PowerAuthService(
             HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
             HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to this::signDataWithDevicePrivateKey,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
-            HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo
+            HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
+            HandlerNames.IS_TIME_SYNCHRONIZED to this::isTimeSynchronized,
+            HandlerNames.LOCAL_TIME_ADJUSTMENT to this::localTimeAdjustment,
+            HandlerNames.LOCAL_TIME_ADJUSTMENT_PRECISION to this::localTimeAdjustmentPrecision,
+            HandlerNames.CURRENT_TIME to this::currentTime,
+            HandlerNames.SYNCHRONIZE_TIME to this::synchronizeTime,
+            HandlerNames.RESET_TIME_SYNCHRONIZATION to this::resetTimeSynchronization
         )
     }
 
@@ -1036,5 +1048,53 @@ internal class PowerAuthService(
     @Suppress("UNUSED_PARAMETER")
     private fun getBiometryInfo(call: MethodCall, result: Result) {
         getBiometryInfo(context, result)
+    }
+
+    private fun isTimeSynchronized(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.timeSynchronizationService.isTimeSynchronized)
+        }
+    }
+
+    private fun localTimeAdjustment(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            // double is expected on the Flutter side
+            result.success(sdk.timeSynchronizationService.localTimeAdjustment)
+        }
+    }
+
+    private fun localTimeAdjustmentPrecision(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            // double is expected on the Flutter side
+            result.success(sdk.timeSynchronizationService.localTimeAdjustmentPrecision)
+        }
+    }
+
+    private fun currentTime(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            // double is expected on the Flutter side
+            result.success(sdk.timeSynchronizationService.currentTime)
+        }
+    }
+
+    private fun synchronizeTime(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            sdk.timeSynchronizationService.synchronizeTime(object : ITimeSynchronizationListener {
+                override fun onTimeSynchronizationSucceeded() {
+                    result.success(null)
+                }
+
+                override fun onTimeSynchronizationFailed(t: Throwable) {
+                    Errors.error(result, t)
+                }
+            })
+        }
+    }
+
+    private fun resetTimeSynchronization(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            sdk.timeSynchronizationService.resetTimeSynchronization()
+            result.success(null)
+        }
     }
 }

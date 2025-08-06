@@ -266,4 +266,28 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthUserInfo?> getLastFetchedUserInfo(String instanceId) {
     throw UnimplementedError('getLastFetchedUserInfo() has not been implemented.');
   }
+
+  Future<bool> isTimeSynchronized(String instanceId) {
+    throw UnimplementedError('isTimeSynchronized() has not been implemented.');
+  }
+
+  Future<int> localTimeAdjustment(String instanceId) {
+    throw UnimplementedError('localTimeAdjustment() has not been implemented.');
+  }
+
+  Future<int> localTimeAdjustmentPrecision(String instanceId) {
+    throw UnimplementedError('localTimeAdjustmentPrecision() has not been implemented.');
+  }
+
+  Future<int> currentTime(String instanceId) {
+    throw UnimplementedError('currentTime() has not been implemented.');
+  }
+
+  Future<void> synchronizeTime(String instanceId) {
+    throw UnimplementedError('synchronizeTime() has not been implemented.');
+  }
+
+  Future<void> resetTimeSynchronization(String instanceId) {
+    throw UnimplementedError('resetTimeSynchronization() has not been implemented.');
+  }
 }

@@ -407,6 +407,48 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     return PowerAuthUserInfo(result['allClaims'] as Map?);
   }
 
+  @override
+  Future<bool> isTimeSynchronized(String instanceId) async {
+    return await invokeMethod('isTimeSynchronized', {
+      'instanceId': instanceId
+    });
+  }
+
+  @override
+  Future<int> localTimeAdjustment(String instanceId) async {
+    return await invokeMethod('localTimeAdjustment', {
+      'instanceId': instanceId
+    });
+  }
+
+  @override
+  Future<int> localTimeAdjustmentPrecision(String instanceId) async {
+    return await invokeMethod('localTimeAdjustmentPrecision', {
+      'instanceId': instanceId
+    });
+  }
+
+  @override
+  Future<int> currentTime(String instanceId) async {
+    return await invokeMethod('currentTime', {
+      'instanceId': instanceId
+    });
+  }
+
+  @override
+  Future<void> synchronizeTime(String instanceId) async {
+    await invokeMethod('synchronizeTime', {
+      'instanceId': instanceId
+    });
+  }
+  
+  @override
+  Future<void> resetTimeSynchronization(String instanceId) async {
+    await invokeMethod('resetTimeSynchronization', {
+      'instanceId': instanceId
+    });
+  }
+
   Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {
     final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     return await resolvedAuth.prepareAuthArguments(baseArgs);

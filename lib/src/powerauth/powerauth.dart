@@ -16,13 +16,12 @@
 
 import 'dart:async';
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
-
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
+import '../model/powerauth_user_info.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../model/powerauth_activation.dart';
@@ -35,6 +34,7 @@ import '../model/powerauth_encryptor.dart';
 import '../model/powerauth_external_pending_operation.dart';
 import '../powerauth_encryptor/powerauth_encryptor.dart';
 import 'powerauth_token_store.dart';
+import 'powerauth_time_synchronization_service.dart';
 import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
@@ -51,16 +51,22 @@ class PowerAuth {
   // Static registry to hold configurations for active instances
   static final Map<String, _InstanceConfigurationHolder> _configRegister = {};
 
+  /// Instance of the token store object, which provides interface for generating token based authentication headers.
   PowerAuthTokenStore get tokenStore => _tokenStore;
   final PowerAuthTokenStore _tokenStore;
+
+  /// Object providing functions to synchronize time with the server.
+  PowerAuthTimeSynchronizationService get timeSynchronizationService => _timeSynchronizationService;
+  final PowerAuthTimeSynchronizationService _timeSynchronizationService;
 
   /// Creates an instance of the PowerAuth SDK client.
   ///
   /// Multiple PowerAuth SDK instances can be created, each identified by a unique [instanceId].
-  ///  The bundle identifier/packagename is recommended.
+  /// The bundle identifier/packagename is recommended.
   ///
   /// Two instances with the same instanceId will be internally the same object!
-  PowerAuth(this.instanceId): _tokenStore = PowerAuthTokenStore(instanceId) {
+  PowerAuth(this.instanceId): _tokenStore = PowerAuthTokenStore(instanceId),
+        _timeSynchronizationService = PowerAuthTimeSynchronizationService(instanceId) {
     if (instanceId.isEmpty) {
       throw ArgumentError.value(instanceId, 'instanceId', 'cannot be empty');
     }

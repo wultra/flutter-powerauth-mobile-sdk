@@ -22,6 +22,7 @@ import '../utils/method_channel_helper.dart';
 import '../model/powerauth_activation_code.dart';
 import '../model/powerauth_error.dart';
 import '../powerauth_password/powerauth_password.dart';
+import '../powerauth_utils/powerauth_utils.dart';
 
 /// Method channel implementation for PowerAuth utility functions.
 class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
@@ -75,6 +76,12 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
     return await invokeMethod<int>('util_correctTypedCharacter', {
       'character': character,
     });
+  }
+
+  @override
+  Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('util_getEnvironmentInfo', null);
+    return PowerAuthEnvironmentInfo.fromJson(result);
   }
 
   @override

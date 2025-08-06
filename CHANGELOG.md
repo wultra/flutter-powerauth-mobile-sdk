@@ -1,3 +1,8 @@
+## 1.1.0
+
+* Added `PowerAuthUtils` that provides `getEnvironmentInfo` with device, system and app info.
+* Added `PowerAuthTimeSynchronizationService` that provides time synchronization with the server.
+
 ## 1.0.0
 
 * First stable release of our PowerAuth Mobile Flutter SDK – v1.0.0! 🎉
