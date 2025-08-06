@@ -68,6 +68,8 @@ internal class PowerAuthServiceRegistry {
     internal static func onPluginDetached() {
         _lock.synchronized {
             _attachmentCount = max(0, _attachmentCount - 1)
+            
+            assert(_attachmentCount > 0, "PowerAuthServiceRegistry: Detach called more times than attach.")
 
             // If no more plugins / engines are attached, we can clean up.
             if _attachmentCount == 0 {

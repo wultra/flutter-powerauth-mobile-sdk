@@ -46,13 +46,11 @@ internal class PowerAuthBackgroundIsolateService: PowerAuthFlutterService {
         backgroundFlutterEngine?.run()
         
         PowerAuthLogger.debug("Background isolate started successfully")
-        print("Background isolate started successfully!")
         result(nil)
     }
     
     private func removeBackgroundIsolate(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         clearFlutterEngine()
-        print("Background isolate removed successfully!")
         result(nil)
     }
     
