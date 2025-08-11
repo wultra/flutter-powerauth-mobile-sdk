@@ -277,7 +277,7 @@ class PowerAuthConfigureTests extends TestSuite {
         appGroup: "group.com.wultra.testGroup",
         appIdentifier: "SharedInstanceTests",
         keychainAccessGroup: "fake.accessGroup", // This will work only in simulator
-        sharedMemoryIdentifier: "tst3"
+        sharedMemoryIdentifier: "ft1"
       );
     }
     if (currentTestName == 'testConfigurationWithBiometry' || currentTestName == 'testFullConfiguration') {
@@ -292,7 +292,7 @@ class PowerAuthConfigureTests extends TestSuite {
         appGroup: "group.com.wultra.testGroup",
         appIdentifier: "SharedInstanceTests",
         keychainAccessGroup: "fake.accessGroup", // This will work only in simulator
-        sharedMemoryIdentifier: "tst4"
+        sharedMemoryIdentifier: "ft2"
       );
     }
     await helper.sdk.configure(
