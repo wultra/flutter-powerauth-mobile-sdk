@@ -28,63 +28,40 @@ import PowerAuthCore
 /// when the first plugin is attached. This is to prevent plugins (each isolate can have its own instance)
 /// from creating multiple instances of the registry, which could lead to conflicts and unexpected
 /// PowerAuth states.
-internal class PowerAuthServiceRegistry {
+internal enum PowerAuthServiceRegistry {
 
-    // MARK: - Singleton access
+    // MARK: - Synchronization
 
-    private init() {}
-
-    private static var _shared: PowerAuthServiceRegistry?
-
-    private static let _lock = Lock()
-
-    internal static var shared: PowerAuthServiceRegistry {
-        _lock.synchronized {
-            if let existing = _shared {
-                return existing
-            }
-            let created = PowerAuthServiceRegistry()
-            _shared = created
-            return created
-        }
-    }
-
-    private let objectRegister = PowerAuthObjectRegister()
-
-    private func cleanUp() {
-        objectRegister.removeAll()
-    }
+    private static let lock = Lock()
 
     // MARK: - Plugin attachment tracking
 
-    private static var _attachmentCount: Int = 0
+    private static var attachedPluginCount: Int = 0
 
     internal static func onPluginAttached() {
-        _lock.synchronized {
-            _attachmentCount += 1
-        }
+        lock.synchronized { attachedPluginCount += 1 }
     }
 
     internal static func onPluginDetached() {
-        _lock.synchronized {
-            _attachmentCount = max(0, _attachmentCount - 1)
+        lock.synchronized {
+            attachedPluginCount -= 1
+            assert(attachedPluginCount >= 0, "PowerAuthServiceRegistry: Detach called more times than attach.")
             
-            assert(_attachmentCount > 0, "PowerAuthServiceRegistry: Detach called more times than attach.")
-
-            // If no more plugins / engines are attached, we can clean up.
-            if _attachmentCount == 0 {
-                _shared?.cleanUp()
+            if attachedPluginCount == 0 {
+                cleanUp()
             }
         }
-    }
-
-    internal static var attachmentCount: Int {
-        _lock.synchronized { _attachmentCount }
     }
 
     // MARK: - Internals
 
-    private lazy var services: [any PowerAuthFlutterService] = {
+    private static let objectRegister = PowerAuthObjectRegister()
+
+    private static func cleanUp() {
+        objectRegister.removeAll()
+    }
+
+    private static let services: [any PowerAuthFlutterService] = {
         return [
             PowerAuthService(register: objectRegister),
             PowerAuthUtilsService(),
@@ -96,7 +73,7 @@ internal class PowerAuthServiceRegistry {
         ]
     }()
 
-    internal lazy var handlers: [String: (service: any PowerAuthFlutterService, handler: Any)] = {
+    internal static let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)] = {
         var map = [String: (service: any PowerAuthFlutterService, handler: Any)]()
         services.forEach { service in
             service.opaqueHandlers.forEach { key, value in

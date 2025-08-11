@@ -27,9 +27,8 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         // Notify the registry that a new plugin instance has been attached.
         PowerAuthServiceRegistry.onPluginAttached()
         
-        // Fetch the already-initialised (or freshly created) registry instance and take a reference
-        // to its handlers map.
-        self.handlers = PowerAuthServiceRegistry.shared.handlers
+        // Reference the registry handlers map
+        self.handlers = PowerAuthServiceRegistry.handlers
         
         super.init()
     }

@@ -32,7 +32,7 @@ internal class PowerAuthBackgroundIsolateService: PowerAuthFlutterService {
     // MARK: - Handlers
     
     private func startBackgroundIsolate(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        if backgroundFlutterEngine != nil {
+        guard backgroundFlutterEngine == nil else {
             PowerAuthLogger.debug("The background isolate is already running")
             result(nil)
 
