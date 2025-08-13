@@ -26,7 +26,7 @@ allprojects {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    api "com.wultra.android.powerauth:powerauth-sdk:1.9.4"
+    api "com.wultra.android.powerauth:powerauth-sdk:1.9.5"
 }
 
 android {

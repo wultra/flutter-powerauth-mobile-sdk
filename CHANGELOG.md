@@ -1,3 +1,7 @@
+## TBA
+
+* Updated native PowerAuth Mobile SDK to version 1.9.5.
+
 ## 1.1.0
 
 * Added `PowerAuthUtils` that provides `getEnvironmentInfo` with device, system and app info.
