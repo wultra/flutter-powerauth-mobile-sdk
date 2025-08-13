@@ -267,14 +267,6 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('getLastFetchedUserInfo() has not been implemented.');
   }
 
-  Future<void> startBackgroundIsolate() {
-    throw UnimplementedError('startBackgroundIsolate() has not been implemented.'); 
-  }
-
-  Future<void> removeBackgroundIsolate() {
-    throw UnimplementedError('removeBackgroundIsolate() has not been implemented.');  
-  }
-
   Future<bool> isTimeSynchronized(String instanceId) {
     throw UnimplementedError('isTimeSynchronized() has not been implemented.');
   }

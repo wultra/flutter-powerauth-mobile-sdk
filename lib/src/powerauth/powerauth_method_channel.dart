@@ -25,7 +25,6 @@ import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
 
-
 /// An implementation of [PowerAuthPlatform] that uses method channels.
 class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper {
 
@@ -67,7 +66,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         auth.biometryKeyId = null;
       }
     }
-    
+
     // On both platforms we need to fetch the key for every biometric authentication.
     // If the key is already set, use it.
     if (auth.useBiometry && auth.biometryKeyId == null) {
@@ -406,38 +405,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
       return null;
     }
     return PowerAuthUserInfo(result['allClaims'] as Map?);
-  }
-
-  @override
-  Future<void> startBackgroundIsolate() async {
-    if (!kDebugMode) {
-      throw PowerAuthException(
-        code: PowerAuthErrorCode.unknownError,
-        message: 'startBackgroundIsolate is only available in DEBUG builds of the library.',
-      );
-    }
-
-    final result = await invokeMethod<void>(
-      'isolate_startBackgroundIsolate', null
-    );
-
-    return result;
-  }
-
-  @override
-  Future<void> removeBackgroundIsolate() async {
-    if (!kDebugMode) {
-      throw PowerAuthException(
-        code: PowerAuthErrorCode.unknownError,
-        message: 'removeBackgroundIsolate is only available in DEBUG builds of the library.',
-      );
-    }
-
-    final result = await invokeMethod<void>(
-      'isolate_removeBackgroundIsolate', null
-    );
-
-    return result;
   }
 
   @override

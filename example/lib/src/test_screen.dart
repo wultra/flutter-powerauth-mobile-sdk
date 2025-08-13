@@ -23,6 +23,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
 
 import '../config.dart';
+import 'debug_helper.dart';
 
 // Helper to generate a fixed-size random nonce
 String _generateRandomNonce() {
@@ -192,11 +193,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _startBackgroundIsolate() async {
-    await _powerAuth.startBackgroundIsolate();
+    await DebugHelper.startBackgroundIsolate();
   }
 
   Future<void> _removeBackgroundIsolate() async {
-    await _powerAuth.removeBackgroundIsolate();
+    await DebugHelper.removeBackgroundIsolate();
   }
 
   Future<void> _setInstanceId(String newInstanceId) async {
