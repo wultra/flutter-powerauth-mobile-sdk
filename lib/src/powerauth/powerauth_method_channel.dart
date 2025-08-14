@@ -402,38 +402,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<void> startBackgroundIsolate() async {
-    if (!kDebugMode) {
-      throw PowerAuthException(
-        code: PowerAuthErrorCode.unknownError,
-        message: 'startBackgroundIsolate is only available in DEBUG builds of the library.',
-      );
-    }
-
-    final result = await invokeMethod<void>(
-      'isolate_startBackgroundIsolate', null
-    );
-
-    return result;
-  }
-
-  @override
-  Future<void> removeBackgroundIsolate() async {
-    if (!kDebugMode) {
-      throw PowerAuthException(
-        code: PowerAuthErrorCode.unknownError,
-        message: 'removeBackgroundIsolate is only available in DEBUG builds of the library.',
-      );
-    }
-
-    final result = await invokeMethod<void>(
-      'isolate_removeBackgroundIsolate', null
-    );
-
-    return result;
-  }
-
-  @override
   Future<bool> isTimeSynchronized(String instanceId) async {
     return await invokeMethod('isTimeSynchronized', {
       'instanceId': instanceId

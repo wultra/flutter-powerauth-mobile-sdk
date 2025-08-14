@@ -23,6 +23,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
 
 import '../config.dart';
+import 'debug_helper.dart';
 import 'sections/logging_section.dart';
 
 // Helper to generate a fixed-size random nonce
@@ -103,7 +104,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         final biometryConfig = PowerAuthBiometryConfiguration();
         final keychainConfig = PowerAuthKeychainConfiguration();
         final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
-        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "tst1");
+        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "fapp");
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
@@ -205,11 +206,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _startBackgroundIsolate() async {
-    await _powerAuth.startBackgroundIsolate();
+    await DebugHelper.startBackgroundIsolate();
   }
 
   Future<void> _removeBackgroundIsolate() async {
-    await _powerAuth.removeBackgroundIsolate();
+    await DebugHelper.removeBackgroundIsolate();
   }
 
   Future<void> _setInstanceId(String newInstanceId) async {
