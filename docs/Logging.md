@@ -4,7 +4,7 @@ The PowerAuth Mobile SDK provides a comprehensive logging system that captures i
 
 ## 1. Listening to Logs
 
-The primary way to interact with the logging system is by listening to the log stream. All log entries, regardless of their origin, are broadcast through this stream. The stream is exposed via the `PowerAuthDebug` class.
+The primary way to interact with the logging system is by listening to the log stream. All log entries, regardless of their origin and level, are broadcast through this stream. The stream is exposed via the `PowerAuthDebug` class.
 Accessing the stream is only possible in **debug** builds.
 
 Listening to the `PowerAuthDebug.logStream` for the first time will automatically initialize the native log listeners with default configuration, ensuring that no logs are lost.
@@ -42,7 +42,7 @@ By default, logging is **enabled** in debug builds and **disabled** in release b
 
 The `PowerAuthLoggingConfig` class has the following properties:
 - `enabled`: A `bool` to turn logging on or off (defaults to `kDebugMode`).
-- `level`: A `PowerAuthLogLevel` enum value that sets the minimum level of logs to be processed (defaults to `.info`).
+- `level`: A `PowerAuthLogLevel` enum value that sets the minimum level of logs to be processed (defaults to `.info`). Note that changes to this setting do not affect the logs being broadcast to the log stream, as all logs are broadcast regardless of their level. Only the logs printed to the platform console are affected by this setting.
 - `logToConsole`: A `bool` that controls whether logs are also printed to the platform console (defaults to `true`).
 
 **Example:**

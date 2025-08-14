@@ -95,13 +95,13 @@ class PowerAuthLogger: NSObject, FlutterStreamHandler, PowerAuthLogDelegate {
     
     /// Central logging method.
     private static func log(_ message: () -> String, level: PowerAuthLogLevel, tag: String? = nil) {
-        guard enabled, self.level <= level else {
+        guard enabled else {
             return
         }
         
         let logMessage = message()
 
-        if logToConsole {
+        if logToConsole, self.level <= level {
             if #available(iOS 14.0, *) {
                 switch level {
                 case .verbose, .debug:

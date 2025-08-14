@@ -29,6 +29,10 @@ class PowerAuthLoggingConfig {
   final bool enabled;
 
   /// Minimum log level to process.
+  ///
+  /// Note that changes to this setting do not affect the logs being broadcast to the log stream,
+  /// as all logs are broadcast regardless of their level.
+  /// Only the logs printed to the platform console are affected by this setting.
   final PowerAuthLogLevel level;
 
   /// Whether logs should also be printed to the platform console.

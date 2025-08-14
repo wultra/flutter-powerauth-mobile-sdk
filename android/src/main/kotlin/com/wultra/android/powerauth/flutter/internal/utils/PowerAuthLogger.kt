@@ -105,7 +105,7 @@ object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
 
     /** Central logging method. */
     private fun log(messageLevel: PowerAuthLogLevel, message: () -> String, tag: String? = null) {
-        if (!enabled || level.ordinal > messageLevel.ordinal) {
+        if (!enabled) {
             return
         }
         val logMessage = message()
@@ -118,7 +118,7 @@ object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
             PowerAuthLogLevel.ERROR -> Log.ERROR
         }
 
-        if (logToConsole) {
+        if (logToConsole && level.ordinal <= messageLevel.ordinal) {
             Log.println(priority, "PowerAuthSDK", logMessage)
         }
 

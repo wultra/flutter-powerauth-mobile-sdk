@@ -40,9 +40,6 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
     deinit {
         // Remove the delegate when the plugin is deallocated
         PowerAuthLogSetDelegate(nil)
-    }
-    
-    deinit {
         PowerAuthServiceRegistry.onPluginDetached()
     }
     

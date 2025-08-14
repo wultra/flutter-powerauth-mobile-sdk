@@ -54,6 +54,9 @@ class PowerAuthDebug {
   /// A stream of all logs produced by the PowerAuth SDK.
   ///
   /// Listening to this stream will automatically initialize the native log listeners.
+  /// 
+  /// Note that the log stream is not affected by the [logLevel] setting,
+  /// as all logs are broadcast regardless of their level.
   static Stream<PowerAuthLog> get logStream {
     _ensureLogListenerInitialized();
     return _logController.stream;
