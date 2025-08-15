@@ -22,30 +22,23 @@ internal class PowerAuthLoggingService: PowerAuthFlutterService {
     let name = "PowerAuthLogging"
     
     let handlers = [
-        "logging_setNativeLogLevel": setNativeLogLevel,
-        "logging_setNativeLoggingEnabled": setNativeLoggingEnabled
+        "logging_configure": configure
     ]
     
     // MARK: - Handlers
     
-    private func setNativeLogLevel(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         guard let args = call.arguments as? [String: Any],
+              let enabled = args["enabled"] as? Bool,
               let levelString = args["level"] as? String,
+              let logToConsole = args["console"] as? Bool,
               let level = PowerAuthLogLevel(levelString: levelString) else {
-            throw PluginException(.wrongParameter, message: "Level is missing in arguments.")
-        }
-        
-        PowerAuthLogger.level = level
-        result(nil)
-    }
-    
-    private func setNativeLoggingEnabled(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        guard let args = call.arguments as? [String: Any],
-              let enabled = args["enabled"] as? Bool else {
-            throw PluginException(.wrongParameter, message: "Enabled is missing in arguments.")
+            throw PluginException(.wrongParameter, message: "Enabled or level is missing in arguments.")
         }
         
         PowerAuthLogger.enabled = enabled
+        PowerAuthLogger.level = level
+        PowerAuthLogger.logToConsole = logToConsole
         result(nil)
     }
 }

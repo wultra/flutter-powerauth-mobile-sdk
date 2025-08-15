@@ -17,13 +17,16 @@
 package com.wultra.android.powerauth.flutter
 
 import com.wultra.android.powerauth.flutter.internal.core.PowerAuthServiceRegistry
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.getlime.security.powerauth.system.PowerAuthLog
 
 /**
  * PowerAuthPlugin integrates the PowerAuth SDK with Flutter, enabling secure authentication and authorization
@@ -32,11 +35,15 @@ import io.flutter.plugin.common.MethodChannel.Result
 class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
+    private lateinit var loggingChannel: EventChannel
     private lateinit var serviceRegistry: PowerAuthServiceRegistry
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "powerauth_plugin")
         channel.setMethodCallHandler(this)
+
+        loggingChannel = EventChannel(flutterPluginBinding.binaryMessenger, "com.wultra.powerauth.flutter/logging")
+        loggingChannel.setStreamHandler(PowerAuthLogger)
 
         // Initialize the service registry (or get the existing one)
         serviceRegistry = PowerAuthServiceRegistry.getInstance(flutterPluginBinding.applicationContext)
@@ -46,6 +53,11 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+
+        // Clean up all logging-related logic
+        loggingChannel.setStreamHandler(null)
+        PowerAuthLog.logListener = null
+
         // Tell the registry that the plugin is detached so it can clean up resources
         PowerAuthServiceRegistry.onPluginDetached()
     }
@@ -78,7 +90,9 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             if (serviceName == null || methodName == null) {
+                PowerAuthLogger.warning { "PowerAuth plugin received unexpected method: ${call.method}" }
                 result.notImplemented()
+
                 return
             }
 
@@ -87,6 +101,7 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     ?: result.notImplemented()
             } ?: result.notImplemented()
         } catch (e: Exception) {
+            PowerAuthLogger.error { "PowerAuth plugin with method ${call.method} threw an error: ${e.localizedMessage}" }
             Errors.error(result, e)
         }
     }

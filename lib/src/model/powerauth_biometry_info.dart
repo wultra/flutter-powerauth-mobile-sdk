@@ -87,9 +87,7 @@ class PowerAuthBiometryInfo {
           (e) => e.name == typeString,
         );
       } catch (e) {
-        PowerAuthLogger.warning(
-          () => "Unknown PowerAuthBiometryType received: $typeString",
-        );
+        PowerAuthLogger.warning("Unknown PowerAuthBiometryType received: $typeString");
 
         return PowerAuthBiometryType.none;
       }
@@ -105,9 +103,7 @@ class PowerAuthBiometryInfo {
           (e) => e.name == statusString,
         );
       } catch (e) {
-        PowerAuthLogger.warning(
-          () => "Unknown PowerAuthBiometryStatus received: $statusString",
-        );
+        PowerAuthLogger.warning("Unknown PowerAuthBiometryStatus received: $statusString");
 
         return PowerAuthBiometryStatus.notSupported;
       }

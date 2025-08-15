@@ -22,6 +22,7 @@ import PowerAuthCore
 public class PowerAuthPlugin: NSObject, FlutterPlugin {
     
     private let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)]
+    private let logger = PowerAuthLogger()
     
     public override init() {
         // Notify the registry that a new plugin instance has been attached.
@@ -31,9 +32,14 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         self.handlers = PowerAuthServiceRegistry.handlers
         
         super.init()
+        
+        // Set the delegate for native PowerAuth SDK logs
+        PowerAuthLogSetDelegate(logger)
     }
     
     deinit {
+        // Remove the delegate when the plugin is deallocated
+        PowerAuthLogSetDelegate(nil)
         PowerAuthServiceRegistry.onPluginDetached()
     }
     
@@ -41,6 +47,9 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(name: "powerauth_plugin", binaryMessenger: registrar.messenger())
         let instance = PowerAuthPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+
+        let loggingChannel = FlutterEventChannel(name: "com.wultra.powerauth.flutter/logging", binaryMessenger: registrar.messenger())
+        loggingChannel.setStreamHandler(instance.logger)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -51,15 +60,15 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
         }
         
         do {
-            PowerAuthLogger.debug("Call \(call.method) being handled by the \(service.name) service")
             try service.handle(handler, call, result)
         } catch let e {
+            PowerAuthLogger.error("PowerAuth plugin with method \(call.method) threw an error: \(e.localizedDescription)")
             result(FlutterError(thrownByPlugin: e))
         }
     }
     
     private func defaultHandle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        PowerAuthLogger.info("PowerAuth plugin received unexpected method: \(call.method)")
+        PowerAuthLogger.warning("PowerAuth plugin received unexpected method: \(call.method)")
         result(FlutterMethodNotImplemented)
     }
 }

@@ -16,82 +16,53 @@
 
 import 'package:flutter/foundation.dart';
 
-import '../powerauth/powerauth_platform_interface.dart';
+import '../debug/powerauth_debug.dart';
+import 'powerauth_log_types.dart';
 
-/// An enumeration of all possible logging levels used in the PowerAuth SDK.
-enum PowerAuthLogLevel {
-
-  /// Log everything.
-  verbose,
-
-  /// Log debug messages.
-  debug,
-
-  /// Log informational messages.
-  info,
-
-  /// Log warnings.
-  warning,
-
-  /// Log errors.
-  error,
-}
-
-/// A simple logger for internal SDK usage.
+/// A simple Logger class.
 class PowerAuthLogger {
+  static void _log({
+    required PowerAuthLogLevel level,
+    required String message,
+    String? tag,
+  }) {
+    if (PowerAuthDebug.loggingEnabled &&
+        level.index >= PowerAuthDebug.logLevel.index) {
+      final prefix = _logPrefix(level);
 
-  /// The current logging level.
-  static PowerAuthLogLevel level = PowerAuthLogLevel.info;
+      // Optionally print to the Dart console
+      if (PowerAuthDebug.logToConsole) {
+        debugPrint("$prefix/${tag ?? 'SDK'}: $message");
+      }
 
-  /// If true, then logger is enabled.
-  static bool enabled = true;
-
-  /// A private method channel instance to communicate with the native side.
-  static final _platform = PowerAuthPlatform.instance;
-
-  /// Enables or disables logging.
-  ///
-  /// The new value is also propagated to the underlying native PowerAuth SDKs.
-  static Future<void> setEnabled(bool enabled) async {
-    PowerAuthLogger.enabled = enabled;
-    await _platform.setNativeLoggingEnabled(enabled);
-  }
-
-  /// Sets the minimum log level for the logger.
-  ///
-  /// The new level is also propagated to the underlying native PowerAuth SDKs.
-  static Future<void> setLogLevel(PowerAuthLogLevel newLevel) async {
-    level = newLevel;
-    await _platform.setNativeLogLevel(newLevel);
+      // Forward the log the the public log stream
+      PowerAuthDebug.pushLog(PowerAuthLog(level, message, tag: tag));
+    }
   }
 
   /// Logs a verbose message.
-  static void verbose(String Function() message) =>
-      _log(PowerAuthLogLevel.verbose, message);
+  static void verbose(String message, {String? tag}) {
+    _log(level: PowerAuthLogLevel.verbose, message: message, tag: tag);
+  }
 
   /// Logs a debug message.
-  static void debug(String Function() message) =>
-      _log(PowerAuthLogLevel.debug, message);
+  static void debug(String message, {String? tag}) {
+    _log(level: PowerAuthLogLevel.debug, message: message, tag: tag);
+  }
 
   /// Logs an info message.
-  static void info(String Function() message) =>
-      _log(PowerAuthLogLevel.info, message);
+  static void info(String message, {String? tag}) {
+    _log(level: PowerAuthLogLevel.info, message: message, tag: tag);
+  }
 
   /// Logs a warning message.
-  static void warning(String Function() message) =>
-      _log(PowerAuthLogLevel.warning, message);
+  static void warning(String message, {String? tag}) {
+    _log(level: PowerAuthLogLevel.warning, message: message, tag: tag);
+  }
 
   /// Logs an error message.
-  static void error(String Function() message) =>
-      _log(PowerAuthLogLevel.error, message);
-
-  /// Central logging method.
-  static void _log(PowerAuthLogLevel messageLevel, String Function() message) {
-    if (enabled && level.index <= messageLevel.index) {
-      final prefix = _logPrefix(messageLevel);
-      
-      debugPrint("PowerAuthSDK: $prefix/ ${message()}");
-    }
+  static void error(String message, {String? tag}) {
+    _log(level: PowerAuthLogLevel.error, message: message, tag: tag);
   }
 
   /// Returns a prefix for the log message.

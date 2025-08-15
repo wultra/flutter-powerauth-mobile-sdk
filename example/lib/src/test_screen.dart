@@ -16,14 +16,15 @@
 
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
 
 import '../config.dart';
 import 'debug_helper.dart';
+import 'sections/logging_section.dart';
 
 // Helper to generate a fixed-size random nonce
 String _generateRandomNonce() {
@@ -61,10 +62,22 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   bool? _hasBiometryFactor;
   PowerAuthBiometryInfo? _biometryInfo;
 
+  // Logging related state
+  final List<PowerAuthLog> _logs = [];
+  PowerAuthLoggingConfig _loggingConfig = const PowerAuthLoggingConfig(level: PowerAuthLogLevel.debug);
+
   @override
   void initState() {
     super.initState();
     _powerAuth = PowerAuth(_instanceId);
+
+    PowerAuthDebug.logStream.listen((log) {
+      if (mounted) {
+        setState(() {
+          _logs.insert(0, log);
+        });
+      }
+    });
   }
 
   Future<void> _initializeAndRefresh() async {
@@ -618,6 +631,20 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   print(jsonEncode(envInfo));
                 },
                 child: const Text('Fetch environment info'),
+              ),
+              const SizedBox(height: 20),
+
+              // Logging Section
+              Text('Logging', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 10),
+              LoggingSection(
+                logs: _logs,
+                loggingConfig: _loggingConfig,
+                onConfigurationChanged: (config) {
+                  setState(() {
+                    _loggingConfig = config;
+                  });
+                },
               ),
               const SizedBox(height: 20),
             ],

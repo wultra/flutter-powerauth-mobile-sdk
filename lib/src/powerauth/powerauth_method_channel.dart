@@ -18,7 +18,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
-import '../logging/powerauth_logger.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_external_pending_operation.dart';
 import 'powerauth_platform_interface.dart';
@@ -33,13 +32,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
   @override
-  Future<void> setNativeLogLevel(PowerAuthLogLevel level) async {
-    await invokeMethod<void>('logging_setNativeLogLevel', {'level': level.name});
-  }
-
-  @override
-  Future<void> setNativeLoggingEnabled(bool enabled) async {
-    await invokeMethod<void>('logging_setNativeLoggingEnabled', {'enabled': enabled});
+  Future<void> configureNativeLogging(PowerAuthLoggingConfig config) async {
+    await invokeMethod<void>('logging_configure', config.toMap());
   }
 
   @override

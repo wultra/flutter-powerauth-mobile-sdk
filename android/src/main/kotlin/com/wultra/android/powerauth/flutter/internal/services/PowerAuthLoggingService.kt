@@ -29,37 +29,32 @@ class PowerAuthLoggingService : BasePowerAuthService(null) {
     private companion object ArgKeys {
         const val LEVEL = "level"
         const val ENABLED = "enabled"
+        const val CONSOLE = "console"
     }
 
     private object HandlerNames {
-        const val SET_NATIVE_LOG_LEVEL = "setNativeLogLevel"
-        const val SET_NATIVE_LOGGING_ENABLED = "setNativeLoggingEnabled"
+        const val CONFIGURE = "configure"
     }
 
     override val handlers by lazy {
         mapOf(
-            HandlerNames.SET_NATIVE_LOG_LEVEL to this::setNativeLogLevel,
-            HandlerNames.SET_NATIVE_LOGGING_ENABLED to this::setNativeLoggingEnabled
+            HandlerNames.CONFIGURE to this::configure
         )
     }
 
-    private fun setNativeLogLevel(call: MethodCall, result: Result) {
+    private fun configure(call: MethodCall, result: Result) {
+        val enabled = call.getRequiredArgument<Boolean>(ENABLED)
         val levelString = call.getRequiredArgument<String>(LEVEL).uppercase()
+        val logToConsole = call.getRequiredArgument<Boolean>(CONSOLE)
 
         try {
             val level = PowerAuthLogLevel.valueOf(levelString)
             PowerAuthLogger.level = level
-
+            PowerAuthLogger.enabled = enabled
+            PowerAuthLogger.logToConsole = logToConsole
             result.success(null)
         } catch (e: IllegalArgumentException) {
             result.error(Errors.EC_INVALID_LOG_LEVEL, "Invalid log level: $levelString", null)
         }
-    }
-
-    private fun setNativeLoggingEnabled(call: MethodCall, result: Result) {
-        val enabled = call.getRequiredArgument<Boolean>(ENABLED)
-
-        PowerAuthLogger.enabled = enabled
-        result.success(null)
     }
 } 

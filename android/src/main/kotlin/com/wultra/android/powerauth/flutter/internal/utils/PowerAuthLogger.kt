@@ -16,8 +16,12 @@
 
 package com.wultra.android.powerauth.flutter.internal.utils
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import io.flutter.plugin.common.EventChannel
 import io.getlime.security.powerauth.system.PowerAuthLog
+import io.getlime.security.powerauth.system.PowerAuthLogListener
 
 /**
  * An enumeration of all possible logging levels used in the PowerAuth SDK.
@@ -33,7 +37,14 @@ enum class PowerAuthLogLevel {
 /**
  * A simple logger for internal SDK usage.
  */
-object PowerAuthLogger {
+object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
+
+    private val mainThreadHandler = Handler(Looper.getMainLooper())
+
+    init {
+        // Register this logger as a listener for the native PowerAuth SDK logs
+        PowerAuthLog.logListener = this
+    }
 
     /** The current logging level. */
     var level: PowerAuthLogLevel = PowerAuthLogLevel.INFO
@@ -44,6 +55,13 @@ object PowerAuthLogger {
 
     /** Determines whether logging is enabled. */
     var enabled: Boolean = true
+        set(value) {
+            field = value
+            updateNativeSdkLogging()
+        }
+
+    /** Determines whether logs are also printed Log. */
+    var logToConsole: Boolean = true
         set(value) {
             field = value
             updateNativeSdkLogging()
@@ -64,6 +82,19 @@ object PowerAuthLogger {
     /** Logs an error message. */
     fun error(message: () -> String) = log(PowerAuthLogLevel.ERROR, message)
 
+    // PowerAuthLogListener implementation
+    override fun powerAuthDebugLog(message: String) {
+        log(PowerAuthLogLevel.DEBUG, { message }, "PowerAuthNativeSDK")
+    }
+
+    override fun powerAuthWarningLog(message: String) {
+        log(PowerAuthLogLevel.WARNING, { message }, "PowerAuthNativeSDK")
+    }
+
+    override fun powerAuthErrorLog(message: String) {
+        log(PowerAuthLogLevel.ERROR, { message }, "PowerAuthNativeSDK")
+    }
+
     private fun updateNativeSdkLogging() {
         val shouldEnable = enabled && level.ordinal <= PowerAuthLogLevel.DEBUG.ordinal
         val isVerbose = shouldEnable && level.ordinal == PowerAuthLogLevel.VERBOSE.ordinal
@@ -73,10 +104,11 @@ object PowerAuthLogger {
     }
 
     /** Central logging method. */
-    private fun log(messageLevel: PowerAuthLogLevel, message: () -> String) {
-        if (!enabled || level.ordinal > messageLevel.ordinal) {
+    private fun log(messageLevel: PowerAuthLogLevel, message: () -> String, tag: String? = null) {
+        if (!enabled) {
             return
         }
+        val logMessage = message()
 
         val priority = when (messageLevel) {
             PowerAuthLogLevel.VERBOSE -> Log.VERBOSE
@@ -86,6 +118,29 @@ object PowerAuthLogger {
             PowerAuthLogLevel.ERROR -> Log.ERROR
         }
 
-        Log.println(priority, "PowerAuthSDK", message())
+        if (logToConsole && level.ordinal <= messageLevel.ordinal) {
+            Log.println(priority, "PowerAuthSDK", logMessage)
+        }
+
+        val logData = mapOf(
+            "level" to messageLevel.name.lowercase(),
+            "message" to logMessage,
+            "tag" to (tag ?: "PowerAuthSDK"),
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        mainThreadHandler.post {
+            eventSink?.success(logData)
+        }
+    }
+
+    private var eventSink: EventChannel.EventSink? = null
+
+    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        eventSink = events
+    }
+
+    override fun onCancel(arguments: Any?) {
+        eventSink = null
     }
 } 

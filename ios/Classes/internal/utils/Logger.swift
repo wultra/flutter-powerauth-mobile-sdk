@@ -16,6 +16,8 @@
 
 import PowerAuth2
 import Foundation
+import Flutter
+import os.log
 
 /**
  An enumeration of all possible logging levels used in the PowerAuth SDK.
@@ -35,7 +37,14 @@ enum PowerAuthLogLevel: Int, Comparable {
 /**
  A simple logger for internal SDK usage.
  */
-class PowerAuthLogger {
+class PowerAuthLogger: NSObject, FlutterStreamHandler, PowerAuthLogDelegate {
+
+    /// Determines whether log messages are also printed to the Xcode / device console.
+    static var logToConsole: Bool = true
+    
+    /// System logger for console output
+    @available(iOS 14.0, *)
+    private static let systemLogger = Logger(subsystem: "com.wultra.powerauth.flutter", category: "SDK")
 
     /// The current logging level.
     static var level: PowerAuthLogLevel = .info {
@@ -85,12 +94,70 @@ class PowerAuthLogger {
     }
     
     /// Central logging method.
-    private static func log(_ message: () -> String, level: PowerAuthLogLevel) {
-        guard enabled, self.level <= level else {
+    private static func log(_ message: () -> String, level: PowerAuthLogLevel, tag: String? = nil) {
+        guard enabled else {
             return
         }
         
-        // TODO: use the system Logger instead of printing?
-        print("PowerAuthSDK: \(message())")
+        let logMessage = message()
+
+        if logToConsole, self.level <= level {
+            if #available(iOS 14.0, *) {
+                switch level {
+                case .verbose, .debug:
+                    systemLogger.debug("\(logMessage)")
+                case .info:
+                    systemLogger.info("\(logMessage)")
+                case .warning:
+                    systemLogger.warning("\(logMessage)")
+                case .error:
+                    systemLogger.error("\(logMessage)")
+                }
+            } else {
+                print("PowerAuthSDK: \(logMessage)")
+            }
+        }
+        
+        let logData: [String: Any] = [
+            "level": level.stringValue,
+            "message": logMessage,
+            "tag": tag ?? "PowerAuthSDK",
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        
+        DispatchQueue.main.async {
+            Self.eventSink?(logData)
+        }
     }
-} 
+    
+    // MARK: - PowerAuthLogDelegate
+    
+    func powerAuthLog(_ message: String) {
+        // Default to .debug as we don't get the level info from the native SDK
+        PowerAuthLogger.log({ message }, level: .debug, tag: "PowerAuthNativeSDK")
+    }
+    
+    private static var eventSink: FlutterEventSink?
+    
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        PowerAuthLogger.eventSink = events
+        return nil
+    }
+    
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        PowerAuthLogger.eventSink = nil
+        return nil
+    }
+}
+
+private extension PowerAuthLogLevel {
+    var stringValue: String {
+        switch self {
+        case .verbose: return "verbose"
+        case .debug: return "debug"
+        case .info: return "info"
+        case .warning: return "warning"
+        case .error: return "error"
+        }
+    }
+}
