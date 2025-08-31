@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'dart:io';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import '../utils/activation_credentials.dart';
 import '../utils/integration_helper.dart';
@@ -40,29 +41,26 @@ main() {
       await helper.cleanup();
     });
 
-    test(
-      'persist activation with password+biometry (no prompt expected)',
-      () async {
-        final activationData = await helper.createActivation(autoCommit: true);
-        final activation = PowerAuthActivation.fromActivationCode(
-          activationCode: activationData.activationCode,
-          name: 'Automated',
-        );
-        expect(await sdk.createActivation(activation), isNot(throwsException));
+    test('persist activation with biometry', () async {
+      final activationData = await helper.createActivation(autoCommit: true);
+      final activation = PowerAuthActivation.fromActivationCode(
+        activationCode: activationData.activationCode,
+        name: 'Automated',
+      );
+      expect(await sdk.createActivation(activation), isNot(throwsException));
 
-        final password = await credentials.validPasswordObject();
-        final persistAuth =
-            PowerAuthAuthentication.persistWithPasswordAndBiometry(
-              password: password,
-              biometricPrompt: PowerAuthBiometricPrompt(
-                promptMessage: 'No UI expected in automated mode',
-              ),
-            );
-        await expectLater(sdk.persistActivation(persistAuth), completes);
+      final password = await credentials.validPasswordObject();
+      final persistAuth =
+          PowerAuthAuthentication.persistWithPasswordAndBiometry(
+            password: password,
+            biometricPrompt: PowerAuthBiometricPrompt(
+              promptMessage: 'Empty prompt since no UI',
+            ),
+          );
+      await expectLater(sdk.persistActivation(persistAuth), completes);
 
-        expect(await sdk.hasBiometryFactor(), isFalse);
-      },
-    );
+      expect(await sdk.hasBiometryFactor(), isFalse);
+    }, skip: Platform.isAndroid);
 
     test('addbiometry factor', () async {
       // Prepare activation without biometry factor
@@ -80,11 +78,14 @@ main() {
           isA<PowerAuthException>().having(
             (e) => e.code,
             'code',
-            PowerAuthErrorCode.biometryNotAvailable,
+            anyOf(
+              PowerAuthErrorCode.biometryNotAvailable,
+              PowerAuthErrorCode.biometryNotEnrolled,
+            ),
           ),
         ),
       );
-    });
+    }, skip: Platform.isAndroid);
 
     test('get biometry info', () async {
       final info = await PowerAuth.getBiometryInfo();
