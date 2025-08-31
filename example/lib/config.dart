@@ -31,6 +31,7 @@ class AppConfig {
   }
 
   static String _get(String key) {
+    // This is to enforce the Future completion to be evaluated in time.
     // ignore: unnecessary_statements
     _initialized;
     return dotenv.env[key] ?? '';

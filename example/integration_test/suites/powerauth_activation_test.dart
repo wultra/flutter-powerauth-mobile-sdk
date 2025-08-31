@@ -357,9 +357,9 @@ main() {
     test('testVerifyActivationQrCode', () async {
       expect(await sdk.canStartActivation(), true);
       await helper.createActivation();
-      expect(await helper.createdActivation?.activationCode, isNotNull);
+      expect(helper.createdActivation?.activationCode, isNotNull);
       expect(
-        await helper.createdActivation?.activationCodeSignature,
+        helper.createdActivation?.activationCodeSignature,
         isNotNull,
       );
     });
