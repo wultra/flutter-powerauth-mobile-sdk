@@ -22,6 +22,7 @@ import android.util.Base64
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.biometry.*
@@ -150,6 +151,7 @@ internal class PowerAuthService(
         const val CURRENT_TIME = "currentTime"
         const val SYNCHRONIZE_TIME = "synchronizeTime"
         const val RESET_TIME_SYNCHRONIZATION = "resetTimeSynchronization"
+        const val GET_EXTERNAL_PENDING_OPERATION = "getExternalPendingOperation"
     }
 
     override val handlers by lazy {
@@ -194,7 +196,8 @@ internal class PowerAuthService(
             HandlerNames.LOCAL_TIME_ADJUSTMENT_PRECISION to this::localTimeAdjustmentPrecision,
             HandlerNames.CURRENT_TIME to this::currentTime,
             HandlerNames.SYNCHRONIZE_TIME to this::synchronizeTime,
-            HandlerNames.RESET_TIME_SYNCHRONIZATION to this::resetTimeSynchronization
+            HandlerNames.RESET_TIME_SYNCHRONIZATION to this::resetTimeSynchronization,
+            HandlerNames.GET_EXTERNAL_PENDING_OPERATION to this::getExternalPendingOperation
         )
     }
 
@@ -1096,5 +1099,10 @@ internal class PowerAuthService(
             sdk.timeSynchronizationService.resetTimeSynchronization()
             result.success(null)
         }
+    }
+
+    private fun getExternalPendingOperation(call: MethodCall, result: Result) {
+        PowerAuthLogger.info { "The getExternalPendingOperationMethod is not implemented in the Android layer, as it is a iOS-only feature." }
+        result.success(null)
     }
 }

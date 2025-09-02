@@ -1,0 +1,27 @@
+name: "Integration Tests iOS"
+
+on:
+  push:
+    branches:
+      - develop
+      - release/*
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@54feb1e258158303e041b9eaf89314dcfbf6d38a
+        with:
+          channel: stable
+          version: latest
+      - name: Create .env file
+        run: echo -e "${{ secrets.ENV_FILE }}" > example/.env
+      - name: Get Flutter Dependencies
+        run: pushd example && flutter pub get && popd
+      - name: Run Integration on iOS
+        run: sh ./scripts/integration-tests-ios.sh

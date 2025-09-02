@@ -510,11 +510,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
             const Text('Automatic tests:'),
             ElevatedButton(
               onPressed: () => _runTests(),
-              child: const Text('Run tests'),
+              child: const Text('Run biometry tests'),
             ),
             ElevatedButton(
               onPressed: () => _runTests(interactive: true),
-              child: const Text('Run interactive tests'),
+              child: const Text('Run interactive biometry tests'),
             ),
             const SizedBox(height: 12),
             const Text('Manual testing:'),

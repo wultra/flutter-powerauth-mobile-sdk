@@ -18,22 +18,42 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// General PWA config loaded from [.env] file.
 class AppConfig {
+  AppConfig._();
+
+  static final Future<void> _initialized = ensureLoaded();
+
+  /// Ensures the .env is loaded. Safe to call repeatedly.
+  static Future<void> ensureLoaded() async {
+    if (dotenv.isInitialized) return;
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {}
+  }
+
+  static String _get(String key) {
+    // This is to enforce the Future completion to be evaluated in time.
+    // ignore: unnecessary_statements
+    _initialized;
+    return dotenv.env[key] ?? '';
+  }
 
   /// Enrollment URL.
-  static final String enrollmentUrl = dotenv.env['ENROLLMENT_URL'] ?? '';
+  static String get enrollmentUrl => _get('ENROLLMENT_URL');
+
   /// SDK Config string
-  static final String sdkConfig = dotenv.env['SDK_CONFIG'] ?? '';
+  static String get sdkConfig => _get('SDK_CONFIG');
 
   /// PowerAuth Cloud URL.
-  static final String cloudUrl = dotenv.env['CLOUD_URL'] ?? '';
-  /// PowerAuth Cloud username.
-  static final String cloudLogin = dotenv.env['CLOUD_LOGIN'] ?? '';
-  /// PowerAuth Cloud password.
-  static final String cloudPassword = dotenv.env['CLOUD_PASSWORD'] ?? '';
-  /// PowerAuth Cloud application ID.
-  static final String cloudApplicationId = dotenv.env['CLOUD_APPLICATION_ID'] ?? '';
+  static String get cloudUrl => _get('CLOUD_URL');
 
-  AppConfig._();
+  /// PowerAuth Cloud username.
+  static String get cloudLogin => _get('CLOUD_LOGIN');
+
+  /// PowerAuth Cloud password.
+  static String get cloudPassword => _get('CLOUD_PASSWORD');
+
+  /// PowerAuth Cloud application ID.
+  static String get cloudApplicationId => _get('CLOUD_APPLICATION_ID');
 
   /// Helper for confing requirement.
   static bool isConfigMissing() {
