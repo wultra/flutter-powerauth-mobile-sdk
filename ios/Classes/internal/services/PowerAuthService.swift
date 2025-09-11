@@ -728,16 +728,17 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func generateHeaderForToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let tokenName: String = try call.requireParameter(Args.tokenName)
-            guard let token = sdk.tokenStore.localToken(withName: tokenName) else {
-                throw PluginException(.localTokenNotAvailable, message: "Token \(tokenName) is no longer available in the local store.")
+            sdk.tokenStore.generateAuthorizationHeader(withName: tokenName) { header, error in
+                wrap {
+                    guard let header else {
+                        throw PluginException(.cannotGenerateToken, message: "Cannot generate header for the token \(tokenName).")
+                    }
+                    result([
+                        "key": header.key,
+                        "value": header.value
+                    ])
+                }
             }
-            guard token.canGenerateHeader, let header = token.generateHeader() else {
-                throw PluginException(.cannotGenerateToken, message: "Cannot generate header for the token \(tokenName).")
-            }
-            result([
-                "key": header.key,
-                "value": header.value
-            ])
         }
     }
     

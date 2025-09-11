@@ -67,7 +67,7 @@ main() {
           isA<PowerAuthException>().having(
             (e) => e.code,
             "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
+            PowerAuthErrorCode.cannotGenerateToken,
           ),
         ),
       );
@@ -77,7 +77,7 @@ main() {
           isA<PowerAuthException>().having(
             (e) => e.code,
             "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
+            PowerAuthErrorCode.cannotGenerateToken,
           ),
         ),
       );
@@ -158,7 +158,7 @@ main() {
           isA<PowerAuthException>().having(
             (e) => e.code,
             "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
+            PowerAuthErrorCode.cannotGenerateToken,
           ),
         ),
       );
@@ -173,7 +173,7 @@ main() {
           isA<PowerAuthException>().having(
             (e) => e.code,
             "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
+            PowerAuthErrorCode.cannotGenerateToken,
           ),
         ),
       );
@@ -191,6 +191,8 @@ main() {
         return await credentials.knowledge();
       }
 
+      final activationId = await sdk.getActivationIdentifier();
+
       final tokenStore = sdk.tokenStore;
 
       final token1 = await tokenStore.requestAccessToken(t1, t1Cred);
@@ -201,11 +203,21 @@ main() {
       expect(token2.tokenIdentifier, isNotNull);
       expect(token2.tokenName, t2);
 
+      await sdk.timeSynchronizationService.resetTimeSynchronization(); // force time sync
+
       final header1 = await tokenStore.generateHeaderForToken(t1);
       expect(header1.value, isNotNull);
+      final result1 = await helper.verifyToken(header1.value);
+      expect(result1.tokenValid, true);
+      expect(result1.registrationId, activationId);
+      expect(result1.signatureType, 'POSSESSION');
 
       final header2 = await tokenStore.generateHeaderForToken(t2);
       expect(header2.value, isNotNull);
+      final result2 = await helper.verifyToken(header2.value);
+      expect(result2.tokenValid, true);
+      expect(result2.registrationId, activationId);
+      expect(result2.signatureType, 'POSSESSION_KNOWLEDGE');
     });
   });
 }

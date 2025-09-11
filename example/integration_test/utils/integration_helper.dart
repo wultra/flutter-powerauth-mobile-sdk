@@ -211,6 +211,16 @@ class IntegrationHelper {
     return SignatureResponse.fromJson(resp);
   }
 
+  Future<TokenResponse> verifyToken(String authHeader) async {
+    final payload = """
+        {
+          "authHeader": "${authHeader.replaceAll("\"", "\\\"")}"
+        }
+        """;
+    final resp = await _makeCall(payload, "${AppConfig.cloudUrl}/v2/token/verify", method: HtptMethod.post);
+    return TokenResponse.fromJson(resp);
+  }
+
   // --- HELPER FUNCTIONS ---
 
   Future<Map<String, dynamic>> callSDKEndpoint(
@@ -392,6 +402,32 @@ class SignatureResponse {
       registrationStatus: json['registrationStatus'],
       signatureType: json['signatureType'],
       remainingAttempts: json['remainingAttempts'],
+    );
+  }
+}
+
+class TokenResponse {
+  final bool tokenValid;
+  final String? userId;
+  final String? registrationId;
+  final String? registrationStatus;
+  final String? signatureType;
+
+  TokenResponse({
+    required this.tokenValid,
+    required this.userId,
+    required this.registrationId,
+    required this.registrationStatus,
+    required this.signatureType
+  });
+
+  factory TokenResponse.fromJson(Map<String, dynamic> json) {
+    return TokenResponse(
+      tokenValid: json['tokenValid'],
+      userId: json['userId'],
+      registrationId: json['registrationId'],
+      registrationStatus: json['registrationStatus'],
+      signatureType: json['signatureType']
     );
   }
 }
