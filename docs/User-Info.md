@@ -82,4 +82,4 @@ Be aware that all properties in the `PowerAuthUserInfo` and `PowerAuthUserAddres
 
 ## Read Next
 
-- [Time Synchronization](Time-Synchronization.md)
+- [Logging](Logging.md)

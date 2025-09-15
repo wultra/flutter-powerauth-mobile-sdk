@@ -80,4 +80,4 @@ await PowerAuthDebug.configureLogging(const PowerAuthLoggingConfig());
 
 ## Read Next
 
-- [Troubleshooting](./Troubleshooting.md)
+- [Time Synchronization](Time-Synchronization.md)

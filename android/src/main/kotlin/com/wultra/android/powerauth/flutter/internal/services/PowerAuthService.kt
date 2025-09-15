@@ -958,24 +958,20 @@ internal class PowerAuthService(
         val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
 
         usePowerAuth(call, result) { sdk ->
-            val token = sdk.tokenStore.getLocalToken(context, tokenName)
 
-            if (token == null) {
-                result.error(
-                    Errors.EC_LOCAL_TOKEN_NOT_AVAILABLE,
-                    "This token is no longer available in the local store.",
-                    null
-                )
-            } else if (token.canGenerateHeader()) {
-                val header = token.generateHeader()
-                result.success(mapOf("key" to header.key, "value" to header.value))
-            } else {
-                result.error(
-                    Errors.EC_CANNOT_GENERATE_TOKEN,
-                    "Cannot generate header for this token.",
-                    null
-                )
-            }
+            sdk.tokenStore.generateAuthorizationHeader(context, tokenName, object: IGenerateTokenHeaderListener {
+                override fun onGenerateTokenHeaderSucceeded(header: PowerAuthAuthorizationHttpHeader) {
+                    result.success(mapOf("key" to header.key, "value" to header.value))
+                }
+
+                override fun onGenerateTokenHeaderFailed(t: Throwable) {
+                    result.error(
+                        Errors.EC_CANNOT_GENERATE_TOKEN,
+                        "Cannot generate header for this token.",
+                        t
+                    )
+                }
+            })
         }
     }
 
