@@ -70,8 +70,8 @@ final methodChannel = const MethodChannel('powerauth_plugin');
 let channel = FlutterMethodChannel(name: "powerauth_plugin", binaryMessenger: registrar.messenger())
 ```
 
-All plugins on the platform (native layer) side are registered into a `registar` (e.g. `FlutterPluginRegistry`). We only handle the plugin-side registration and method calls, the app registration happens automatically with codegen during config builds, and the `registrars` are injected into the main discovered plugin.
-The discovery is driven by the `pluginClass` and `package` fields for each platform in our `pubspec.yaml` definiton file.
+All plugins on the platform (native layer) side are registered into a `registrar` (e.g. `FlutterPluginRegistry`). We only handle the plugin-side registration and method calls, the app registration happens automatically with codegen during config builds, and the `registrars` are injected into the main discovered plugin.
+The discovery is driven by the `pluginClass` and `package` fields for each platform in our `pubspec.yaml` definition file.
 
 ! Please note that sub-plugins are **registered from the main plugin**. It is a standard way, tho we should test this a lot and might need to implement some sort of sub-moduling, similar to native layers in React Native, to be able to use all the plugins in the main `PowerAuth` one.
 
@@ -84,7 +84,7 @@ Interestingly, all plugins on pub.dev also have an auto-calculated [score mechan
 
 ## Plugin architecture 
 
-Our SDK implemets a plugin technique called a `Federated Plugin`. It is an official Flutter abstraction for doing Plugin things.
+Our SDK implements a plugin technique called a `Federated Plugin`. It is an official Flutter abstraction for doing Plugin things.
 
 __Traditionally, federated plugins have separately developed, versioned and released platform implementations for the plugin, as sometimes you want to outsource (e.g. **federate**) the platform dev to someone else, and then simply bring the dep. as a transient dependency (e.g. **endorse** a federated plugin). We do not need this as it brings an unnecessary layer of abstraction to our product case.__
 
