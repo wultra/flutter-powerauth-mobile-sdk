@@ -1,0 +1,58 @@
+{
+    "_purpose": "This file is used as a definition file for the prepare-release script.",
+    "_info": "It defines files that contains version number that should be updated during the release preparation.",
+    "library": {
+        "name": "flutter-powerauth-mobile-sdk",
+        "type": "flutter"
+    },
+    "files": [
+        {
+            "description": "Main package definition file.",
+            "path": "pubspec.yaml",
+            "type": "version_replace",
+            "match": "\nversion: %VERSION%\n"
+        },
+        {
+            "description": "Version file used in the SDK code.",
+            "path": "lib/src/version.dart",
+            "type": "version_replace",
+            "match": "const powerAuthFlutterVersion = '%VERSION%';"
+        },
+        {
+            "description": "Example installation tutorial in the documentation.",
+            "path": "docs/Installation.md",
+            "type": "version_replace",
+            "match": "%VERSION%  # Check pub.dev for latest version"
+        },
+        {
+            "description": "Example app pubspec file in the documentation.",
+            "path": "docs/PowerAuth-Server-Compatibility.md",
+            "type": "version_verify",
+            "match": "| `%VERSION_STREAM%`"
+        },
+        {
+            "description": "Changelog for the pub.dev.",
+            "path": "CHANGELOG.md",
+            "type": "version_verify",
+            "match": "## %VERSION%"
+        },
+        {
+            "description": "Changelog for the wultra documentation.",
+            "path": "docs/Changelog.md",
+            "type": "version_verify",
+            "match": "## %VERSION%"
+        }
+    ],
+    "scripts": [
+        {
+            "type": "bash",
+            "script": "flutter pub get",
+            "description": "Run flutter pub get to update dependencies after version change."
+        },
+        {
+            "type": "bash",
+            "script": "cd example && flutter pub get && cd ..",
+            "description": "Run flutter pub get to update dependencies after version change."
+        }
+    ]
+}

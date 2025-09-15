@@ -12,7 +12,12 @@ The PowerAuth Mobile Flutter SDK is a wrapper built on top of the native PowerAu
 
 For more information about the native PowerAuth Mobile SDK, please refer to the [PowerAuth Mobile SDK repository](https://github.com/wultra/powerauth-mobile-sdk).
 
-Both iOS and Android platforms use the same native SDK version **1.9.5**.
+## Compatibility Table
+
+| Flutter SDK Version | Native SDK   | Server version |
+|---------------------|--------------|----------------|
+| `1.1.x`             | `1.9.x`      | `1.9.+`        |
+| `1.0.x`             | `1.9.x`      | `1.9.+`        |
 
 ## Read Next
 
