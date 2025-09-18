@@ -1,4 +1,4 @@
-## TBA
+## 1.2.0
 
 * Updated native PowerAuth Mobile SDK to version 1.9.5.
 * Token-based authentication now automatically synchronizes time if needed.
