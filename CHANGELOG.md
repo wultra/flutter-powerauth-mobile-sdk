@@ -1,4 +1,8 @@
-## TBA
+## 1.3.0
+
+* Added crypto utility functions for hash SHA256 and generation of random bytes.
+
+## 1.2.0
 
 * Updated native PowerAuth Mobile SDK to version 1.9.5.
 * Token-based authentication now automatically synchronizes time if needed.

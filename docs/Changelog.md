@@ -1,6 +1,6 @@
 # Changelog
 
-## TBA
+## 1.3.0
 
 * Added crypto utility functions for hash SHA256 and generation of random bytes. (see [Crypto Utilities](./Crypto-Utilities.md) for more details)
 

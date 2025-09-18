@@ -20,7 +20,7 @@ Open `pubspec.yaml` and add:
 
 ```yaml
 dependencies:
-  flutter_powerauth_mobile_sdk_plugin: ^1.0.0  # Check pub.dev for latest version
+  flutter_powerauth_mobile_sdk_plugin: ^1.3.0  # Check pub.dev for latest version
 ```
 
 Then run:
