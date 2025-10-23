@@ -32,8 +32,6 @@ internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
     fileprivate enum Args: String {
         case length
         case data
-        case dataFormat
-        case outputDataFormat
     }
     
     // MARK: - Handlers
@@ -44,24 +42,14 @@ internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
             throw PluginException(.wrongParameter, message: "Length must be non-negative")
         }
         
-        // Generate random bytes using PowerAuthCore
-        let bytes = PowerAuthCoreCryptoUtils.randomBytes(UInt(length)) ?? Data()
+        // Generate random bytes using PowerAuthCoreCryptoUtils
+        let bytes = PowerAuthCoreCryptoUtils.randomBytes(UInt(length))
         result(bytes)
     }
     
     private func hashSha256(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        do {
-                guard let args = call.arguments as? [String: Any],
-                      let typedData = args[Args.data.rawValue] as? FlutterStandardTypedData else {
-                    throw FlutterError(code: "INVALID_ARGUMENT", message: "Missing or invalid 'data' parameter", details: nil) as! any Error
-                }
-                
-                let dataValue = typedData.data  // This is Swift Data
-                let digest = PowerAuthCoreCryptoUtils.hashSha256(dataValue)
-                
-                result(digest)
-            } catch {
-                result(FlutterError(code: "HASH_ERROR", message: error.localizedDescription, details: nil))
-            }
+        let typedData: FlutterStandardTypedData = try call.requireParameter(Args.data)
+        let digest = PowerAuthCoreCryptoUtils.hashSha256(typedData.data)
+        result(digest)
     }
 }
