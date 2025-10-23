@@ -15,7 +15,6 @@
  */
 package com.wultra.android.powerauth.flutter.internal.services
 
-import com.wultra.android.powerauth.flutter.DataFormat
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
@@ -36,8 +35,6 @@ internal class PowerAuthCoreCryptoUtilsService : BasePowerAuthService(null) {
     private companion object ArgKeys {
         const val LENGTH = "length"
         const val DATA = "data"
-        const val DATA_FORMAT = "dataFormat"
-        const val OUTPUT_DATA_FORMAT = "outputDataFormat"
     }
 
     private object HandlerNames {
@@ -59,7 +56,7 @@ internal class PowerAuthCoreCryptoUtilsService : BasePowerAuthService(null) {
                 throw WrapperException(Errors.EC_WRONG_PARAMETER, "Length must be non-negative")
             }
 
-            val bytes = CryptoUtils.randomBytes(length)
+            val bytes: ByteArray = CryptoUtils.randomBytes(length)
             result.success(bytes)
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -69,7 +66,7 @@ internal class PowerAuthCoreCryptoUtilsService : BasePowerAuthService(null) {
     private fun hashSha256(call: MethodCall, result: Result) {
         try {
             val dataBytes: ByteArray = call.getRequiredArgument(DATA)
-            val digest = CryptoUtils.hashSha256(dataBytes)
+            val digest: ByteArray = CryptoUtils.hashSha256(dataBytes)
             result.success(digest)
         } catch (t: Throwable) {
             Errors.error(result, t)
