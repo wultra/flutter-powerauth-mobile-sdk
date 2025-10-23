@@ -66,6 +66,7 @@ internal enum PowerAuthServiceRegistry {
             PowerAuthService(register: objectRegister),
             PowerAuthUtilsService(),
             PowerAuthPasswordService(register: objectRegister),
+            PowerAuthCoreCryptoUtilsService(),
             PowerAuthEncryptorService(register: objectRegister),
             PowerAuthRegisterService(register: objectRegister),
             PowerAuthLoggingService(),
