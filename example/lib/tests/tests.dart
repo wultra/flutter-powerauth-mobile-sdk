@@ -16,10 +16,12 @@
 
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_interactive_tests.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_tests.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_cryptoutils_tests.dart';
 
 class Tests {
 
   final _testSuites = [
+      PowerAuthCryptoUtilsTests(),
       PowerAuthBiometricsTests(),
       PowerauthBiometricsInteractiveTests(),
     ];
