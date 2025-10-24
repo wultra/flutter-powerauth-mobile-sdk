@@ -26,37 +26,32 @@ class PowerAuthCryptoUtilsTests extends TestSuiteWithActivation {
   List<Future<void> Function()> getTests() => [testRandomBytes, testHashSha256];
 
   // Simple helper to convert bytes to lowercase hex string
-  String _toHex(Uint8List data) {
-    final sb = StringBuffer();
-    for (final b in data) {
-      sb.write(b.toRadixString(16).padLeft(2, '0'));
-    }
-    return sb.toString();
-  }
+  String _toHex(Uint8List data) =>
+    data.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
   Future<void> testRandomBytes() async {
-    // Generate random bytes of various lengths and validate properties
-    final b16_a = await PowerAuthCryptoUtils.randomBytes(16);
-    final b16_b = await PowerAuthCryptoUtils.randomBytes(16);
-    final b32 = await PowerAuthCryptoUtils.randomBytes(32);
+    // 1) Typical lengths should return data of requested size and not all zeros
+    final lengths = [1, 2, 3, 4, 5, 16, 32, 64, 127, 128, 1024];
+    for (final len in lengths) {
+      final data = await PowerAuthCryptoUtils.randomBytes(len);
+      await expect(data.length).toBe(len, message: "Random bytes length must match request ($len)");
+      final allZero = data.every((b) => b == 0);
+      await expect(allZero).toBe(false, message: "Random bytes should not be all zeros (len=$len)");
+    }
 
-    // Length checks
-    await expect(b16_a.length).toBe(16, message: 'randomBytes(16) should return 16 bytes');
-    await expect(b16_b.length).toBe(16, message: 'randomBytes(16) should return 16 bytes');
-    await expect(b32.length).toBe(32, message: 'randomBytes(32) should return 32 bytes');
+    // 2) Different calls should yield different sequences with very high probability
+    // Use sufficiently large length to minimize collision probability.
+    final r1 = await PowerAuthCryptoUtils.randomBytes(32);
+    final r2 = await PowerAuthCryptoUtils.randomBytes(32);
+    await expect(_toHex(r1)).notToBe(_toHex(r2), message: "Two random draws should differ");
 
-    // Content should not be all zeros (very strong indication of proper randomness)
-    final hasNonZero16 = b16_a.any((e) => e != 0);
-    final hasNonZero32 = b32.any((e) => e != 0);
-    await expect(hasNonZero16).toBe(true, message: 'randomBytes(16) should not be all zeros');
-    await expect(hasNonZero32).toBe(true, message: 'randomBytes(32) should not be all zeros');
+    // 3) Zero length should fail with WRONG_PARAMETER
+    await expect(PowerAuthCryptoUtils.randomBytes(0)).toThrow(PowerAuthErrorCode.wrongParameter,
+        message: "Length must be positive number");
 
-    // Two consecutive calls should yield different byte sequences with overwhelming probability
-    // Compare by content (base64) to avoid identity-based comparison
-    await expect(base64.encode(b16_a)).notToBe(base64.encode(b16_b), message: 'Two random sequences should differ');
-
-    // Different lengths should obviously produce different results length-wise
-    await expect(b16_a.length).notToBe(b32.length, message: 'Different lengths must differ');
+    // 4) Negative length should fail with WRONG_PARAMETER
+    await expect(PowerAuthCryptoUtils.randomBytes(-1)).toThrow(PowerAuthErrorCode.wrongParameter,
+        message: "Length must be positive number");
   }
 
   Future<void> testHashSha256() async {
@@ -69,18 +64,18 @@ class PowerAuthCryptoUtilsTests extends TestSuiteWithActivation {
       message: 'SHA-256("") must match known vector',
     );
 
-    // 2) 'abc'
-    final abcHash = await PowerAuthCryptoUtils.hashSha256(Uint8List.fromList(utf8.encode('abc')));
-    await expect(_toHex(abcHash)).toBe(
-      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
-      message: 'SHA-256("abc") must match known vector',
+    // 2) 'wultra rocks'
+    final wultraHash = await PowerAuthCryptoUtils.hashSha256(Uint8List.fromList(utf8.encode('wultra rocks')));
+    await expect(_toHex(wultraHash)).toBe(
+      'fe114b675533c5f25c89fcb2c347a40d2faf4800abd0e7419d70cdf18e493e5a',
+      message: 'SHA-256("wultra rocks") must match known vector',
     );
 
     // 3) Long message
-    const msg = 'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq';
+    const msg = 'This is very long test message that is available for commercial purposes.';
     final longHash = await PowerAuthCryptoUtils.hashSha256(Uint8List.fromList(utf8.encode(msg)));
     await expect(_toHex(longHash)).toBe(
-      '248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1',
+      '71c3abbb2bc7a18db58763c2e338ac98df98557965a12ec2bcd45865dede927a',
       message: 'SHA-256(long message) must match known vector',
     );
 
@@ -90,7 +85,7 @@ class PowerAuthCryptoUtilsTests extends TestSuiteWithActivation {
     await expect(randomHash.length).toBe(32, message: 'SHA-256 output is 32 bytes');
 
     // Determinism: hashing the same input twice yields the same result
-    final repeatHash = await PowerAuthCryptoUtils.hashSha256(Uint8List.fromList(utf8.encode('abc')));
-    await expect(base64.encode(abcHash)).toBe(base64.encode(repeatHash), message: 'SHA-256 should be deterministic');
+    final repeatHash = await PowerAuthCryptoUtils.hashSha256(Uint8List.fromList(utf8.encode('wultra rocks')));
+    await expect(base64.encode(wultraHash)).toBe(base64.encode(repeatHash), message: 'SHA-256 should be deterministic');
   }
 }

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -33,25 +30,15 @@ class PowerAuthCryptoUtilsMethodChannel extends PowerAuthCryptoUtilsPlatform
 
   @override
   Future<Uint8List> randomBytes(int length) async {
-    final result = await invokeMethod<dynamic>('cryptoUtils_randomBytes', {
+    return await invokeMethod<Uint8List>('cryptoUtils_randomBytes', {
       'length': length
     });
-
-    if (result is Uint8List) {
-      return result;
-    } else {
-      throw PlatformException(
-        code: 'unexpectedResult',
-        message: 'Unexpected result type from randomBytes: ${result.runtimeType}',
-      );
-    }
   }
 
   @override
   Future<Uint8List> hashSha256(Uint8List data) async {
-    final result = await invokeMethod<Uint8List>('cryptoUtils_hashSha256', {
+    return await invokeMethod<Uint8List>('cryptoUtils_hashSha256', {
       'data': data,
     });
-    return result;
   }
 }

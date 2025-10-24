@@ -38,10 +38,10 @@ internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
     
     private func randomBytes(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let length: Int = try call.requireParameter(Args.length)
-        guard length >= 0 else {
-            throw PluginException(.wrongParameter, message: "Length must be non-negative")
+        guard length > 0 else {
+            throw PluginException(.wrongParameter, message: "Length must be positive number")
         }
-        
+
         // Generate random bytes using PowerAuthCoreCryptoUtils
         let bytes = PowerAuthCoreCryptoUtils.randomBytes(UInt(length))
         result(bytes)

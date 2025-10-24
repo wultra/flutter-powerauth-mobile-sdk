@@ -52,8 +52,8 @@ internal class PowerAuthCoreCryptoUtilsService : BasePowerAuthService(null) {
     private fun randomBytes(call: MethodCall, result: Result) {
         try {
             val length: Int = call.getRequiredArgument(LENGTH)
-            if (length < 0) {
-                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Length must be non-negative")
+            if (length <= 0) {
+                throw WrapperException(Errors.EC_WRONG_PARAMETER, "Length must be positive number")
             }
 
             val bytes: ByteArray = CryptoUtils.randomBytes(length)
