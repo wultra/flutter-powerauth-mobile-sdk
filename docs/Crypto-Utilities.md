@@ -1,4 +1,4 @@
-# Crypto Utils
+# Crypto Utilities
 
 Flutter PowerAuth Mobile SDK also provides useful cryptographic utility functions:
 - Generate cryptographically secure random bytes

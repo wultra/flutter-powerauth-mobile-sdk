@@ -4,7 +4,7 @@
 * Updated native PowerAuth Mobile SDK to version 1.9.5.
 * Token-based authentication now automatically synchronizes time if needed (see [Token-Based Authentication](./Token-Based-Authentication.md) for more details)
 * Logging improvements (see [Logging](./Logging.md) for more details)
-* Added crypto utility functions for hash SHA256 and generation of random bytes. (see [CryptoUtils](./Crypto-Utils.md) for more details)
+* Added crypto utility functions for hash SHA256 and generation of random bytes. (see [Crypto Utilities](./Crypto-Utilities.md) for more details)
 
 ## 1.1.0
 

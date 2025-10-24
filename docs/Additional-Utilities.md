@@ -28,3 +28,7 @@ The method returns a `PowerAuthEnvironmentInfo` object with the following proper
 - `deviceManufacturer` (string): Device manufacturer, for example "apple" or "Samsung"
 - `deviceId` (string): Device ID, for example "iPhone9,2"
 - `sdkVersion` (string): PowerAuth Flutter SDK version, for example "1.0.0"
+
+## Read Next
+
+- [Crypto Utilities](Crypto-Utilities.md)
