@@ -32,6 +32,7 @@ import 'suites/powerauth_token_test.dart' as token_suite;
 import 'suites/powerauth_userinfo_test.dart' as userinfo_suite;
 import 'suites/powerauth_biometrics_automated_test.dart'
     as biometrics_automated_suite;
+import 'suites/powerauth_cryptoutils_tests.dart' as cryptoutils_suite;
 
 // A simple helper to wrap potentially async main functions.
 // Useful for when you need to call top-level async functions in the test's main.
@@ -65,4 +66,5 @@ Future<void> main() async {
   await _runSuite(token_suite.main);
   await _runSuite(userinfo_suite.main);
   await _runSuite(biometrics_automated_suite.main);
+  await _runSuite(cryptoutils_suite.main);
 }
