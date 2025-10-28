@@ -101,6 +101,7 @@ class PowerAuthServiceRegistry private constructor(appContext: Context) {
             PowerAuthService(objectRegister, appContext, getCurrentActivity = { activities.getFirstAvailable() }),
             PowerAuthPasswordService(objectRegister),
             PowerAuthUtilsService(appContext),
+            PowerAuthCoreCryptoUtilsService(),
             PowerAuthEncryptorService(objectRegister, appContext),
             PowerAuthRegisterService(objectRegister),
             PowerAuthLoggingService(),
