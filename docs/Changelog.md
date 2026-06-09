@@ -3,6 +3,7 @@
 ## TBA
 
 * Added crypto utility functions for hash SHA256 and generation of random bytes. (see [Crypto Utilities](./Crypto-Utilities.md) for more details)
+* Added `PowerAuthUtils.migrateiOSSharingConfiguration` to migrate the iOS keychain initialization flag when enabling or changing [activation data sharing](./Additional-Utilities.md#migrateiossharingconfiguration). (iOS only, no-op on Android)
 
 ## 1.2.0
 * 

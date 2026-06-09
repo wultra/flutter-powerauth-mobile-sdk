@@ -18,6 +18,7 @@ import 'dart:async';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/version.dart';
 
+import '../model/powerauth_sharing_configuration.dart';
 import '../powerauth_activation_code_utils/powerauth_activation_code_utils_platform_interface.dart';
 
 /// The `PowerAuthUtils` class provides utility methods for the PowerAuth SDK.
@@ -30,6 +31,50 @@ class PowerAuthUtils {
   /// Returns information about the current environment, such as system name, version, device ID,
   /// and the PowerAuth SDK version.
   static Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() => _platform.getEnvironmentInfo();
+
+  /// Migrates the iOS keychain initialization state between two activation data sharing setups.
+  ///
+  /// PowerAuth SDK for iOS keeps track of whether the application has been reinstalled. When you
+  /// start sharing activation data between an application and its app extension (or change the
+  /// sharing setup), this state has to be moved to the new setup. Otherwise the SDK may evaluate
+  /// the activation incorrectly after the configuration change.
+  ///
+  /// Call this method at the application's startup, **before** any [PowerAuth] instance is
+  /// configured and used.
+  ///
+  /// > Use this method only after consulting Wultra support or engineers. Incorrect usage can lead
+  /// > to scenarios where users lose access to their activation data.
+  ///
+  /// This operation is a **no-op on Android** (it is an iOS-only concept).
+  ///
+  /// See the native documentation for the rationale and original implementation:
+  /// https://developers.wultra.com/components/powerauth-mobile-sdk/1.9.x/documentation/PowerAuth-SDK-for-iOS-Extensions#userdefaults-migration
+  ///
+  /// - [from]: the source configuration to migrate from.
+  /// - [to]: the destination configuration to migrate to.
+  ///
+  /// Throws [ArgumentError] when both [from] and [to] are `null`, or when both are provided but
+  /// share the same [PowerAuthSharingConfiguration.appGroup] (there would be nothing to migrate).
+  static Future<void> migrateiOSSharingConfiguration({
+    PowerAuthSharingConfiguration? from,
+    PowerAuthSharingConfiguration? to,
+  }) {
+    // At least one side must be provided, otherwise there is nothing to migrate between.
+    if (from == null && to == null) {
+      throw ArgumentError('At least one of "from" or "to" must be provided.');
+    }
+
+    // Migrating within the same setup is a no-op and most likely indicates a mistake.
+    if (from != null && to != null && from.appGroup == to.appGroup) {
+      throw ArgumentError.value(
+        to.appGroup,
+        'to.appGroup',
+        '"from" and "to" must not share the same appGroup',
+      );
+    }
+
+    return _platform.migrateiOSSharingConfiguration(from?.appGroup, to?.appGroup);
+  }
 }
 
 /// Class representing the environment information for the PowerAuth SDK.
