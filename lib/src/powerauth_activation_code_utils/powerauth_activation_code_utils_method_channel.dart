@@ -85,6 +85,19 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
   }
 
   @override
+  Future<void> migrateiOSSharingConfiguration(String? fromAppGroup, String? toAppGroup) async {
+    // The keychain initialization flag is an iOS-only concept stored in UserDefaults.
+    // On any other platform this is a no-op, so we avoid invoking the native channel.
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+    await invokeMethod<void>('util_migrateSharingConfiguration', {
+      'fromAppGroup': fromAppGroup,
+      'toAppGroup': toAppGroup,
+    });
+  }
+
+  @override
   Future<PinTestResult> testPin(Object pin) async {
 
     // Validate pin type before serialization

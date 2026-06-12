@@ -63,6 +63,14 @@ abstract class PowerAuthUtilsPlatform extends PlatformInterface {
     throw UnimplementedError('getEnvironmentInfo() has not been implemented.');
   }
 
+  /// Migrates the iOS keychain initialization flag between two `UserDefaults` suites identified by
+  /// their app group names. No-op on platforms other than iOS.
+  ///
+  /// See [PowerAuthUtils.migrateiOSSharingConfiguration] for details.
+  Future<void> migrateiOSSharingConfiguration(String? fromAppGroup, String? toAppGroup) {
+    throw UnimplementedError('migrateiOSSharingConfiguration() has not been implemented.');
+  }
+
   // TODO: do we want to move this to a dedicated PassphraseMeter module?
   Future<PinTestResult> testPin(Object pin) {
     throw UnimplementedError('testPin() has not been implemented.');
