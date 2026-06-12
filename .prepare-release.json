@@ -28,7 +28,7 @@
             "description": "Example app pubspec file in the documentation.",
             "path": "docs/PowerAuth-Server-Compatibility.md",
             "type": "version_verify",
-            "match": "| `%VERSION_STREAM%`"
+            "match": "`%VERSION_STREAM%`"
         },
         {
             "description": "Changelog for the pub.dev.",

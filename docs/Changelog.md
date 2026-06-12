@@ -1,6 +1,6 @@
 # Changelog
 
-## TBA
+## 1.4.0
 
 * Added `PowerAuthUtils.migrateiOSSharingConfiguration` to migrate the iOS keychain initialization flag when enabling or changing [activation data sharing](./Additional-Utilities.md#migrateiossharingconfiguration). (iOS only, no-op on Android)
 
