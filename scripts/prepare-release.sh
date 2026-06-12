@@ -5,39 +5,39 @@ set -u # stop when undefined variable is used
 #set -x # print all execution (good for debugging)
 
 ######### USAGE #########
-# This script prepares the release of the Flutter package by running the JavaScript script from Wultra infrastructure repository.
+#
+# To prepare or verify release metadata of the library (settings proper version, updating changelog, etc.)
+# - this script runs the JavaScript script from Wultra infrastructure repository
+# - it uses data defined in `.prepare-release.json` file in the root of the repository
+# - it passes all parameters to the JavaScript script
+#
+#
 # It can be run in 3 modes:
-# 1. With a version argument: it will prepare the release with the current version in the pubspec.yaml file.
-#    Example: sh scripts/prepare-release.sh 1.0.0
-# 2. With a version argument and --verify: it will verify that the given release version is prepared.
-#    Example: sh scripts/prepare-release.sh 1.0.0 --verify
-# 3. Without arguments: it will run the script in the root directory of the repository and verify that all files are prepared.
-#    Example: sh scripts/prepare-release.sh
+#
+# 1. With a version (-v X.Y.Z) argument:
+#  - it will prepare the release with the current version
+#  - use it when you're preparing a new release pull-request
+#  - Example: sh scripts/prepare-release.sh -v 1.0.0
+#
+# 2. With a version argument and --verify:
+#  - it will verify that the given release version is prepared.
+#  - use it to make sure that the release pull-request is properly prepared (also used on CI)
+#  - Example: sh scripts/prepare-release.sh -v 1.0.0 --verify
+#
+# 3. Without arguments:
+#  - it will run the script in the root directory of the repository and verify that all files are prepared.
+#  - use it to make sure that the current state of the repository is ready for release
+#  - Example: sh scripts/prepare-release.sh
+#
+# Note: you can add --ignore-git-clean to ignore "git clean" errors (useful when testing things locally)
+#
 #########################
 
 # path to the script folder
 SCRIPT_FOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # URL of the JavaScript prepare-release script in Wultra infrastructure repository
-URL="https://raw.githubusercontent.com/wultra/wultra-infrastructure/refs/heads/mobile-release/mobile-release/v1/prepare-release.js"
+URL="https://raw.githubusercontent.com/wultra/wultra-infrastructure/refs/heads/mobile/mobile/release/prepare/v1/prepare-release.js"
 
-# Create a temporary file
-TMP_FILE=$(mktemp)
-
-# Ensure the temporary file is removed on exit
-trap 'rm -f "$TMP_FILE"' EXIT
-
-# Download the file
-echo "Downloading prepare-release.js script from Wultra infrastructure repository..."
-curl -fsSL "$URL" -o "$TMP_FILE"
-
-# Run the file with Node.js in a root directory of the repository
-COMMAND="node $TMP_FILE -p $SCRIPT_FOLDER/.." # --ignore-git-clean" # uncomment to ignore git clean errors
-if [ $# -ge 1 ]; then
-  COMMAND="$COMMAND -v $1"
-fi
-if [[ $# -ge 2 && "$2" == "--verify" ]]; then
-  COMMAND="$COMMAND --verify"
-fi
-echo "Executing command: $COMMAND"
-eval "$COMMAND"
+# execute the remote node and pass all parameters to it + add path parameter to the root of the repository
+curl -fsSL "${URL}" | node - -p "${SCRIPT_FOLDER}/.." "${@}"

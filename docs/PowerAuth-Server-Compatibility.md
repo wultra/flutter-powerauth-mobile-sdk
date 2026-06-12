@@ -16,8 +16,7 @@ For more information about the native PowerAuth Mobile SDK, please refer to the 
 
 | Flutter SDK Version | Native SDK   | Server version |
 |---------------------|--------------|----------------|
-| `1.1.x`             | `1.9.x`      | `1.9.+`        |
-| `1.0.x`             | `1.9.x`      | `1.9.+`        |
+| `1.0.x` - `1.4.x`   | `1.9.x`      | `1.9.+`        |
 
 ## Read Next
 
