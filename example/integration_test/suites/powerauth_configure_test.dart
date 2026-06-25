@@ -372,30 +372,33 @@ main() {
       final sdk1 = helper1.sdk;
       final sdk2 = helper2.sdk;
 
+      // TEMP: android side in version 2.0.0 wont return optional configs.
+      final expectedValueOptionalFields = Platform.isAndroid ? isNull : isNotNull;
+
       expect(await sdk1.isConfigured(), true);
       expect(await sdk2.isConfigured(), true);
-      expect(sdk1.configuration, isNotNull);
-      expect(sdk2.configuration, isNotNull);
-      expect(sdk1.keychainConfiguration, isNull);
-      expect(sdk2.keychainConfiguration, isNull);
-      expect(sdk1.clientConfiguration, isNull);
-      expect(sdk2.clientConfiguration, isNull);
-      expect(sdk1.biometryConfiguration, isNull);
-      expect(sdk2.biometryConfiguration, isNull);
-      expect(sdk1.sharingConfiguration, isNull);
-      expect(sdk2.sharingConfiguration, isNull);
+      expect(await sdk1.configuration, isNotNull);
+      expect(await sdk2.configuration, isNotNull);
+      expect(await sdk1.keychainConfiguration, expectedValueOptionalFields);
+      expect(await sdk2.keychainConfiguration, expectedValueOptionalFields);
+      expect(await sdk1.clientConfiguration, expectedValueOptionalFields);
+      expect(await sdk2.clientConfiguration, expectedValueOptionalFields);
+      expect(await sdk1.biometryConfiguration, expectedValueOptionalFields);
+      expect(await sdk2.biometryConfiguration, expectedValueOptionalFields);
+      expect(await sdk1.sharingConfiguration, isNull);
+      expect(await sdk2.sharingConfiguration, isNull);
       expect(await pa1.isConfigured(), true);
       expect(await pa2.isConfigured(), true);
-      expect(pa1.configuration, isNotNull);
-      expect(pa2.configuration, isNotNull);
-      expect(pa1.keychainConfiguration, isNull);
-      expect(pa2.keychainConfiguration, isNull);
-      expect(pa1.clientConfiguration, isNull);
-      expect(pa2.clientConfiguration, isNull);
-      expect(pa1.biometryConfiguration, isNull);
-      expect(pa2.biometryConfiguration, isNull);
-      expect(pa1.sharingConfiguration, isNull);
-      expect(pa2.sharingConfiguration, isNull);
+      expect(await pa1.configuration, isNotNull);
+      expect(await pa2.configuration, isNotNull);
+      expect(await pa1.keychainConfiguration, expectedValueOptionalFields);
+      expect(await pa2.keychainConfiguration, expectedValueOptionalFields);
+      expect(await pa1.clientConfiguration, expectedValueOptionalFields);
+      expect(await pa2.clientConfiguration, expectedValueOptionalFields);
+      expect(await pa1.biometryConfiguration, expectedValueOptionalFields);
+      expect(await pa2.biometryConfiguration, expectedValueOptionalFields);
+      expect(await pa1.sharingConfiguration, isNull);
+      expect(await pa2.sharingConfiguration, isNull);
 
       pa1.deconfigure();
       pa2.deconfigure();
@@ -404,6 +407,7 @@ main() {
       expect(await pa2.isConfigured(), false);
       expect(await sdk1.isConfigured(), false);
       expect(await sdk2.isConfigured(), false);
+
     });
 
     test('testFullConfiguration', () async {
@@ -427,13 +431,13 @@ main() {
       final helper1 = await getHelper1('iosTestActivationSharing');
       final sdk1 = helper1.sdk;
       expect(await sdk1.isConfigured(), true);
-      expect(sdk1.sharingConfiguration?.appGroup, "group.com.wultra.testGroup");
-      expect(sdk1.sharingConfiguration?.appIdentifier, "SharedInstanceTests");
+      expect((await sdk1.sharingConfiguration)?.appGroup, "group.com.wultra.testGroup");
+      expect((await sdk1.sharingConfiguration)?.appIdentifier, "SharedInstanceTests");
       expect(
-        sdk1.sharingConfiguration?.keychainAccessGroup,
+        (await sdk1.sharingConfiguration)?.keychainAccessGroup,
         "fake.accessGroup",
       );
-      expect(sdk1.sharingConfiguration?.sharedMemoryIdentifier, "tst3");
+      expect((await sdk1.sharingConfiguration)?.sharedMemoryIdentifier, "tst3");
     }, skip: !Platform.isIOS);
 
     test('testReconfigureWhileActive', () async {
@@ -445,25 +449,28 @@ main() {
       expect(await sdk1.isConfigured(), true);
       expect(await sdk2.isConfigured(), true);
 
-      final config1 = sdk1.configuration;
-      final config2 = sdk2.configuration;
-      final clientConfig1 = sdk1.clientConfiguration;
-      final clientConfig2 = sdk2.clientConfiguration;
-      final keychainConfig1 = sdk1.keychainConfiguration;
-      final keychainConfig2 = sdk2.keychainConfiguration;
-      final biometryConfig1 = sdk1.biometryConfiguration;
-      final biometryConfig2 = sdk2.biometryConfiguration;
-      final sharingConfig1 = sdk1.sharingConfiguration;
-      final sharingConfig2 = sdk2.sharingConfiguration;
+      final config1 = await sdk1.configuration;
+      final config2 = await sdk2.configuration;
+      final clientConfig1 = await sdk1.clientConfiguration;
+      final clientConfig2 = await sdk2.clientConfiguration;
+      final keychainConfig1 = await sdk1.keychainConfiguration;
+      final keychainConfig2 = await sdk2.keychainConfiguration;
+      final biometryConfig1 = await sdk1.biometryConfiguration;
+      final biometryConfig2 = await sdk2.biometryConfiguration;
+      final sharingConfig1 = await sdk1.sharingConfiguration;
+      final sharingConfig2 = await sdk2.sharingConfiguration;
+
+      // TEMP: android side in version 2.0.0 wont return optional configs.
+      final expectedValueOptionalFields = Platform.isAndroid ? isNull : isNotNull;
 
       expect(config1, isNotNull);
       expect(config2, isNotNull);
-      expect(clientConfig1, isNull);
-      expect(clientConfig2, isNull);
-      expect(keychainConfig1, isNull);
-      expect(keychainConfig2, isNull);
-      expect(biometryConfig1, isNull);
-      expect(biometryConfig2, isNull);
+      expect(clientConfig1, expectedValueOptionalFields);
+      expect(clientConfig2, expectedValueOptionalFields);
+      expect(keychainConfig1, expectedValueOptionalFields);
+      expect(keychainConfig2, expectedValueOptionalFields);
+      expect(biometryConfig1, expectedValueOptionalFields);
+      expect(biometryConfig2, expectedValueOptionalFields);
       expect(sharingConfig1, isNull);
       expect(sharingConfig2, isNull);
 

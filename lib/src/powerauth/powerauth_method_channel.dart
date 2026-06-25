@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_external_pending_operation.dart';
+import '../model/powerauth_instance_configuration_holder.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -97,6 +98,26 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @override
   Future<bool> isConfigured(String instanceId) async {
     return await invokeMethod<bool>('isConfigured', {'instanceId': instanceId});
+  }
+
+  @override
+  Future<PowerAuthInstanceConfigurationHolder?> getConfiguration(String instanceId) async {
+    final result = await invokeNullableMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
+    if (result == null) {
+      return null;
+    }
+    T? parse<T>(String key, T Function(Map<String, dynamic>) fromMap) {
+      final value = result[key];
+      return value != null ? fromMap((value as Map).cast<String, dynamic>()) : null;
+    }
+
+    return PowerAuthInstanceConfigurationHolder(
+      configuration: parse('configuration', PowerAuthConfiguration.fromMap)!,
+      clientConfiguration: parse('clientConfiguration', PowerAuthClientConfiguration.fromMap),
+      biometryConfiguration: parse('biometryConfiguration', PowerAuthBiometryConfiguration.fromMap),
+      keychainConfiguration: parse('keychainConfiguration', PowerAuthKeychainConfiguration.fromMap),
+      sharingConfiguration: parse('sharingConfiguration', PowerAuthSharingConfiguration.fromMap),
+    );
   }
 
   @override

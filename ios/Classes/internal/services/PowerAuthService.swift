@@ -31,6 +31,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     let handlers = [
         "configure": configure,
         "isConfigured": isConfigured,
+        "getConfiguration": getConfiguration,
         "deconfigure": deconfigure,
         "hasValidActivation": hasValidActivation,
         "canStartActivation": canStartActivation,
@@ -221,6 +222,21 @@ internal class PowerAuthService: PowerAuthFlutterService {
             result(true)
         } else {
             throw PluginException(.flutterError, message: "PowerAuth instance is alread configured.")
+        }
+    }
+
+    private func getConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            let config = sdk.configuration
+            let keychainConfig = sdk.keychainConfiguration
+            var response: FlutterMap = [
+                "configuration": config.serializable,
+                "clientConfiguration": sdk.clientConfiguration.serializable,
+                "keychainConfiguration": keychainConfig.serializable,
+                "biometryConfiguration": keychainConfig.biometrySerializable,
+                "sharingConfiguration": config.sharingConfiguration?.serializable
+            ]
+            result(response)
         }
     }
     
@@ -878,6 +894,50 @@ private extension PowerAuthConfiguration {
         }
         
         self.init(instanceId: instanceId, baseEndpointUrl: baseEndpointUrl, configuration: sdkConfig)
+    }
+
+    var serializable: FlutterMap {
+        [
+            "configuration": configuration,
+            "baseEndpointUrl": baseEndpointUrl
+        ]
+    }
+}
+
+private extension PowerAuthClientConfiguration {
+    var serializable: FlutterMap {
+        [
+            "connectionTimeout": defaultRequestTimeout,
+            "readTimeout": defaultRequestTimeout,
+            "enableUnsecureTraffic": sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
+        ]
+    }
+}
+
+private extension PowerAuthKeychainConfiguration {
+    var serializable: FlutterMap {
+        [
+            "accessGroupName": keychainAttribute_AccessGroup as Any,
+            "userDefaultsSuiteName": keychainAttribute_UserDefaultsSuiteName as Any
+        ]
+    }
+
+    var biometrySerializable: FlutterMap {
+        [
+            "linkItemsToCurrentSet": linkBiometricItemsToCurrentSet,
+            "fallbackToDevicePasscode": allowBiometricAuthenticationFallbackToDevicePasscode
+        ]
+    }
+}
+
+private extension PowerAuthSharingConfiguration {
+    var serializable: FlutterMap {
+        [
+            "appGroup": appGroup,
+            "appIdentifier": appIdentifier,
+            "keychainAccessGroup": keychainAccessGroup,
+            "sharedMemoryIdentifier": sharedMemoryIdentifier as Any
+        ]
     }
 }
 

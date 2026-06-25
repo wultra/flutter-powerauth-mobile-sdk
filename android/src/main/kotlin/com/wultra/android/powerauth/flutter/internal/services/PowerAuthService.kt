@@ -52,6 +52,7 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtil
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
@@ -112,6 +113,7 @@ internal class PowerAuthService(
     private object HandlerNames {
         const val CONFIGURE = "configure"
         const val IS_CONFIGURED = "isConfigured"
+        const val GET_CONFIGURATION = "getConfiguration"
         const val DECONFIGURE = "deconfigure"
         const val HAS_VALID_ACTIVATION = "hasValidActivation"
         const val CAN_START_ACTIVATION = "canStartActivation"
@@ -158,6 +160,7 @@ internal class PowerAuthService(
         mapOf(
             HandlerNames.CONFIGURE to this::configure,
             HandlerNames.IS_CONFIGURED to this::isConfigured,
+            HandlerNames.GET_CONFIGURATION to this::getConfiguration,
             HandlerNames.DECONFIGURE to this::deconfigure,
             HandlerNames.HAS_VALID_ACTIVATION to this::hasValidActivation,
             HandlerNames.CAN_START_ACTIVATION to this::canStartActivation,
@@ -248,6 +251,32 @@ internal class PowerAuthService(
             result.success(getPowerAuthInstance(instanceId) != null)
         } catch (t: Throwable) {
             Errors.error(result, t)
+        }
+    }
+    
+    private fun getConfiguration(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            val configuration = sdk.getConfiguration()
+
+       /*
+        * TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
+        *   val clientConfiguration = clientConfigurationToMap(sdk.getClientConfiguration())
+        *   val biometryConfiguration = biometryConfigurationToMap(sdk.getKeychainConfiguration())
+        *   val keychainConfiguration = keychainConfigurationToMap(sdk.getKeychainConfiguration())
+        */
+
+            val clientConfiguration = null
+            val biometryConfiguration = null
+            val keychainConfiguration = null
+
+            result.success(
+                mapOf(
+                    CONFIGURATION to configurationToMap(configuration),
+                    CLIENT_CONFIGURATION to clientConfiguration,
+                    BIOMETRY_CONFIGURATION to biometryConfiguration,
+                    KEYCHAIN_CONFIGURATION to keychainConfiguration
+                )
+            )
         }
     }
 

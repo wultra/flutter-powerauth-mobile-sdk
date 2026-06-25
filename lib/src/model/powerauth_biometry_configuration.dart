@@ -86,4 +86,14 @@ class PowerAuthBiometryConfiguration {
       'fallbackToSharedBiometryKey': fallbackToSharedBiometryKey,
     };
   }
+
+  factory PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic> map) {
+    return PowerAuthBiometryConfiguration(
+      linkItemsToCurrentSet: map['linkItemsToCurrentSet'] ?? Platform.isAndroid,
+      fallbackToDevicePasscode: map['fallbackToDevicePasscode'] ?? false,
+      confirmBiometricAuthentication: map['confirmBiometricAuthentication'] ?? false,
+      authenticateOnBiometricKeySetup: map['authenticateOnBiometricKeySetup'] ?? true,
+      fallbackToSharedBiometryKey: map['fallbackToSharedBiometryKey'] ?? true,
+    );
+  }
 }

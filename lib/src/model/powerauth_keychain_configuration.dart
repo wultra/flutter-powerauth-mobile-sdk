@@ -90,4 +90,15 @@ class PowerAuthKeychainConfiguration {
           minimalRequiredKeychainProtection.name,
     };
   }
+
+  factory PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic> map) {
+    return PowerAuthKeychainConfiguration(
+      accessGroupName: map['accessGroupName'],
+      userDefaultsSuiteName: map['userDefaultsSuiteName'],
+      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
+        (e) => e.name == map['minimalRequiredKeychainProtection'],
+        orElse: () => PowerAuthKeychainProtection.none,
+      ),
+    );
+  }
 }

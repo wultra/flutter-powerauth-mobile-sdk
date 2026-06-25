@@ -281,7 +281,7 @@ main() {
       expect(await decryptor.canDecryptResponse(), true);
 
       // Deconfigure
-      final configuration = sdk.configuration;
+      final configuration = await sdk.configuration;
       expect(configuration, isNotNull);
 
       await sdk.deconfigure();
