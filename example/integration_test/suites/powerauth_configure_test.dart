@@ -355,6 +355,17 @@ main() {
         ),
       );
 
+      await expectLater(
+        sdk.configuration,
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
+      );
+
       // TODO: getBiometryInfo() doesn't depend on configuration. We should move this to separate class
       await expectLater(PowerAuth.getBiometryInfo(), completes);
     }
@@ -374,8 +385,14 @@ main() {
 
       expect(await sdk1.isConfigured(), true);
       expect(await sdk2.isConfigured(), true);
-      expect(await sdk1.configuration, isNotNull);
-      expect(await sdk2.configuration, isNotNull);
+      final sdk1Config = await sdk1.configuration;
+      final sdk2Config = await sdk2.configuration;
+      expect(sdk1Config, isNotNull);
+      expect(sdk2Config, isNotNull);
+      expect(sdk1Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
+      expect(sdk2Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
+      expect(sdk1Config.configuration, AppConfig.sdkConfig);
+      expect(sdk2Config.configuration, AppConfig.sdkConfig);
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(await sdk1.keychainConfiguration, expectedValueOptionalFields);
@@ -388,8 +405,12 @@ main() {
       // expect(await sdk2.sharingConfiguration, isNull);
       expect(await pa1.isConfigured(), true);
       expect(await pa2.isConfigured(), true);
-      expect(await pa1.configuration, isNotNull);
-      expect(await pa2.configuration, isNotNull);
+      final pa1Config = await pa1.configuration;
+      final pa2Config = await pa2.configuration;
+      expect(pa1Config, isNotNull);
+      expect(pa2Config, isNotNull);
+      expect(pa1Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
+      expect(pa2Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(await pa1.keychainConfiguration, expectedValueOptionalFields);
@@ -401,13 +422,37 @@ main() {
       // expect(await pa1.sharingConfiguration, isNull);
       // expect(await pa2.sharingConfiguration, isNull);
 
-      pa1.deconfigure();
-      pa2.deconfigure();
+      await pa1.deconfigure();
+      await pa2.deconfigure();
 
       expect(await pa1.isConfigured(), false);
       expect(await pa2.isConfigured(), false);
       expect(await sdk1.isConfigured(), false);
       expect(await sdk2.isConfigured(), false);
+      await expectLater(
+        pa1.configuration,
+        throwsA(isA<PowerAuthException>().having(
+          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
+        )),
+      );
+      await expectLater(
+        pa2.configuration,
+        throwsA(isA<PowerAuthException>().having(
+          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
+        )),
+      );
+      await expectLater(
+        sdk1.configuration,
+        throwsA(isA<PowerAuthException>().having(
+          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
+        )),
+      );
+      await expectLater(
+        sdk2.configuration,
+        throwsA(isA<PowerAuthException>().having(
+          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
+        )),
+      );
 
     });
 
@@ -417,7 +462,7 @@ main() {
 
       expect(await sdk1.isConfigured(), true);
 
-      expect(sdk1.configuration, isNotNull);
+      expect(await sdk1.configuration, isNotNull);
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(sdk1.clientConfiguration, isNotNull);
