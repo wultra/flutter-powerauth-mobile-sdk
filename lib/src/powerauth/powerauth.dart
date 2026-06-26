@@ -112,9 +112,8 @@ class PowerAuth {
     );
   }
 
-
+  /// Returns the configuration holder for this instance from the platform, if configured.
   Future<PowerAuthInstanceConfigurationHolder?> _getConfiguration(String instanceId) async {
-    // _platform.
     return _platform.getConfiguration(instanceId);
   }
 
