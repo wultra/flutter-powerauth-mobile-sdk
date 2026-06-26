@@ -10,7 +10,7 @@ on:
 jobs:
   tests:
     name: Tests
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
