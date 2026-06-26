@@ -41,6 +41,7 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     _checkConfiguration();
   }
 
+  Future<void> _checkConfiguration() async {
     if (await _powerAuth.isConfigured()) {
       await _loadConfiguration();
     } else {

@@ -17,6 +17,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'src/simple_configuration_screen.dart';
+import 'src/test_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
