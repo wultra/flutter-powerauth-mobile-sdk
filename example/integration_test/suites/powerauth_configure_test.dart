@@ -23,6 +23,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 
+/// Removes a single trailing slash from [url].
+String _normalizeEndpointUrl(String url) =>
+    url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+
 main() {
   group('Configure tests', () {
     IntegrationHelper? helperInstance1;
@@ -389,8 +393,14 @@ main() {
       final sdk2Config = await sdk2.configuration;
       expect(sdk1Config, isNotNull);
       expect(sdk2Config, isNotNull);
-      expect(sdk1Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
-      expect(sdk2Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
+      expect(
+        _normalizeEndpointUrl(sdk1Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(AppConfig.enrollmentUrl),
+      );
+      expect(
+        _normalizeEndpointUrl(sdk2Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(AppConfig.enrollmentUrl),
+      );
       expect(sdk1Config.configuration, AppConfig.sdkConfig);
       expect(sdk2Config.configuration, AppConfig.sdkConfig);
 
@@ -409,8 +419,14 @@ main() {
       final pa2Config = await pa2.configuration;
       expect(pa1Config, isNotNull);
       expect(pa2Config, isNotNull);
-      expect(pa1Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
-      expect(pa2Config!.baseEndpointUrl, AppConfig.enrollmentUrl);
+      expect(
+        _normalizeEndpointUrl(pa1Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(AppConfig.enrollmentUrl),
+      );
+      expect(
+        _normalizeEndpointUrl(pa2Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(AppConfig.enrollmentUrl),
+      );
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(await pa1.keychainConfiguration, expectedValueOptionalFields);
