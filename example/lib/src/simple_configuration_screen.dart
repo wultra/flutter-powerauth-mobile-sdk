@@ -41,9 +41,8 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     _checkConfiguration();
   }
 
-  Future<void> _checkConfiguration() async {
     if (await _powerAuth.isConfigured()) {
-      _loadConfiguration();
+      await _loadConfiguration();
     } else {
       setState(() {
         _configuration = null;
@@ -122,7 +121,7 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
                 const SizedBox(height: 12),
                 SelectableText('baseEndpointUrl: ${_configuration!.baseEndpointUrl}'),
                 const SizedBox(height: 8),
-                SelectableText('configuration: ${_configuration!.configuration.substring(0, 50)}...'),
+                SelectableText('configuration: ${_configuration!.configuration.length > 50 ? _configuration!.configuration.substring(0, 50) : _configuration!.configuration}'),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () async {

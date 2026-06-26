@@ -16,9 +16,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_powerauth_mobile_sdk_plugin_example/src/simple_configuration_screen.dart';
-
-import 'src/test_screen.dart';
+import 'src/simple_configuration_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

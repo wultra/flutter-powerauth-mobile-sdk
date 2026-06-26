@@ -61,8 +61,8 @@ The following steps are typically required for a full E2EE request and response 
    final body = jsonEncode(encryptedData.cryptogram.toMap());
    // Fetch data
    final configuration = await sdk.configuration;
-   final url = Uri.parse("${configuration?.baseEndpointUrl}/$endpoint");
-   final response = await http.post(serviceBaseUrl + '/my/custom/endpoint', headers: headers, body: body);
+   final url = Uri.parse("${configuration!.baseEndpointUrl}/$endpoint");
+   final response = await http.post(url, headers: headers, body: body);
    // The response object is typically also PowerAuthCryptogram
    final responseObject = jsonDecode(response.body) as Map<String, dynamic>;
    ```
