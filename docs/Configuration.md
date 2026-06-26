@@ -45,6 +45,8 @@ Future<void> initPowerauth() async {
 }
 ```
 
+> Note: SDK configuration is kept in native state, so it survives Flutter hot restart and hot reload.
+
 ### Advanced configuration
 
 In case you need an advanced configuration, you can import and use the following configuration classes:
@@ -76,7 +78,6 @@ In case you need an advanced configuration, you can import and use the following
   - `keychainAccessGroup` - defines the keychain access group name used by the PowerAuthSDK keychain instances.
   - `sharedMemoryIdentifier` - defines an optional identifier of memory shared between the applications in the app group. If identifier is not provided then PowerAuthSDK calculate unique identifier based on `PowerAuth.instanceId`.
   - If you're not familiar with sharing data between iOS applications or app extensions, then please refer to the native PowerAuth mobile SDK documentation, where this topic is explained in more detail. 
-
 
 > Note 1: Setting `authenticateOnBiometricKeySetup` parameter to `true` leads to using symmetric AES cipher in the background, so both configuration and usage of biometric key require the biometric authentication. If set to `false`, then the RSA cipher is used, and only the usage of the biometric key requires the biometric authentication. This is due to the fact that the RSA cipher can encrypt data using its public key, available immediately after the key pair is created in Android KeyStore.
 
@@ -114,11 +115,11 @@ Future<void> initPowerauth() async {
                 keychainAccessGroup: "keychain.access.group",
             );
             await powerAuth.configure(
-                configuration: powerAuthConfig,
-                biometryConfiguration: biometryConfig,
-                clientConfiguration: clientConfig,
-                keychainConfiguration: keychainConfig,
-                sharingConfiguration: sharingConfig
+                configuration: configuration,
+                biometryConfiguration: biometryConfiguration,
+                clientConfiguration: clientConfiguration,
+                keychainConfiguration: keychainConfiguration,
+                sharingConfiguration: sharingConfiguration
             );
             
             // powerAuth object configured
@@ -132,7 +133,10 @@ Future<void> initPowerauth() async {
 }
 ```
 
+<!-- begin box warning -->
+Advanced configuration getters (`clientConfiguration`, `biometryConfiguration`, `keychainConfiguration`, `sharingConfiguration`) are temporarily unavailable until the release of PowerAuth SDK `2.0.0`.
+<!-- end -->
+
 ## Read Next
 
 - [Device Activation](./Device-Activation.md)
-
