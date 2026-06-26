@@ -106,18 +106,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     if (result == null) {
       return null;
     }
-    T? parse<T>(String key, T Function(Map<String, dynamic>) fromMap) {
-      final value = result[key];
-      return value != null ? fromMap((value as Map).cast<String, dynamic>()) : null;
-    }
-
-    return PowerAuthInstanceConfigurationHolder(
-      configuration: parse('configuration', PowerAuthConfiguration.fromMap)!,
-      clientConfiguration: parse('clientConfiguration', PowerAuthClientConfiguration.fromMap),
-      biometryConfiguration: parse('biometryConfiguration', PowerAuthBiometryConfiguration.fromMap),
-      keychainConfiguration: parse('keychainConfiguration', PowerAuthKeychainConfiguration.fromMap),
-      sharingConfiguration: parse('sharingConfiguration', PowerAuthSharingConfiguration.fromMap),
-    );
+    return PowerAuthInstanceConfigurationHolder.fromMap(result);
   }
 
   @override

@@ -93,8 +93,8 @@ class PowerAuthKeychainConfiguration {
 
   factory PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthKeychainConfiguration(
-      accessGroupName: map['accessGroupName'],
-      userDefaultsSuiteName: map['userDefaultsSuiteName'],
+      accessGroupName: map['accessGroupName'] as String?,
+      userDefaultsSuiteName: map['userDefaultsSuiteName'] as String?,
       minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
         (e) => e.name == map['minimalRequiredKeychainProtection'],
         orElse: () => PowerAuthKeychainProtection.none,

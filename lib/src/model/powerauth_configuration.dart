@@ -38,8 +38,8 @@ class PowerAuthConfiguration {
 
   factory PowerAuthConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthConfiguration(
-      configuration: map['configuration'] ?? '',
-      baseEndpointUrl: map['baseEndpointUrl'] ?? '',
+      configuration: map['configuration'] as String,
+      baseEndpointUrl: map['baseEndpointUrl'] as String,
     );
   }
 }
