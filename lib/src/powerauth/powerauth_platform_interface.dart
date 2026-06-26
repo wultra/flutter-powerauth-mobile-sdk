@@ -79,7 +79,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('isConfigured() has not been implemented.');
   }
 
-  Future<PowerAuthInstanceConfigurationHolder?> getConfiguration(String instanceId) {
+  Future<PowerAuthInstanceConfigurationHolder> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
 

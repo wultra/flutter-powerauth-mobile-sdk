@@ -101,11 +101,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthInstanceConfigurationHolder?> getConfiguration(String instanceId) async {
-    final result = await invokeNullableMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
-    if (result == null) {
-      return null;
-    }
+  Future<PowerAuthInstanceConfigurationHolder> getConfiguration(String instanceId) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
     return PowerAuthInstanceConfigurationHolder.fromMap(result);
   }
 
