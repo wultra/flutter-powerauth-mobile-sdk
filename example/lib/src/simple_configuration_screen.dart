@@ -33,7 +33,6 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
   final PowerAuth _powerAuth = PowerAuth("config-instance");
 
   PowerAuthConfiguration? _configuration;
-  PowerAuthClientConfiguration? _clientConfiguration;
   String? _status;
 
   @override
@@ -48,7 +47,6 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     } else {
       setState(() {
         _configuration = null;
-        _clientConfiguration = null;
         _status = "Instance is not configured.";
       });
     }
@@ -65,13 +63,6 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
         );
         final clientConfiguration = PowerAuthClientConfiguration(
           connectionTimeout: 30.0,
-          basicHttpAuthentication: PowerAuthBasicHttpAuthentication(
-            username: "x",
-            password: "x",
-          ),
-          customHttpHeaders: [
-            PowerAuthHttpHeader(name: "X-Custom-Header", value: "CustomValue"),
-          ]
         );
         await _powerAuth.configure(configuration: configuration, clientConfiguration: clientConfiguration);
 
@@ -89,10 +80,8 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     await initPowerauth();
     try {
       final configuration = await _powerAuth.configuration;
-      final clientConfiguration = await _powerAuth.clientConfiguration;
       setState(() {
         _configuration = configuration;
-        _clientConfiguration = clientConfiguration;
         _status = configuration == null
             ? "Instance is not configured."
             : null;
@@ -100,14 +89,12 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     } on PowerAuthException catch (error) {
       setState(() {
         _configuration = null;
-        _clientConfiguration = null;
         _status = "Failed to read configuration "
             "(Code: ${error.code}, msg: ${error.message}).";
       });
     } catch (error) {
       setState(() {
         _configuration = null;
-        _clientConfiguration = null;
         _status = "Failed to read configuration: $error";
       });
     }
@@ -137,12 +124,6 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
                 const SizedBox(height: 8),
                 SelectableText('configuration: ${_configuration!.configuration.substring(0, 50)}...'),
                 const SizedBox(height: 8),
-                SelectableText('connectionTimeout: ${_clientConfiguration?.connectionTimeout} seconds'),
-                const SizedBox(height: 8),
-                SelectableText('basicHttpAuthentication: ${_clientConfiguration?.basicHttpAuthentication?.username} / ${_clientConfiguration?.basicHttpAuthentication?.password}'),
-                const SizedBox(height: 8),
-                SelectableText('customHttpHeaders: ${_clientConfiguration?.customHttpHeaders?.map((header) => "${header.name}: ${header.value}").join(", ")}'),
-                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () async {
                     await _powerAuth.deconfigure();

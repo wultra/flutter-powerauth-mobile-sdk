@@ -76,17 +76,19 @@ class PowerAuth {
   /// Returns the base configuration used for this instance, if configured.
   Future<PowerAuthConfiguration?> get configuration async => (await _getConfiguration(instanceId))?.configuration;
 
-  /// Returns the client configuration used for this instance, if configured.
-  Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _getConfiguration(instanceId))?.clientConfiguration;
+  // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
-  /// Returns the biometry configuration used for this instance, if configured.
-  Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _getConfiguration(instanceId))?.biometryConfiguration;
+  // /// Returns the client configuration used for this instance, if configured.
+  // Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _getConfiguration(instanceId))?.clientConfiguration;
 
-  /// Returns the keychain configuration used for this instance, if configured.
-  Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _getConfiguration(instanceId))?.keychainConfiguration;
+  // /// Returns the biometry configuration used for this instance, if configured.
+  // Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _getConfiguration(instanceId))?.biometryConfiguration;
 
-  /// Returns the sharing configuration used for this instance (iOS only), if configured.
-  Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _getConfiguration(instanceId))?.sharingConfiguration;
+  // /// Returns the keychain configuration used for this instance, if configured.
+  // Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _getConfiguration(instanceId))?.keychainConfiguration;
+
+  // /// Returns the sharing configuration used for this instance (iOS only), if configured.
+  // Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _getConfiguration(instanceId))?.sharingConfiguration;
 
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///
@@ -99,13 +101,6 @@ class PowerAuth {
     PowerAuthKeychainConfiguration? keychainConfiguration,
     PowerAuthSharingConfiguration? sharingConfiguration
   }) async {
-    // _configRegister[instanceId] = _InstanceConfigurationHolder(
-    //   configuration: configuration,
-    //   clientConfiguration: clientConfiguration,
-    //   biometryConfiguration: biometryConfiguration,
-    //   keychainConfiguration: keychainConfiguration,
-    //   sharingConfiguration: sharingConfiguration
-    // );
 
     await _platform.configure(
       instanceId: instanceId,

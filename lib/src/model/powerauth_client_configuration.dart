@@ -59,13 +59,6 @@ class PowerAuthClientConfiguration {
       enableUnsecureTraffic: map['enableUnsecureTraffic'] ?? false,
       connectionTimeout: (map['connectionTimeout'] as num?)?.toDouble() ?? 20.0,
       readTimeout: (map['readTimeout'] as num?)?.toDouble() ?? 20.0,
-      customHttpHeaders: map['customHttpHeaders'] != null
-          ? List<PowerAuthHttpHeader>.from(
-              (map['customHttpHeaders'] as List<dynamic>).map((h) => PowerAuthHttpHeader.fromMap(h as Map<String, dynamic>)))
-          : null,
-      basicHttpAuthentication: map['basicHttpAuthentication'] != null
-          ? PowerAuthBasicHttpAuthentication.fromMap(map['basicHttpAuthentication'] as Map<String, dynamic>)
-          : null,
     );
   }
 }
