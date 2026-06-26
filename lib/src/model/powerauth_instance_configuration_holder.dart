@@ -15,7 +15,11 @@
  */
 
 
-import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'powerauth_biometry_configuration.dart';
+import 'powerauth_client_configuration.dart';
+import 'powerauth_configuration.dart';
+import 'powerauth_keychain_configuration.dart';
+import 'powerauth_sharing_configuration.dart';
 
 class PowerAuthInstanceConfigurationHolder {
   final PowerAuthConfiguration configuration;
