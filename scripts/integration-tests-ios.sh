@@ -59,7 +59,7 @@ fi
 
 # boot the simulator and wait until it is fully booted before launching tests,
 # otherwise the app launch / VM service attach can stall indefinitely
-xcrun simctl bootstatus "$SIM_ID" -b
+xcrun simctl bootstatus "$SIM_ID" -b -t 300
 
 (
   cd "$SCRIPT_FOLDER/../example"
