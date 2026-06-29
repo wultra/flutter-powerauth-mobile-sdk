@@ -10,11 +10,6 @@ if [ "${PA_DEBUG_INTEGRATION:-0}" = "1" ]; then
   set -x
 fi
 
-print_section() {
-  echo
-  echo "========== $1 =========="
-}
-
 is_simulator_booted() {
   sim_id="$1"
   xcrun simctl list devices | grep -F "$sim_id" | grep -q "(Booted)"
@@ -37,22 +32,12 @@ wait_for_flutter_device() {
   done
 
   echo "ERROR: Simulator $sim_id did not appear in Flutter device list in time." >&2
+  flutter devices >&2 || true
   return 1
 }
 
 # path to the script folder
 SCRIPT_FOLDER=$( cd "$( dirname "$0" )" && pwd )
-
-print_section "Host / toolchain"
-sw_vers
-xcodebuild -version
-flutter --version
-flutter doctor -v
-
-# list available iOS Simulators
-print_section "Available iOS simulators"
-xcrun simctl list devices available
-xcrun simctl list runtimes
 
 # get the first available iOS Simulator ID from iOS runtimes
 SIM_LINE=$(xcrun simctl list devices available iOS | grep 'iPhone' | head -n 1 || true)
@@ -67,7 +52,6 @@ fi
 echo "Selected iOS simulator: $SIM_LINE"
 echo "Booting iOS Simulator with ID: $SIM_ID"
 
-print_section "Reset selected simulator state"
 # reset only selected simulator to avoid stale boot sessions that can break VM attach
 if is_simulator_booted "$SIM_ID"; then
   echo "Simulator $SIM_ID is booted, shutting it down first."
@@ -83,16 +67,15 @@ xcrun simctl boot "$SIM_ID" || true
 # wait until the simulator is fully booted before launching tests, otherwise
 # the app launch / VM service attach can stall indefinitely
 xcrun simctl bootstatus "$SIM_ID" -b
-xcrun simctl list devices | grep "$SIM_ID"
 
 pushd "$SCRIPT_FOLDER/../example"
 pushd "ios"
 pod install # install pods to shave some time off the test run
 popd
-print_section "Flutter-visible devices"
-flutter devices
-flutter devices -v
 wait_for_flutter_device "$SIM_ID"
-print_section "Running iOS integration tests (verbose)"
-flutter test -v --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
+if [ "${PA_FLUTTER_TEST_VERBOSE:-0}" = "1" ] || [ "${PA_FLUTTER_TEST_VERBOSE:-}" = "true" ]; then
+  flutter test -v --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
+else
+  flutter test --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
+fi
 popd

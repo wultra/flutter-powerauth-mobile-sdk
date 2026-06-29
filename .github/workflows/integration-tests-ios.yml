@@ -25,4 +25,6 @@ jobs:
       - name: Get Flutter Dependencies
         run: pushd example && flutter pub get && popd
       - name: Run Integration on iOS
+        env:
+          PA_FLUTTER_TEST_VERBOSE: ${{ github.event_name == 'workflow_dispatch' }}
         run: sh ./scripts/integration-tests-ios.sh
