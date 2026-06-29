@@ -74,7 +74,7 @@ class PowerAuth {
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
 
   /// Returns the base configuration used for this instance, if configured.
-  Future<PowerAuthConfiguration?> get configuration async => (await _getConfiguration(instanceId)).configuration;
+  Future<PowerAuthConfiguration?> get configuration async => (await _platform.getConfiguration(instanceId)).configuration;
 
   // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
@@ -110,11 +110,6 @@ class PowerAuth {
       keychainConfiguration: keychainConfiguration,
       sharingConfiguration: sharingConfiguration
     );
-  }
-
-  /// Returns the configuration holder for this instance from the platform, if configured.
-  Future<PowerAuthInstanceConfigurationHolder> _getConfiguration(String instanceId) async {
-    return _platform.getConfiguration(instanceId);
   }
 
   /// Checks if this instance is configured.

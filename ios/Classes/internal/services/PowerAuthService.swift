@@ -78,6 +78,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     fileprivate enum Args: String {
         case instanceId
         case configuration
+        case baseEndpointUrl
         case clientConfiguration
         case biometryConfiguration
         case keychainConfiguration
@@ -111,6 +112,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case customHttpHeaders
         case basicHttpAuthentication
         case connectionTimeout
+        case defaultRequestTimeout
         case enableUnsecureTraffic
         case name
         case value
@@ -898,8 +900,8 @@ private extension PowerAuthConfiguration {
 
     var serializable: FlutterMap {
         [
-            "configuration": configuration,
-            "baseEndpointUrl": baseEndpointUrl
+            PowerAuthService.Args.configuration.rawValue: configuration,
+            PowerAuthService.Args.baseEndpointUrl.rawValue: baseEndpointUrl
         ]
     }
 }
@@ -907,9 +909,9 @@ private extension PowerAuthConfiguration {
 private extension PowerAuthClientConfiguration {
     var serializable: FlutterMap {
         [
-            "connectionTimeout": defaultRequestTimeout,
-            "readTimeout": defaultRequestTimeout,
-            "enableUnsecureTraffic": sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
+            PowerAuthService.Args.connectionTimeout.rawValue: defaultRequestTimeout,
+            PowerAuthService.Args.defaultRequestTimeout.rawValue: defaultRequestTimeout,
+            PowerAuthService.Args.enableUnsecureTraffic.rawValue: sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
         ]
     }
 }
@@ -917,15 +919,15 @@ private extension PowerAuthClientConfiguration {
 private extension PowerAuthKeychainConfiguration {
     var serializable: FlutterMap {
         [
-            "accessGroupName": keychainAttribute_AccessGroup as Any,
-            "userDefaultsSuiteName": keychainAttribute_UserDefaultsSuiteName as Any
+            PowerAuthService.Args.accessGroupName.rawValue: keychainAttribute_AccessGroup as Any,
+            PowerAuthService.Args.userDefaultsSuiteName.rawValue: keychainAttribute_UserDefaultsSuiteName as Any
         ]
     }
 
     var biometrySerializable: FlutterMap {
         [
-            "linkItemsToCurrentSet": linkBiometricItemsToCurrentSet,
-            "fallbackToDevicePasscode": allowBiometricAuthenticationFallbackToDevicePasscode
+            PowerAuthService.Args.linkItemsToCurrentSet.rawValue: linkBiometricItemsToCurrentSet,
+            PowerAuthService.Args.fallbackToDevicePasscode.rawValue: allowBiometricAuthenticationFallbackToDevicePasscode
         ]
     }
 }
@@ -933,10 +935,10 @@ private extension PowerAuthKeychainConfiguration {
 private extension PowerAuthSharingConfiguration {
     var serializable: FlutterMap {
         [
-            "appGroup": appGroup,
-            "appIdentifier": appIdentifier,
-            "keychainAccessGroup": keychainAccessGroup,
-            "sharedMemoryIdentifier": sharedMemoryIdentifier as Any
+            PowerAuthService.Args.appGroup.rawValue: appGroup,
+            PowerAuthService.Args.appIdentifier.rawValue: appIdentifier,
+            PowerAuthService.Args.keychainAccessGroup.rawValue: keychainAccessGroup,
+            PowerAuthService.Args.sharedMemoryIdentifier.rawValue: sharedMemoryIdentifier as Any
         ]
     }
 }

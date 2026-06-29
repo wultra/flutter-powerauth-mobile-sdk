@@ -133,10 +133,6 @@ Future<void> initPowerauth() async {
 }
 ```
 
-<!-- begin box warning -->
-Advanced configuration getters (`clientConfiguration`, `biometryConfiguration`, `keychainConfiguration`, `sharingConfiguration`) are temporarily unavailable until the release of PowerAuth SDK `2.0.0`.
-<!-- end -->
-
 ## Read Next
 
 - [Device Activation](./Device-Activation.md)

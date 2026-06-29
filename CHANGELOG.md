@@ -1,6 +1,8 @@
 ## TBA
 
-* Removed `_configRegister` caching, thus introducing a breaking API change for getConfiguration() methods
+* The `configuration` property was changed to asynchronous
+* The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration`, `sharingConfiguration` were removed without replacement
+* PowerAuth configuration now outlives the dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70).
 
 ## 1.4.0
 
