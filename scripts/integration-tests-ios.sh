@@ -2,8 +2,6 @@
 
 set -e # stop script when error occurs
 set -u # stop when undefined variable is used
-# stop on errors in pipelines if supported by the active shell
-(set -o pipefail) 2>/dev/null && set -o pipefail
 
 # Optional command tracing can be enabled with PA_DEBUG_INTEGRATION=1.
 if [ "${PA_DEBUG_INTEGRATION:-0}" = "1" ]; then
@@ -12,7 +10,34 @@ fi
 
 is_simulator_booted() {
   sim_id="$1"
-  xcrun simctl list devices | grep -F "$sim_id" | grep -q "(Booted)"
+  xcrun simctl list devices | grep -F "$sim_id" | grep -Fq "(Booted)"
+}
+
+boot_simulator() {
+  sim_id="$1"
+  if boot_output=$(xcrun simctl boot "$sim_id" 2>&1); then
+    return 0
+  fi
+
+  if printf '%s\n' "$boot_output" | grep -Fq "current state: Booted"; then
+    echo "Simulator $sim_id is already booted."
+    return 0
+  fi
+
+  echo "ERROR: Failed to boot simulator $sim_id." >&2
+  echo "$boot_output" >&2
+  return 1
+}
+
+is_verbose_mode() {
+  case "${PA_FLUTTER_TEST_VERBOSE:-0}" in
+    1|true|TRUE)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }
 
 wait_for_flutter_device() {
@@ -22,7 +47,7 @@ wait_for_flutter_device() {
   attempt=1
 
   while [ "$attempt" -le "$max_attempts" ]; do
-    if flutter devices --machine | grep -q "$sim_id"; then
+    if flutter devices --machine | grep -Fq "$sim_id"; then
       echo "Simulator $sim_id is visible to Flutter (attempt $attempt/$max_attempts)."
       return 0
     fi
@@ -40,8 +65,8 @@ wait_for_flutter_device() {
 SCRIPT_FOLDER=$( cd "$( dirname "$0" )" && pwd )
 
 # get the first available iOS Simulator ID from iOS runtimes
-SIM_LINE=$(xcrun simctl list devices available iOS | grep 'iPhone' | head -n 1 || true)
-SIM_ID=$(echo "$SIM_LINE" | grep -oE '[A-F0-9-]{36}' || true)
+SIM_LINE=$(xcrun simctl list devices available iOS | grep -m 1 'iPhone' || true)
+SIM_ID=$(printf '%s\n' "$SIM_LINE" | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p')
 
 # fail fast if no iOS simulator is available
 if [ -z "$SIM_ID" ]; then
@@ -62,20 +87,25 @@ fi
 
 # open the Simulator app focused on selected device and boot it
 open -a Simulator --args -CurrentDeviceUDID "$SIM_ID"
-xcrun simctl boot "$SIM_ID" || true
+boot_simulator "$SIM_ID"
 
 # wait until the simulator is fully booted before launching tests, otherwise
 # the app launch / VM service attach can stall indefinitely
 xcrun simctl bootstatus "$SIM_ID" -b
 
-pushd "$SCRIPT_FOLDER/../example"
-pushd "ios"
-pod install # install pods to shave some time off the test run
-popd
-wait_for_flutter_device "$SIM_ID"
-if [ "${PA_FLUTTER_TEST_VERBOSE:-0}" = "1" ] || [ "${PA_FLUTTER_TEST_VERBOSE:-}" = "true" ]; then
-  flutter test -v --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
-else
-  flutter test --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
-fi
-popd
+(
+  cd "$SCRIPT_FOLDER/../example"
+  (
+    cd ios
+    pod install # install pods to shave some time off the test run
+  )
+
+  wait_for_flutter_device "$SIM_ID"
+
+  set -- --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
+  if is_verbose_mode; then
+    set -- -v "$@"
+  fi
+
+  flutter test "$@"
+)
