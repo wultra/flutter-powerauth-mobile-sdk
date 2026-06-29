@@ -10,7 +10,7 @@ Flutter plugin (`flutter_powerauth_mobile_sdk_plugin`) that bridges the native P
   - Single test by name: `flutter test --plain-name "<substring of test name>"`
 - **Integration tests** (real device/simulator, in `example/`): `cd example && flutter test -r expanded integration_test/plugin_integration_test.dart`
   - Requires `example/.env` (copy from `example/.env-example`; values come from the Wultra/your team). The entry file aggregates all suites in `example/integration_test/suites/`.
-  - iOS via script: `sh ./scripts/integration-tests-ios.sh`. Both platforms also need `flutter pub get` in `example/` (and `pod install` in `example/ios/` for iOS).
+  - iOS via script: `bash ./scripts/integration-tests-ios.sh`. Both platforms also need `flutter pub get` in `example/` (and `pod install` in `example/ios/` for iOS).
 
 ## Architecture: how a call flows
 

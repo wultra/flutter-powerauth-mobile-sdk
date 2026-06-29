@@ -2,11 +2,7 @@
 
 set -e # stop script when error occurs
 set -u # stop when undefined variable is used
-
-# Optional command tracing can be enabled with PA_DEBUG_INTEGRATION=1.
-if [ "${PA_DEBUG_INTEGRATION:-0}" = "1" ]; then
-  set -x
-fi
+set -o pipefail # fail a pipeline if any command in it fails, not just the last
 
 is_simulator_booted() {
   sim_id="$1"
@@ -27,17 +23,6 @@ boot_simulator() {
   echo "ERROR: Failed to boot simulator $sim_id." >&2
   echo "$boot_output" >&2
   return 1
-}
-
-is_verbose_mode() {
-  case "${PA_FLUTTER_TEST_VERBOSE:-0}" in
-    1|true|TRUE)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
 }
 
 wait_for_flutter_device() {
@@ -102,10 +87,5 @@ xcrun simctl bootstatus "$SIM_ID" -b
 
   wait_for_flutter_device "$SIM_ID"
 
-  set -- --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 20m
-  if is_verbose_mode; then
-    set -- -v "$@"
-  fi
-
-  flutter test "$@"
+  flutter test --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 30m
 )
