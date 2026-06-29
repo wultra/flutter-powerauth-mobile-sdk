@@ -20,7 +20,6 @@ import 'package:flutter/services.dart';
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_external_pending_operation.dart';
-import '../model/powerauth_instance_configuration_holder.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';
@@ -101,9 +100,9 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthInstanceConfigurationHolder> getConfiguration(String instanceId) async {
+  Future<PowerAuthConfiguration> getConfiguration(String instanceId) async {
     final result = await invokeMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
-    return PowerAuthInstanceConfigurationHolder.fromMap(result);
+    return PowerAuthConfiguration.fromMap(Map<String, dynamic>.from(result));
   }
 
   @override

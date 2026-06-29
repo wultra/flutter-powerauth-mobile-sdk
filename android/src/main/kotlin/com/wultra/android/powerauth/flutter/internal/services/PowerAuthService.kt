@@ -253,30 +253,15 @@ internal class PowerAuthService(
             Errors.error(result, t)
         }
     }
+
+    /*
+    * TODO: Add other configurations when SDK 2.0.0 is available
+    */
     
     private fun getConfiguration(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val configuration = sdk.getConfiguration()
-
-       /*
-        * TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
-        *   val clientConfiguration = clientConfigurationToMap(sdk.getClientConfiguration())
-        *   val biometryConfiguration = biometryConfigurationToMap(sdk.getKeychainConfiguration())
-        *   val keychainConfiguration = keychainConfigurationToMap(sdk.getKeychainConfiguration())
-        */
-
-            val clientConfiguration = null
-            val biometryConfiguration = null
-            val keychainConfiguration = null
-
-            result.success(
-                mapOf(
-                    CONFIGURATION to configurationToMap(configuration),
-                    CLIENT_CONFIGURATION to clientConfiguration,
-                    BIOMETRY_CONFIGURATION to biometryConfiguration,
-                    KEYCHAIN_CONFIGURATION to keychainConfiguration
-                )
-            )
+            result.success(configurationToMap(configuration))
         }
     }
 

@@ -230,15 +230,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func getConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             let config = sdk.configuration
-            let keychainConfig = sdk.keychainConfiguration
-            var response: FlutterMap = [
-                "configuration": config.serializable,
-                "clientConfiguration": sdk.clientConfiguration.serializable,
-                "keychainConfiguration": keychainConfig.serializable,
-                "biometryConfiguration": keychainConfig.biometrySerializable,
-                "sharingConfiguration": config.sharingConfiguration?.serializable
-            ]
-            result(response)
+            result(config.serializable)
         }
     }
     

@@ -32,7 +32,6 @@ import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
-import '../model/powerauth_instance_configuration_holder.dart';
 import 'powerauth_method_channel.dart';
 
 /// An internal platform interface for core PowerAuth SDK functionalities.
@@ -79,7 +78,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('isConfigured() has not been implemented.');
   }
 
-  Future<PowerAuthInstanceConfigurationHolder> getConfiguration(String instanceId) {
+  Future<PowerAuthConfiguration> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
 

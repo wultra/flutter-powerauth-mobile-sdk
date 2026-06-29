@@ -16,8 +16,6 @@
 
 import 'dart:async';
 
-import '../model/powerauth_instance_configuration_holder.dart';
-
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
@@ -74,7 +72,7 @@ class PowerAuth {
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
 
   /// Returns the base configuration used for this instance, if configured.
-  Future<PowerAuthConfiguration?> get configuration async => (await _platform.getConfiguration(instanceId)).configuration;
+  Future<PowerAuthConfiguration> get configuration async => (await _platform.getConfiguration(instanceId));
 
   // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
