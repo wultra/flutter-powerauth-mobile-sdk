@@ -8,7 +8,7 @@ You will need the following parameters to prepare and configure a PowerAuth inst
 
 - **instanceId** - Identifier of the app - the application package name/identifier is recommended.
 - **configuration** - String (base64) with the cryptographic configuration - this configuration can be retrieved via the `Get App Details` Admin API in the PowerAuth Cloud server component.
-- **baseEndpointUrl** - Base URL to the PowerAuth Standard RESTful API. _(usualy sometihng like `https://<your-domain>/enrollment-server`)_
+- **baseEndpointUrl** - Base URL to the PowerAuth Standard RESTful API. _(usually something like `https://<your-domain>/enrollment-server`)_
 
 ## 2. Configuration
 
