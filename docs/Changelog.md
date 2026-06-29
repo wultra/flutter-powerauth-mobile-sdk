@@ -2,7 +2,7 @@
 
 ## TBA
 
-* TBA
+* Removed `_configRegister` caching, thus introducing a breaking API change for getConfiguration() methods
 
 ## 1.4.0
 
