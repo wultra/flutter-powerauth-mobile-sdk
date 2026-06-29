@@ -15,6 +15,11 @@ print_section() {
   echo "========== $1 =========="
 }
 
+is_simulator_booted() {
+  sim_id="$1"
+  xcrun simctl list devices | grep -F "$sim_id" | grep -q "(Booted)"
+}
+
 wait_for_flutter_device() {
   sim_id="$1"
   max_attempts=30
@@ -64,11 +69,16 @@ echo "Booting iOS Simulator with ID: $SIM_ID"
 
 print_section "Reset selected simulator state"
 # reset only selected simulator to avoid stale boot sessions that can break VM attach
-xcrun simctl shutdown "$SIM_ID" || true
+if is_simulator_booted "$SIM_ID"; then
+  echo "Simulator $SIM_ID is booted, shutting it down first."
+  xcrun simctl shutdown "$SIM_ID"
+else
+  echo "Simulator $SIM_ID is already shutdown."
+fi
 
 # open the Simulator app focused on selected device and boot it
 open -a Simulator --args -CurrentDeviceUDID "$SIM_ID"
-xcrun simctl boot "$SIM_ID"
+xcrun simctl boot "$SIM_ID" || true
 
 # wait until the simulator is fully booted before launching tests, otherwise
 # the app launch / VM service attach can stall indefinitely
