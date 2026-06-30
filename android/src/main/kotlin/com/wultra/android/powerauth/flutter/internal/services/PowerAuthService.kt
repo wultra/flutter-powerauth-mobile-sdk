@@ -114,6 +114,11 @@ internal class PowerAuthService(
         const val CONFIGURE = "configure"
         const val IS_CONFIGURED = "isConfigured"
         const val GET_CONFIGURATION = "getConfiguration"
+        //TODO: implement when SDK 2.0.0 is available
+        // const val GET_CLIENT_CONFIGURATION = "getClientConfiguration"
+        // const val GET_BIOMETRY_CONFIGURATION = "getBiometryConfiguration"
+        // const val GET_KEYCHAIN_CONFIGURATION = "getKeychainConfiguration"
+        // const val GET_SHARING_CONFIGURATION = "getSharingConfiguration"
         const val DECONFIGURE = "deconfigure"
         const val HAS_VALID_ACTIVATION = "hasValidActivation"
         const val CAN_START_ACTIVATION = "canStartActivation"
@@ -161,6 +166,11 @@ internal class PowerAuthService(
             HandlerNames.CONFIGURE to this::configure,
             HandlerNames.IS_CONFIGURED to this::isConfigured,
             HandlerNames.GET_CONFIGURATION to this::getConfiguration,
+            //TODO: implement when SDK 2.0.0 is available
+            // HandlerNames.GET_CLIENT_CONFIGURATION to this::getClientConfiguration,
+            // HandlerNames.GET_BIOMETRY_CONFIGURATION to this::getBiometryConfiguration,
+            // HandlerNames.GET_KEYCHAIN_CONFIGURATION to this::getKeychainConfiguration,
+            // HandlerNames.GET_SHARING_CONFIGURATION to this::getSharingConfiguration,
             HandlerNames.DECONFIGURE to this::deconfigure,
             HandlerNames.HAS_VALID_ACTIVATION to this::hasValidActivation,
             HandlerNames.CAN_START_ACTIVATION to this::canStartActivation,
@@ -254,16 +264,40 @@ internal class PowerAuthService(
         }
     }
 
-    /*
-    * TODO: Add other configurations when SDK 2.0.0 is available
-    */
-    
     private fun getConfiguration(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val configuration = sdk.getConfiguration()
             result.success(configurationToMap(configuration))
         }
     }
+    //TODO: Add other configurations when SDK 2.0.0 is available
+    // private fun getClientConfiguration(call: MethodCall, result: Result) {
+    //     usePowerAuth(call, result) { sdk ->
+    //         val clientConfiguration = sdk.getClientConfiguration()
+    //         result.success(configurationToMap(clientConfiguration))
+    //     }
+    // }
+    //
+    // private fun getBiometryConfiguration(call: MethodCall, result: Result) {
+    //     usePowerAuth(call, result) { sdk ->
+    //         val biometryConfiguration = sdk.getBiometryConfiguration()
+    //         result.success(configurationToMap(biometryConfiguration))
+    //     }
+    // }
+    //
+    // private fun getKeychainConfiguration(call: MethodCall, result: Result) {
+    //     usePowerAuth(call, result) { sdk ->
+    //         val keychainConfiguration = sdk.getKeychainConfiguration()
+    //         result.success(configurationToMap(keychainConfiguration))
+    //     }
+    // }
+    //
+    // private fun getSharingConfiguration(call: MethodCall, result: Result) {
+    //     usePowerAuth(call, result) { sdk ->
+    //         val sharingConfiguration = sdk.getSharingConfiguration()
+    //         result.success(configurationToMap(sharingConfiguration))
+    //     }
+    // }
 
     private fun deconfigure(call: MethodCall, result: Result) {
         try {

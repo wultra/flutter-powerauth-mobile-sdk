@@ -32,6 +32,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "configure": configure,
         "isConfigured": isConfigured,
         "getConfiguration": getConfiguration,
+        //TODO: Implements when SDK 2.0.0 is available
+        // "getClientConfiguration": getClientConfiguration,
+        // "getBiometryConfiguration": getBiometryConfiguration,
+        // "getKeychainConfiguration": getKeychainConfiguration,
+        // "getSharingConfiguration": getSharingConfiguration,
         "deconfigure": deconfigure,
         "hasValidActivation": hasValidActivation,
         "canStartActivation": canStartActivation,
@@ -232,30 +237,31 @@ internal class PowerAuthService: PowerAuthFlutterService {
             result(sdk.configuration.serializable)
         }
     }
-
-    private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
-            result(sdk.clientConfiguration.serializable)
-        }
-    }
-
-    private func getBiometryConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
-            result(sdk.keychainConfiguration.biometrySerializable)
-        }
-    }
-
-    private func getKeychainConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
-            result(sdk.keychainConfiguration.serializable)
-        }
-    }
-
-    private func getSharingConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
-            result(sdk.configuration.sharingConfiguration?.serializable)
-        }
-    }
+    //TODO: implement when SDK 2.0.0 is available
+    //
+    // private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    //     try usePowerAuth(call, result) { sdk, _ in
+    //         result(sdk.clientConfiguration.serializable)
+    //     }
+    // }
+    //
+    // private func getBiometryConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    //     try usePowerAuth(call, result) { sdk, _ in
+    //         result(sdk.keychainConfiguration.biometrySerializable)
+    //     }
+    // }
+    //
+    // private func getKeychainConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    //     try usePowerAuth(call, result) { sdk, _ in
+    //         result(sdk.keychainConfiguration.serializable)
+    //     }
+    // }
+    //
+    // private func getSharingConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    //     try usePowerAuth(call, result) { sdk, _ in
+    //         result(sdk.configuration.sharingConfiguration?.serializable)
+    //     }
+    // }
 
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
