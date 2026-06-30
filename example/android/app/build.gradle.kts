@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.wultra.flutter_powerauth_mobile_sdk_plugin_example"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
