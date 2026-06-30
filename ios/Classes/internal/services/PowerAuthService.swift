@@ -420,8 +420,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
             
             let oldPassParam: FlutterMap = try call.requireParameter(Args.oldPassword)
             let newPassParam: FlutterMap = try call.requireParameter(Args.newPassword)
-            let oldPassword = try self.usePassword(oldPassParam)
-            let newPassword = try self.usePassword(newPassParam)
+
+            //Making copies of passwords to avoid being deallocated before native sdk finishes
+            let oldPassword = try self.usePassword(oldPassParam).copyToImmutable()
+            let newPassword = try self.usePassword(newPassParam).copyToImmutable()
             
             sdk.changePassword(from: oldPassword, to: newPassword) { error in
                 wrap {
