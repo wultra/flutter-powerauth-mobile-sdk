@@ -427,10 +427,11 @@ internal class PowerAuthService(
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
             val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
 
-            //Making copies of passwords to avoid being deallocated before native sdk finishes
-            val oldPassword = buildPasswordObject(oldPasswordMap, use = true).copyToImmutable();
-            val newPassword = buildPasswordObject(newPasswordMap, use = true).copyToImmutable();
-            val clear = { // Clear passwords from memory to not depend on garbage collector
+            // Making copies of passwords to avoid being deallocated before native sdk finishes
+            val oldPassword = buildPasswordObject(oldPasswordMap, use = true).copyToImmutable()
+            val newPassword = buildPasswordObject(newPasswordMap, use = true).copyToImmutable()
+            val clear = {
+                // Clear passwords from memory to not depend on garbage collector
                 oldPassword.clear()
                 newPassword.clear()
             }
