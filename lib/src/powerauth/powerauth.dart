@@ -48,9 +48,6 @@ class PowerAuth {
   /// Unique identifier for this PowerAuth instance.
   final String instanceId;
 
-  // Static registry to hold configurations for active instances
-  static final Map<String, _InstanceConfigurationHolder> _configRegister = {};
-
   /// Instance of the token store object, which provides interface for generating token based authentication headers.
   PowerAuthTokenStore get tokenStore => _tokenStore;
   final PowerAuthTokenStore _tokenStore;
@@ -75,19 +72,21 @@ class PowerAuth {
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
 
   /// Returns the base configuration used for this instance, if configured.
-  PowerAuthConfiguration? get configuration => _configRegister[instanceId]?.configuration;
+  Future<PowerAuthConfiguration> get configuration async => (await _platform.getConfiguration(instanceId));
 
-  /// Returns the client configuration used for this instance, if configured.
-  PowerAuthClientConfiguration? get clientConfiguration => _configRegister[instanceId]?.clientConfiguration;
+  // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
-  /// Returns the biometry configuration used for this instance, if configured.
-  PowerAuthBiometryConfiguration? get biometryConfiguration => _configRegister[instanceId]?.biometryConfiguration;
+  // /// Returns the client configuration used for this instance, if configured.
+  // Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _platform.getClientConfiguration(instanceId));
 
-  /// Returns the keychain configuration used for this instance, if configured.
-  PowerAuthKeychainConfiguration? get keychainConfiguration => _configRegister[instanceId]?.keychainConfiguration;
+  // /// Returns the biometry configuration used for this instance, if configured.
+  // Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _platform.getBiometryConfiguration(instanceId));
 
-  /// Returns the sharing configuration used for this instance (iOS only), if configured.
-  PowerAuthSharingConfiguration? get sharingConfiguration => _configRegister[instanceId]?.sharingConfiguration;
+  // /// Returns the keychain configuration used for this instance, if configured.
+  // Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _platform.getKeychainConfiguration(instanceId));
+
+  // /// Returns the sharing configuration used for this instance (iOS only), if configured.
+  // Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _platform.getSharingConfiguration(instanceId));
 
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///
@@ -100,13 +99,6 @@ class PowerAuth {
     PowerAuthKeychainConfiguration? keychainConfiguration,
     PowerAuthSharingConfiguration? sharingConfiguration
   }) async {
-    _configRegister[instanceId] = _InstanceConfigurationHolder(
-      configuration: configuration,
-      clientConfiguration: clientConfiguration,
-      biometryConfiguration: biometryConfiguration,
-      keychainConfiguration: keychainConfiguration,
-      sharingConfiguration: sharingConfiguration
-    );
 
     await _platform.configure(
       instanceId: instanceId,
@@ -123,7 +115,6 @@ class PowerAuth {
 
   /// Deconfigures this instance, removing its state.
   Future<void> deconfigure() async {
-    _configRegister.remove(instanceId);
     await _platform.deconfigure(instanceId);
   }
 
@@ -355,21 +346,4 @@ class PowerAuth {
   Future<PowerAuthUserInfo?> getLastFetchedUserInfo() {
     return _platform.getLastFetchedUserInfo(instanceId);
   }
-}
-
-/// Internal helper class to hold the configuration set for a single PowerAuth instance.
-class _InstanceConfigurationHolder {
-  final PowerAuthConfiguration configuration;
-  final PowerAuthClientConfiguration? clientConfiguration;
-  final PowerAuthBiometryConfiguration? biometryConfiguration;
-  final PowerAuthKeychainConfiguration? keychainConfiguration;
-  final PowerAuthSharingConfiguration? sharingConfiguration;
-
-  _InstanceConfigurationHolder({
-    required this.configuration,
-    this.biometryConfiguration,
-    this.keychainConfiguration,
-    this.clientConfiguration,
-    this.sharingConfiguration
-  });
 }

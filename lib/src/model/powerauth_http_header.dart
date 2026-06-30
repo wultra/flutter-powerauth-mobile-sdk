@@ -28,4 +28,5 @@ class PowerAuthHttpHeader {
   Map<String, String> toMap() {
     return {'name': name, 'value': value};
   }
+
 }
