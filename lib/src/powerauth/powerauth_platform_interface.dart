@@ -81,23 +81,23 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthConfiguration> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
-
-  Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) {
-    throw UnimplementedError('getClientConfiguration() has not been implemented.');
-  }
-
-  Future<PowerAuthBiometryConfiguration> getBiometryConfiguration(String instanceId) {
-    throw UnimplementedError('getBiometryConfiguration() has not been implemented.');
-  }
-
-  Future<PowerAuthKeychainConfiguration> getKeychainConfiguration(String instanceId) {
-    throw UnimplementedError('getKeychainConfiguration() has not been implemented.');
-  }
-
-  Future<PowerAuthSharingConfiguration> getSharingConfiguration(String instanceId) {
-    throw UnimplementedError('getSharingConfiguration() has not been implemented.');
-  }
-
+  // TODO: Implement when SDK 2.0.0 is available
+  // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) {
+  //   throw UnimplementedError('getClientConfiguration() has not been implemented.');
+  // }
+  //
+  // Future<PowerAuthBiometryConfiguration> getBiometryConfiguration(String instanceId) {
+  //   throw UnimplementedError('getBiometryConfiguration() has not been implemented.');
+  // }
+  //
+  // Future<PowerAuthKeychainConfiguration> getKeychainConfiguration(String instanceId) {
+  //   throw UnimplementedError('getKeychainConfiguration() has not been implemented.');
+  // }
+  //
+  // Future<PowerAuthSharingConfiguration> getSharingConfiguration(String instanceId) {
+  //   throw UnimplementedError('getSharingConfiguration() has not been implemented.');
+  // }
+  //
   Future<void> deconfigure(String instanceId) {
     throw UnimplementedError('deconfigure() has not been implemented.');
   }

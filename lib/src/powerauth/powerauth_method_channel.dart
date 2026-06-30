@@ -104,31 +104,32 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     final result = await invokeMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
     return PowerAuthConfiguration.fromMap(Map<String, dynamic>.from(result));
   }
-
-  @override
-  Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) async {
-      final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
-      return PowerAuthClientConfiguration.fromMap(Map<String, dynamic>.from(result));
-  }
-
-  @override
-  Future<PowerAuthBiometryConfiguration> getBiometryConfiguration(String instanceId) async {
-      final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryConfiguration', {'instanceId': instanceId});
-      return PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic>.from(result));
-  }
-
-  @override
-  Future<PowerAuthKeychainConfiguration> getKeychainConfiguration(String instanceId) async {
-      final result = await invokeMethod<Map<dynamic, dynamic>>('getKeychainConfiguration', {'instanceId': instanceId});
-      return PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic>.from(result));
  
-  }
-
-  @override
-  Future<PowerAuthSharingConfiguration> getSharingConfiguration(String instanceId) async {
-      final result = await invokeMethod<Map<dynamic, dynamic>>('getSharingConfiguration', {'instanceId': instanceId});
-      return PowerAuthSharingConfiguration.fromMap(Map<String, dynamic>.from(result));
-  }
+  // TODO: Implement when SDK 2.0.0 is available
+  // @override
+  // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) async {
+  //     final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
+  //     return PowerAuthClientConfiguration.fromMap(Map<String, dynamic>.from(result));
+  // }
+  //
+  // @override
+  // Future<PowerAuthBiometryConfiguration> getBiometryConfiguration(String instanceId) async {
+  //     final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryConfiguration', {'instanceId': instanceId});
+  //     return PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic>.from(result));
+  // }
+  //
+  // @override
+  // Future<PowerAuthKeychainConfiguration> getKeychainConfiguration(String instanceId) async {
+  //     final result = await invokeMethod<Map<dynamic, dynamic>>('getKeychainConfiguration', {'instanceId': instanceId});
+  //     return PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic>.from(result));
+  //
+  // }
+  //
+  // @override
+  // Future<PowerAuthSharingConfiguration> getSharingConfiguration(String instanceId) async {
+  //     final result = await invokeMethod<Map<dynamic, dynamic>>('getSharingConfiguration', {'instanceId': instanceId});
+  //     return PowerAuthSharingConfiguration.fromMap(Map<String, dynamic>.from(result));
+  // }
 
   @override
   Future<void> deconfigure(String instanceId) async {

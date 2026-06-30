@@ -98,7 +98,7 @@ class PowerAuthKeychainConfiguration {
       accessGroupName: map['accessGroupName'] as String?,
       userDefaultsSuiteName: map['userDefaultsSuiteName'] as String?,
       minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
-        (e) => e.name == map['minimalRequiredKeychainProtection'],
+        (e) => e.name == (map['minimalRequiredKeychainProtection'] as String?),
         orElse: () => throw PowerAuthException(code: PowerAuthErrorCode.invalidNativeObject)
       ),
     );

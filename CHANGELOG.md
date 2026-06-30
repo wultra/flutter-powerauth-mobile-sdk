@@ -1,8 +1,8 @@
 ## TBA
 
 * The `configuration` property was changed to asynchronous
-* The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration`, `sharingConfiguration` were removed without replacement
-* PowerAuth configuration now outlives the dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70).
+* The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration` and `sharingConfiguration` were removed without replacement
+* PowerAuth configuration now outlives the Dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70).
 
 ## 1.4.0
 
