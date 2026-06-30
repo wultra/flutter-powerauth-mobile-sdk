@@ -89,11 +89,11 @@ class PowerAuthBiometryConfiguration {
 
   factory PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthBiometryConfiguration(
-      linkItemsToCurrentSet: map['linkItemsToCurrentSet'] ?? Platform.isAndroid,
-      fallbackToDevicePasscode: map['fallbackToDevicePasscode'] ?? false,
-      confirmBiometricAuthentication: map['confirmBiometricAuthentication'] ?? false,
-      authenticateOnBiometricKeySetup: map['authenticateOnBiometricKeySetup'] ?? true,
-      fallbackToSharedBiometryKey: map['fallbackToSharedBiometryKey'] ?? true,
+      linkItemsToCurrentSet: map['linkItemsToCurrentSet'] as bool,
+      fallbackToDevicePasscode: map['fallbackToDevicePasscode'] as bool,
+      confirmBiometricAuthentication: map['confirmBiometricAuthentication'] as bool,
+      authenticateOnBiometricKeySetup: map['authenticateOnBiometricKeySetup'] as bool,
+      fallbackToSharedBiometryKey: map['fallbackToSharedBiometryKey'] as bool,
     );
   }
 }

@@ -229,11 +229,34 @@ internal class PowerAuthService: PowerAuthFlutterService {
 
     private func getConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
-            let config = sdk.configuration
-            result(config.serializable)
+            result(sdk.configuration.serializable)
         }
     }
-    
+
+    private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.clientConfiguration.serializable)
+        }
+    }
+
+    private func getBiometryConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.keychainConfiguration.biometrySerializable)
+        }
+    }
+
+    private func getKeychainConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.keychainConfiguration.serializable)
+        }
+    }
+
+    private func getSharingConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.configuration.sharingConfiguration?.serializable)
+        }
+    }
+
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
         register.removeAll(tag: instanceId)

@@ -106,6 +106,31 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) async {
+      final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
+      return PowerAuthClientConfiguration.fromMap(Map<String, dynamic>.from(result));
+  }
+
+  @override
+  Future<PowerAuthBiometryConfiguration> getBiometryConfiguration(String instanceId) async {
+      final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
+      return PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic>.from(result));
+  }
+
+  @override
+  Future<PowerAuthKeychainConfiguration> getKeychainConfiguration(String instanceId) async {
+      final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
+      return PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic>.from(result));
+ 
+  }
+
+  @override
+  Future<PowerAuthSharingConfiguration> getSharingConfiguration(String instanceId) async {
+      final result = await invokeMethod<Map<dynamic, dynamic>>('getClientConfiguration', {'instanceId': instanceId});
+      return PowerAuthSharingConfiguration.fromMap(Map<String, dynamic>.from(result));
+  }
+
+  @override
   Future<void> deconfigure(String instanceId) async {
     await invokeMethod<void>('deconfigure', {'instanceId': instanceId});
   }

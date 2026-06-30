@@ -29,10 +29,4 @@ class PowerAuthHttpHeader {
     return {'name': name, 'value': value};
   }
 
-  factory PowerAuthHttpHeader.fromMap(Map<String, dynamic> map) {
-    return PowerAuthHttpHeader(
-      name: map['name'] as String,
-      value: map['value'] as String,
-    );
-  }
 }

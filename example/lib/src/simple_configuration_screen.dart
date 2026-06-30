@@ -82,9 +82,7 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
       final configuration = await _powerAuth.configuration;
       setState(() {
         _configuration = configuration;
-        _status = configuration == null
-            ? "Instance is not configured."
-            : null;
+        _status = null;
       });
     } on PowerAuthException catch (error) {
       setState(() {

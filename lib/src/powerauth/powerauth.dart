@@ -77,16 +77,16 @@ class PowerAuth {
   // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
   // /// Returns the client configuration used for this instance, if configured.
-  // Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _getConfiguration(instanceId))?.clientConfiguration;
+  // Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _platform.getClientConfiguration(instanceId));
 
   // /// Returns the biometry configuration used for this instance, if configured.
-  // Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _getConfiguration(instanceId))?.biometryConfiguration;
+  // Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _platform.getBiometryConfiguration(instanceId));
 
   // /// Returns the keychain configuration used for this instance, if configured.
-  // Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _getConfiguration(instanceId))?.keychainConfiguration;
+  // Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _platform.getKeychainConfiguration(instanceId));
 
   // /// Returns the sharing configuration used for this instance (iOS only), if configured.
-  // Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _getConfiguration(instanceId))?.sharingConfiguration;
+  // Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _platform.getSharingConfiguration(instanceId));
 
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///

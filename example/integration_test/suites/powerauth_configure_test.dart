@@ -394,11 +394,11 @@ main() {
       expect(sdk1Config, isNotNull);
       expect(sdk2Config, isNotNull);
       expect(
-        _normalizeEndpointUrl(sdk1Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(sdk1Config.baseEndpointUrl),
         _normalizeEndpointUrl(AppConfig.enrollmentUrl),
       );
       expect(
-        _normalizeEndpointUrl(sdk2Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(sdk2Config.baseEndpointUrl),
         _normalizeEndpointUrl(AppConfig.enrollmentUrl),
       );
       expect(sdk1Config.configuration, AppConfig.sdkConfig);
@@ -420,11 +420,11 @@ main() {
       expect(pa1Config, isNotNull);
       expect(pa2Config, isNotNull);
       expect(
-        _normalizeEndpointUrl(pa1Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(pa1Config.baseEndpointUrl),
         _normalizeEndpointUrl(AppConfig.enrollmentUrl),
       );
       expect(
-        _normalizeEndpointUrl(pa2Config!.baseEndpointUrl),
+        _normalizeEndpointUrl(pa2Config.baseEndpointUrl),
         _normalizeEndpointUrl(AppConfig.enrollmentUrl),
       );
 
@@ -565,14 +565,14 @@ main() {
 
       // Reconfigure. This technically re-create native SDK objects on behalf
       await helper1.sdk.configure(
-        configuration: config1!,
+        configuration: config1,
         // TEMP: will be fixed in version 2.0.0 SDK
         // clientConfiguration: clientConfig1,
         // biometryConfiguration: biometryConfig1,
         // keychainConfiguration: keychainConfig1,
       );
       await helper2.sdk.configure(
-        configuration: config2!,
+        configuration: config2,
         // TEMP: will be fixed in version 2.0.0 SDK
         // clientConfiguration: clientConfig2,
         // biometryConfiguration: biometryConfig2,

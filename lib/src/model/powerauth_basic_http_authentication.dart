@@ -32,10 +32,4 @@ class PowerAuthBasicHttpAuthentication {
     return {'username': username, 'password': password};
   }
 
-  factory PowerAuthBasicHttpAuthentication.fromMap(Map<String, dynamic> map) {
-    return PowerAuthBasicHttpAuthentication(
-      username: map['username'] as String,
-      password: map['password'] as String,
-    );
-  }
 }
