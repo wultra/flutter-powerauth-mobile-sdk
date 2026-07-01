@@ -63,10 +63,9 @@ xcrun simctl bootstatus "$SIM_ID" -b
 
 (
   cd "$SCRIPT_FOLDER/../example"
-  (
-    cd ios
-    pod install # install pods to shave some time off the test run
-  )
+
+  # use Swift Package Manager for iOS dependency resolution instead of CocoaPods
+  flutter config --enable-swift-package-manager
 
   wait_for_flutter_device "$SIM_ID"
 
