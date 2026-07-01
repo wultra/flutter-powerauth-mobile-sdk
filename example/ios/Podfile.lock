@@ -1,32 +1,15 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_powerauth_mobile_sdk_plugin (0.0.1):
-    - Flutter
-    - PowerAuth2 (~> 1.9.5)
-  - PowerAuth2 (1.9.5):
-    - PowerAuthCore (~> 1.9.5)
-  - PowerAuthCore (1.9.5)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
-  - flutter_powerauth_mobile_sdk_plugin (from `.symlinks/plugins/flutter_powerauth_mobile_sdk_plugin/ios`)
-
-SPEC REPOS:
-  trunk:
-    - PowerAuth2
-    - PowerAuthCore
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
-  flutter_powerauth_mobile_sdk_plugin:
-    :path: ".symlinks/plugins/flutter_powerauth_mobile_sdk_plugin/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_powerauth_mobile_sdk_plugin: 4e12c52174577398e6e65147609c22642c1ec548
-  PowerAuth2: 8ce9b05ad8ce12157c521d0112d6c7e755ea755d
-  PowerAuthCore: 2bd5e5b2fa4de392436413238441b586465f428b
 
 PODFILE CHECKSUM: c828a38c253d5f47218258786de668d23a9f4505
 

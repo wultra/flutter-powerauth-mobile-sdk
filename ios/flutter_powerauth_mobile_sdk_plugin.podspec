@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
 
   s.source           = { :git => "https://github.com/wultra/flutter-powerauth-mobile-sdk" }
 
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'flutter_powerauth_mobile_sdk_plugin/Sources/flutter_powerauth_mobile_sdk_plugin/**/*.swift'
   s.platform = :ios, '13.4'
 
   s.dependency 'Flutter'
