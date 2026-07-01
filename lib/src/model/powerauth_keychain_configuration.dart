@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+
 /// ### Android specific
 ///
 /// Defines the level of keychain content protection.
@@ -89,5 +91,16 @@ class PowerAuthKeychainConfiguration {
       'minimalRequiredKeychainProtection':
           minimalRequiredKeychainProtection.name,
     };
+  }
+
+  factory PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic> map) {
+    return PowerAuthKeychainConfiguration(
+      accessGroupName: map['accessGroupName'] as String?,
+      userDefaultsSuiteName: map['userDefaultsSuiteName'] as String?,
+      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
+        (e) => e.name == (map['minimalRequiredKeychainProtection'] as String?),
+        orElse: () => throw PowerAuthException(code: PowerAuthErrorCode.invalidNativeObject)
+      ),
+    );
   }
 }
