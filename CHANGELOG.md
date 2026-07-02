@@ -2,6 +2,9 @@
 
 * Updates minimum supported SDK version to Flutter 3.44/Dart 3.12.
 * Migrates to built-in Kotlin
+* The `configuration` property was changed to asynchronous
+* The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration` and `sharingConfiguration` were removed without replacement
+* PowerAuth configuration now outlives the Dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70).
 
 ## 1.4.0
 

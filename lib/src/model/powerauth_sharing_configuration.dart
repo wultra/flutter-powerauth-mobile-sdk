@@ -63,4 +63,13 @@ class PowerAuthSharingConfiguration {
       'sharedMemoryIdentifier': sharedMemoryIdentifier,
     };
   }
+
+  factory PowerAuthSharingConfiguration.fromMap(Map<String, dynamic> map) {
+    return PowerAuthSharingConfiguration(
+      appGroup: map['appGroup'] as String,
+      appIdentifier: map['appIdentifier'] as String,
+      keychainAccessGroup: map['keychainAccessGroup'] as String,
+      sharedMemoryIdentifier: map['sharedMemoryIdentifier'] as String?,
+    );
+  }
 }
