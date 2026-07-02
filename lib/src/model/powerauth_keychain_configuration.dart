@@ -23,7 +23,6 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 /// If the KeyStore supports hardware backed keys, like StrongBox, then also the higher level of
 /// protection is reported.
 enum PowerAuthKeychainProtection {
-
   /// The content of the keychain is not encrypted and therefore not protected. This level of
   /// the protection is typically reported on devices older than Android Marshmallow, or in
   /// case that the device has faulty KeyStore implementation.
@@ -51,43 +50,25 @@ enum PowerAuthKeychainProtection {
   strongbox,
 }
 
-/// Represents the keychain settings.
+/// ### Android specific
+///
+/// Configures the secure storage used by the Android PowerAuth SDK.
+///
+/// iOS keychain sharing is configured with [PowerAuthSharingConfiguration].
+/// The native iOS keychain configuration only exposes internal storage names,
+/// which are intentionally not part of the Flutter API.
 class PowerAuthKeychainConfiguration {
-
-  /// ### iOS specific
-  ///
-  /// Access group name used by the `PowerAuth` keychain instances. This property
-  /// has no default value, so the application shoud provide a valid access group,
-  /// if such group should be used.
-  final String? accessGroupName;
-
-  /// ### iOS specific
-  ///
-  /// Suite name used by the `UserDefaults` that check for Keychain data presence.
-  ///
-  /// If the value is not set, `UserDefaults.standardUserDefaults` are used. Otherwise,
-  /// user defaults with given suite name are created. In case a developer started using SDK
-  /// with no suite name specified, the developer is responsible for migrating data
-  /// to the new `UserDefaults` before using the SDK with the new suite name.
-  final String? userDefaultsSuiteName;
-
-  /// ### Android specific
-  ///
   /// Set minimal required keychain protection level that must be supported on the current device. Note that
   /// if you enforce protection higher than [PowerAuthKeychainProtection.none], then your application must target
   /// at least Android 6.0.
   final PowerAuthKeychainProtection minimalRequiredKeychainProtection;
 
   PowerAuthKeychainConfiguration({
-    this.accessGroupName,
-    this.userDefaultsSuiteName,
     this.minimalRequiredKeychainProtection = PowerAuthKeychainProtection.none,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'accessGroupName': accessGroupName,
-      'userDefaultsSuiteName': userDefaultsSuiteName,
       'minimalRequiredKeychainProtection':
           minimalRequiredKeychainProtection.name,
     };
@@ -95,12 +76,14 @@ class PowerAuthKeychainConfiguration {
 
   factory PowerAuthKeychainConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthKeychainConfiguration(
-      accessGroupName: map['accessGroupName'] as String?,
-      userDefaultsSuiteName: map['userDefaultsSuiteName'] as String?,
-      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
-        (e) => e.name == (map['minimalRequiredKeychainProtection'] as String?),
-        orElse: () => throw PowerAuthException(code: PowerAuthErrorCode.invalidNativeObject)
-      ),
+      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values
+          .firstWhere(
+            (e) =>
+                e.name == (map['minimalRequiredKeychainProtection'] as String?),
+            orElse: () => throw PowerAuthException(
+              code: PowerAuthErrorCode.invalidNativeObject,
+            ),
+          ),
     );
   }
 }

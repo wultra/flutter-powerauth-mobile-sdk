@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Wultra s.r.o.
+ * Copyright 2026 Wultra s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,21 @@
  * limitations under the License.
  */
 
-/// Data format used for encryption and decryption.
-enum PowerAuthDataFormat {
-  /// UTF8 encoded string
-  utf8,
+/// Algorithm used for communication with the PowerAuth Server.
+enum PowerAuthAlgorithm {
+	/// Legacy P-256 algorithm compatible with PowerAuth protocol V3.3.
+	legacy,
 
-  /// Base64 encoded string
-  base64,
+	/// P-384 elliptic curve algorithm without post-quantum resistance.
+	p384,
+
+	/// P-384 combined with ML-KEM-768 and ML-DSA-65.
+	p384l3,
+
+	/// P-384 combined with ML-KEM-1024 and ML-DSA-87.
+	p384l5,
 }
+
+
+
+

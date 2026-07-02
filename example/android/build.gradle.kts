@@ -1,7 +1,11 @@
+import java.net.URI
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        // TODO: Remove the snapshots repository once PowerAuth SDK 2.0.0 is released.
+        maven { url = URI("https://central.sonatype.com/repository/maven-snapshots/") }
     }
 }
 

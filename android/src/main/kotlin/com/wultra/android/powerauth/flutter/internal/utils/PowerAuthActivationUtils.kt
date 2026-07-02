@@ -16,14 +16,13 @@
 
 package com.wultra.android.powerauth.flutter.internal.utils
 
-import io.getlime.security.powerauth.core.ActivationStatus
-import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
-import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.networking.response.CreateActivationResult
-import io.getlime.security.powerauth.sdk.PowerAuthAuthorizationHttpHeader
+import io.getlime.security.powerauth.sdk.PowerAuthActivationState
+import io.getlime.security.powerauth.sdk.PowerAuthActivationStatus
+import io.getlime.security.powerauth.sdk.PowerAuthHttpHeader
 
 object PowerAuthActivationUtils {
-    fun activationStatusToMap(status: ActivationStatus): Map<String, Any?> {
+    fun activationStatusToMap(status: PowerAuthActivationStatus): Map<String, Any?> {
         return mapOf(
             "state" to activationStateToString(status.state),
             "failCount" to status.failCount,
@@ -41,25 +40,20 @@ object PowerAuthActivationUtils {
         )
     }
 
-    fun authorizationHeaderToMap(header: PowerAuthAuthorizationHttpHeader): Map<String, String> {
-        if (header.powerAuthErrorCode != PowerAuthErrorCodes.SUCCEED) {
-            throw PowerAuthErrorException(header.powerAuthErrorCode)
-        }
-
+    fun httpHeaderToMap(header: PowerAuthHttpHeader): Map<String, String> {
         return mapOf(
-            "key" to header.key,
+            "name" to header.key,
             "value" to header.value
         )
     }
 
     private fun activationStateToString(state: Int): String {
         return when (state) {
-            ActivationStatus.State_Created -> "created"
-            ActivationStatus.State_Pending_Commit -> "pendingCommit"
-            ActivationStatus.State_Active -> "active"
-            ActivationStatus.State_Blocked -> "blocked"
-            ActivationStatus.State_Removed -> "removed"
-            ActivationStatus.State_Deadlock -> "deadlock"
+            PowerAuthActivationState.PENDING_COMMIT -> "pendingCommit"
+            PowerAuthActivationState.ACTIVE -> "active"
+            PowerAuthActivationState.BLOCKED -> "blocked"
+            PowerAuthActivationState.REMOVED -> "removed"
+            PowerAuthActivationState.DEADLOCK -> "deadlock"
             else -> "unknown"
         }
     }

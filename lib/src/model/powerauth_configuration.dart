@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+import 'powerauth_algorithm.dart';
+
 /// Contains configuration data for a single `PowerAuth` instance.
 class PowerAuthConfiguration {
+
+  static const int defaultOfflineAuthenticationCodeComponentLength = 8;
 
   /// String with the cryptographic configuration.
   final String configuration;
@@ -23,23 +27,48 @@ class PowerAuthConfiguration {
   /// Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
   final String baseEndpointUrl;
 
+  /// Algorithm used for communication with the PowerAuth Server.
+  ///
+  /// If not specified, the native PowerAuth SDK default is used.
+  final PowerAuthAlgorithm? algorithm;
+
+  /// Length of one component in an offline authentication code.
+  ///
+  /// Supported values are from 4 to 8. The default value is 8.
+  final int offlineAuthenticationCodeComponentLength;
+
   /// Construct configuration with required parameters.
   /// 
   /// [configuration] String with the cryptographic configuration.
   /// [baseEndpointUrl] Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
+  /// [algorithm] Algorithm used for communication with the PowerAuth Server.
+  /// [offlineAuthenticationCodeComponentLength] Length of one component in an offline authentication code.
   PowerAuthConfiguration({
     required this.configuration,
     required this.baseEndpointUrl,
+    this.algorithm,
+    this.offlineAuthenticationCodeComponentLength = defaultOfflineAuthenticationCodeComponentLength,
   });
 
   Map<String, dynamic> toMap() {
-    return {'configuration': configuration, 'baseEndpointUrl': baseEndpointUrl};
+    return {
+      'configuration': configuration,
+      'baseEndpointUrl': baseEndpointUrl,
+      if (algorithm != null) 'algorithm': algorithm!.name,
+      'offlineAuthenticationCodeComponentLength': offlineAuthenticationCodeComponentLength,
+    };
   }
 
   factory PowerAuthConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthConfiguration(
       configuration: map['configuration'] as String,
       baseEndpointUrl: map['baseEndpointUrl'] as String,
+      algorithm: map['algorithm'] != null
+          ? PowerAuthAlgorithm.values.byName(map['algorithm'] as String)
+          : null,
+      offlineAuthenticationCodeComponentLength:
+          map['offlineAuthenticationCodeComponentLength'] as int? ??
+          defaultOfflineAuthenticationCodeComponentLength,
     );
   }
 }

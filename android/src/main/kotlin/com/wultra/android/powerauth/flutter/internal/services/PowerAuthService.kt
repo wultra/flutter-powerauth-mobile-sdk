@@ -18,7 +18,6 @@ package com.wultra.android.powerauth.flutter.internal.services
 
 import android.content.Context
 import android.os.Build
-import android.util.Base64
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
@@ -27,36 +26,35 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.biometry.*
 import io.getlime.security.powerauth.core.*
-import io.getlime.security.powerauth.exception.*
 import io.getlime.security.powerauth.networking.response.*
 import io.getlime.security.powerauth.sdk.*
 import io.getlime.security.powerauth.core.Password
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 
-import androidx.core.util.component1
-import androidx.core.util.component2
 import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Constants
+import com.wultra.android.powerauth.flutter.Constants.SECURE_VAULT_KEY_KEEP_ALIVE_TIME
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.ManagedAny
 import com.wultra.android.powerauth.flutter.ReleasePolicy
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.authorizationHeaderToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.httpHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.extractPromptStrings
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getBiometryInfo
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateBiometryBeforeUse
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.biometricStatusToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateFragmentActivity
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthBiometricConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthSignatureUtils.signatureKeyIdFromString
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
-import java.nio.charset.StandardCharsets
 
 internal class PowerAuthService(
     val objectRegister: PowerAuthObjectRegister,
@@ -78,14 +76,22 @@ internal class PowerAuthService(
         const val PASSWORD = "password"
         const val OLD_PASSWORD = "oldPassword"
         const val NEW_PASSWORD = "newPassword"
+        const val PASSWORD_CHANGE_DATA = "passwordChangeData"
+        const val UPGRADE_BIOMETRY = "upgradeBiometry"
         const val URI_ID = "uriId"
-        const val QUERY_PARAMS = "queryParams"
+        const val PARAMS = "params"
         const val METHOD = "method"
         const val BODY = "body"
         const val NONCE = "nonce"
         const val DATA = "data"
+        const val DATA_TYPE = "dataType"
+        const val FORMAT = "format"
         const val SIGNATURE = "signature"
-        const val USE_MASTER_KEY = "useMasterKey"
+        const val SIGNATURE_KEY_ID = "signatureKeyId"
+        const val COMPACT = "compact"
+        const val STRICT = "strict"
+        const val DISTINGUISHED_NAMES = "distinguishedNames"
+        const val SUBJECT_ALT_NAMES = "subjectAltNames"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
         const val BIOMETRIC_PROMPT = "biometricPrompt"
@@ -95,25 +101,50 @@ internal class PowerAuthService(
         const val ADDITIONAL_ACTIVATION_OTP = "additionalActivationOtp"
         const val CUSTOM_ATTRIBUTES = "customAttributes"
         const val IS_BIOMETRY = "isBiometry"
+        const val IS_PERSIST = "isPersist"
+        const val IS_REUSABLE = "isReusable"
         const val PROMPT_MESSAGE = "promptMessage"
         const val PROMPT_TITLE = "promptTitle"
-        const val LINK_ITEMS_TO_CURRENT_SET = "linkItemsToCurrentSet"
+        const val PROMPT_SUBTITLE = "promptSubtitle"
+        const val INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE = "invalidateBiometricFactorAfterChange"
         const val CONFIRM_BIOMETRIC_AUTHENTICATION = "confirmBiometricAuthentication"
         const val AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP = "authenticateOnBiometricKeySetup"
         const val FALLBACK_TO_SHARED_BIOMETRY_KEY = "fallbackToSharedBiometryKey"
+        const val USE_LEGACY_SYMMETRIC_KEY = "useLegacySymmetricKey"
         const val MINIMAL_REQUIRED_KEYCHAIN_PROTECTION = "minimalRequiredKeychainProtection"
         const val BIOMETRY_KEY_ID = "biometryKeyId"
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
+        const val ALGORITHM = "algorithm"
+        const val OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH = "offlineAuthenticationCodeComponentLength"
         const val OBJECT_ID = "objectId"
+        const val KEY_IDENTIFIER = "keyIdentifier"
+        const val KEY_SIZE = "keySize"
         const val TOKEN_NAME = "tokenName"
         const val OIDC_PARAMETERS = "oidcParameters"
+
+        @JvmStatic
+        private fun cleanupInstanceData(
+            context: Context,
+            instanceId: String,
+            configurationMap: Map<String, Any>,
+            keychainConfigMap: Map<String, Any>?
+        ) {
+            val configuration = buildPowerAuthConfiguration(instanceId, configurationMap)
+            val keychainConfiguration = keychainConfigMap?.let {
+                buildPowerAuthKeychainConfiguration(it)
+            }
+            PowerAuthSDK.cleanupInstanceData(context, configuration, keychainConfiguration)
+        }
+
     }
 
     private object HandlerNames {
         const val CONFIGURE = "configure"
+        const val CLEANUP_INSTANCE_DATA = "cleanupInstanceData"
         const val IS_CONFIGURED = "isConfigured"
         const val GET_CONFIGURATION = "getConfiguration"
+        const val GET_CURRENT_ALGORITHM = "getCurrentAlgorithm"
         //TODO: implement when SDK 2.0.0 is available
         // const val GET_CLIENT_CONFIGURATION = "getClientConfiguration"
         // const val GET_BIOMETRY_CONFIGURATION = "getBiometryConfiguration"
@@ -126,21 +157,25 @@ internal class PowerAuthService(
         const val GET_ACTIVATION_IDENTIFIER = "getActivationIdentifier"
         const val GET_ACTIVATION_FINGERPRINT = "getActivationFingerprint"
         const val FETCH_ACTIVATION_STATUS = "fetchActivationStatus"
+        const val HAS_PROTOCOL_UPGRADE_AVAILABLE = "hasProtocolUpgradeAvailable"
+        const val HAS_PENDING_PROTOCOL_UPGRADE = "hasPendingProtocolUpgrade"
+        const val START_PROTOCOL_UPGRADE = "startProtocolUpgrade"
         const val REMOVE_ACTIVATION_LOCAL = "removeActivationLocal"
         const val REMOVE_ACTIVATION_WITH_AUTHENTICATION = "removeActivationWithAuthentication"
         const val CREATE_ACTIVATION = "createActivation"
         const val PERSIST_ACTIVATION = "persistActivation"
-        const val VALIDATE_PASSWORD = "validatePassword"
-        const val CHANGE_PASSWORD = "changePassword"
-        const val REQUEST_GET_SIGNATURE = "requestGetSignature"
-        const val REQUEST_SIGNATURE = "requestSignature"
+        const val BEGIN_PASSWORD_CHANGE = "beginPasswordChange"
+        const val FINISH_PASSWORD_CHANGE = "finishPasswordChange"
+        const val AUTHENTICATION_HEADER_FOR_REQUEST_WITH_PARAMS = "authenticationHeaderForRequestWithParams"
+        const val AUTHENTICATION_HEADER_FOR_REQUEST_WITH_BODY = "authenticationHeaderForRequestWithBody"
         const val OFFLINE_SIGNATURE = "offlineSignature"
-        const val VERIFY_SERVER_SIGNED_DATA = "verifyServerSignedData"
-        const val GET_BIOMETRY_INFO = "getBiometryInfo"
+        const val VERIFY_DIGITAL_SIGNATURE = "verifyDigitalSignature"
+        const val GET_BIOMETRIC_STATUS = "getBiometricStatus"
+        const val IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE = "isAuthenticationWithBiometricsAvailable"
         const val ADD_BIOMETRY_FACTOR = "addBiometryFactor"
         const val HAS_BIOMETRY_FACTOR = "hasBiometryFactor"
         const val REMOVE_BIOMETRY_FACTOR = "removeBiometryFactor"
-        const val AUTHENTICATE_WITH_BIOMETRY = "authenticateWithBiometry"
+        const val AUTHENTICATE_USING_BIOMETRY = "authenticateUsingBiometry"
         const val REQUEST_ACCESS_TOKEN = "requestAccessToken"
         const val REMOVE_ACCESS_TOKEN = "removeAccessToken"
         const val HAS_LOCAL_TOKEN = "hasLocalToken"
@@ -149,7 +184,13 @@ internal class PowerAuthService(
         const val REMOVE_ALL_LOCAL_TOKENS = "removeAllLocalTokens"
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
         const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
-        const val SIGN_DATA_WITH_DEVICE_PRIVATE_KEY = "signDataWithDevicePrivateKey"
+        const val FETCH_SECURE_VAULT_KEY = "fetchSecureVaultKey"
+        const val DERIVE_SECURE_VAULT_KEY = "deriveSecureVaultKey"
+        const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
+        const val EXPORT_DEVICE_PUBLIC_KEYS = "exportDevicePublicKeys"
+        const val VERIFY_JWS_SIGNATURE = "verifyJwsSignature"
+        const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
+        const val CREATE_CERTIFICATE_SIGNING_REQUEST = "createCertificateSigningRequest"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
         const val IS_TIME_SYNCHRONIZED = "isTimeSynchronized"
@@ -164,8 +205,10 @@ internal class PowerAuthService(
     override val handlers by lazy {
         mapOf(
             HandlerNames.CONFIGURE to this::configure,
+            HandlerNames.CLEANUP_INSTANCE_DATA to this::cleanupInstanceData,
             HandlerNames.IS_CONFIGURED to this::isConfigured,
             HandlerNames.GET_CONFIGURATION to this::getConfiguration,
+            HandlerNames.GET_CURRENT_ALGORITHM to this::getCurrentAlgorithm,
             //TODO: implement when SDK 2.0.0 is available
             // HandlerNames.GET_CLIENT_CONFIGURATION to this::getClientConfiguration,
             // HandlerNames.GET_BIOMETRY_CONFIGURATION to this::getBiometryConfiguration,
@@ -178,21 +221,25 @@ internal class PowerAuthService(
             HandlerNames.GET_ACTIVATION_IDENTIFIER to this::getActivationIdentifier,
             HandlerNames.GET_ACTIVATION_FINGERPRINT to this::getActivationFingerprint,
             HandlerNames.FETCH_ACTIVATION_STATUS to this::fetchActivationStatus,
+            HandlerNames.HAS_PROTOCOL_UPGRADE_AVAILABLE to this::hasProtocolUpgradeAvailable,
+            HandlerNames.HAS_PENDING_PROTOCOL_UPGRADE to this::hasPendingProtocolUpgrade,
+            HandlerNames.START_PROTOCOL_UPGRADE to this::startProtocolUpgrade,
             HandlerNames.REMOVE_ACTIVATION_LOCAL to this::removeActivationLocal,
             HandlerNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION to this::removeActivationWithAuthentication,
             HandlerNames.CREATE_ACTIVATION to this::createActivation,
             HandlerNames.PERSIST_ACTIVATION to this::persistActivation,
-            HandlerNames.VALIDATE_PASSWORD to this::validatePassword,
-            HandlerNames.CHANGE_PASSWORD to this::changePassword,
-            HandlerNames.REQUEST_GET_SIGNATURE to this::requestGetSignature,
-            HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
+            HandlerNames.BEGIN_PASSWORD_CHANGE to this::beginPasswordChange,
+            HandlerNames.FINISH_PASSWORD_CHANGE to this::finishPasswordChange,
+            HandlerNames.AUTHENTICATION_HEADER_FOR_REQUEST_WITH_PARAMS to this::authenticationHeaderForRequestWithParams,
+            HandlerNames.AUTHENTICATION_HEADER_FOR_REQUEST_WITH_BODY to this::authenticationHeaderForRequestWithBody,
             HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
-            HandlerNames.VERIFY_SERVER_SIGNED_DATA to this::verifyServerSignedData,
-            HandlerNames.GET_BIOMETRY_INFO to this::getBiometryInfo,
+            HandlerNames.VERIFY_DIGITAL_SIGNATURE to this::verifyDigitalSignature,
+            HandlerNames.GET_BIOMETRIC_STATUS to this::getBiometricStatus,
+            HandlerNames.IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE to this::isAuthenticationWithBiometricsAvailable,
             HandlerNames.ADD_BIOMETRY_FACTOR to this::addBiometryFactor,
             HandlerNames.HAS_BIOMETRY_FACTOR to this::hasBiometryFactor,
             HandlerNames.REMOVE_BIOMETRY_FACTOR to this::removeBiometryFactor,
-            HandlerNames.AUTHENTICATE_WITH_BIOMETRY to this::authenticateWithBiometry,
+            HandlerNames.AUTHENTICATE_USING_BIOMETRY to this::authenticateUsingBiometry,
             HandlerNames.REQUEST_ACCESS_TOKEN to this::requestAccessToken,
             HandlerNames.REMOVE_ACCESS_TOKEN to this::removeAccessToken,
             HandlerNames.HAS_LOCAL_TOKEN to this::hasLocalToken,
@@ -201,7 +248,13 @@ internal class PowerAuthService(
             HandlerNames.REMOVE_ALL_LOCAL_TOKENS to this::removeAllLocalTokens,
             HandlerNames.GENERATE_HEADER_FOR_TOKEN to this::generateHeaderForToken,
             HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
-            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to this::signDataWithDevicePrivateKey,
+            HandlerNames.FETCH_SECURE_VAULT_KEY to this::fetchSecureVaultKey,
+            HandlerNames.DERIVE_SECURE_VAULT_KEY to this::deriveSecureVaultKey,
+            HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
+            HandlerNames.EXPORT_DEVICE_PUBLIC_KEYS to this::exportDevicePublicKeys,
+            HandlerNames.VERIFY_JWS_SIGNATURE to this::verifyJwsSignature,
+            HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
+            HandlerNames.CREATE_CERTIFICATE_SIGNING_REQUEST to this::createCertificateSigningRequest,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
             HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
             HandlerNames.IS_TIME_SYNCHRONIZED to this::isTimeSynchronized,
@@ -230,11 +283,12 @@ internal class PowerAuthService(
                 val powerAuthConfiguration =
                     buildPowerAuthConfiguration(instanceId, configurationMap)
                 val clientConfiguration = buildPowerAuthClientConfiguration(clientConfigMap)
-                val keychainConfiguration =
-                    buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
+                val biometricConfiguration = buildPowerAuthBiometricConfiguration(biometryConfigMap)
+                val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap)
 
                 val sdkBuilder = PowerAuthSDK.Builder(powerAuthConfiguration)
                     .clientConfiguration(clientConfiguration)
+                    .biometricConfiguration(biometricConfiguration)
                     .keychainConfiguration(keychainConfiguration)
 
                 val sdk = sdkBuilder.build(context)
@@ -255,6 +309,18 @@ internal class PowerAuthService(
         }
     }
 
+    private fun cleanupInstanceData(call: MethodCall, result: Result) {
+        try {
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val configurationMap: Map<String, Any> = call.getRequiredArgument(CONFIGURATION)
+            val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
+            PowerAuthService.cleanupInstanceData(context, instanceId, configurationMap, keychainConfigMap)
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
     private fun isConfigured(call: MethodCall, result: Result) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
@@ -270,6 +336,13 @@ internal class PowerAuthService(
             result.success(configurationToMap(configuration))
         }
     }
+
+    private fun getCurrentAlgorithm(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(algorithmToString(sdk.currentAlgorithm))
+        }
+    }
+
     //TODO: Add other configurations when SDK 2.0.0 is available
     // private fun getClientConfiguration(call: MethodCall, result: Result) {
     //     usePowerAuth(call, result) { sdk ->
@@ -344,7 +417,7 @@ internal class PowerAuthService(
     private fun fetchActivationStatus(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             sdk.fetchActivationStatusWithCallback(context, object : IActivationStatusListener {
-                override fun onActivationStatusSucceed(status: ActivationStatus) {
+                override fun onActivationStatusSucceed(status: PowerAuthActivationStatus) {
                     result.success(activationStatusToMap(status))
                 }
 
@@ -352,6 +425,59 @@ internal class PowerAuthService(
                     Errors.error(result, t)
                 }
             })
+        }
+    }
+
+    private fun hasProtocolUpgradeAvailable(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.hasProtocolUpgradeAvailable())
+        }
+    }
+
+    private fun hasPendingProtocolUpgrade(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.hasPendingProtocolUpgrade())
+        }
+    }
+
+    private fun startProtocolUpgrade(call: MethodCall, result: Result) {
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
+            val upgradeBiometry = call.argument<Boolean>(UPGRADE_BIOMETRY) ?: false
+            val biometricSetupPrompt = if (upgradeBiometry) {
+                val activity = validateFragmentActivity(getCurrentActivity())
+                PowerAuthBiometricPrompt.noPromptForBiometricKeySetup(activity)
+            } else null
+            val corePassword = buildOwnedPasswordObject(passwordMap)
+
+            val listener = object : IProtocolUpgradeListener {
+                override fun onProtocolUpgradeSucceed(upgradeResult: ProtocolUpgradeResult) {
+                    corePassword.destroy()
+                    result.success(
+                        mapOf(
+                            "activationStatusFetchRequired" to upgradeResult.isActivationStatusFetchRequired,
+                            "activationFingerprint" to upgradeResult.activationFingerprint,
+                            "biometryFactorRemoved" to upgradeResult.isBiometryFactorRemoved
+                        )
+                    )
+                }
+
+                override fun onProtocolUpgradeFailed(throwable: Throwable) {
+                    corePassword.destroy()
+                    Errors.error(result, throwable)
+                }
+            }
+
+            try {
+                if (biometricSetupPrompt != null) {
+                    sdk.startProtocolUpgrade(context, corePassword, biometricSetupPrompt, listener)
+                } else {
+                    sdk.startProtocolUpgrade(context, corePassword, listener)
+                }
+            } catch (t: Throwable) {
+                corePassword.destroy()
+                throw t
+            }
         }
     }
 
@@ -364,20 +490,20 @@ internal class PowerAuthService(
 
     private fun removeActivationWithAuthentication(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = false)
+            withOwnedAuthentication(call) { authentication ->
+                sdk.removeActivationWithAuthentication(
+                    context,
+                    authentication,
+                    object : IActivationRemoveListener {
+                        override fun onActivationRemoveSucceed() {
+                            result.success(null)
+                        }
 
-            sdk.removeActivationWithAuthentication(
-                context,
-                authentication,
-                object : IActivationRemoveListener {
-                    override fun onActivationRemoveSucceed() {
-                        result.success(null)
-                    }
-
-                    override fun onActivationRemoveFailed(t: Throwable) {
-                        Errors.error(result, t)
-                    }
-                })
+                        override fun onActivationRemoveFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
+                    })
+            }
         }
     }
 
@@ -400,183 +526,212 @@ internal class PowerAuthService(
 
     private fun persistActivation(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
-            val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
-            val useBiometryActual = authMap[IS_BIOMETRY] as? Boolean ?: false
+            val authentication = buildAuthenticationObject(
+                call,
+                authenticateOnBiometricKeySetup = sdk.biometricConfiguration.isAuthenticateOnBiometricKeySetup
+            )
 
-            val authenticationObject = buildAuthenticationObject(call, persist = true)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && useBiometryActual) {
-                val corePassword = authenticationObject.password
-                    ?: throw WrapperException(
-                        Errors.EC_FLUTTER_ERROR,
-                        "Password could not be retrieved from authentication object for biometric persist."
-                    )
-
-                val promptMap: Map<String, String>? =
-                    authMap[BIOMETRIC_PROMPT] as? Map<String, String>
-                val (title, description) = extractPromptStrings(promptMap)
-
-                val activity = validateFragmentActivity(getCurrentActivity())
-
-                sdk.persistActivation(
+            try {
+                sdk.persistActivationWithAuthentication(
                     context,
-                    activity,
-                    title,
-                    description,
-                    corePassword,
-                    object : IPersistActivationWithBiometricsListener {
-                        override fun onBiometricDialogCancelled() {
+                    authentication,
+                    object : IPersistActivationListener {
+                        override fun onPersistActivationCancelled(userCancel: Boolean) {
+                            authentication.destroy()
                             Errors.error(
                                 result,
-                                PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
+                                PowerAuthErrorException(PowerAuthErrorCodes.OPERATION_CANCELED)
                             )
                         }
 
-                        override fun onBiometricDialogSuccess() {
+                        override fun onPersistActivationFailed(t: Throwable) {
+                            authentication.destroy()
+                            Errors.error(result, t)
+                        }
+
+                        override fun onPersistActivationSucceeded() {
+                            authentication.destroy()
                             result.success(null)
                         }
-
-                        override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
-                            Errors.error(result, error)
-                        }
-                    }
-                )
-            } else {
-                val resultCode =
-                    sdk.persistActivationWithAuthentication(context, authenticationObject)
-                if (resultCode == PowerAuthErrorCodes.SUCCEED) {
-                    result.success(null)
-                } else {
-                    Errors.error(result, PowerAuthErrorException(resultCode))
-                }
+                    })
+            } catch (t: Throwable) {
+                authentication.destroy()
+                throw t
             }
         }
     }
 
-    private fun validatePassword(call: MethodCall, result: Result) {
-        usePowerAuth(call, result) { sdk ->
-            val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
-            val password = buildPasswordObject(passwordMap, use = true)
-
-            sdk.validatePassword(context, password, object : IValidatePasswordListener {
-                override fun onPasswordValid() {
-                    result.success(null)
-                }
-
-                override fun onPasswordValidationFailed(t: Throwable) {
-                    Errors.error(result, t)
-                }
-            })
-        }
-    }
-
-    private fun changePassword(call: MethodCall, result: Result) {
+    private fun beginPasswordChange(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
-            val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
+            // Keep this immutable copy alive until the asynchronous callback completes.
+            val oldPassword = buildOwnedPasswordObject(oldPasswordMap)
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
 
-            val oldPassword = buildPasswordObject(oldPasswordMap, use = true)
-            val newPassword = buildPasswordObject(newPasswordMap, use = true)
+            try {
+                sdk.beginPasswordChange(context, oldPassword, object : IBeginPasswordChangeListener {
+                    override fun onBeginPasswordChangeSucceed(passwordChangeData: PowerAuthPasswordChangeData) {
+                        try {
+                            // Do not expose change data produced by an SDK that was deconfigured
+                            // while the network request was running.
+                            val objectId = objectRegister.registerObjectIfOwnerMatches(
+                                instanceId,
+                                sdk,
+                                ManagedAny.wrap(passwordChangeData) {
+                                    it.secureClear();
+                                    it.oldPassword.destroy();},
+                                listOf(
+                                    ReleasePolicy.expire(Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
+                                )
+                            )
+                            if (objectId == null) {
+                                throw WrapperException(
+                                    Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                    "PowerAuth instance '$instanceId' not configured."
+                                )
+                            }
+                            result.success(objectId)
+                        } catch (t: Throwable) {
+                            passwordChangeData.secureClear()
+                            oldPassword.destroy()
+                            Errors.error(result, t)
+                        }
+                    }
 
-            sdk.changePassword(context, oldPassword, newPassword, object : IChangePasswordListener {
-                override fun onPasswordChangeSucceed() {
-                    result.success(null)
-                }
-
-                override fun onPasswordChangeFailed(t: Throwable) {
-                    Errors.error(result, t)
-                }
-            })
-        }
-    }
-
-    private fun requestGetSignature(call: MethodCall, result: Result) {
-        usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = false)
-            val uriId: String = call.getRequiredArgument(URI_ID)
-            val queryParams: Map<String, String>? = call.argument(QUERY_PARAMS)
-
-            val header = sdk.requestGetSignatureWithAuthentication(
-                context,
-                authentication,
-                uriId,
-                queryParams
-            )
-
-            if (header.powerAuthErrorCode == PowerAuthErrorCodes.SUCCEED) {
-                result.success(authorizationHeaderToMap(header))
-            } else {
-                throw PowerAuthErrorException(header.powerAuthErrorCode)
+                    override fun onBeginPasswordChangeFailed(t: Throwable) {
+                        oldPassword.destroy()
+                        Errors.error(result, t)
+                    }
+                })
+            } catch (t: Throwable) {
+                oldPassword.destroy()
+                throw t
             }
         }
     }
 
-    private fun requestSignature(call: MethodCall, result: Result) {
+    private fun finishPasswordChange(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = false)
+            val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
+            val newPassword = buildOwnedPasswordObject(newPasswordMap)
+            val passwordChangeDataId: String = call.getRequiredArgument(PASSWORD_CHANGE_DATA)
+            val passwordChangeData = try {
+                objectRegister.touchObject(
+                    passwordChangeDataId,
+                    PowerAuthPasswordChangeData::class.java
+                )
+                    ?: throw WrapperException(
+                        Errors.EC_INVALID_NATIVE_OBJECT,
+                        "Password change data object '$passwordChangeDataId' is no longer valid or not found."
+                    )
+            } catch (t: Throwable) {
+                newPassword.destroy()
+                throw t
+            }
+            try {
+                sdk.finishPasswordChange(context, newPassword, passwordChangeData, object : IFinishPasswordChangeListener {
+                    override fun onFinishPasswordChangeSucceed() {
+                        newPassword.destroy()
+                        objectRegister.removeObject(passwordChangeDataId, PowerAuthPasswordChangeData::class.java)
+                        result.success(null)
+                    }
+
+                    override fun onFinishPasswordChangeFailed(t: Throwable) {
+                        newPassword.destroy()
+                        Errors.error(result, t)
+                    }
+                })
+            } catch (t: Throwable) {
+                newPassword.destroy()
+                throw t
+            }
+        }
+    }
+
+    private fun authenticationHeaderForRequestWithParams(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
             val method: String = call.getRequiredArgument(METHOD)
             val uriId: String = call.getRequiredArgument(URI_ID)
-            val bodyString: String? = call.argument(BODY)
-            val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
+            val params: Map<String, String>? = call.argument(PARAMS)
 
-            val header = sdk.requestSignatureWithAuthentication(
-                context,
-                authentication,
-                method,
-                uriId,
-                requestData
-            )
-
-            if (header.powerAuthErrorCode == PowerAuthErrorCodes.SUCCEED) {
-                result.success(authorizationHeaderToMap(header))
-            } else {
-                throw PowerAuthErrorException(header.powerAuthErrorCode)
+            val header = withOwnedAuthentication(call) { authentication ->
+                sdk.authenticationHeaderForRequestWithParams(
+                    authentication,
+                    method,
+                    uriId,
+                    params
+                )
             }
+            result.success(httpHeaderToMap(header))
+        }
+    }
+
+    private fun authenticationHeaderForRequestWithBody(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            val method: String = call.getRequiredArgument(METHOD)
+            val uriId: String = call.getRequiredArgument(URI_ID)
+            val requestData: ByteArray? = call.argument(BODY)
+
+            val header = withOwnedAuthentication(call) { authentication ->
+                sdk.authenticationHeaderForRequestWithBody(
+                    authentication,
+                    method,
+                    uriId,
+                    requestData
+                )
+            }
+            result.success(httpHeaderToMap(header))
         }
     }
 
     private fun offlineSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = false)
+            // This asynchronous API needs explicit credential cleanup in both callback paths.
+            val authentication = buildAuthenticationObject(call)
+
             val uriId: String = call.getRequiredArgument(URI_ID)
             val nonce: String = call.getRequiredArgument(NONCE)
-            val bodyString: String? = call.argument(BODY)
-            val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
+            val requestData: ByteArray? = call.argument(BODY)
 
             try {
-                val signature = sdk.offlineSignatureWithAuthentication(
+                sdk.offlineAuthenticationCode(
                     context,
                     authentication,
                     uriId,
                     requestData,
-                    nonce
-                )
+                    nonce,
+                    object: IOfflineAuthenticationCodeListener {
+                        override fun onOfflineAuthenticationCodeFailed(t: Throwable) {
+                            authentication.destroy()
+                            Errors.error(result, t)
+                        }
 
-                if (signature != null) {
-                    result.success(signature)
-                } else {
-                    // TODO: tests required missing activation, however the SDK does not indicate and/or throw it
-                    result.error(Errors.EC_MISSING_ACTIVATION, "Signature calculation failed", null)
-                    // result.error(Errors.EC_SIGNATURE_ERROR, "Signature calculation failed", null)
-                }
-            } catch (e: PowerAuthMissingConfigException) {
-                Errors.error(result, e)
+                        override fun onOfflineAuthenticationCodeSucceed(authenticationCode: String) {
+                            authentication.destroy()
+                            result.success(authenticationCode)
+                        }
+
+                    }
+                )
+            } catch (t: Throwable) {
+                authentication.destroy()
+                throw t
             }
         }
     }
 
-    private fun verifyServerSignedData(call: MethodCall, result: Result) {
+    private fun verifyDigitalSignature(call: MethodCall, result: Result) {
+        val signature: ByteArray = call.getRequiredArgument(SIGNATURE)
+        val data: ByteArray = call.getRequiredArgument(DATA)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
         usePowerAuth(call, result) { sdk ->
-            val dataString: String = call.getRequiredArgument(DATA)
-            val signature: String = call.getRequiredArgument(SIGNATURE)
-            val useMasterKey: Boolean = call.argument<Boolean>(USE_MASTER_KEY) ?: false
-
-            val dataBytes = dataString.toByteArray()
-            val signatureBytes = Base64.decode(signature, Base64.DEFAULT)
-
-            val isValid = sdk.verifyServerSignedData(dataBytes, signatureBytes, useMasterKey)
-
-            result.success(isValid)
+            sdk.verifyDigitalSignature(
+                signature,
+                data,
+                keyId
+            )
+            result.success(null)
         }
     }
 
@@ -584,33 +739,35 @@ internal class PowerAuthService(
         usePowerAuthOnMainThread(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
-            val corePassword = buildPasswordObject(passwordMap, use = true)
+            val activity = validateFragmentActivity(getCurrentActivity())
+            val prompt = buildBiometricPrompt(
+                activity,
+                promptMap,
+                allowNoPrompt = true,
+                authenticateOnBiometricKeySetup = sdk.biometricConfiguration.isAuthenticateOnBiometricKeySetup
+            )
+            val corePassword = buildOwnedPasswordObject(passwordMap)
 
             try {
-                // validateBiometryBeforeUse(sdk)
-
-                val activity = validateFragmentActivity(getCurrentActivity())
-
-                val (title, description) = extractPromptStrings(promptMap)
-
                 sdk.addBiometryFactor(
                     context,
-                    activity,
-                    title,
-                    description,
                     corePassword,
+                    prompt,
                     object : IAddBiometryFactorListener {
                         override fun onAddBiometryFactorSucceed() {
+                            corePassword.destroy()
                             result.success(null)
                         }
 
-                        override fun onAddBiometryFactorFailed(error: PowerAuthErrorException) {
+                        override fun onAddBiometryFactorFailed(error: Throwable) {
+                            corePassword.destroy()
                             Errors.error(result, error)
                         }
                     }
                 )
-            } catch (e: Exception) {
-                Errors.error(result, e)
+            } catch (t: Throwable) {
+                corePassword.destroy()
+                throw t
             }
         }
     }
@@ -627,90 +784,86 @@ internal class PowerAuthService(
 
     private fun removeBiometryFactor(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val removed = sdk.removeBiometryFactor(context)
-
-                if (removed) {
-                    result.success(null)
-                } else {
-                    if (!sdk.hasBiometryFactor(context)) {
-                        throw WrapperException(
-                            Errors.EC_BIOMETRY_NOT_CONFIGURED,
-                            "Biometry factor was not configured."
-                        )
-                    } else {
-                        throw WrapperException(
-                            Errors.EC_FLUTTER_ERROR,
-                            "Failed to remove biometry factor for unknown reason."
-                        )
-                    }
+            sdk.removeBiometryFactor(context, object: IRemoveBiometryFactorListener {
+                override fun onRemoveBiometryFactorFailed(t: Throwable) {
+                    Errors.error(result, t)
                 }
-            } else {
-                throw WrapperException(
-                    Errors.EC_BIOMETRY_NOT_SUPPORTED,
-                    "Biometry requires Android 6.0 (API 23) or higher"
-                )
-            }
+
+                override fun onRemoveBiometryFactorSucceed() {
+                    result.success(null)
+                }
+            })
         }
     }
 
-    private fun authenticateWithBiometry(call: MethodCall, result: Result) {
+    private fun authenticateUsingBiometry(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val isReusable = call.argument<Boolean>(IS_REUSABLE) ?: false
 
-            try {
-                validateBiometryBeforeUse(context, sdk)
+            val activity = validateFragmentActivity(getCurrentActivity())
+            val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
 
-                val activity = validateFragmentActivity(getCurrentActivity())
-                val (title, description) = extractPromptStrings(promptMap)
+            sdk.authenticateUsingBiometrics(
+                context,
+                prompt,
+                object : IAuthenticateWithBiometricsListener {
+                    override fun onBiometricDialogCancelled(userCancel: Boolean) {
+                        Errors.error(
+                            result,
+                            PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
+                        )
+                    }
 
-                sdk.authenticateUsingBiometrics(
-                    context,
-                    activity,
-                    title,
-                    description,
-                    object : IAuthenticateWithBiometricsListener {
-                        override fun onBiometricDialogCancelled(userCancel: Boolean) {
-                            Errors.error(
-                                result,
-                                PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
-                            )
+                    override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
+                        val key = try {
+                            authentication.biometryFactorRelatedKey?.copy()
+                                ?: throw WrapperException(
+                                    Errors.EC_FLUTTER_ERROR,
+                                    "Biometric key missing after success."
+                                )
+                        } catch (t: Throwable) {
+                            Errors.error(result, t)
+                            return
+                        } finally {
+                            authentication.destroy()
                         }
 
-                        override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
-                            val key = authentication.biometryFactorRelatedKey
-                            if (key == null) {
+                        try {
+                            val managedKey = ManagedAny.wrap(key) { it.destroy() }
+                            val keyId = objectRegister.registerObjectIfOwnerMatches(
+                                instanceId,
+                                sdk,
+                                managedKey,
+                                listOfNotNull(
+                                    if (isReusable) null else ReleasePolicy.afterUse(1),
+                                    ReleasePolicy.keepAlive(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
+                                )
+                            )
+                            if (keyId == null) {
+                                key.destroy()
                                 Errors.error(
                                     result,
                                     WrapperException(
-                                        Errors.EC_FLUTTER_ERROR,
-                                        "Biometric key missing after success."
+                                        Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                        "PowerAuth instance '$instanceId' not configured."
                                     )
                                 )
                                 return
                             }
-
-                            val managedKey = ManagedAny.wrap(key)
-                            val keyId = objectRegister.registerObject(
-                                managedKey,
-                                instanceId,
-                                listOf(
-                                    ReleasePolicy.afterUse(1),
-                                    ReleasePolicy.expire(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
-                                )
-                            )
                             result.success(keyId)
-                        }
-
-                        override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
-                            Errors.error(result, error)
+                        } catch (t: Throwable) {
+                            key.destroy()
+                            Errors.error(result, t)
                         }
                     }
-                )
-            } catch (e: Exception) {
-                Errors.error(result, e)
-            }
+
+                    override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
+                        Errors.error(result, error)
+                    }
+                }
+            )
         }
     }
 
@@ -742,21 +895,12 @@ internal class PowerAuthService(
                 )
                 val codeVerifier = oidcParameters["codeVerifier"]
 
-                try {
-                    PowerAuthActivation.Builder.oidcActivation(
-                        providerId,
-                        code,
-                        nonce,
-                        codeVerifier
-                    )
-                } catch (e: PowerAuthErrorException) {
-                    throw WrapperException(
-                        Errors.EC_INVALID_ACTIVATION_OBJECT,
-                        "Invalid OIDC parameters provided"
-                    )
-                }
-
-
+                PowerAuthActivation.Builder.oidcActivation(
+                    providerId,
+                    code,
+                    nonce,
+                    codeVerifier
+                )
             }
 
             else -> throw WrapperException(
@@ -780,79 +924,127 @@ internal class PowerAuthService(
         return activationBuilder.build()
     }
 
+    /**
+     * Builds an authentication object that owns copies of credentials consumed from the register.
+     *
+     * The caller must destroy the returned object after the native operation finishes so copied
+     * password and biometric key material is cleared deterministically.
+     */
     private fun buildAuthenticationObject(
         call: MethodCall,
-        persist: Boolean
+        authenticateOnBiometricKeySetup: Boolean = true
     ): PowerAuthAuthentication {
         val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
+        // Reconstruct the native object from its serialized purpose. The core SDK
+        // remains responsible for validating whether the called operation accepts it.
+        val persist = authMap[IS_PERSIST] as? Boolean
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Missing isPersist in authentication object."
+            )
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
         val passwordMap = authMap[PASSWORD] as? Map<String, Any>
         val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
+        if (!persist && useBiometry && biometryKeyId.isNullOrEmpty()) {
+            throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "biometryKeyId is required for biometric authentication."
+            )
+        }
 
-        val password: Password? = if (passwordMap != null) {
-            buildPasswordObject(passwordMap, use = true)
+        val persistPrompt = if (persist && useBiometry) {
+            val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
+            val activity = validateFragmentActivity(getCurrentActivity())
+            buildBiometricPrompt(
+                activity,
+                promptMap,
+                allowNoPrompt = true,
+                authenticateOnBiometricKeySetup = authenticateOnBiometricKeySetup
+            )
         } else {
             null
         }
+        // Copy before consuming a one-shot handle so the returned authentication owns its data.
+        var password = passwordMap?.let { buildOwnedPasswordObject(it) }
+        var biometryKey: SecureData? = null
 
-        return if (persist) {
-            if (password == null) {
-                throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Password is required for persisting activation."
-                )
-            }
+        try {
+            val authentication = if (persist) {
+                val ownedPassword = password
+                    ?: throw WrapperException(
+                        Errors.EC_WRONG_PARAMETER,
+                        "Password is required for persisting activation."
+                    )
 
-            if (useBiometry) {
-                val biometricKeyBytes = biometryKeyId?.let { keyId ->
-                    objectRegister.useObject(keyId, ByteArray::class.java)
+                if (useBiometry) {
+                    PowerAuthAuthentication.persistWithPasswordAndBiometry(
+                        ownedPassword,
+                        checkNotNull(persistPrompt)
+                    )
+                } else {
+                    PowerAuthAuthentication.persistWithPassword(ownedPassword)
+                }
+            } else {
+                biometryKey = biometryKeyId?.let { keyId ->
+                    objectRegister.useObjectAndTransform(keyId, SecureData::class.java) { key ->
+                        key.copy()
+                    }
                         ?: throw WrapperException(
                             Errors.EC_INVALID_NATIVE_OBJECT,
-                            "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired. This key is required if biometryKeyId is explicitly provided for persisting."
+                            "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
                         )
                 }
 
-                if (biometricKeyBytes != null) {
-                    PowerAuthAuthentication.persistWithPasswordAndBiometry(
-                        password,
-                        biometricKeyBytes
-                    )
-                } else {
-                    PowerAuthAuthentication.persistWithPassword(password)
+                when {
+                    biometryKey != null -> {
+                        password?.destroy()
+                        password = null
+                        PowerAuthAuthentication.possessionWithBiometry(biometryKey)
+                    }
+                    password != null -> PowerAuthAuthentication.possessionWithPassword(password)
+                    else -> PowerAuthAuthentication.possession()
                 }
-            } else {
-                PowerAuthAuthentication.persistWithPassword(password)
-            }
-        } else {
-            val biometryKeyBytes = biometryKeyId?.let { keyId ->
-                objectRegister.useObject(keyId, ByteArray::class.java)
-                    ?: throw WrapperException(
-                        Errors.EC_INVALID_NATIVE_OBJECT,
-                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
-                    )
             }
 
-            if (biometryKeyBytes != null) {
-                PowerAuthAuthentication.possessionWithBiometry(biometryKeyBytes)
-            } else if (password != null) {
-                PowerAuthAuthentication.possessionWithPassword(password)
-            } else {
-                PowerAuthAuthentication.possession()
-            }
+            // Ownership has moved to the authentication object.
+            password = null
+            biometryKey = null
+            return authentication
+        } catch (t: Throwable) {
+            password?.destroy()
+            biometryKey?.destroy()
+            throw t
         }
     }
 
-    private fun buildPasswordObject(passwordArgMap: Map<String, Any>, use: Boolean): Password {
+    /**
+     * Executes a synchronous operation and always destroys its copied authentication data.
+     */
+    private fun <T> withOwnedAuthentication(
+        call: MethodCall,
+        block: (PowerAuthAuthentication) -> T
+    ): T {
+        val authentication = buildAuthenticationObject(call)
+        return try {
+            block(authentication)
+        } finally {
+            authentication.destroy()
+        }
+    }
+
+    /**
+     * Consumes one use of a registered password and returns an independently owned immutable copy.
+     */
+    private fun buildOwnedPasswordObject(passwordArgMap: Map<String, Any>): Password {
         passwordArgMap[OBJECT_ID]?.let { objectIdValue ->
             if (objectIdValue is String) {
-                val managedPassword = if (use) {
-                    objectRegister.useObject(objectIdValue, Password::class.java)
-                } else {
-                    objectRegister.touchObject(objectIdValue, Password::class.java)
-                }
-
-                return managedPassword ?: throw WrapperException(
+                return objectRegister.useObjectAndTransform(
+                    objectIdValue,
+                    Password::class.java
+                ) { password ->
+                    password.copyToImmutable()
+                } ?: throw WrapperException(
                     Errors.EC_INVALID_NATIVE_OBJECT,
                     "PowerAuthPassword object with ID '$objectIdValue' is no longer valid or not found."
                 )
@@ -911,28 +1103,29 @@ internal class PowerAuthService(
 
     private fun requestAccessToken(call: MethodCall, result: Result) {
         val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
-        val authentication = buildAuthenticationObject(call, persist = false)
 
         usePowerAuth(call, result) { sdk ->
-            sdk.tokenStore.requestAccessToken(
-                context,
-                tokenName,
-                authentication,
-                object : IGetTokenListener {
-                    override fun onGetTokenSucceeded(token: PowerAuthToken) {
-                        result.success(
-                            mapOf(
-                                "tokenName" to token.tokenName,
-                                "tokenIdentifier" to token.tokenIdentifier
+            withOwnedAuthentication(call) { authentication ->
+                sdk.tokenStore.requestAccessToken(
+                    context,
+                    tokenName,
+                    authentication,
+                    object : IGetTokenListener {
+                        override fun onGetTokenSucceeded(token: PowerAuthToken) {
+                            result.success(
+                                mapOf(
+                                    "tokenName" to token.tokenName,
+                                    "tokenIdentifier" to token.tokenIdentifier
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    override fun onGetTokenFailed(t: Throwable) {
-                        Errors.error(result, t)
+                        override fun onGetTokenFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 
@@ -1006,18 +1199,13 @@ internal class PowerAuthService(
         val tokenName: String = call.getRequiredArgument(TOKEN_NAME)
 
         usePowerAuth(call, result) { sdk ->
-
-            sdk.tokenStore.generateAuthorizationHeader(context, tokenName, object: IGenerateTokenHeaderListener {
-                override fun onGenerateTokenHeaderSucceeded(header: PowerAuthAuthorizationHttpHeader) {
-                    result.success(mapOf("key" to header.key, "value" to header.value))
+            sdk.tokenStore.generateAuthenticationHeader(context, tokenName, object: IGenerateTokenHeaderListener {
+                override fun onGenerateTokenHeaderSucceeded(header: PowerAuthHttpHeader) {
+                    result.success(httpHeaderToMap(header))
                 }
 
                 override fun onGenerateTokenHeaderFailed(t: Throwable) {
-                    result.error(
-                        Errors.EC_CANNOT_GENERATE_TOKEN,
-                        "Cannot generate header for this token.",
-                        t
-                    )
+                    Errors.error(result, t)
                 }
             })
         }
@@ -1025,45 +1213,222 @@ internal class PowerAuthService(
 
     private fun fetchEncryptionKey(call: MethodCall, result: Result) {
         val index: Int = call.getRequiredArgument("index")
-        val authentication = buildAuthenticationObject(call, persist = false)
 
         usePowerAuth(call, result) { sdk ->
-            sdk.fetchEncryptionKey(
-                context,
-                authentication,
-                index.toLong(),
-                object : IFetchEncryptionKeyListener {
-                    override fun onFetchEncryptionKeySucceed(key: ByteArray) {
-                        result.success(Base64.encodeToString(key, Base64.NO_WRAP))
-                    }
+            withOwnedAuthentication(call) { authentication ->
+                sdk.fetchEncryptionKey(
+                    context,
+                    authentication,
+                    index.toLong(),
+                    object : IFetchEncryptionKeyListener {
+                        override fun onFetchEncryptionKeySucceed(key: SecureData) {
+                            result.success(key.sensitiveData)
+                            key.destroy()
+                        }
 
-                    override fun onFetchEncryptionKeyFailed(t: Throwable) {
-                        Errors.error(result, t)
+                        override fun onFetchEncryptionKeyFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
                     }
-                }
+                )
+            }
+        }
+    }
+
+    private fun fetchSecureVaultKey(call: MethodCall, result: Result) {
+        val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+        val keyIdentifier = secureVaultKeyIdFromString(call.getRequiredArgument(KEY_IDENTIFIER))
+
+        usePowerAuth(call, result) { sdk ->
+            withOwnedAuthentication(call) { authentication ->
+                sdk.fetchSecureVaultKey(
+                    context,
+                    authentication,
+                    keyIdentifier,
+                    object : IFetchSecureVaultKeyListener {
+                        override fun onFetchSecureVaultKeySucceed(vaultKey: PowerAuthSecureVaultKey) {
+                            // Do not expose a key produced by an SDK that was deconfigured while
+                            // the network request was running.
+                            val objectId = objectRegister.registerObjectIfOwnerMatches(
+                                instanceId,
+                                sdk,
+                                ManagedAny.wrap(vaultKey),
+                                // The Dart handle may release it earlier; otherwise inactivity
+                                // limits how long the key remains in memory.
+                                listOf(ReleasePolicy.keepAlive(SECURE_VAULT_KEY_KEEP_ALIVE_TIME))
+                            )
+                            if (objectId == null) {
+                                Errors.error(
+                                    result,
+                                    WrapperException(
+                                        Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                        "PowerAuth instance '$instanceId' not configured."
+                                    )
+                                )
+                                return
+                            }
+                            result.success(objectId)
+                        }
+
+                        override fun onFetchSecureVaultKeyFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    private fun deriveSecureVaultKey(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val index: Number = call.getRequiredArgument("index")
+            val keySize: Int = call.getRequiredArgument(KEY_SIZE)
+            val vaultKey = objectRegister.touchObject(objectId, PowerAuthSecureVaultKey::class.java)
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Secure Vault key object '$objectId' is no longer valid."
+                )
+            val derivedKey = vaultKey.deriveKey(index.toLong(), keySize)
+            try {
+                result.success(derivedKey.sensitiveData)
+            } finally {
+                derivedKey.destroy()
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    @PowerAuthSecureVaultKeyId
+    private fun secureVaultKeyIdFromString(value: String): Int {
+        return when (value) {
+            "knowledge" -> PowerAuthSecureVaultKeyId.KNOWLEDGE
+            "knowledgeOrBiometry" -> PowerAuthSecureVaultKeyId.KNOWLEDGE_OR_BIOMETRY
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Unknown Secure Vault key identifier: $value"
             )
         }
     }
 
-    private fun signDataWithDevicePrivateKey(call: MethodCall, result: Result) {
-        val data: String = call.getRequiredArgument(DATA)
-        val authentication = buildAuthenticationObject(call, persist = false)
+    private fun calculateDigitalSignature(call: MethodCall, result: Result) {
+        val data: ByteArray = call.getRequiredArgument(DATA)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
 
         usePowerAuth(call, result) { sdk ->
-            sdk.signDataWithDevicePrivateKey(
-                context,
-                authentication,
-                data.toByteArray(StandardCharsets.UTF_8),
-                object : IDataSignatureListener {
-                    override fun onDataSignedSucceed(signature: ByteArray) {
-                        result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
-                    }
+            withOwnedAuthentication(call) { authentication ->
+                sdk.calculateDigitalSignature(
+                    context,
+                    authentication,
+                    data,
+                    keyId,
+                    object: IDigitalSignatureListener {
+                        override fun onDigitalSignatureFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
 
-                    override fun onDataSignedFailed(t: Throwable) {
-                        Errors.error(result, t)
+                        override fun onDigitalSignatureSucceed(signature: ByteArray) {
+                            result.success(signature)
+                        }
                     }
-                }
-            )
+                )
+            }
+        }
+    }
+
+    private fun exportDevicePublicKeys(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            val format = when (val value: String = call.getRequiredArgument(FORMAT)) {
+                "der" -> PowerAuthDevicePublicKeyFormat.DER
+                "raw" -> PowerAuthDevicePublicKeyFormat.RAW
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Unknown device public key format: $value"
+                )
+            }
+            result.success(sdk.exportDevicePublicKeys(format).map { key ->
+                mapOf(
+                    "keyType" to when (key.keyType) {
+                        PowerAuthSignatureKeyType.EC -> "ec"
+                        PowerAuthSignatureKeyType.ML_DSA -> "mlDsa"
+                        else -> throw WrapperException(
+                            Errors.EC_UNKNOWN_ERROR,
+                            "Unknown signature key type: ${key.keyType}"
+                        )
+                    },
+                    "keyAlgorithm" to key.keyAlgorithm,
+                    "keyData" to key.keyData
+                )
+            })
+        }
+    }
+
+    private fun verifyJwsSignature(call: MethodCall, result: Result) {
+        val signature: String = call.getRequiredArgument(SIGNATURE)
+        val compact: Boolean = call.getRequiredArgument(COMPACT)
+        val strict: Boolean = call.getRequiredArgument(STRICT)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
+        usePowerAuth(call, result) { sdk ->
+            sdk.verifyJwsSignature(signature, compact, strict, keyId)
+            result.success(null)
+        }
+    }
+
+    private fun calculateJwsSignature(call: MethodCall, result: Result) {
+        val data: ByteArray = call.getRequiredArgument(DATA)
+        val dataType: String? = call.argument(DATA_TYPE)
+        val compact: Boolean = call.getRequiredArgument(COMPACT)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
+        usePowerAuth(call, result) { sdk ->
+            withOwnedAuthentication(call) { authentication ->
+                sdk.calculateJwsSignature(
+                    context,
+                    authentication,
+                    data,
+                    dataType,
+                    compact,
+                    keyId,
+                    object: IJwsSignatureListener {
+                        override fun onJwsSignatureSucceed(signedData: String, compactForm: Boolean) {
+                            result.success(signedData)
+                        }
+
+                        override fun onJwsSignatureFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    private fun createCertificateSigningRequest(call: MethodCall, result: Result) {
+        val distinguishedNames: Map<String, String> = call.getRequiredArgument(DISTINGUISHED_NAMES)
+        val subjectAltNames: List<String>? = call.argument(SUBJECT_ALT_NAMES)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
+        usePowerAuth(call, result) { sdk ->
+            withOwnedAuthentication(call) { authentication ->
+                sdk.createCertificateSigningRequest(
+                    context,
+                    authentication,
+                    distinguishedNames,
+                    subjectAltNames,
+                    keyId,
+                    object: ICreateCertificateSigningRequestListener {
+                        override fun onCreateCertificateSigningRequestSucceed(certificateSigningRequest: String) {
+                            result.success(certificateSigningRequest)
+                        }
+
+                        override fun onCreateCertificateSigningRequestFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -1092,9 +1457,16 @@ internal class PowerAuthService(
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun getBiometryInfo(call: MethodCall, result: Result) {
-        getBiometryInfo(context, result)
+    private fun getBiometricStatus(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) {sdk ->
+            result.success(biometricStatusToMap(sdk.getBiometricStatus(context)))
+        }
+    }
+
+    private fun isAuthenticationWithBiometricsAvailable(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.isAuthenticationWithBiometricsAvailable(context))
+        }
     }
 
     private fun isTimeSynchronized(call: MethodCall, result: Result) {
@@ -1105,21 +1477,19 @@ internal class PowerAuthService(
 
     private fun localTimeAdjustment(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
+            // Native millisecond values are Longs, which map to Dart ints.
             result.success(sdk.timeSynchronizationService.localTimeAdjustment)
         }
     }
 
     private fun localTimeAdjustmentPrecision(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
             result.success(sdk.timeSynchronizationService.localTimeAdjustmentPrecision)
         }
     }
 
     private fun currentTime(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
             result.success(sdk.timeSynchronizationService.currentTime)
         }
     }

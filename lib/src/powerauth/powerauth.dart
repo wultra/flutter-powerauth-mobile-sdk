@@ -15,9 +15,10 @@
  */
 
 import 'dart:async';
+import 'dart:typed_data';
 
+import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
@@ -27,7 +28,8 @@ import 'powerauth_platform_interface.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_http_header.dart';
+import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
 import '../model/powerauth_encryptor.dart';
@@ -36,9 +38,13 @@ import '../powerauth_encryptor/powerauth_encryptor.dart';
 import 'powerauth_token_store.dart';
 import 'powerauth_time_synchronization_service.dart';
 import '../model/powerauth_create_activation_result.dart';
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
+import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_device_public_key.dart';
+import '../model/powerauth_secure_vault_key.dart';
+import '../model/powerauth_protocol_upgrade_result.dart';
+import '../model/powerauth_password_change_data.dart';
 
 /// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
@@ -74,6 +80,9 @@ class PowerAuth {
   /// Returns the base configuration used for this instance, if configured.
   Future<PowerAuthConfiguration> get configuration async => (await _platform.getConfiguration(instanceId));
 
+  /// Returns the algorithm currently used for communication with the PowerAuth Server.
+  Future<PowerAuthAlgorithm> get currentAlgorithm async => (await _platform.getCurrentAlgorithm(instanceId));
+
   // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 
   // /// Returns the client configuration used for this instance, if configured.
@@ -92,23 +101,40 @@ class PowerAuth {
   ///
   /// Must be called before any other method.
   /// [configuration] - Configuration object with basic parameters for `PowerAuth` class.
+  /// [keychainConfiguration] - Android-only secure-storage configuration.
+  /// [sharingConfiguration] - iOS-only activation-sharing configuration.
   Future<void> configure({
     required PowerAuthConfiguration configuration,
     PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
-    PowerAuthSharingConfiguration? sharingConfiguration
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) async {
-
     await _platform.configure(
       instanceId: instanceId,
       configuration: configuration,
       clientConfiguration: clientConfiguration,
       biometryConfiguration: biometryConfiguration,
       keychainConfiguration: keychainConfiguration,
-      sharingConfiguration: sharingConfiguration
+      sharingConfiguration: sharingConfiguration,
     );
   }
+
+  /// Removes incompatible local data after instance configuration fails.
+  ///
+  /// Use the same [instanceId], [configuration], and [keychainConfiguration]
+  /// that were used to configure the instance.
+  static Future<void> cleanupInstanceData({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
+  }) => _platform.cleanupInstanceData(
+    instanceId: instanceId,
+    configuration: configuration,
+    keychainConfiguration: keychainConfiguration,
+    sharingConfiguration: sharingConfiguration,
+  );
 
   /// Checks if this instance is configured.
   Future<bool> isConfigured() => _platform.isConfigured(instanceId);
@@ -142,6 +168,36 @@ class PowerAuth {
   /// This may involve network communication and potential protocol upgrades.
   Future<PowerAuthActivationStatus> fetchActivationStatus() => _platform.fetchActivationStatus(instanceId);
 
+  /// Returns `true` if a protocol upgrade is available for the current activation.
+  ///
+  /// The result reflects locally stored activation status. Call
+  /// [fetchActivationStatus] first to obtain the latest information from the
+  /// PowerAuth server.
+  Future<bool> hasProtocolUpgradeAvailable() => _platform.hasProtocolUpgradeAvailable(instanceId);
+
+  /// Returns `true` if a protocol upgrade has started but has not yet finished.
+  Future<bool> hasPendingProtocolUpgrade() => _platform.hasPendingProtocolUpgrade(instanceId);
+
+  /// Starts a protocol upgrade for the current activation.
+  ///
+  /// The [password] is required to authorize the upgrade. On Android, set
+  /// [upgradeBiometry] to `true` to migrate an existing local biometry factor.
+  /// On iOS, the native SDK preserves an existing biometry factor automatically.
+  /// Biometry migration is supported only when `authenticateOnBiometricKeySetup`
+  /// is disabled. Otherwise, use the default value and add the biometry factor
+  /// again after the upgrade if it was removed.
+  ///
+  /// If the returned result has `activationStatusFetchRequired` set to `true`,
+  /// call [fetchActivationStatus] to finish the upgrade.
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) => _platform.startProtocolUpgrade(
+    instanceId,
+    password,
+    upgradeBiometry: upgradeBiometry,
+  );
+
   /// Removes the activation state locally from the device.
   /// This does **not** inform the server. Use this only if the activation
   /// was removed externally (e.g., via web banking).
@@ -164,42 +220,60 @@ class PowerAuth {
   /// Requires [authentication] (password and, optionally, biometry) to secure the local activation state.
   Future<void> persistActivation(PowerAuthAuthentication authentication) => _platform.persistActivation(instanceId, authentication);
 
-  /// Validates the provided [password] against the server.
-  /// This typically involves computing a signature and verifying it server-side.
-  Future<void> validatePassword(PowerAuthPassword password) => _platform.validatePassword(instanceId, password);
+  /// Begins a password change by validating the [oldPassword] on the server.
+  ///
+  /// Call [PowerAuthPasswordChangeData.release] if the operation is abandoned.
+  Future<PowerAuthPasswordChangeData> beginPasswordChange(PowerAuthPassword oldPassword) async {
+    final objectId = await _platform.beginPasswordChange(instanceId, oldPassword);
+    return PowerAuthPasswordChangeData.fromNative(
+      objectId: objectId,
+    );
+  }
 
-  /// Changes the user's password. Validates the [oldPassword] on the server before
-  /// setting the [newPassword].
-  Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) => _platform.changePassword(instanceId, oldPassword, newPassword);
+  /// Finishes a password change initiated by [beginPasswordChange].
+  ///
+  /// The [passwordChangeData] object is consumed and released by this call,
+  /// regardless of whether the operation succeeds or fails.
+  Future<void> finishPasswordChange(
+    PowerAuthPassword newPassword,
+    PowerAuthPasswordChangeData passwordChangeData,
+  ) async {
+    await passwordChangeData.executeAndRelease(
+      (objectId) => _platform.finishPasswordChange(instanceId, newPassword, objectId),
+    );
+  }
 
-  /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
+  /// Computes an HTTP authentication header for a request with query parameters.
   ///
   /// - [authentication]: Specifies the factors to use for signing.
+  /// - [method]: The HTTP method (for example, `"GET"`).
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/user/detail").
-  /// - [queryParams]: Optional query parameters to include in the signature calculation.
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  /// - [params]: Optional query parameters to include in the authentication calculation.
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     PowerAuthAuthentication authentication,
+    String method,
     String uriId, [
-    Map<String, String>? queryParams,
-  ]) => _platform.requestGetSignature(
+    Map<String, String>? params,
+  ]) => _platform.authenticationHeaderForRequestWithParams(
     instanceId,
     authentication,
+    method,
     uriId,
-    queryParams,
+    params,
   );
 
-  /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a request with a body.
+  /// Computes an HTTP authentication header for a request with a body.
   ///
   /// - [authentication]: Specifies the factors to use for signing.
   /// - [method]: The HTTP method (e.g., "POST", "PUT").
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/transfer").
-  /// - [body]: Optional request body data (as a String) to include in the signature calculation.
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  /// - [body]: Optional raw request body data to include in the authentication calculation.
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body,
-  ]) => _platform.requestSignature(
+    Uint8List? body,
+  ]) => _platform.authenticationHeaderForRequestWithBody(
     instanceId,
     authentication,
     method,
@@ -213,12 +287,12 @@ class PowerAuth {
   /// - [authentication]: Specifies the factors to use for signing (possession and knowledge recommended).
   /// - [uriId]: The URI identifier associated with the operation being signed.
   /// - [nonce]: A unique cryptographic nonce (Base64 encoded).
-  /// - [body]: Optional data (as a String) included in the signature calculation.
+  /// - [body]: Optional raw data included in the signature calculation.
   Future<String> offlineSignature(
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body,
+    Uint8List? body,
   ]) => _platform.offlineSignature(
     instanceId,
     authentication,
@@ -227,25 +301,98 @@ class PowerAuth {
     body,
   );
 
-  /// Verifies data signed by the PowerAuth server's public key.
+  /// Verifies a digital [signature] for the supplied raw [data].
   ///
-  /// - [data]: The original data that was signed (as a String).
-  /// - [signature]: The Base64 encoded signature received from the server.
-  /// - [useMasterKey]: If `true`, use the Master Server Public Key for verification.
-  ///                   If `false`, use the current Personalized Server Public Key.
-  Future<bool> verifyServerSignedData(
-    String data,
-    String signature,
-    bool useMasterKey,
-  ) => _platform.verifyServerSignedData(
+  /// The [signatureKeyId] must identify a specific verification key. If the
+  /// signature is invalid, a [PowerAuthException] with
+  /// [PowerAuthErrorCode.wrongSignature] is thrown.
+  Future<void> verifyDigitalSignature(
+    Uint8List signature,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.verifyDigitalSignature(
     instanceId,
-    data,
     signature,
-    useMasterKey,
+    data,
+    signatureKeyId,
   );
 
-  /// Gets information about the biometric capabilities of the device.
-  static Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo();
+  /// Calculates a digital signature for the supplied raw [data] and returns it as raw bytes.
+  ///
+  /// The [signatureKeyId] must identify a specific device signing key, such as
+  /// [PowerAuthSignatureKeyId.deviceEc] or [PowerAuthSignatureKeyId.deviceMlDsa].
+  Future<Uint8List> calculateDigitalSignature(
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.calculateDigitalSignature(
+    instanceId,
+    authentication,
+    data,
+    signatureKeyId,
+  );
+
+  /// Exports device public keys in the requested [format].
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    PowerAuthDevicePublicKeyFormat format,
+  ) => _platform.exportDevicePublicKeys(instanceId, format);
+
+  /// Verifies JWS or JWT signed data using the specified key.
+  ///
+  /// If [compact] is `true`, [signature] is expected to be a compact JWT.
+  /// Otherwise, a full JWS object is expected. If [strict] is `true`, all
+  /// selected keys must successfully verify their corresponding signatures.
+  /// If verification fails, a [PowerAuthException] is thrown.
+  Future<void> verifyJwsSignature(
+    String signature,
+    bool compact,
+    bool strict,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.verifyJwsSignature(
+    instanceId,
+    signature,
+    compact,
+    strict,
+    signatureKeyId,
+  );
+
+  /// Calculates a JWS signature for the supplied raw [data].
+  ///
+  /// The optional [dataType] is added to the protected JOSE header as `typ`.
+  /// If [compact] is `true`, the result is a compact JWT. Otherwise, a full
+  /// JWS object is returned.
+  Future<String> calculateJwsSignature(
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.calculateJwsSignature(
+    instanceId,
+    authentication,
+    data,
+    dataType,
+    compact,
+    signatureKeyId,
+  );
+
+  /// Creates an X.509 Certificate Signing Request in PEM format.
+  ///
+  /// The request contains the supplied [distinguishedNames], optional
+  /// [subjectAltNames], and the public key identified by [signatureKeyId]. It
+  /// is signed with the corresponding device private key.
+  Future<String> createCertificateSigningRequest(
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.createCertificateSigningRequest(
+    instanceId,
+    authentication,
+    distinguishedNames,
+    subjectAltNames,
+    signatureKeyId,
+  );
 
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
@@ -258,28 +405,47 @@ class PowerAuth {
   /// Checks if a biometry key exists locally for the current activation.
   Future<bool> hasBiometryFactor() => _platform.hasBiometryFactor(instanceId);
 
+  /// Gets the biometric authentication status for the current activation.
+  Future<PowerAuthBiometricStatus> getBiometricStatus() => _platform.getBiometricStatus(instanceId);
+
+  /// Checks whether biometric authentication is available for the current activation.
+  Future<bool> isAuthenticationWithBiometricsAvailable() => _platform.isAuthenticationWithBiometricsAvailable(instanceId);
+
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);
 
-  /// Generate a derived encryption key with given index. The key is returned in form of base64 encoded string.
+  /// Generate a derived encryption key with given index. The key is returned as raw bytes.
   /// 
   /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key used 
   /// for subsequent key derivation using given index.
   /// 
   /// - [authentication] Authentication used for vault unlocking call.
   /// - [index] Index of the derived key using KDF. 
-  Future<String> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
+  @Deprecated('Legacy protocol 3.3 only. Migrate the activation and use fetchSecureVaultKey() with protocol 4.0.')
+  Future<Uint8List> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
 
-  /// Sign given data with the original device private key (asymetric signature).
-  /// 
-  /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key 
-  /// used for private key decryption. Data is then signed using ECDSA algorithm with this key and can be validated on the server side.
-  /// 
-  /// - [authentication] Authentication used for vault unlocking call.
-  /// - [data] Data to be signed with the private key.
-  /// - [dataFormat] Specifies format of passed data. If not used, then [PowerAuthDataFormat.utf8] is applied.
-  Future<String> signDataWithDevicePrivateKey(PowerAuthAuthentication authentication, String data, {PowerAuthDataFormat dataFormat = PowerAuthDataFormat.utf8}) 
-  => _platform.signDataWithDevicePrivateKey(instanceId, authentication, data, dataFormat);
+  /// Fetches a base Secure Vault key for subsequent key derivation.
+  ///
+  /// This method is available only for activations using PowerAuth protocol 4.0.
+  /// The returned object keeps the base key on the native side and must be
+  /// released as soon as all required keys have been derived.
+  ///
+  /// - [authentication] Authentication used for the vault unlocking call.
+  /// - [keyIdentifier] Secure Vault key to retrieve.
+  Future<PowerAuthSecureVaultKey> fetchSecureVaultKey(
+    PowerAuthAuthentication authentication,
+    PowerAuthSecureVaultKeyId keyIdentifier,
+  ) async {
+    final objectId = await _platform.fetchSecureVaultKey(
+      instanceId,
+      authentication,
+      keyIdentifier.name,
+    );
+    return PowerAuthSecureVaultKey.fromNative(
+      keyIdentifier: keyIdentifier,
+      objectId: objectId,
+    );
+  }
 
   /// Helper method for grouping biometric authentications.
   /// 
@@ -310,24 +476,25 @@ class PowerAuth {
       }  
   }
 
-  /// Returns an encryptor for application scope.
+  /// Acquires a single-use encryptor for application scope.
   ///
-  /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// Encryption is available without activation.
-  PowerAuthEncryptor getEncryptorForApplicationScope() {
-    return PowerAuthRequestEncryptor(
-      encryptorScope: PowerAuthEncryptorScope.application,
+  /// Encryption is available without activation. Acquire a new encryptor for
+  /// every request and response exchange and release it in a `finally` block.
+  Future<PowerAuthEncryptor> getEncryptorForApplicationScope() {
+    return PowerAuthEncryptorImpl.acquire(
+      scope: PowerAuthEncryptorScope.application,
       powerAuthInstanceId: instanceId,
     );
   }
 
-  /// Returns an encryptor for activation scope.
+  /// Acquires a single-use encryptor for activation scope.
   ///
-  /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// Encryption requires valid activation.
-  PowerAuthEncryptor getEncryptorForActivationScope() {
-    return PowerAuthRequestEncryptor(
-      encryptorScope: PowerAuthEncryptorScope.activation,
+  /// A valid activation is required at acquisition time. Acquire a new
+  /// encryptor for every request and response exchange and release it in a
+  /// `finally` block.
+  Future<PowerAuthEncryptor> getEncryptorForActivationScope() {
+    return PowerAuthEncryptorImpl.acquire(
+      scope: PowerAuthEncryptorScope.activation,
       powerAuthInstanceId: instanceId,
     );
   }

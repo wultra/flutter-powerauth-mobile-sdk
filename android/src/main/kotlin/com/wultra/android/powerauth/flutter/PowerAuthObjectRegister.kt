@@ -22,6 +22,7 @@ import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_DEFAULT
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MAX
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MIN
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_REMOVE_DELAY
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import java.util.Random
 import java.util.Timer
 import java.util.TimerTask
@@ -32,9 +33,11 @@ import io.getlime.security.powerauth.core.Password
 import java.nio.charset.StandardCharsets
 
 /**
- * Object register that allows exposing native objects.
- * The object is identified by a unique identifier created at the time of registration
- * or by an application-provided identifier.
+ * Thread-safe storage for SDK instances and short-lived native objects referenced by Dart handles.
+ *
+ * Objects are identified by generated or application-provided identifiers. Child objects use
+ * their SDK instance identifier as a tag so deconfiguration can release the instance and all
+ * associated sensitive objects in one operation.
  */
 class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
@@ -68,7 +71,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         var useCount: Int = 0,
         var removeOrderTime: Long = 0
     ) {
-        // TODO: improve
+        private var cleanupPerformed = false
+        // A null policy list is the internal representation of manual ownership.
         val policies = if (policies.contains(ReleasePolicy.manual())) null else policies
 
         fun setUsed() {
@@ -78,6 +82,18 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
         fun touch() {
             lastUseTime = SystemClock.elapsedRealtime()
+        }
+
+        fun cleanup() {
+            if (cleanupPerformed) return
+            cleanupPerformed = true
+            try {
+                obj.cleanup()
+            } catch (t: Throwable) {
+                PowerAuthLogger.error {
+                    "Failed to clean up native object ${obj.managedInstance()::class.java.simpleName}: ${t.localizedMessage}"
+                }
+            }
         }
 
         /**
@@ -139,7 +155,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     removeOrderTime == 0L || (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
 
                 if (readyNow) {
-                    obj.cleanup()
+                    cleanup()
                 }
 
                 return readyNow
@@ -172,6 +188,28 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         scheduleCleanupJob()
 
         return@withLock id
+    }
+
+    /**
+     * Registers an object only if the expected owner is still registered under [ownerId].
+     *
+     * The identity check and insertion are atomic. This prevents an asynchronous callback from
+     * attaching a child to a new SDK instance that reused the same identifier after deconfiguration.
+     */
+    fun <T : Any> registerObjectIfOwnerMatches(
+        ownerId: String,
+        expectedOwner: Any,
+        objectWrapper: IManagedObject<T>,
+        releasePolicies: List<ReleasePolicy>
+    ): String? = lock.withLock {
+        val owner = managedObjects[ownerId]
+        if (owner == null ||
+            !owner.isStillValid ||
+            owner.obj.managedInstance() !== expectedOwner
+        ) {
+            return@withLock null
+        }
+        return@withLock registerObject(objectWrapper, ownerId, releasePolicies)
     }
 
     /**
@@ -241,7 +279,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
             OPT_SET_USE -> holder.setUsed()
             OPT_TOUCH -> holder.touch()
             OPT_REMOVE -> if (holder.setRemoved()) {
-                holder.obj.cleanup()
+                holder.cleanup()
                 managedObjects.remove(id)
             }
         }
@@ -258,6 +296,31 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return findAndProcessObject(id, type, OPT_SET_USE)
     }
 
+    /**
+     * Transform an object and mark it as used while holding the register lock.
+     *
+     * This is useful for one-shot native objects whose independent copy must be created before
+     * the register cleanup job is allowed to destroy the registered instance.
+     * Not suitable for heavy operations, as it locks the whole register
+     */
+    fun <T : Any, R : Any> useObjectAndTransform(
+        id: String,
+        type: Class<T>,
+        transform: (T) -> R
+    ): R? = lock.withLock {
+        val holder = managedObjects[id] ?: return@withLock null
+        val instance = holder.obj.managedInstance()
+
+        if (!holder.isStillValid || !type.isInstance(instance)) {
+            return@withLock null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        val result = transform(instance as T)
+        holder.setUsed()
+        return@withLock result
+    }
+
     fun <T : Any> touchObject(id: String, type: Class<T>): T? = lock.withLock {
         return findAndProcessObject(id, type, OPT_TOUCH)
     }
@@ -267,8 +330,29 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     }
 
     /**
+     * Removes an object only when it matches the expected debug object type.
+     */
+    internal fun removeObject(id: String, objectType: String?): Boolean {
+        val clazz = getClassForObjectType(objectType)
+            ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+        return removeObject(id, clazz) != null
+    }
+
+    /**
+     * Explicitly releases an object regardless of its type or release policy.
+     */
+    fun releaseObject(id: String): Boolean = lock.withLock {
+        val holder = managedObjects[id] ?: return@withLock false
+
+        holder.cleanup()
+        managedObjects.remove(id)
+        scheduleCleanupJob()
+        return@withLock true
+    }
+
+    /**
      * Removes all objects associated with a specific tag.
-     * If tag is null, removes all objects that are not manually managed.
+     * If [tag] is null, removes every object regardless of ownership policy.
      */
     fun removeAllObjectsWithTag(tag: String?) = lock.withLock {
         val iterator = managedObjects.entries.iterator()
@@ -280,7 +364,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
             // TODO: implement proper filtering!
             if (tag == null || holder.tag == tag) {
                 if (holder.setRemoved()) {
-                    holder.obj.cleanup()
+                    holder.cleanup()
                     iterator.remove()
 
                     changed = true
@@ -301,7 +385,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      * Removes all objects from the register, regardless of policy.
      */
     private fun removeAllObjects() = lock.withLock {
-        managedObjects.values.forEach { it.obj.cleanup() }
+        managedObjects.values.forEach { it.cleanup() }
         managedObjects.clear()
         stopCleanupJob()
     }
@@ -310,7 +394,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return !id.isNullOrEmpty()
     }
 
-    private fun setCleanupPeriod(periodMs: Long) = lock.withLock {
+    internal fun setCleanupPeriod(periodMs: Long) = lock.withLock {
         cleanupPeriodMs = if (periodMs in CLEANUP_PERIOD_MIN..CLEANUP_PERIOD_MAX) {
             periodMs
         } else {
@@ -475,19 +559,6 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                 return null
             }
 
-            "release" -> {
-                val objectIdNonNull = objectId ?: throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Missing objectId"
-                )
-                val objectType = data["objectType"] as? String
-                val clazz = getClassForObjectType(objectType)
-                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                val removedInstance = removeObject(objectIdNonNull, clazz)
-
-                return removedInstance != null
-            }
-
             "releaseAll" -> {
                 val tag = data["objectTag"] as? String
                 removeAllObjectsWithTag(tag)
@@ -529,15 +600,6 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
 
                 return touchObject(objectIdNonNull, clazz) != null
-            }
-
-            "setPeriod" -> {
-                val period = data["cleanupPeriod"] as? Int
-                if (period != null) {
-                    setCleanupPeriod(period.toLong())
-                }
-
-                return null
             }
 
             else -> throw WrapperException(

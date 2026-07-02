@@ -48,7 +48,7 @@ class PowerAuthActivationStatus {
 
     PowerAuthActivationState parseState(String? stateString) {
       if (stateString == null) {
-        return PowerAuthActivationState.removed;
+        return PowerAuthActivationState.unknown;
       }
         
       try {
@@ -56,7 +56,7 @@ class PowerAuthActivationStatus {
       } catch (e) {
         
         PowerAuthLogger.warning("Unknown PowerAuthActivationState received: $stateString");
-        return PowerAuthActivationState.removed;
+        return PowerAuthActivationState.unknown;
       }
     }
 

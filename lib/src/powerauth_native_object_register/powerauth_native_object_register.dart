@@ -34,6 +34,7 @@ class NativeObjectRegister {
     return await _platform.isValidNativeObject(objectId);
   }
 
+
   static Future<ObjectsCount> countObjects(String tag) async {
     final r = await _platform.debugDump(tag);
     final valid = r.where((x) => x.isValid).length;
@@ -59,8 +60,15 @@ class NativeObjectRegister {
     return await _platform.debugCommand(NativeObjectCmd.touch, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
   }
 
-  static Future<bool> removeObject(String objectId, NativeObjectType type) async {
-    return await _platform.debugCommand(NativeObjectCmd.release, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  static Future<bool> removeObject(
+    String objectId,
+    NativeObjectType type,
+  ) async {
+    return await _platform.removeObject(objectId, type);
+  }
+
+  static Future<void> setCleanupPeriod(int milliseconds) async {
+    await _platform.setCleanupPeriod(milliseconds);
   }
 
   static Future<List<NativeObjectInfo>> debugDump(String? instanceId) => _platform.debugDump(instanceId);
@@ -88,18 +96,16 @@ enum NativeObjectType {
 
 /// Data accepted in debugCommand() function.
 class NativeObjectCmdData {
-  final String? objectId; // object id, accepted in 'release', 'use', 'find', 'touch'
+  final String? objectId; // object id, accepted in 'use', 'find', 'touch'
   final String? objectTag; // object tag, accepted in 'create', 'releaseAll'
-  final NativeObjectType? objectType; // object type accepted in 'create', 'release', 'use', 'find', 'touch'
+  final NativeObjectType? objectType; // object type accepted in 'create', 'use', 'find', 'touch'
   final List<String>? releasePolicy; // use 'manual', 'after_use N', 'keep_alive T', 'expire T', accepted in 'create'
-  final int? cleanupPeriod; // cleanup period in milliseconds <100, 60000>, accepted in 'setPeriod'
 
   NativeObjectCmdData({
     this.objectId,
     this.objectTag,
     this.objectType,
     this.releasePolicy,
-    this.cleanupPeriod,
   });
 
   factory NativeObjectCmdData.fromMap(Map map) {
@@ -115,7 +121,6 @@ class NativeObjectCmdData {
       releasePolicy: map['releasePolicy'] != null
           ? List<String>.from(map['releasePolicy'] as List)
           : null,
-      cleanupPeriod: map['cleanupPeriod'] as int?,
     );
   }
 
@@ -125,7 +130,6 @@ class NativeObjectCmdData {
       'objectTag': objectTag,
       'objectType': objectType?.name,
       'releasePolicy': releasePolicy,
-      'cleanupPeriod': cleanupPeriod,
     };
   }
 }

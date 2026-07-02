@@ -15,7 +15,7 @@
  */
 
 import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_http_header.dart';
 import 'powerauth_platform_interface.dart';
 
 /// The PowerAuthTokenStore provides interface for managing access tokens. The class is using Keychain as 
@@ -93,9 +93,8 @@ class PowerAuthTokenStore {
     /// 
     /// @param tokenName Name of token in the local storage that will be used for generating
     /// @returns header or throws
-    Future<PowerAuthAuthorizationHttpHeader> generateHeaderForToken(String tokenName) async {
-      final result = await _platform.generateHeaderForToken(_instanceId, tokenName);
-      return PowerAuthAuthorizationHttpHeader.fromMap(result);
+    Future<PowerAuthHttpHeader> generateHeaderForToken(String tokenName) async {
+      return await _platform.generateHeaderForToken(_instanceId, tokenName);
     }
 }
 

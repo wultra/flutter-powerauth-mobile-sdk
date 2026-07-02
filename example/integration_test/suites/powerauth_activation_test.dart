@@ -152,9 +152,19 @@ main() {
         ),
       );
 
-      expect(
-        await sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false),
-        isFalse,
+      await expectLater(
+        sdk.verifyDigitalSignature(
+          'c2lnbmF0dXJl',
+          'c2lnbmF0dXJl',
+          PowerAuthSignatureKeyId.serverEc,
+        ),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            expectedError,
+          ),
+        ),
       );
       await expectLater(
         sdk.removeBiometryFactor(),

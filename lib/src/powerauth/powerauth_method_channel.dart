@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
+import '../logging/powerauth_logger.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_external_pending_operation.dart';
 import 'powerauth_platform_interface.dart';
@@ -38,16 +39,10 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
+    final auth = _getInternalAuthentication(authentication);
 
-    // We expect that the authentication object is an instance of InternalAuth,
-    // which is used for method channel operations. If it's not, we throw an exception.
-    final auth = authentication as InternalAuth?;
-
-    if (auth == null) {
-      throw PowerAuthException(code: PowerAuthErrorCode.unknownError, message: "PowerAuthAuthentication must be an InternalAuth instance for method channel operations.");
-    }
-
-    // If the authentication is for activation persist, we return it directly (persist does not need biometric authentication).
+    // Persistence authentication does not need biometric resolution. Keep its
+    // declared purpose intact so the native SDK can validate its usage.
     if (auth.forActivationPersist) {
       return auth;
     }
@@ -63,14 +58,23 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
     // On both platforms we need to fetch the key for every biometric authentication.
     // If the key is already set, use it.
-    if (auth.useBiometry && auth.biometryKeyId == null) {
+    if (auth.useBiometry &&
+        (auth.biometryKeyId == null || auth.biometryKeyId!.isEmpty)) {
       final isReusable = auth.isReusable || makeReusable;
       auth.isReusable = isReusable;
-      auth.biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
+      final biometryKeyId = await invokeNullableMethod<String>('authenticateUsingBiometry', {
         'instanceId': instanceId,
         'prompt': auth.biometricPrompt?.toMap(),
         'isReusable': isReusable,
       });
+      if (biometryKeyId == null || biometryKeyId.isEmpty) {
+        throw PowerAuthException(
+          code: PowerAuthErrorCode.invalidNativeObject,
+          message:
+              'Biometric authentication did not produce a valid native key.',
+        );
+      }
+      auth.biometryKeyId = biometryKeyId;
     }
     return auth;
   }
@@ -95,6 +99,21 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<void> cleanupInstanceData({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
+  }) async {
+    await invokeMethod<void>('cleanupInstanceData', {
+      'instanceId': instanceId,
+      'configuration': configuration.toMap(),
+      'keychainConfiguration': keychainConfiguration?.toMap(),
+      'sharingConfiguration': sharingConfiguration?.toMap(),
+    });
+  }
+
+  @override
   Future<bool> isConfigured(String instanceId) async {
     return await invokeMethod<bool>('isConfigured', {'instanceId': instanceId});
   }
@@ -104,7 +123,19 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     final result = await invokeMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
     return PowerAuthConfiguration.fromMap(Map<String, dynamic>.from(result));
   }
- 
+
+  @override
+  Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) async {
+    final result = await invokeMethod<String>('getCurrentAlgorithm', {'instanceId': instanceId});
+    return PowerAuthAlgorithm.values.firstWhere(
+      (algorithm) => algorithm.name == result,
+      orElse: () => throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'Unknown PowerAuth algorithm received from native platform: \'$result\'.',
+      ),
+    );
+  }
+
   // TODO: Implement when SDK 2.0.0 is available
   // @override
   // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) async {
@@ -194,6 +225,40 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<bool> hasProtocolUpgradeAvailable(String instanceId) async {
+    return await invokeMethod<bool>('hasProtocolUpgradeAvailable', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
+  Future<bool> hasPendingProtocolUpgrade(String instanceId) async {
+    return await invokeMethod<bool>('hasPendingProtocolUpgrade', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    String instanceId,
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) async {
+    if (upgradeBiometry && defaultTargetPlatform == TargetPlatform.iOS) {
+      PowerAuthLogger.warning('upgradeBiometry is ignored on iOS because biometry is preserved automatically.');
+    }
+    final result = await invokeMethod<Map<dynamic, dynamic>>(
+      'startProtocolUpgrade',
+      {
+        'instanceId': instanceId,
+        'password': await password.toRawPasswordMap(),
+        if (defaultTargetPlatform != TargetPlatform.iOS) 'upgradeBiometry': upgradeBiometry,
+      },
+    );
+    return PowerAuthProtocolUpgradeResult.fromMap(result);
+  }
+
+  @override
   Future<void> removeActivationLocal(String instanceId) async {
     await invokeMethod<void>('removeActivationLocal', {
       'instanceId': instanceId,
@@ -216,66 +281,76 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> persistActivation(String instanceId, PowerAuthAuthentication authentication) async {
-    await invokeMethod<void>('persistActivation', await _authenticate(instanceId, authentication, {'instanceId': instanceId}));
+    final auth = _getInternalAuthentication(authentication);
+    await invokeMethod<void>(
+      'persistActivation',
+      await auth.prepareAuthArguments({'instanceId': instanceId}),
+    );
   }
 
   @override
-  Future<void> validatePassword(String instanceId, PowerAuthPassword password) async {
-    await invokeMethod<void>('validatePassword', {
-      'instanceId': instanceId,
-      'password': await password.toRawPasswordMap()
-    });
-  }
-
-  @override
-  Future<void> changePassword(
+  Future<String> beginPasswordChange(
     String instanceId,
     PowerAuthPassword oldPassword,
-    PowerAuthPassword newPassword,
   ) async {
-    await invokeMethod<void>('changePassword', {
+    return await invokeMethod<String>('beginPasswordChange', {
       'instanceId': instanceId,
-      'oldPassword': await oldPassword.toRawPasswordMap(),
-      'newPassword': await newPassword.toRawPasswordMap()
+      'oldPassword': await oldPassword.toRawPasswordMap()
     });
   }
 
   @override
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  Future<void> finishPasswordChange(
     String instanceId,
-    PowerAuthAuthentication authentication,
-    String uriId, [
-    Map<String, String>? queryParams,
-  ]) async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'requestGetSignature',
-      await _authenticate(instanceId, authentication, {
-        'instanceId': instanceId,
-        'uriId': uriId,
-        'queryParams': queryParams
-      })
-    );
-    return PowerAuthAuthorizationHttpHeader.fromMap(result);
+    PowerAuthPassword newPassword,
+    String passwordChangeData,
+  ) async {
+    await invokeMethod<void>('finishPasswordChange', {
+      'instanceId': instanceId,
+      'newPassword': await newPassword.toRawPasswordMap(),
+      'passwordChangeData': passwordChangeData
+    });
   }
 
   @override
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body
+    Map<String, String>? params,
   ]) async {
     final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'requestSignature',
+      'authenticationHeaderForRequestWithParams',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
         'method': method,
         'uriId': uriId,
-        'body': body
+        'params': params
       })
     );
-    return PowerAuthAuthorizationHttpHeader.fromMap(result);
+    return PowerAuthHttpHeader.fromMap(result);
+  }
+
+  @override
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String method,
+    String uriId, [
+    Uint8List? body
+  ]) async {
+    final bodySnapshot = body == null ? null : Uint8List.fromList(body);
+    final result = await invokeMethod<Map<dynamic, dynamic>>(
+      'authenticationHeaderForRequestWithBody',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'method': method,
+        'uriId': uriId,
+        'body': bodySnapshot
+      })
+    );
+    return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override
@@ -284,35 +359,120 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body
+    Uint8List? body
   ]) async {
+    final bodySnapshot = body == null ? null : Uint8List.fromList(body);
     return await invokeMethod<String>('offlineSignature', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'uriId': uriId,
       'nonce': nonce,
-      'body': body
+      'body': bodySnapshot
     }));
   }
 
   @override
-  Future<bool> verifyServerSignedData(
+  Future<void> verifyDigitalSignature(
     String instanceId,
-    String data,
-    String signature,
-    bool useMasterKey,
+    Uint8List signature,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
   ) async {
-    return await invokeMethod<bool>('verifyServerSignedData', {
+    await invokeMethod<void>('verifyDigitalSignature', {
       'instanceId': instanceId,
-      'data': data,
       'signature': signature,
-      'useMasterKey': useMasterKey,
+      'data': data,
+      'signatureKeyId': signatureKeyId.name,
     });
   }
 
   @override
-  Future<PowerAuthBiometryInfo> getBiometryInfo() async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo', null);
-    return PowerAuthBiometryInfo.fromMap(result);
+  Future<Uint8List> calculateDigitalSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    final dataSnapshot = Uint8List.fromList(data);
+    return await invokeMethod<Uint8List>(
+      'calculateDigitalSignature',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'data': dataSnapshot,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
+  }
+
+  @override
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    String instanceId,
+    PowerAuthDevicePublicKeyFormat format,
+  ) async {
+    final result = await invokeMethod<List<dynamic>>('exportDevicePublicKeys', {
+      'instanceId': instanceId,
+      'format': format.name,
+    });
+    return result
+        .map((key) => PowerAuthDevicePublicKeyData.fromMap(key as Map))
+        .toList();
+  }
+
+  @override
+  Future<void> verifyJwsSignature(
+    String instanceId,
+    String signature,
+    bool compact,
+    bool strict,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    await invokeMethod<void>('verifyJwsSignature', {
+      'instanceId': instanceId,
+      'signature': signature,
+      'compact': compact,
+      'strict': strict,
+      'signatureKeyId': signatureKeyId.name,
+    });
+  }
+
+  @override
+  Future<String> calculateJwsSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    final dataSnapshot = Uint8List.fromList(data);
+    return await invokeMethod<String>(
+      'calculateJwsSignature',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'data': dataSnapshot,
+        'dataType': dataType,
+        'compact': compact,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
+  }
+
+  @override
+  Future<String> createCertificateSigningRequest(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    return await invokeMethod<String>(
+      'createCertificateSigningRequest',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'distinguishedNames': distinguishedNames,
+        'subjectAltNames': subjectAltNames,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
   }
 
   @override
@@ -336,6 +496,21 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<PowerAuthBiometricStatus> getBiometricStatus(String instanceId) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometricStatus', {
+      'instanceId': instanceId,
+    });
+    return PowerAuthBiometricStatus.fromMap(result);
+  }
+
+  @override
+  Future<bool> isAuthenticationWithBiometricsAvailable(String instanceId) async {
+    return await invokeMethod<bool>('isAuthenticationWithBiometricsAvailable', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
   Future<void> removeBiometryFactor(String instanceId) async {
     await invokeMethod<void>('removeBiometryFactor', {
       'instanceId': instanceId,
@@ -343,20 +518,28 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) async {
-    return await invokeMethod<String>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
+  Future<Uint8List> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) async {
+    return await invokeMethod<Uint8List>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'index': index
     }));
   }
 
   @override
-  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) async {
-    return await invokeMethod<String>('signDataWithDevicePrivateKey', await _authenticate(instanceId, authentication, {
+  Future<String> fetchSecureVaultKey(String instanceId, PowerAuthAuthentication authentication, String keyIdentifier) async {
+    return await invokeMethod<String>('fetchSecureVaultKey', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
-      'data': data,
-      'dataFormat': dataFormat.name,
+      'keyIdentifier': keyIdentifier,
     }));
+  }
+
+  @override
+  Future<Uint8List> deriveSecureVaultKey(String objectId, int index, int keySize) async {
+    return await invokeMethod<Uint8List>('deriveSecureVaultKey', {
+      'objectId': objectId,
+      'index': index,
+      'keySize': keySize,
+    });
   }
 
   @override
@@ -407,11 +590,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<Map> generateHeaderForToken(String instanceId, String tokenName) async {
-    return await invokeMethod('generateHeaderForToken', {
+  Future<PowerAuthHttpHeader> generateHeaderForToken(String instanceId, String tokenName) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('generateHeaderForToken', {
       'instanceId': instanceId,
       'tokenName': tokenName,
     });
+    return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override
@@ -478,5 +662,16 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {
     final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     return await resolvedAuth.prepareAuthArguments(baseArgs);
+  }
+
+  InternalAuth _getInternalAuthentication(PowerAuthAuthentication authentication) {
+    if (authentication is! InternalAuth) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.wrongParameter,
+        message:
+            'PowerAuthAuthentication must be created with one of its factory constructors.',
+      );
+    }
+    return authentication;
   }
 }

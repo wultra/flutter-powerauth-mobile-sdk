@@ -136,36 +136,6 @@ main() {
       //expect(result).toBe(true)
     });
 
-    // async testServerSignedData_WithNoActivation() {
-    //     const dataToSign = 'All your money are belong to us!'
-    //     let signedPayload = await this.serverApi.createNonPersonalizedOfflineSignature(this.helper.application, dataToSign)
-    //     let signedData = signedPayload.parsedSignedData
-    //     let signature = signedPayload.parsedSignature
-    //     expect(signedPayload.parsedData).toBe(dataToSign)
-    //     expect(signedData).toBeNotNullish()
-    //     expect(signature).toBeNotNullish()
-
-    //     let result = await this.sdk.verifyServerSignedData(signedData!, signature!, true)
-    //     expect(result).toBe(true)
-    //     result = await this.sdk.verifyServerSignedData(Base64.encode(`A${signedData!}`), signature!, true)
-    //     expect(result).toBe(false)
-    // }
-
-    // async testServerSignedData_WithActivation() {
-    //     const activationId = await this.sdk.getActivationIdentifier()
-    //     const dataToSign = 'All your money are belong to us!'
-    //     let signedPayload = await this.serverApi.createPersonalizedOfflineSignature(activationId!, dataToSign)
-    //     let signedData = signedPayload.parsedSignedData
-    //     let signature = signedPayload.parsedSignature
-    //     expect(signedPayload.parsedData).toBe(dataToSign)
-    //     expect(signedData).toBeNotNullish()
-    //     expect(signature).toBeNotNullish()
-
-    //     let result = await this.sdk.verifyServerSignedData(signedData!, signature!, false)
-    //     expect(result).toBe(true)
-    //     result = await this.sdk.verifyServerSignedData(Base64.encode(`A${signedData!}`), signature!, false)
-    //     expect(result).toBe(false)
-    // }
   });
 }
 

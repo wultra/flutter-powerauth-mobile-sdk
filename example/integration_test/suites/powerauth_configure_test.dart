@@ -279,7 +279,7 @@ main() {
         ),
       );
       await expectLater(
-        sdk.verifyServerSignedData('', '', false),
+        sdk.verifyDigitalSignature('', '', PowerAuthSignatureKeyId.serverEc),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,

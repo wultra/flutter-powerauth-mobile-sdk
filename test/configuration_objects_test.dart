@@ -20,6 +20,37 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('PowerAuthConfiguration', () {
+    test('default values', () {
+      final cfg = PowerAuthConfiguration(
+        configuration: 'configuration',
+        baseEndpointUrl: 'https://example.com',
+      );
+      expect(cfg.algorithm, isNull);
+      expect(
+        cfg.offlineAuthenticationCodeComponentLength,
+        PowerAuthConfiguration.defaultOfflineAuthenticationCodeComponentLength,
+      );
+    });
+
+    test('serialization', () {
+      final cfg = PowerAuthConfiguration(
+        configuration: 'configuration',
+        baseEndpointUrl: 'https://example.com',
+        algorithm: PowerAuthAlgorithm.p384l3,
+        offlineAuthenticationCodeComponentLength: 6,
+      );
+      final restored = PowerAuthConfiguration.fromMap(cfg.toMap());
+      expect(restored.configuration, cfg.configuration);
+      expect(restored.baseEndpointUrl, cfg.baseEndpointUrl);
+      expect(restored.algorithm, cfg.algorithm);
+      expect(
+        restored.offlineAuthenticationCodeComponentLength,
+        cfg.offlineAuthenticationCodeComponentLength,
+      );
+    });
+  });
+
   group('PowerAuthClientConfiguration', () {
     test('default values', () {
       const defaultTimeout = 20;
@@ -56,24 +87,25 @@ void main() {
 
   group('PowerAuthBiometryConfiguration', () {
     test('default values', () {
-      final defaultLinkItems = Platform.isAndroid;
+      final defaultInvalidateAfterChange = Platform.isAndroid;
       final cfg = PowerAuthBiometryConfiguration();
 
       expect(cfg.authenticateOnBiometricKeySetup, isTrue);
-      expect(cfg.linkItemsToCurrentSet, defaultLinkItems);
+      expect(cfg.invalidateBiometricFactorAfterChange, defaultInvalidateAfterChange);
       expect(cfg.confirmBiometricAuthentication, isFalse);
       expect(cfg.fallbackToDevicePasscode, isFalse);
+      expect(cfg.useLegacySymmetricKey, isFalse);
     });
 
     test('partial construction', () {
-      final defaultLinkItems = Platform.isAndroid;
+      final defaultInvalidateAfterChange = Platform.isAndroid;
       final base = PowerAuthBiometryConfiguration();
 
       final c1 = PowerAuthBiometryConfiguration(
         authenticateOnBiometricKeySetup: false,
       );
       expect(c1.authenticateOnBiometricKeySetup, isFalse);
-      expect(c1.linkItemsToCurrentSet, base.linkItemsToCurrentSet);
+      expect(c1.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
       expect(
         c1.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
@@ -81,13 +113,13 @@ void main() {
       expect(c1.fallbackToDevicePasscode, base.fallbackToDevicePasscode);
 
       final c2 = PowerAuthBiometryConfiguration(
-        linkItemsToCurrentSet: !defaultLinkItems,
+        invalidateBiometricFactorAfterChange: !defaultInvalidateAfterChange,
       );
       expect(
         c2.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c2.linkItemsToCurrentSet, !defaultLinkItems);
+      expect(c2.invalidateBiometricFactorAfterChange, !defaultInvalidateAfterChange);
       expect(
         c2.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
@@ -101,7 +133,7 @@ void main() {
         c3.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c3.linkItemsToCurrentSet, base.linkItemsToCurrentSet);
+      expect(c3.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
       expect(c3.confirmBiometricAuthentication, isTrue);
       expect(c3.fallbackToDevicePasscode, base.fallbackToDevicePasscode);
 
@@ -110,12 +142,19 @@ void main() {
         c4.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c4.linkItemsToCurrentSet, base.linkItemsToCurrentSet);
+      expect(c4.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
       expect(
         c4.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
       );
       expect(c4.fallbackToDevicePasscode, isTrue);
+
+      final c5 = PowerAuthBiometryConfiguration(useLegacySymmetricKey: true);
+      expect(c5.useLegacySymmetricKey, isTrue);
+      expect(
+        c5.authenticateOnBiometricKeySetup,
+        base.authenticateOnBiometricKeySetup,
+      );
     });
   });
 

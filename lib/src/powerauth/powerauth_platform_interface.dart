@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
+import 'dart:typed_data';
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../logging/powerauth_logging_config.dart';
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
+import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_http_header.dart';
+import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
+import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_device_public_key.dart';
+import '../model/powerauth_protocol_upgrade_result.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
 
@@ -74,6 +79,17 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('configure() has not been implemented.');
   }
 
+  Future<void> cleanupInstanceData({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
+  }) {
+    throw UnimplementedError(
+      'cleanupInstanceData() has not been implemented.',
+    );
+  }
+
   Future<bool> isConfigured(String instanceId) {
     throw UnimplementedError('isConfigured() has not been implemented.');
   }
@@ -81,6 +97,11 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthConfiguration> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
+
+  Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) {
+    throw UnimplementedError('getCurrentAlgorithm() has not been implemented.');
+  }
+
   // TODO: Implement when SDK 2.0.0 is available
   // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) {
   //   throw UnimplementedError('getClientConfiguration() has not been implemented.');
@@ -138,6 +159,28 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<bool> hasProtocolUpgradeAvailable(String instanceId) {
+    throw UnimplementedError(
+      'hasProtocolUpgradeAvailable() has not been implemented.',
+    );
+  }
+
+  Future<bool> hasPendingProtocolUpgrade(String instanceId) {
+    throw UnimplementedError(
+      'hasPendingProtocolUpgrade() has not been implemented.',
+    );
+  }
+
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    String instanceId,
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) {
+    throw UnimplementedError(
+      'startProtocolUpgrade() has not been implemented.',
+    );
+  }
+
   Future<void> removeActivationLocal(String instanceId) {
     throw UnimplementedError(
       'removeActivationLocal() has not been implemented.',
@@ -167,35 +210,39 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('persistActivation() has not been implemented.');
   }
 
-  Future<void> validatePassword(String instanceId, PowerAuthPassword password) {
-    throw UnimplementedError('validatePassword() has not been implemented.');
-  }
-
-  Future<void> changePassword(
+  Future<String> beginPasswordChange(
     String instanceId,
     PowerAuthPassword oldPassword,
-    PowerAuthPassword newPassword,
   ) {
-    throw UnimplementedError('changePassword() has not been implemented.');
+    throw UnimplementedError('beginPasswordChange() has not been implemented.');
   }
 
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  Future<void> finishPasswordChange(
     String instanceId,
-    PowerAuthAuthentication authentication,
-    String uriId, [
-    Map<String, String>? queryParams,
-  ]) {
-    throw UnimplementedError('requestGetSignature() has not been implemented.');
+    PowerAuthPassword newPassword,
+    String passwordChangeData,
+  ) {
+    throw UnimplementedError('finishPasswordChange() has not been implemented.');
   }
 
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body,
+    Map<String, String>? params,
   ]) {
-    throw UnimplementedError('requestSignature() has not been implemented.');
+    throw UnimplementedError('authenticationHeaderForRequestWithParams() has not been implemented.');
+  }
+
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String method,
+    String uriId, [
+    Uint8List? body,
+  ]) {
+    throw UnimplementedError('authenticationHeaderForRequestWithBody() has not been implemented.');
   }
 
   Future<String> offlineSignature(
@@ -203,24 +250,77 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body,
+    Uint8List? body,
   ]) {
     throw UnimplementedError('offlineSignature() has not been implemented.');
   }
 
-  Future<bool> verifyServerSignedData(
+  Future<void> verifyDigitalSignature(
     String instanceId,
-    String data,
-    String signature,
-    bool useMasterKey,
+    Uint8List signature,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
   ) {
     throw UnimplementedError(
-      'verifyServerSignedData() has not been implemented.',
+      'verifyDigitalSignature() has not been implemented.',
     );
   }
 
-  Future<PowerAuthBiometryInfo> getBiometryInfo() {
-    throw UnimplementedError('getBiometryInfo() has not been implemented.');
+  Future<Uint8List> calculateDigitalSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'calculateDigitalSignature() has not been implemented.',
+    );
+  }
+
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    String instanceId,
+    PowerAuthDevicePublicKeyFormat format,
+  ) {
+    throw UnimplementedError(
+      'exportDevicePublicKeys() has not been implemented.',
+    );
+  }
+
+  Future<void> verifyJwsSignature(
+    String instanceId,
+    String signature,
+    bool compact,
+    bool strict,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'verifyJwsSignature() has not been implemented.',
+    );
+  }
+
+  Future<String> calculateJwsSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Uint8List data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'calculateJwsSignature() has not been implemented.',
+    );
+  }
+
+  Future<String> createCertificateSigningRequest(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'createCertificateSigningRequest() has not been implemented.',
+    );
   }
 
   Future<void> addBiometryFactor(
@@ -235,17 +335,30 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('hasBiometryFactor() has not been implemented.');
   }
 
+  Future<PowerAuthBiometricStatus> getBiometricStatus(String instanceId) {
+    throw UnimplementedError('getBiometricStatus() has not been implemented.');
+  }
+
+  Future<bool> isAuthenticationWithBiometricsAvailable(String instanceId) {
+    throw UnimplementedError('isAuthenticationWithBiometricsAvailable() has not been implemented.');
+  }
+
   Future<void> removeBiometryFactor(String instanceId) {
     throw UnimplementedError('removeBiometryFactor() has not been implemented.');
   }
 
-  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
+  Future<Uint8List> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
     throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
   }
 
-  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) {
-    throw UnimplementedError('signDataWithDevicePrivateKey() has not been implemented.');
+  Future<String> fetchSecureVaultKey(String instanceId, PowerAuthAuthentication authentication, String keyIdentifier) {
+    throw UnimplementedError('fetchSecureVaultKey() has not been implemented.');
   }
+
+  Future<Uint8List> deriveSecureVaultKey(String objectId, int index, int keySize) {
+    throw UnimplementedError('deriveSecureVaultKey() has not been implemented.');
+  }
+
 
   Future<bool> hasLocalToken(String instanceId, String tokenName) {
     throw UnimplementedError('hasLocalToken() has not been implemented.');
@@ -271,7 +384,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('removeAccessToken() has not been implemented.');
   }
 
-  Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
+  Future<PowerAuthHttpHeader> generateHeaderForToken(String instanceId, String tokenName) {
     throw UnimplementedError('generateHeaderForToken() has not been implemented.');
   }
 

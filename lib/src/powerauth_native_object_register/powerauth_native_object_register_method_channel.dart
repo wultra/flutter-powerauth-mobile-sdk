@@ -43,6 +43,42 @@ class NativeObjectRegisterMethodChannel extends NativeObjectRegisterPlatform
   }
 
   @override
+  Future<void> releaseNativeObject(String objectId) async {
+    await invokeNullableMethod<void>(
+      'register_releaseNativeObject',
+      {'objectId': objectId},
+    );
+  }
+
+  @override
+  Future<bool> removeObject(String objectId, NativeObjectType type) async {
+    if (!kDebugMode) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'removeObject is only available in DEBUG builds of the library.',
+      );
+    }
+    return await invokeMethod<bool>(
+      'register_removeObject',
+      {'objectId': objectId, 'objectType': type.name},
+    );
+  }
+
+  @override
+  Future<void> setCleanupPeriod(int milliseconds) async {
+    if (!kDebugMode) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'setCleanupPeriod is only available in DEBUG builds of the library.',
+      );
+    }
+    await invokeNullableMethod<void>(
+      'register_setCleanupPeriod',
+      {'cleanupPeriod': milliseconds},
+    );
+  }
+
+  @override
   Future<List<NativeObjectInfo>> debugDump(String? instanceId) async {
     if (!kDebugMode) {
       throw PowerAuthException(

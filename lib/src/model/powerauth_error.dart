@@ -25,14 +25,11 @@ enum PowerAuthErrorCode {
   /// Error code for error with network connectivity or download.
   networkError,
 
-  /// Failed to authenticate on the server. The code is reported when 401 HTTP status code from the server is received.
-  authenticationError,
-
-  /// Non 200 HTTP status code received from the server. The [PowerAuthException.errorData] dictionary contains more details.
-  responseError,
-
   /// Error code for error in signature calculation.
   signatureError,
+
+  /// Digital or JWS signature is not valid.
+  wrongSignature,
 
   /// Error code for error that occurs when activation state is invalid.
   invalidActivationState,
@@ -58,9 +55,6 @@ enum PowerAuthErrorCode {
   /// Error code for accessing an unknown token.
   invalidToken,
 
-  /// Encryptor is not constructed for encryption or decryption.
-  invalidEncryptor,
-
   /// Error code for errors related to end-to-end encryption.
   encryptionError,
 
@@ -72,6 +66,9 @@ enum PowerAuthErrorCode {
 
   /// The requested function is not available during the protocol upgrade.
   pendingProtocolUpgrade,
+
+  /// Local activation data was created by a newer PowerAuth SDK version.
+  upgradeSdk,
 
   /// Error code for situation when biometric prompt is canceled by the user.
   biometryCancel,
@@ -109,6 +106,9 @@ enum PowerAuthErrorCode {
   /// Error in `correctTypedCharacter`.
   invalidCharacter,
 
+  /// Error caused by an invalid native logging configuration.
+  invalidLogLevel,
+
   /// Error when generating a token.
   cannotGenerateToken,
 
@@ -120,6 +120,12 @@ enum PowerAuthErrorCode {
 
   /// The requested function is not available due to an external application is doing the sensitive operation (iOS Specific).
   externalPendingOperation,
+
+  /// An error not covered by a more specific PowerAuth error code.
+  other,
+
+  /// Internal error reported by the Flutter native plugin.
+  flutterError,
 
   /// Failed with unexpected error.
   unknownError,

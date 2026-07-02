@@ -19,17 +19,23 @@ package com.wultra.android.powerauth.flutter.internal.utils
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.ALGORITHM
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.BASE_ENDPOINT_URL
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIGURATION_STRING
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIRM_BIOMETRIC_AUTHENTICATION
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.FALLBACK_TO_SHARED_BIOMETRY_KEY
-import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.LINK_ITEMS_TO_CURRENT_SET
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.MINIMAL_REQUIRED_KEYCHAIN_PROTECTION
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.USE_LEGACY_SYMMETRIC_KEY
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmFromString
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getKeychainProtectionFromString
 import io.getlime.security.powerauth.networking.interceptors.BasicHttpAuthenticationRequestInterceptor
 import io.getlime.security.powerauth.networking.interceptors.CustomHeaderRequestInterceptor
 import io.getlime.security.powerauth.networking.ssl.HttpClientSslNoValidationStrategy
 import io.getlime.security.powerauth.sdk.PowerAuthClientConfiguration
+import io.getlime.security.powerauth.sdk.PowerAuthBiometricConfiguration
 import io.getlime.security.powerauth.sdk.PowerAuthConfiguration
 import io.getlime.security.powerauth.sdk.PowerAuthKeychainConfiguration
 
@@ -50,8 +56,14 @@ object PowerAuthConfigurationUtils {
                 "Missing '$CONFIGURATION_STRING' string in configuration map"
             )
 
-        return PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
-            .build()
+        val builder = PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
+        (map[ALGORITHM] as? String)?.let { algorithm ->
+            builder.algorithm(algorithmFromString(algorithm))
+        }
+        (map[OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH] as? Int)?.let { length ->
+            builder.offlineAuthenticationCodeComponentLength(length)
+        }
+        return builder.build()
     }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
@@ -103,15 +115,13 @@ object PowerAuthConfigurationUtils {
         return builder.build()
     }
 
-    fun buildPowerAuthKeychainConfiguration(
-        keychainMap: Map<String, Any>?,
+    fun buildPowerAuthBiometricConfiguration(
         biometryMap: Map<String, Any>?
-    ): PowerAuthKeychainConfiguration {
-        val builder = PowerAuthKeychainConfiguration.Builder()
-
+    ): PowerAuthBiometricConfiguration {
+        val builder = PowerAuthBiometricConfiguration.Builder()
         biometryMap?.let {
-            (it[LINK_ITEMS_TO_CURRENT_SET] as? Boolean)?.let { v ->
-                builder.linkBiometricItemsToCurrentSet(
+            (it[INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE] as? Boolean)?.let { v ->
+                builder.invalidateBiometricFactorAfterChange(
                     v
                 )
             }
@@ -130,7 +140,20 @@ object PowerAuthConfigurationUtils {
                     v
                 )
             }
+            (it[USE_LEGACY_SYMMETRIC_KEY] as? Boolean)?.let { v ->
+                builder.useLegacySymmetricKey(
+                    v
+                )
+            }
         }
+
+        return builder.build()
+    }
+
+    fun buildPowerAuthKeychainConfiguration(
+        keychainMap: Map<String, Any>?
+    ): PowerAuthKeychainConfiguration {
+        val builder = PowerAuthKeychainConfiguration.Builder()
 
         keychainMap?.let {
             (it[MINIMAL_REQUIRED_KEYCHAIN_PROTECTION] as? String)?.let { v ->
@@ -144,7 +167,9 @@ object PowerAuthConfigurationUtils {
     fun configurationToMap(configuration: PowerAuthConfiguration): Map<String, Any?> {
         return mapOf(
             BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
-            CONFIGURATION_STRING to configuration.configuration
+            CONFIGURATION_STRING to configuration.configuration,
+            ALGORITHM to algorithmToString(configuration.algorithm),
+            OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH to configuration.offlineAuthenticationCodeComponentLength
         )
     }
 

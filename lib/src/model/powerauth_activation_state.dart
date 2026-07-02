@@ -18,9 +18,6 @@
 /// The state is part of the information received in [PowerAuthActivationStatus].
 enum PowerAuthActivationState {
 
-  /// The activation is just created.
-  created,
-
   /// The activation is not completed yet on the server.
   pendingCommit,
 
@@ -36,4 +33,6 @@ enum PowerAuthActivationState {
   /// The activation is technically blocked. You cannot use it anymore
   /// for the signature calculations.
   deadlock,
+
+  unknown,
 }

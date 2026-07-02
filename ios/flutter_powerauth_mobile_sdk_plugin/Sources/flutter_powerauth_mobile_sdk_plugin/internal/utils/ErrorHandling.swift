@@ -19,6 +19,10 @@ import PowerAuth2
 
 internal extension FlutterError {
     
+    /// Translates native SDK and transport failures into the stable error codes exposed to Dart.
+    ///
+    /// REST failures preserve the response metadata shape used by the Android implementation so
+    /// callers can handle server errors consistently on both platforms.
     convenience init(thrownByPlugin: Error) {
         if let pe = thrownByPlugin as? PluginException {
             self.init(code: pe.code, message: pe.message, details: pe.details)
@@ -36,48 +40,26 @@ internal extension FlutterError {
         let paErrorCode = error.powerAuthErrorCode
         if paErrorCode != PowerAuthErrorCode.NA {
             // Handle PA error
-            if let responseData = error.userInfo[PowerAuthErrorInfoKey_AdditionalInfo] as? FlutterMap {
-                // Handle error response received from the server. In this case, we have to re-create the error in a nice-to-serialize manner
-                let responseObject = error.userInfo[PowerAuthErrorDomain] as? PowerAuthRestApiErrorResponse
-                let httpStatusCode = responseObject?.httpStatusCode
-                if (httpStatusCode == 401) {
-                    errorCode = .authenticationError
-                    message = "Unauthorized"
-                } else {
-                    errorCode = .responseError
-                    message = "Wrong HTTP status code received from the server"
+            errorCode = .from(paErrorCode)
+            if let responseObject = error.powerAuthRestApiErrorResponse {
+                let httpStatusCode = responseObject.httpStatusCode
+                var errorDetails: FlutterMap = ["httpStatusCode": httpStatusCode]
+                if let responseData = error.userInfo[PowerAuthErrorInfoKey_ResponseData] as? Data,
+                   let responseBody = String(data: responseData, encoding: .utf8) {
+                    errorDetails["responseBody"] = responseBody
+                } else if let additionalInfo = error.userInfo[PowerAuthErrorInfoKey_AdditionalInfo],
+                          JSONSerialization.isValidJSONObject(additionalInfo),
+                          let jsonData = try? JSONSerialization.data(withJSONObject: additionalInfo),
+                          let responseBody = String(data: jsonData, encoding: .utf8) {
+                    errorDetails["responseBody"] = responseBody
                 }
-                var newUserInfo: FlutterMap = [NSLocalizedDescriptionKey: message]
-                if let responseObject {
-                    newUserInfo["httpStatusCode"] = httpStatusCode
-                    // Serialize dictionary back to string, to be compatible with Android
-                    if let jsonData = try? JSONSerialization.data(withJSONObject: responseData as Any) {
-                        if let jsonString = String(data: jsonData, encoding: .utf8) {
-                            newUserInfo["responseBody"] = jsonString
-                        }
-                    }
-                    if let serverResponseCode = responseObject.responseObject?.code {
-                        newUserInfo["serverResponseCode"] = serverResponseCode
-                    }
-                    if let serverResponseMessage = responseObject.responseObject?.message {
-                        newUserInfo["serverResponseMessage"] = serverResponseMessage
-                    }
+                if let serverResponseCode = responseObject.responseObject?.code {
+                    errorDetails["serverResponseCode"] = serverResponseCode
                 }
-                // Finally, build a new error
-                details = [
-                    "domain": PowerAuthErrorDomain,
-                    "code": error.code,
-                    "userInfo": newUserInfo
-                ]
-                //
-            } else {
-                // Other type of PowerAuthError. Just translate errorCode to string and keep NSError as it is.
-                errorCode = .from(paErrorCode)
-                if errorCode == .unknownError {
-                    // unknown error was passed, at least set the original raw value to the message
-                    message = "Unknown PowerAuthError code: \(paErrorCode.rawValue)"
+                if let serverResponseMessage = responseObject.responseObject?.message {
+                    errorDetails["serverResponseMessage"] = serverResponseMessage
                 }
-                //
+                details = errorDetails
             }
         } else if error.domain  == NSURLErrorDomain {
             // Handle error from NSURLSession
