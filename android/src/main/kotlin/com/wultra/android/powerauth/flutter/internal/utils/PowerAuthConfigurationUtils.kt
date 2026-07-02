@@ -140,4 +140,34 @@ object PowerAuthConfigurationUtils {
 
         return builder.build()
     }
+
+    fun configurationToMap(configuration: PowerAuthConfiguration): Map<String, Any?> {
+        return mapOf(
+            BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
+            CONFIGURATION_STRING to configuration.configuration
+        )
+    }
+
+    /*
+     * TODO: Enable once the native PowerAuth Mobile SDK (2.0.0+) exposes the configuration getters.
+     *
+     *
+     * fun clientConfigurationToMap(config: PowerAuthClientConfiguration): Map<String, Any?> {
+     *     return mapOf(
+     *     
+     *     )
+     * }
+     *
+     * fun biometryConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
+     *     return mapOf(
+     * 
+     *     )
+     * }
+     *
+     * fun keychainConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
+     *     return mapOf(
+     *      
+     *     )
+     * }
+     */
 }
