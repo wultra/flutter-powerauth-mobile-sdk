@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'package:meta/meta.dart';
+
 import 'powerauth_basic_http_authentication.dart';
 import 'powerauth_http_header.dart';
 
@@ -31,9 +33,13 @@ class PowerAuthClientConfiguration {
   final double readTimeout;
 
   /// Custom HTTP headers that will be added to each HTTP request produced by this library.
+  /// internal because native does not return this value to Dart.
+  @internal
   final List<PowerAuthHttpHeader>? customHttpHeaders;
 
   /// Basic HTTP Authentication that will be added to each HTTP request produced by this library.
+  /// internal because native does not return this value to Dart.
+  @internal
   final PowerAuthBasicHttpAuthentication? basicHttpAuthentication;
 
   PowerAuthClientConfiguration({
@@ -52,5 +58,13 @@ class PowerAuthClientConfiguration {
       'customHttpHeaders': customHttpHeaders?.map((h) => h.toMap()).toList(),
       'basicHttpAuthentication': basicHttpAuthentication?.toMap(),
     };
+  }
+
+  factory PowerAuthClientConfiguration.fromMap(Map<String, dynamic> map) {
+    return PowerAuthClientConfiguration(
+      enableUnsecureTraffic: map['enableUnsecureTraffic'] as bool,
+      connectionTimeout: (map['connectionTimeout'] as num).toDouble(),
+      readTimeout: (map['readTimeout'] as num).toDouble(),
+    );
   }
 }

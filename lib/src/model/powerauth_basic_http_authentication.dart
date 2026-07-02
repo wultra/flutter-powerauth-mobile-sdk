@@ -31,4 +31,5 @@ class PowerAuthBasicHttpAuthentication {
   Map<String, String> toMap() {
     return {'username': username, 'password': password};
   }
+
 }

@@ -16,7 +16,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'src/simple_configuration_screen.dart';
 import 'src/test_screen.dart';
 
 Future<void> main() async {
@@ -54,7 +54,40 @@ class PowerAuthTestingApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const PowerAuthTestingScreen(),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('PowerAuth Example')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PowerAuthTestingScreen()),
+              ),
+              child: const Text('PowerAuth Testing'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SimpleConfigurationScreen()),
+              ),
+              child: const Text('Simple Configuration'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
