@@ -4,8 +4,8 @@ version: 0.0.1-dev
 homepage: https://www.wultra.com/products/mobile-first-authentication
 
 environment:
-  sdk: ^3.7.2
-  flutter: '>=3.3.0'
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
