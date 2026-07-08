@@ -1,7 +1,10 @@
+import java.net.URI
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url = URI("https://central.sonatype.com/repository/maven-snapshots/") }
     }
 }
 
