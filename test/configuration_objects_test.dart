@@ -16,10 +16,59 @@
 
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('PowerAuthConfiguration', () {
+    test('uses native default when algorithm is omitted', () {
+      final configuration = PowerAuthConfiguration(
+        configuration: 'test-config',
+        baseEndpointUrl: 'https://example.com',
+      );
+
+      expect(configuration.algorithm, isNull);
+      expect(configuration.toMap(), {
+        'configuration': 'test-config',
+        'baseEndpointUrl': 'https://example.com',
+      });
+    });
+
+    test('serializes and restores each communication algorithm', () {
+      for (final algorithm in PowerAuthAlgorithm.values) {
+        final configuration = PowerAuthConfiguration(
+          configuration: 'test-config',
+          baseEndpointUrl: 'https://example.com',
+          algorithm: algorithm,
+        );
+
+        expect(configuration.toMap()['algorithm'], algorithm.value);
+        expect(PowerAuthConfiguration.fromMap(configuration.toMap()).algorithm, algorithm);
+      }
+    });
+
+    test('retrieves the current algorithm from the native SDK', () async {
+      const channel = MethodChannel('powerauth_plugin');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'getCurrentAlgorithm');
+        expect(call.arguments, {'instanceId': 'test-instance'});
+        return PowerAuthAlgorithm.ecP384MlL5.value;
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+      });
+
+      final algorithm = await PowerAuth('test-instance').currentAlgorithm;
+
+      expect(algorithm, PowerAuthAlgorithm.ecP384MlL5);
+    });
+  });
+
   group('PowerAuthClientConfiguration', () {
     test('default values', () {
       const defaultTimeout = 20;

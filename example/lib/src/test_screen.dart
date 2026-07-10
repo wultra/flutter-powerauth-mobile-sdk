@@ -51,6 +51,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   bool _isLoading = false;
   bool _isInitialized = false;
+  PowerAuthAlgorithm? _selectedAlgorithm;
+  PowerAuthAlgorithm? _currentAlgorithm;
   String? _errorMessage;
   bool _isConfigured = false;
   bool? _hasValidActivation;
@@ -99,6 +101,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         final powerAuthConfig = PowerAuthConfiguration(
           configuration: AppConfig.sdkConfig,
           baseEndpointUrl: AppConfig.enrollmentUrl,
+          algorithm: _selectedAlgorithm,
         );
 
         final biometryConfig = PowerAuthBiometryConfiguration();
@@ -161,6 +164,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.getActivationFingerprint(),
         _powerAuth.hasBiometryFactor(),
         PowerAuth.getBiometryInfo(),
+        _powerAuth.currentAlgorithm,
       ]);
 
       setState(() {
@@ -171,6 +175,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationFingerprint = results[4] as String?;
         _hasBiometryFactor = results[5] as bool?;
         _biometryInfo = results[6] as PowerAuthBiometryInfo?;
+        _currentAlgorithm = results[7] as PowerAuthAlgorithm?;
         _activationStatus = activationStatus;
       });
 
@@ -187,6 +192,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationFingerprint = null;
         _hasBiometryFactor = null;
         _biometryInfo = null;
+        _currentAlgorithm = null;
         _activationStatus = null;
       });
     } catch (e) {
@@ -232,6 +238,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       _activationStatus = null;
       _hasBiometryFactor = null;
       _biometryInfo = null;
+      _currentAlgorithm = null;
     });
   }
 
@@ -553,6 +560,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
             const SizedBox(height: 10),
 
+            if (!_isInitialized) _buildAlgorithmSelector(),
+
+            if (!_isInitialized) const SizedBox(height: 10),
+
             if (_errorMessage != null)
               _buildErrorBanner(_errorMessage!, _clearError),
             const SizedBox(height: 10),
@@ -708,6 +719,35 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     );
   }
 
+  Widget _buildAlgorithmSelector() {
+    const nativeDefault = 'nativeDefault';
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedAlgorithm?.name ?? nativeDefault,
+      decoration: const InputDecoration(labelText: 'Communication algorithm'),
+      onChanged: _isLoading
+          ? null
+          : (value) {
+              setState(() {
+                _selectedAlgorithm = value == nativeDefault
+                    ? null
+                    : PowerAuthAlgorithm.values.byName(value!);
+              });
+            },
+      items: [
+        const DropdownMenuItem<String>(
+          value: nativeDefault,
+          child: Text('Native default'),
+        ),
+        ...PowerAuthAlgorithm.values.map(
+          (algorithm) => DropdownMenuItem<String>(
+            value: algorithm.name,
+            child: Text(algorithm.name),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildErrorBanner(String message, VoidCallback onDismiss) {
     return MaterialBanner(
       padding: const EdgeInsets.all(12),
@@ -746,6 +786,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         Text('Instance ID: $_instanceId'),
         Text('Is Initialized: $_isInitialized'),
         Text('Is Configured: ${formatBool(_isConfigured)}'),
+        Text('Current Algorithm: ${_currentAlgorithm?.name ?? "Unknown"}'),
         Text('Has Valid Activation: ${formatBool(_hasValidActivation)}'),
         Text('Can Start Activation: ${formatBool(_canStartActivation)}'),
         Text('Has Pending Activation: ${formatBool(_hasPendingActivation)}'),

@@ -14,6 +14,34 @@
  * limitations under the License.
  */
 
+/// Algorithm used for communication with the PowerAuth Server.
+enum PowerAuthAlgorithm {
+	/// Legacy P-256 algorithm compatible with PowerAuth protocol V3.3.
+	legacyP256(0),
+
+	/// P-384 elliptic curve algorithm without post-quantum resistance.
+	ecP384(1),
+
+	/// P-384 combined with ML-KEM-768 and ML-DSA-65.
+	ecP384MlL3(2),
+
+	/// P-384 combined with ML-KEM-1024 and ML-DSA-87.
+	ecP384MlL5(3);
+
+	const PowerAuthAlgorithm(this.value);
+
+	/// Integer representation used by the native PowerAuth SDK.
+	final int value;
+
+	/// Creates an algorithm from its native integer representation.
+	factory PowerAuthAlgorithm.fromValue(int value) {
+		return values.firstWhere(
+			(algorithm) => algorithm.value == value,
+			orElse: () => throw ArgumentError.value(value, 'value', 'Unsupported PowerAuth algorithm'),
+		);
+	}
+}
+
 
 
 

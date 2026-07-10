@@ -109,6 +109,7 @@ internal class PowerAuthService(
         const val BIOMETRY_KEY_ID = "biometryKeyId"
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
+        const val ALGORITHM = "algorithm"
         const val OBJECT_ID = "objectId"
         const val TOKEN_NAME = "tokenName"
         const val OIDC_PARAMETERS = "oidcParameters"

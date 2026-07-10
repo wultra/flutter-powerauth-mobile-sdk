@@ -19,6 +19,7 @@ package com.wultra.android.powerauth.flutter.internal.utils
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.ALGORITHM
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.BASE_ENDPOINT_URL
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIGURATION_STRING
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIRM_BIOMETRIC_AUTHENTICATION
@@ -50,8 +51,11 @@ object PowerAuthConfigurationUtils {
                 "Missing '$CONFIGURATION_STRING' string in configuration map"
             )
 
-        return PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
-            .build()
+        val builder = PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
+        (map[ALGORITHM] as? Int)?.let { algorithm ->
+            builder.algorithm(algorithm)
+        }
+        return builder.build()
     }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
@@ -144,7 +148,8 @@ object PowerAuthConfigurationUtils {
     fun configurationToMap(configuration: PowerAuthConfiguration): Map<String, Any?> {
         return mapOf(
             BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
-            CONFIGURATION_STRING to configuration.configuration
+            CONFIGURATION_STRING to configuration.configuration,
+            ALGORITHM to configuration.algorithm
         )
     }
 

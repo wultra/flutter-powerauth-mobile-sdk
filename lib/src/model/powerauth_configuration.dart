@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'powerauth_algorithm.dart';
+
 /// Contains configuration data for a single `PowerAuth` instance.
 class PowerAuthConfiguration {
 
@@ -23,23 +25,37 @@ class PowerAuthConfiguration {
   /// Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
   final String baseEndpointUrl;
 
+  /// Algorithm used for communication with the PowerAuth Server.
+  ///
+  /// If not specified, the native PowerAuth SDK default is used.
+  final PowerAuthAlgorithm? algorithm;
+
   /// Construct configuration with required parameters.
   /// 
   /// [configuration] String with the cryptographic configuration.
   /// [baseEndpointUrl] Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
+  /// [algorithm] Algorithm used for communication with the PowerAuth Server.
   PowerAuthConfiguration({
     required this.configuration,
     required this.baseEndpointUrl,
+    this.algorithm,
   });
 
   Map<String, dynamic> toMap() {
-    return {'configuration': configuration, 'baseEndpointUrl': baseEndpointUrl};
+    return {
+      'configuration': configuration,
+      'baseEndpointUrl': baseEndpointUrl,
+      if (algorithm != null) 'algorithm': algorithm!.value,
+    };
   }
 
   factory PowerAuthConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthConfiguration(
       configuration: map['configuration'] as String,
       baseEndpointUrl: map['baseEndpointUrl'] as String,
+      algorithm: map['algorithm'] != null
+          ? PowerAuthAlgorithm.fromValue(map['algorithm'] as int)
+          : null,
     );
   }
 }

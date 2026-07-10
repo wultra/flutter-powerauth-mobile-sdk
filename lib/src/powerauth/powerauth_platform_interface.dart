@@ -22,6 +22,7 @@ import '../logging/powerauth_logging_config.dart';
 import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
+import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
 import '../model/powerauth_biometry_configuration.dart';
@@ -81,6 +82,11 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthConfiguration> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
+
+  Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) {
+    throw UnimplementedError('getCurrentAlgorithm() has not been implemented.');
+  }
+
   // TODO: Implement when SDK 2.0.0 is available
   // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) {
   //   throw UnimplementedError('getClientConfiguration() has not been implemented.');

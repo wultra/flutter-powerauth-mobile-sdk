@@ -28,6 +28,7 @@ import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
 import '../model/powerauth_encryptor.dart';
@@ -73,6 +74,9 @@ class PowerAuth {
 
   /// Returns the base configuration used for this instance, if configured.
   Future<PowerAuthConfiguration> get configuration async => (await _platform.getConfiguration(instanceId));
+
+  /// Returns the algorithm currently used for communication with the PowerAuth Server.
+  Future<PowerAuthAlgorithm> get currentAlgorithm async => (await _platform.getCurrentAlgorithm(instanceId));
 
   // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
 

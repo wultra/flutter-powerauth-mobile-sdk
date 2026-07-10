@@ -104,6 +104,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     final result = await invokeMethod<Map<dynamic, dynamic>>('getConfiguration', {'instanceId': instanceId});
     return PowerAuthConfiguration.fromMap(Map<String, dynamic>.from(result));
   }
+
+  @override
+  Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) async {
+    final result = await invokeMethod<int>('getCurrentAlgorithm', {'instanceId': instanceId});
+    return PowerAuthAlgorithm.fromValue(result);
+  }
  
   // TODO: Implement when SDK 2.0.0 is available
   // @override

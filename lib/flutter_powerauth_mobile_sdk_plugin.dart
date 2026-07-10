@@ -26,6 +26,7 @@ export 'src/powerauth_crypto_utils/powerauth_crypto_utils.dart';
 
 // Models
 export 'src/model/powerauth_activation.dart';
+export 'src/model/powerauth_algorithm.dart';
 export 'src/model/powerauth_activation_state.dart';
 export 'src/model/powerauth_activation_status.dart';
 export 'src/model/powerauth_authentication.dart';
