@@ -84,12 +84,12 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform with Me
   @override
   Future<String> decryptResponse(
     String objectId,
-    Map<String, dynamic> cryptogram,
+    String responseBody,
     PowerAuthDataFormat outputDataFormat,
   ) async {
     final result = await invokeMethod<String>('encryptor_decryptResponse', {
       'objectId': objectId,
-      'cryptogram': cryptogram,
+      'responseBody': responseBody,
       'outputDataFormat': outputDataFormat.name,
     });
 

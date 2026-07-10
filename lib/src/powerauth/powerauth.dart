@@ -164,13 +164,11 @@ class PowerAuth {
   /// Requires [authentication] (password and, optionally, biometry) to secure the local activation state.
   Future<void> persistActivation(PowerAuthAuthentication authentication) => _platform.persistActivation(instanceId, authentication);
 
-  /// Validates the provided [password] against the server.
-  /// This typically involves computing a signature and verifying it server-side.
-  Future<void> validatePassword(PowerAuthPassword password) => _platform.validatePassword(instanceId, password);
+    /// Begins a password change by validating the [oldPassword] on the server.
+  Future<String> beginPasswordChange(PowerAuthPassword oldPassword) => _platform.beginPasswordChange(instanceId, oldPassword);
 
-  /// Changes the user's password. Validates the [oldPassword] on the server before
-  /// setting the [newPassword].
-  Future<void> changePassword(PowerAuthPassword oldPassword, PowerAuthPassword newPassword) => _platform.changePassword(instanceId, oldPassword, newPassword);
+  /// Finishes a password change initiated by [beginPasswordChange].
+  Future<void> finishPasswordChange(PowerAuthPassword newPassword, String passwordChangeData) => _platform.finishPasswordChange(instanceId, newPassword, passwordChangeData);
 
   /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
   ///

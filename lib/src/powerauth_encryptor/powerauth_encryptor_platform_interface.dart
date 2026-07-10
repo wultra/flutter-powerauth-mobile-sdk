@@ -79,7 +79,7 @@ abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
   /// Decrypt a response.
   Future<String> decryptResponse(
     String objectId,
-    Map<String, dynamic> cryptogram,
+    String responseBody,
     PowerAuthDataFormat outputDataFormat,
   ) {
     throw UnimplementedError('decryptResponse() has not been implemented.');

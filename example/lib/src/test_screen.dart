@@ -377,23 +377,23 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _validatePassword(String password) async {
-    if (!_isConfigured || _hasValidActivation != true) {
-      return _setError('Instance not configured or no valid activation');
-    }
-    _setLoading(true);
-    try {
-      final paPassword = await PowerAuthPassword.fromString(password);
-      await _powerAuth.validatePassword(paPassword);
-      print('Password validation successful.');
+    // if (!_isConfigured || _hasValidActivation != true) {
+    //   return _setError('Instance not configured or no valid activation');
+    // }
+    // _setLoading(true);
+    // try {
+    //   final paPassword = await PowerAuthPassword.fromString(password);
+    //   await _powerAuth.validatePassword(paPassword);
+    //   print('Password validation successful.');
 
-      // TODO: temporarily using the error banner as a success also...
-      _setError('Password is valid.');
-    } on PowerAuthException catch (e) {
-      _setError('Password validation failed: ${e.message} (${e.code})');
-    } catch (e) {
-      _setError('Unexpected error during password validation: $e');
-    }
-    _setLoading(false);
+    //   // TODO: temporarily using the error banner as a success also...
+    //   _setError('Password is valid.');
+    // } on PowerAuthException catch (e) {
+    //   _setError('Password validation failed: ${e.message} (${e.code})');
+    // } catch (e) {
+    //   _setError('Unexpected error during password validation: $e');
+    // }
+    // _setLoading(false);
   }
 
   Future<void> _changePassword(String oldPassword, String newPassword) async {
@@ -405,7 +405,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final oldPaPassword = await PowerAuthPassword.fromString(oldPassword);
       final newPaPassword = await PowerAuthPassword.fromString(newPassword);
 
-      await _powerAuth.changePassword(oldPaPassword, newPaPassword);
+      final passwordChangeData = await _powerAuth.beginPasswordChange(oldPaPassword);
+      await _powerAuth.finishPasswordChange(newPaPassword, passwordChangeData);
       print('Password changed successfully (online).');
 
       _setError('Password changed successfully.');
@@ -441,6 +442,35 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
     } catch (e) {
       _setError('Unexpected error during server signature verification: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _signDataWithDevicePrivateKey(
+    String password,
+    String data,
+  ) async {
+    if (!_isConfigured) {
+      return _setError('Instance not configured');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final signature = await _powerAuth.signDataWithDevicePrivateKey(
+        authentication,
+        data,
+      );
+
+      print('Device private key signature: $signature');
+      _setError('Device Private Key Signature: $signature');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Device private key signing failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during device private key signing: $e');
     }
     _setLoading(false);
   }
@@ -997,6 +1027,26 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Sign Data with Device Private Key',
+                    fields: {'Password': true, 'Data': false},
+                    initialValues: {'Data': defaultBody},
+                    onSubmit: (values) {
+                      _signDataWithDevicePrivateKey(
+                        values['Password']!,
+                        values['Data']!,
+                      );
+                    },
+                  ),
+          child: const Text('Sign Data with Device Private Key'),
+        ),
+
+        const SizedBox(height: 8),
         ElevatedButton(
           onPressed:
               _isLoading || !_isConfigured || _hasValidActivation != true

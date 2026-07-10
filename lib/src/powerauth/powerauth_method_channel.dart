@@ -220,23 +220,26 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<void> validatePassword(String instanceId, PowerAuthPassword password) async {
-    await invokeMethod<void>('validatePassword', {
+  Future<String> beginPasswordChange(
+    String instanceId,
+    PowerAuthPassword oldPassword,
+  ) async {
+    return await invokeMethod<String>('beginPasswordChange', {
       'instanceId': instanceId,
-      'password': await password.toRawPasswordMap()
+      'oldPassword': await oldPassword.toRawPasswordMap()
     });
   }
 
   @override
-  Future<void> changePassword(
+  Future<void> finishPasswordChange(
     String instanceId,
-    PowerAuthPassword oldPassword,
     PowerAuthPassword newPassword,
+    String passwordChangeData,
   ) async {
-    await invokeMethod<void>('changePassword', {
+    await invokeMethod<void>('finishPasswordChange', {
       'instanceId': instanceId,
-      'oldPassword': await oldPassword.toRawPasswordMap(),
-      'newPassword': await newPassword.toRawPasswordMap()
+      'newPassword': await newPassword.toRawPasswordMap(),
+      'passwordChangeData': passwordChangeData
     });
   }
 

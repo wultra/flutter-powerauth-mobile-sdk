@@ -83,9 +83,12 @@ class PowerAuthRequestEncryptor extends BaseNativeObject implements PowerAuthEnc
   ]) async {
     return await withObjectId((id) async {
       final result = await _platform.encryptRequest(id, body, bodyFormat);
+      final headers = (result['requestHeaders'] as List)
+          .map((e) => PowerAuthEncryptionHttpHeader.fromMap(e as Map))
+          .toList();
       return PowerAuthEncryptedRequestData(
-        cryptogram: PowerAuthCryptogram.fromMap(result['cryptogram']),
-        header: PowerAuthEncryptionHttpHeader.fromMap(result['header']),
+        requestBody: result['requestBody'],
+        requestHeaders: headers,
         decryptor: PowerAuthResponseDecryptor(
           decryptorScope: encryptorScope,
           objectId: result['decryptorId'],
@@ -132,9 +135,9 @@ class PowerAuthResponseDecryptor extends BaseReleasableObject implements PowerAu
 
   @override
   Future<String> decryptResponse(
-    PowerAuthCryptogram cryptogram, [
+    String responseBody, [
     PowerAuthDataFormat outputDataFormat = PowerAuthDataFormat.utf8,
   ]) async {
-    return await withObjectId((id) =>_platform.decryptResponse(id, cryptogram.toMap(), outputDataFormat));
+    return await withObjectId((id) => _platform.decryptResponse(id, responseBody, outputDataFormat));
   }
 }

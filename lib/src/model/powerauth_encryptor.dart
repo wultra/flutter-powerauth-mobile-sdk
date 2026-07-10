@@ -32,79 +32,81 @@ enum PowerAuthEncryptorScope {
 }
 
 /// Class representing encrypted data in request or response.
-class PowerAuthCryptogram {
+// class PowerAuthCryptogram {
 
-  /// Temporary key identifier.
-  final String? temporaryKeyId;
+//   /// Temporary key identifier.
+//   final String? temporaryKeyId;
 
-  /// Ephemeral public key, valid only for encrypted request.
-  final String? ephemeralPublicKey;
+//   /// Ephemeral public key, valid only for encrypted request.
+//   final String? ephemeralPublicKey;
 
-  /// Encrypted data, valid for request and response.
-  final String encryptedData;
+//   /// Encrypted data, valid for request and response.
+//   final String encryptedData;
 
-  /// Message authenticated code, valid for request and response.
-  final String mac;
+//   /// Message authenticated code, valid for request and response.
+//   final String mac;
 
-  /// Nonce, valid for encrypted request.
-  final String? nonce;
+//   /// Nonce, valid for encrypted request.
+//   final String? nonce;
 
-  /// Timestamp of request or response in milliseconds since 1.1.1970.
-  final int timestamp;
+//   /// Timestamp of request or response in milliseconds since 1.1.1970.
+//   final int timestamp;
 
-  PowerAuthCryptogram({
-    required this.temporaryKeyId,
-    this.ephemeralPublicKey,
-    required this.encryptedData,
-    required this.mac,
-    this.nonce,
-    required this.timestamp,
-  });
+//   PowerAuthCryptogram({
+//     required this.temporaryKeyId,
+//     this.ephemeralPublicKey,
+//     required this.encryptedData,
+//     required this.mac,
+//     this.nonce,
+//     required this.timestamp,
+//   });
 
-  /// Creates a [PowerAuthCryptogram] from a map.
-  factory PowerAuthCryptogram.fromMap(Map<dynamic, dynamic> map) {
-    return PowerAuthCryptogram(
-      temporaryKeyId: map['temporaryKeyId'] as String?,
-      ephemeralPublicKey: map['ephemeralPublicKey'] as String?,
-      encryptedData: map['encryptedData'] as String,
-      mac: map['mac'] as String,
-      nonce: map['nonce'] as String?,
-      timestamp: map['timestamp'] as int,
-    );
-  }
+//   /// Creates a [PowerAuthCryptogram] from a map.
+//   factory PowerAuthCryptogram.fromMap(Map<dynamic, dynamic> map) {
+//     return PowerAuthCryptogram(
+//       temporaryKeyId: map['temporaryKeyId'] as String?,
+//       ephemeralPublicKey: map['ephemeralPublicKey'] as String?,
+//       encryptedData: map['encryptedData'] as String,
+//       mac: map['mac'] as String,
+//       nonce: map['nonce'] as String?,
+//       timestamp: map['timestamp'] as int,
+//     );
+//   }
 
-  /// Converts this [PowerAuthCryptogram] to a map.
-  Map<String, dynamic> toMap() {
-    return {
-      'temporaryKeyId': temporaryKeyId,
-      'ephemeralPublicKey': ephemeralPublicKey,
-      'encryptedData': encryptedData,
-      'mac': mac,
-      'nonce': nonce,
-      'timestamp': timestamp,
-    }..removeWhere((key, value) => value == null);
-  }
-}
+//   /// Converts this [PowerAuthCryptogram] to a map.
+//   Map<String, dynamic> toMap() {
+//     return {
+//       'temporaryKeyId': temporaryKeyId,
+//       'ephemeralPublicKey': ephemeralPublicKey,
+//       'encryptedData': encryptedData,
+//       'mac': mac,
+//       'nonce': nonce,
+//       'timestamp': timestamp,
+//     }..removeWhere((key, value) => value == null);
+//   }
+// }
 
 /// Object returned from the `encryptRequest()` function.
 class PowerAuthEncryptedRequestData {
 
   /// Cryptogram with encrypted request data.
-  final PowerAuthCryptogram cryptogram;
+  // final PowerAuthCryptogram cryptogram;
+
+  final String requestBody;
 
   /// HTTP request header. You must include this header to your HTTP request
   /// to properly decrypt the request data on the server.
   ///
   /// If you plan to combine encryption with PowerAuth Symmetric Signature, then
   /// the header can be omitted.
-  final PowerAuthEncryptionHttpHeader header;
+  final List<PowerAuthEncryptionHttpHeader> requestHeaders;
 
   /// Object that can decrypt encrypted response received from the server.
   final PowerAuthDecryptor decryptor;
 
   PowerAuthEncryptedRequestData({
-    required this.cryptogram,
-    required this.header,
+    required this.requestBody,
+    required this.requestHeaders,
     required this.decryptor,
   });
 }
@@ -152,13 +154,13 @@ abstract class PowerAuthDecryptor extends BaseReleasableObject {
   /// Decrypt the response received from the server. The underlying native object is automatically released
   /// after this call.
   ///
-  /// [cryptogram] contains encrypted response from the server.
+  /// [responseBody] contains encrypted response from the server.
   ///
   /// [outputDataFormat] specifies data format expected at the output. If not used, then [PowerAuthDataFormat.utf8] is applied.
   ///
   /// Returns decrypted data in specified format.
   Future<String> decryptResponse(
-    PowerAuthCryptogram cryptogram, [
+    String responseBody, [
     PowerAuthDataFormat outputDataFormat = PowerAuthDataFormat.utf8,
   ]);
 }

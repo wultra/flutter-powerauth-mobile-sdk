@@ -167,16 +167,19 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('persistActivation() has not been implemented.');
   }
 
-  Future<void> validatePassword(String instanceId, PowerAuthPassword password) {
-    throw UnimplementedError('validatePassword() has not been implemented.');
-  }
-
-  Future<void> changePassword(
+  Future<String> beginPasswordChange(
     String instanceId,
     PowerAuthPassword oldPassword,
-    PowerAuthPassword newPassword,
   ) {
-    throw UnimplementedError('changePassword() has not been implemented.');
+    throw UnimplementedError('beginPasswordChange() has not been implemented.');
+  }
+
+  Future<void> finishPasswordChange(
+    String instanceId,
+    PowerAuthPassword newPassword,
+    String passwordChangeData,
+  ) {
+    throw UnimplementedError('finishPasswordChange() has not been implemented.');
   }
 
   Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(

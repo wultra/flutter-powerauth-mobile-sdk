@@ -32,6 +32,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "configure": configure,
         "isConfigured": isConfigured,
         "getConfiguration": getConfiguration,
+        "getCurrentAlgorithm": getCurrentAlgorithm,
         //TODO: Implements when SDK 2.0.0 is available
         // "getClientConfiguration": getClientConfiguration,
         // "getBiometryConfiguration": getBiometryConfiguration,
@@ -237,6 +238,14 @@ internal class PowerAuthService: PowerAuthFlutterService {
             result(sdk.configuration.serializable)
         }
     }
+
+    private func getCurrentAlgorithm(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { _, _ in
+            // PowerAuth SDK 1.9 supports only the legacy P-256 algorithm.
+            result(0)
+        }
+    }
+
     //TODO: implement when SDK 2.0.0 is available
     //
     // private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {

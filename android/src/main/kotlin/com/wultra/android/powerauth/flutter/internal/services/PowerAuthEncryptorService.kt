@@ -17,6 +17,7 @@
 package com.wultra.android.powerauth.flutter.internal.services
 
 import android.content.Context
+import android.util.Base64
 import com.wultra.android.powerauth.flutter.Constants
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
@@ -25,19 +26,20 @@ import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
-import io.getlime.security.powerauth.core.EciesCryptogram
-import io.getlime.security.powerauth.core.EciesEncryptor
-import io.getlime.security.powerauth.ecies.EciesMetadata
 import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
-import io.getlime.security.powerauth.networking.response.IGetEciesEncryptorListener
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 import com.wultra.android.powerauth.flutter.DataFormat
 import com.wultra.android.powerauth.flutter.IManagedObject
+import io.getlime.security.powerauth.core.CoreEncryptedRequest
+import io.getlime.security.powerauth.core.CoreEncryptedResponse
+import io.getlime.security.powerauth.core.CoreEncryptor
+import io.getlime.security.powerauth.core.CoreException
+import io.getlime.security.powerauth.networking.response.IGetEncryptorListener
 
 private data class PowerAuthFlutterEncryptor(
     val activationScoped: Boolean,
-    val coreEncryptor: EciesEncryptor,
+    val coreEncryptor: CoreEncryptor,
     val powerAuthInstanceId: String
 ) : IManagedObject<Any> {
 
@@ -64,8 +66,8 @@ internal class PowerAuthEncryptorService(
         const val OBJECT_ID = "objectId"
         const val BODY = "body"
         const val BODY_FORMAT = "bodyFormat"
-        const val CRYPTOGRAM = "cryptogram"
         const val OUTPUT_DATA_FORMAT = "outputDataFormat"
+        const val RESPONSE_BODY = "responseBody"
     }
 
     private object HandlerNames {
@@ -109,8 +111,8 @@ internal class PowerAuthEncryptorService(
                     "PowerAuth instance '$powerAuthInstanceId' not configured."
                 )
 
-            val listener = object : IGetEciesEncryptorListener {
-                override fun onGetEciesEncryptorSuccess(encryptor: EciesEncryptor) {
+            val listener = object : IGetEncryptorListener {
+                override fun onGetEncryptorSuccess(encryptor: CoreEncryptor) {
                     val flutterEncryptor =
                         PowerAuthFlutterEncryptor(isActivationScope, encryptor, powerAuthInstanceId)
                     val releaseTime =
@@ -124,7 +126,7 @@ internal class PowerAuthEncryptorService(
                     result.success(objectId)
                 }
 
-                override fun onGetEciesEncryptorFailed(t: Throwable) {
+                override fun onGetEncryptorFailed(t: Throwable) {
                     if (isActivationScope && !sdk.hasValidActivation()) {
                         Errors.error(
                             result,
@@ -137,9 +139,9 @@ internal class PowerAuthEncryptorService(
             }
 
             if (isActivationScope) {
-                sdk.getEciesEncryptorForActivationScope(context, listener)
+                sdk.getEncryptorForActivationScope(listener)
             } else {
-                sdk.getEciesEncryptorForApplicationScope(listener)
+                sdk.getEncryptorForApplicationScope(listener)
             }
         } catch (t: Throwable) {
             Errors.error(result, t)
@@ -179,50 +181,73 @@ internal class PowerAuthEncryptorService(
                 )
             }
 
-            val encryptionResult = encryptor.coreEncryptor.encryptRequestSynchronized(data)
-                ?: throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to encrypt request")
+            val encryptedRequest: CoreEncryptedRequest = try {
+                encryptor.coreEncryptor.encryptRequest(data)
+            } catch (e: CoreException) {
+                throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to encrypt request", e)
+            }
 
-            val decryptorEncryptor = encryptionResult.first
-            val cryptogram = encryptionResult.second
-
-            val metadata: EciesMetadata = decryptorEncryptor.metadata
-                ?: throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Incompatible native SDK")
-
-            val decryptor = PowerAuthFlutterEncryptor(
-                encryptor.activationScoped,
-                decryptorEncryptor,
-                encryptor.powerAuthInstanceId
-            )
-
-            val policies = listOf(
-                ReleasePolicy.afterUse(1),
-                ReleasePolicy.keepAlive(Constants.DECRYPTOR_KEY_KEEP_ALIVE_TIME)
-            )
-
-            val decryptorId =
-                objectRegister.registerObject(decryptor, encryptor.powerAuthInstanceId, policies)
-
-            val cryptogramMap = mapOf(
-                "temporaryKeyId" to cryptogram.temporaryKeyId,
-                "ephemeralPublicKey" to cryptogram.keyBase64,
-                "encryptedData" to cryptogram.bodyBase64,
-                "mac" to cryptogram.macBase64,
-                "nonce" to cryptogram.nonceBase64,
-                "timestamp" to cryptogram.timestamp
-            )
-
-            val headerMap = mapOf(
-                "name" to metadata.httpHeaderKey,
-                "value" to metadata.httpHeaderValue
-            )
+            val requestHeaders = encryptedRequest.requestHeaders.map { header ->
+                mapOf("name" to header.key, "value" to header.value)
+            }
 
             result.success(
                 mapOf(
-                    "cryptogram" to cryptogramMap,
-                    "header" to headerMap,
-                    "decryptorId" to decryptorId
+                    "requestBody" to Base64.encodeToString(
+                        encryptedRequest.requestBody,
+                        Base64.NO_WRAP
+                    ),
+                    "requestHeaders" to requestHeaders,
+                    // The native encryptor is single-use (encrypt, then decrypt), so the very same
+                    // registered object is reused as the "decryptor" reference given back to Dart.
+                    "decryptorId" to objectId
                 )
             )
+
+//            val encryptionResult = encryptor.coreEncryptor.encryptRequest(data)
+//                ?: throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to encrypt request")
+//            data = encryptionResult.requestBody
+//            val decryptorEncryptor = encryptionResult.first // ??
+//            val cryptogram = encryptionResult.second
+
+//            val metadata: EciesMetadata = decryptorEncryptor.metadata // not needed at all
+//                ?: throw WrapperException(Errors.EC_INVALID_ENCRYPTOR, "Incompatible native SDK")
+//
+//            val decryptor = PowerAuthFlutterEncryptor(
+//                encryptor.activationScoped,
+//                decryptorEncryptor,
+//                encryptor.powerAuthInstanceId
+//            )
+//
+//            val policies = listOf(
+//                ReleasePolicy.afterUse(1),
+//                ReleasePolicy.keepAlive(Constants.DECRYPTOR_KEY_KEEP_ALIVE_TIME)
+//            )
+//
+//            val decryptorId =
+//                objectRegister.registerObject(decryptor, encryptor.powerAuthInstanceId, policies)
+//
+//            val cryptogramMap = mapOf(
+//                "temporaryKeyId" to cryptogram.temporaryKeyId,
+//                "ephemeralPublicKey" to cryptogram.keyBase64,
+//                "encryptedData" to cryptogram.bodyBase64,
+//                "mac" to cryptogram.macBase64,
+//                "nonce" to cryptogram.nonceBase64,
+//                "timestamp" to cryptogram.timestamp
+//            )
+//
+//            val headerMap = mapOf(
+//                "name" to metadata.httpHeaderKey,
+//                "value" to metadata.httpHeaderValue
+//            )
+
+//            result.success(
+//                mapOf(
+//                    "cryptogram" to cryptogramMap,
+//                    "header" to headerMap,
+//                    "decryptorId" to decryptorId
+//                )
+//            )
         }
     }
 
@@ -236,7 +261,8 @@ internal class PowerAuthEncryptorService(
     private fun decryptResponse(call: MethodCall, result: Result) {
         withEncryptor(call, result, touch = false) { encryptor, sdk ->
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            val cryptogramMap: Map<String, Any> = call.getRequiredArgument(CRYPTOGRAM)
+//            val cryptogramMap: Map<String, Any> = call.getRequiredArgument(CRYPTOGRAM)
+            val responseBody: String = call.getRequiredArgument(RESPONSE_BODY)
             val outputDataFormat: String = call.getRequiredArgument(OUTPUT_DATA_FORMAT)
 
             if (!canDecrypt(encryptor, sdk)) {
@@ -247,17 +273,24 @@ internal class PowerAuthEncryptorService(
                 )
             }
 
-            val cryptogram = EciesCryptogram(
-                cryptogramMap["temporaryKeyId"] as String?,
-                cryptogramMap["encryptedData"] as String?,
-                cryptogramMap["mac"] as String?,
-                cryptogramMap["ephemeralPublicKey"] as String?,
-                cryptogramMap["nonce"] as String?,
-                cryptogramMap["timestamp"] as Long,
-            )
+            val responseBytes = Base64.decode(responseBody, Base64.DEFAULT)
+            val decryptedData = try {
+                encryptor.coreEncryptor.decryptResponse(CoreEncryptedResponse(responseBytes))
+            } catch (e: CoreException) {
+                throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to decrypt response.", e)
+            }
 
-            val decryptedData = encryptor.coreEncryptor.decryptResponse(cryptogram)
-                ?: throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to decrypt response.")
+//            val cryptogram = EciesCryptogram( //CoreEncryptedRequest now
+//                cryptogramMap["temporaryKeyId"] as String?,
+//                cryptogramMap["encryptedData"] as String?,
+//                cryptogramMap["mac"] as String?,
+//                cryptogramMap["ephemeralPublicKey"] as String?,
+//                cryptogramMap["nonce"] as String?,
+//                cryptogramMap["timestamp"] as Long,
+//            )
+//
+//            val decryptedData = encryptor.coreEncryptor.decryptResponse(cryptogram)
+//                ?: throw WrapperException(Errors.EC_ENCRYPTION_ERROR, "Failed to decrypt response.")
 
             result.success(DataFormat.fromString(outputDataFormat).encodeBytes(decryptedData))
         }
