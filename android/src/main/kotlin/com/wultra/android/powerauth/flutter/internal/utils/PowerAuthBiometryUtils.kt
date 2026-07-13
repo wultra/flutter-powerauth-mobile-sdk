@@ -16,21 +16,20 @@
 
 package com.wultra.android.powerauth.flutter.internal.utils
 
-import android.app.Activity
 import android.content.Context
 import android.os.Build
-import android.util.Pair
 import androidx.fragment.app.FragmentActivity
-import com.wultra.android.powerauth.flutter.Constants
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_MESSAGE
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_SUBTITLE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_TITLE
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.biometry.BiometricAuthentication
 import io.getlime.security.powerauth.biometry.BiometricStatus
 import io.getlime.security.powerauth.biometry.BiometryType
 import io.getlime.security.powerauth.keychain.KeychainProtection
+import io.getlime.security.powerauth.sdk.PowerAuthBiometricPrompt
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
 object PowerAuthBiometryUtils {
@@ -68,11 +67,20 @@ object PowerAuthBiometryUtils {
         }
     }
 
-    fun extractPromptStrings(promptMap: Map<String, Any>?): Pair<String, String> {
-        val title = promptMap?.get(PROMPT_TITLE) as? String ?: Constants.MISSING_REQUIRED_STRING
-        val description =
-            promptMap?.get(PROMPT_MESSAGE) as? String ?: Constants.MISSING_REQUIRED_STRING
-        return Pair(title, description)
+    fun buildBiometricPrompt(
+        activity: FragmentActivity,
+        promptMap: Map<String, Any>?,
+        allowNoPrompt: Boolean
+    ): PowerAuthBiometricPrompt {
+        if (promptMap == null && allowNoPrompt) {
+            return PowerAuthBiometricPrompt.noPromptForBiometricKeySetup(activity)
+        }
+
+        val builder = PowerAuthBiometricPrompt.Builder(activity)
+        (promptMap?.get(PROMPT_TITLE) as? String)?.let { builder.setTitle(it) }
+        (promptMap?.get(PROMPT_SUBTITLE) as? String)?.let { builder.setSubtitle(it) }
+        (promptMap?.get(PROMPT_MESSAGE) as? String)?.let { builder.setDescription(it) }
+        return builder.build()
     }
 
     @Throws(WrapperException::class)

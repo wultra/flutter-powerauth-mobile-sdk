@@ -30,6 +30,10 @@ class PowerAuthBiometricPrompt {
   /// Example: "Payment authorization"
   final String? promptTitle;
 
+  /// ### Android specific
+  /// Subtitle displayed to the user.
+  final String? promptSubtitle;
+
   /// ### iOS specific
   /// Title for the cancel button.
   final String? cancelButtonTitle;
@@ -42,6 +46,7 @@ class PowerAuthBiometricPrompt {
   PowerAuthBiometricPrompt({
     required this.promptMessage,
     this.promptTitle, // Required on Android
+    this.promptSubtitle,
     this.cancelButtonTitle,
     this.fallbackButtonTitle,
   });
@@ -50,6 +55,7 @@ class PowerAuthBiometricPrompt {
     return {
       'promptMessage': promptMessage,
       'promptTitle': promptTitle,
+      'promptSubtitle': promptSubtitle,
       'cancelButtonTitle': cancelButtonTitle,
       'fallbackButtonTitle': fallbackButtonTitle,
     }..removeWhere((key, value) => value == null);
@@ -100,10 +106,11 @@ abstract class PowerAuthAuthentication {
 
   /// Creates an object configured to persist activation with password and biometry.
   /// [password] [PowerAuthPassword] object.
-  /// [biometricPrompt] is required on Android only when biometry config has `authenticateOnBiometricKeySetup` set to `true`.
+  /// [biometricPrompt] is required on Android only when biometry config has
+  /// `authenticateOnBiometricKeySetup` set to `true`. 
   factory PowerAuthAuthentication.persistWithPasswordAndBiometry({
     required PowerAuthPassword password,
-    required PowerAuthBiometricPrompt biometricPrompt,
+    PowerAuthBiometricPrompt? biometricPrompt,
   }) {
     return InternalAuth(
       password: password,

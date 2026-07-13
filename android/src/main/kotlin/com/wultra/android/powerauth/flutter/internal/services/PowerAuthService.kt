@@ -47,7 +47,7 @@ import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.authorizationHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.extractPromptStrings
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getBiometryInfo
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateBiometryBeforeUse
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateFragmentActivity
@@ -103,6 +103,7 @@ internal class PowerAuthService(
         const val IS_BIOMETRY = "isBiometry"
         const val PROMPT_MESSAGE = "promptMessage"
         const val PROMPT_TITLE = "promptTitle"
+        const val PROMPT_SUBTITLE = "promptSubtitle"
         const val LINK_ITEMS_TO_CURRENT_SET = "linkItemsToCurrentSet"
         const val CONFIRM_BIOMETRIC_AUTHENTICATION = "confirmBiometricAuthentication"
         const val AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP = "authenticateOnBiometricKeySetup"
@@ -698,8 +699,7 @@ internal class PowerAuthService(
 
                 val activity = validateFragmentActivity(getCurrentActivity())
 
-                val (title, description) = extractPromptStrings(promptMap)
-                val prompt = PowerAuthBiometricPrompt.prompt(activity,title, description)
+                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
 
                 sdk.addBiometryFactor(
                     context,
@@ -775,8 +775,7 @@ internal class PowerAuthService(
                 validateBiometryBeforeUse(context, sdk)
 
                 val activity = validateFragmentActivity(getCurrentActivity())
-                val (title, description) = extractPromptStrings(promptMap)
-                val prompt = PowerAuthBiometricPrompt.prompt(activity, title, description)
+                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
 
                 sdk.authenticateUsingBiometrics(
                     context,
@@ -916,11 +915,9 @@ internal class PowerAuthService(
             }
 
             if (useBiometry) {
-                val promptMap: Map<String, String>? =
-                    authMap[BIOMETRIC_PROMPT] as? Map<String, String>
-                val (title, description) = extractPromptStrings(promptMap)
+                val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
                 val activity = validateFragmentActivity(getCurrentActivity())
-                val prompt = PowerAuthBiometricPrompt.prompt(activity, title, description)
+                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
 
                 PowerAuthAuthentication.persistWithPasswordAndBiometry(password, prompt)
 
