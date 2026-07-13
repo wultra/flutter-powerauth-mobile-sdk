@@ -17,16 +17,16 @@
 /// Algorithm used for communication with the PowerAuth Server.
 enum PowerAuthAlgorithm {
 	/// Legacy P-256 algorithm compatible with PowerAuth protocol V3.3.
-	legacyP256,
+	legacy,
 
 	/// P-384 elliptic curve algorithm without post-quantum resistance.
-	ecP384,
+	p384,
 
 	/// P-384 combined with ML-KEM-768 and ML-DSA-65.
-	ecP384MlL3,
+	p384l3,
 
 	/// P-384 combined with ML-KEM-1024 and ML-DSA-87.
-	ecP384MlL5,
+	p384l5,
 }
 
 

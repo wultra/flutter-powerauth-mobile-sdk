@@ -108,7 +108,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @override
   Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) async {
     final result = await invokeMethod<String>('getCurrentAlgorithm', {'instanceId': instanceId});
-    return PowerAuthAlgorithm.values.byName(result);
+    return PowerAuthAlgorithm.values.firstWhere(
+      (algorithm) => algorithm.name == result,
+      orElse: () => throw PowerAuthException(
+        code: PowerAuthErrorCode.unknownError,
+        message: 'Unknown PowerAuth algorithm received from native platform: \'$result\'.',
+      ),
+    );
   }
  
   // TODO: Implement when SDK 2.0.0 is available

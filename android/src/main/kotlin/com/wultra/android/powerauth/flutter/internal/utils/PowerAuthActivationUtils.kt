@@ -16,8 +16,6 @@
 
 package com.wultra.android.powerauth.flutter.internal.utils
 
-import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
-import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.networking.response.CreateActivationResult
 import io.getlime.security.powerauth.sdk.PowerAuthActivationState
 import io.getlime.security.powerauth.sdk.PowerAuthActivationStatus

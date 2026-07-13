@@ -53,38 +53,38 @@ object PowerAuthConfigurationUtils {
             )
 
         val builder = PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
-            (map[ALGORITHM] as? String)?.let { algorithm ->
-                builder.algorithm(algorithmFromString(algorithm))
+        (map[ALGORITHM] as? String)?.let { algorithm ->
+            builder.algorithm(algorithmFromString(algorithm))
         }
         return builder.build()
     }
 
-        @PowerAuthAlgorithm
-        fun algorithmFromString(value: String): Int {
-            return when (value) {
-                "legacyP256" -> PowerAuthAlgorithm.LEGACY_P256
-                "ecP384" -> PowerAuthAlgorithm.EC_P384
-                "ecP384MlL3" -> PowerAuthAlgorithm.EC_P384_ML_L3
-                "ecP384MlL5" -> PowerAuthAlgorithm.EC_P384_ML_L5
-                else -> throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Unknown PowerAuth algorithm: $value"
-                )
-            }
+    @PowerAuthAlgorithm
+    fun algorithmFromString(value: String): Int {
+        return when (value) {
+            "legacy" -> PowerAuthAlgorithm.LEGACY_P256
+            "p384" -> PowerAuthAlgorithm.EC_P384
+            "p384l3" -> PowerAuthAlgorithm.EC_P384_ML_L3
+            "p384l5" -> PowerAuthAlgorithm.EC_P384_ML_L5
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Unknown PowerAuth algorithm: $value"
+            )
         }
+    }
 
-        fun algorithmToString(@PowerAuthAlgorithm value: Int): String {
-            return when (value) {
-                PowerAuthAlgorithm.LEGACY_P256 -> "legacyP256"
-                PowerAuthAlgorithm.EC_P384 -> "ecP384"
-                PowerAuthAlgorithm.EC_P384_ML_L3 -> "ecP384MlL3"
-                PowerAuthAlgorithm.EC_P384_ML_L5 -> "ecP384MlL5"
-                else -> throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Unknown native PowerAuth algorithm: $value"
-                )
-            }
+    fun algorithmToString(@PowerAuthAlgorithm value: Int): String {
+        return when (value) {
+            PowerAuthAlgorithm.LEGACY_P256 -> "legacy"
+            PowerAuthAlgorithm.EC_P384 -> "p384"
+            PowerAuthAlgorithm.EC_P384_ML_L3 -> "p384l3"
+            PowerAuthAlgorithm.EC_P384_ML_L5 -> "p384l5"
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Unknown native PowerAuth algorithm: $value"
+            )
         }
+    }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
         val builder = PowerAuthClientConfiguration.Builder()

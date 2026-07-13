@@ -418,9 +418,6 @@ internal class PowerAuthService(
 
     private fun persistActivation(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
-//            val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
-//            val useBiometryActual = authMap[IS_BIOMETRY] as? Boolean ?: false
-
             val authenticationObject = buildAuthenticationObject(call, persist = true)
 
             sdk.persistActivationWithAuthentication(
@@ -694,30 +691,26 @@ internal class PowerAuthService(
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val corePassword = buildPasswordObject(passwordMap, use = true)
 
-            try {
-                // validateBiometryBeforeUse(sdk)
+            // validateBiometryBeforeUse(sdk) // TODO: Real?
 
-                val activity = validateFragmentActivity(getCurrentActivity())
+            val activity = validateFragmentActivity(getCurrentActivity())
 
-                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
+            val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
 
-                sdk.addBiometryFactor(
-                    context,
-                    corePassword,
-                    prompt,
-                    object : IAddBiometryFactorListener {
-                        override fun onAddBiometryFactorSucceed() {
-                            result.success(null)
-                        }
-
-                        override fun onAddBiometryFactorFailed(error: Throwable) {
-                            Errors.error(result, error)
-                        }
+            sdk.addBiometryFactor(
+                context,
+                corePassword,
+                prompt,
+                object : IAddBiometryFactorListener {
+                    override fun onAddBiometryFactorSucceed() {
+                        result.success(null)
                     }
-                )
-            } catch (e: Exception) {
-                Errors.error(result, e)
-            }
+
+                    override fun onAddBiometryFactorFailed(error: Throwable) {
+                        Errors.error(result, error)
+                    }
+                }
+            )
         }
     }
 
@@ -742,27 +735,6 @@ internal class PowerAuthService(
                         result.success(null)
                     }
                 })
-
-//                if (removed) {
-//                    result.success(null)
-//                } else {
-//                    if (!sdk.hasBiometryFactor(context)) {
-//                        throw WrapperException(
-//                            Errors.EC_BIOMETRY_NOT_CONFIGURED,
-//                            "Biometry factor was not configured."
-//                        )
-//                    } else {
-//                        throw WrapperException(
-//                            Errors.EC_FLUTTER_ERROR,
-//                            "Failed to remove biometry factor for unknown reason."
-//                        )
-//                    }
-//                }
-//            } else {
-//                throw WrapperException(
-//                    Errors.EC_BIOMETRY_NOT_SUPPORTED,
-//                    "Biometry requires Android 6.0 (API 23) or higher"
-//                )
         }
     }
 
@@ -771,56 +743,52 @@ internal class PowerAuthService(
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
 
-            try {
-                validateBiometryBeforeUse(context, sdk)
+            validateBiometryBeforeUse(context, sdk) // TODO: REAL?
 
-                val activity = validateFragmentActivity(getCurrentActivity())
-                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
+            val activity = validateFragmentActivity(getCurrentActivity())
+            val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
 
-                sdk.authenticateUsingBiometrics(
-                    context,
-                    prompt,
-                    object : IAuthenticateWithBiometricsListener {
-                        override fun onBiometricDialogCancelled(userCancel: Boolean) {
+            sdk.authenticateUsingBiometrics(
+                context,
+                prompt,
+                object : IAuthenticateWithBiometricsListener {
+                    override fun onBiometricDialogCancelled(userCancel: Boolean) {
+                        Errors.error(
+                            result,
+                            PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
+                        )
+                    }
+
+                    override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
+                        val key = authentication.biometryFactorRelatedKey
+                        if (key == null) {
                             Errors.error(
                                 result,
-                                PowerAuthErrorException(PowerAuthErrorCodes.BIOMETRY_CANCEL)
-                            )
-                        }
-
-                        override fun onBiometricDialogSuccess(authentication: PowerAuthAuthentication) {
-                            val key = authentication.biometryFactorRelatedKey
-                            if (key == null) {
-                                Errors.error(
-                                    result,
-                                    WrapperException(
-                                        Errors.EC_FLUTTER_ERROR,
-                                        "Biometric key missing after success."
-                                    )
-                                )
-                                return
-                            }
-
-                            val managedKey = ManagedAny.wrap(key)
-                            val keyId = objectRegister.registerObject(
-                                managedKey,
-                                instanceId,
-                                listOf(
-                                    ReleasePolicy.afterUse(1),
-                                    ReleasePolicy.expire(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
+                                WrapperException(
+                                    Errors.EC_FLUTTER_ERROR,
+                                    "Biometric key missing after success."
                                 )
                             )
-                            result.success(keyId)
+                            return
                         }
 
-                        override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
-                            Errors.error(result, error)
-                        }
+                        val managedKey = ManagedAny.wrap(key)
+                        val keyId = objectRegister.registerObject(
+                            managedKey,
+                            instanceId,
+                            listOf(
+                                ReleasePolicy.afterUse(1),
+                                ReleasePolicy.expire(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
+                            )
+                        )
+                        result.success(keyId)
                     }
-                )
-            } catch (e: Exception) {
-                Errors.error(result, e)
-            }
+
+                    override fun onBiometricDialogFailed(error: PowerAuthErrorException) {
+                        Errors.error(result, error)
+                    }
+                }
+            )
         }
     }
 
@@ -898,7 +866,8 @@ internal class PowerAuthService(
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
         val passwordMap = authMap[PASSWORD] as? Map<String, Any>
-        val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
+        val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
+        val activity = validateFragmentActivity(getCurrentActivity())
 
         val password: Password? = if (passwordMap != null) {
             buildPasswordObject(passwordMap, use = true)
@@ -940,16 +909,18 @@ internal class PowerAuthService(
                 PowerAuthAuthentication.persistWithPassword(password)
             }
         } else {
-            val biometryKeyBytes = biometryKeyId?.let { keyId ->
-                objectRegister.useObject(keyId, SecureData::class.java)
-                    ?: throw WrapperException(
-                        Errors.EC_INVALID_NATIVE_OBJECT,
-                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
-                    )
-            }
+//            val biometryKeyBytes = biometryKeyId?.let { keyId ->
+//                objectRegister.useObject(keyId, SecureData::class.java)
+//                    ?: throw WrapperException(
+//                        Errors.EC_INVALID_NATIVE_OBJECT,
+//                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
+//                    )
+//            }
 
-            if (biometryKeyBytes != null) {
-                PowerAuthAuthentication.possessionWithBiometry(biometryKeyBytes)
+
+            if (useBiometry) {
+                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
+                PowerAuthAuthentication.possessionWithBiometry(prompt)
             } else if (password != null) {
                 PowerAuthAuthentication.possessionWithPassword(password)
             } else {
