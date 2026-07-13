@@ -45,7 +45,7 @@ class PowerAuthConfiguration {
     return {
       'configuration': configuration,
       'baseEndpointUrl': baseEndpointUrl,
-      if (algorithm != null) 'algorithm': algorithm!.value,
+      if (algorithm != null) 'algorithm': algorithm!.name,
     };
   }
 
@@ -54,7 +54,7 @@ class PowerAuthConfiguration {
       configuration: map['configuration'] as String,
       baseEndpointUrl: map['baseEndpointUrl'] as String,
       algorithm: map['algorithm'] != null
-          ? PowerAuthAlgorithm.fromValue(map['algorithm'] as int)
+          ? PowerAuthAlgorithm.values.byName(map['algorithm'] as String)
           : null,
     );
   }

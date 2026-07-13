@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'dart:typed_data';
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_external_pending_operation.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_info.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -32,6 +34,7 @@ import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
+import '../model/powerauth_signature_key_id.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
 
@@ -228,6 +231,17 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<String> calculateDigitalSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'calculateDigitalSignature() has not been implemented.',
+    );
+  }
+
   Future<PowerAuthBiometryInfo> getBiometryInfo() {
     throw UnimplementedError('getBiometryInfo() has not been implemented.');
   }
@@ -252,9 +266,6 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
   }
 
-  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) {
-    throw UnimplementedError('signDataWithDevicePrivateKey() has not been implemented.');
-  }
 
   Future<bool> hasLocalToken(String instanceId, String tokenName) {
     throw UnimplementedError('hasLocalToken() has not been implemented.');

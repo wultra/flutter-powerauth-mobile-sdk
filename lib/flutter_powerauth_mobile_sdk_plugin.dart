@@ -49,6 +49,7 @@ export 'src/model/powerauth_encryptor.dart';
 export 'src/model/powerauth_encryption_http_header.dart';
 export 'src/model/powerauth_user_info.dart';
 export 'src/model/powerauth_oidc_parameters.dart';
+export 'src/model/powerauth_signature_key_id.dart';
 export 'src/powerauth_encryptor/powerauth_encryptor.dart';
 
 // Debug

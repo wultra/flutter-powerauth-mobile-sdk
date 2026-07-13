@@ -54,8 +54,9 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtil
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
-import io.getlime.security.powerauth.core.CoreSignatureKeyId
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthSignatureUtils.signatureKeyIdFromString
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import io.getlime.security.powerauth.sdk.PowerAuthToken
@@ -89,6 +90,7 @@ internal class PowerAuthService(
         const val NONCE = "nonce"
         const val DATA = "data"
         const val SIGNATURE = "signature"
+        const val SIGNATURE_KEY_ID = "signatureKeyId"
         const val USE_MASTER_KEY = "useMasterKey"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
@@ -156,7 +158,7 @@ internal class PowerAuthService(
         const val REMOVE_ALL_LOCAL_TOKENS = "removeAllLocalTokens"
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
         const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
-        const val SIGN_DATA_WITH_DEVICE_PRIVATE_KEY = "signDataWithDevicePrivateKey"
+        const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
         const val IS_TIME_SYNCHRONIZED = "isTimeSynchronized"
@@ -209,7 +211,7 @@ internal class PowerAuthService(
             HandlerNames.REMOVE_ALL_LOCAL_TOKENS to this::removeAllLocalTokens,
             HandlerNames.GENERATE_HEADER_FOR_TOKEN to this::generateHeaderForToken,
             HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
-            HandlerNames.SIGN_DATA_WITH_DEVICE_PRIVATE_KEY to this::signDataWithDevicePrivateKey,
+            HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
             HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
             HandlerNames.IS_TIME_SYNCHRONIZED to this::isTimeSynchronized,
@@ -281,7 +283,7 @@ internal class PowerAuthService(
 
     private fun getCurrentAlgorithm(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            result.success(sdk.currentAlgorithm)
+            result.success(algorithmToString(sdk.currentAlgorithm))
         }
     }
 
@@ -920,6 +922,8 @@ internal class PowerAuthService(
                 val activity = validateFragmentActivity(getCurrentActivity())
                 val prompt = PowerAuthBiometricPrompt.prompt(activity, title, description)
 
+                PowerAuthAuthentication.persistWithPasswordAndBiometry(password, prompt)
+
 //                val biometricKeyBytes = biometryKeyId?.let { keyId ->
 //                    objectRegister.useObject(keyId, SecureData::class.java)
 //                        ?: throw WrapperException(
@@ -934,7 +938,6 @@ internal class PowerAuthService(
 //                        biometricKeyBytes
 //                    )
 //                } else {
-                    PowerAuthAuthentication.persistWithPasswordAndBiometry(password, prompt)
 //                }
             } else {
                 PowerAuthAuthentication.persistWithPassword(password)
@@ -1160,38 +1163,52 @@ internal class PowerAuthService(
         }
     }
 
-    private fun signDataWithDevicePrivateKey(call: MethodCall, result: Result) {
+    private fun calculateDigitalSignature(call: MethodCall, result: Result) {
         val data: String = call.getRequiredArgument(DATA)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
         val authentication = buildAuthenticationObject(call, persist = false)
 
         usePowerAuth(call, result) { sdk ->
-            val keyIdentifier = when (sdk.currentAlgorithm) {
-                PowerAuthAlgorithm.LEGACY_P256,
-                PowerAuthAlgorithm.EC_P384 -> PowerAuthSignatureKeyId.DEVICE_EC
-                PowerAuthAlgorithm.EC_P384_ML_L3,
-                PowerAuthAlgorithm.EC_P384_ML_L5 -> PowerAuthSignatureKeyId.DEVICE_ML_DSA
-                else -> throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Unsupported PowerAuth algorithm '${sdk.currentAlgorithm}'."
-                )
-            }
             sdk.calculateDigitalSignature(
                 context,
                 authentication,
                 data.toByteArray(StandardCharsets.UTF_8),
-                keyIdentifier,
-                object : IDigitalSignatureListener {
+                keyId,
+                object: IDigitalSignatureListener {
+                    override fun onDigitalSignatureFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+
                     override fun onDigitalSignatureSucceed(signature: ByteArray) {
                         result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
                     }
 
-                    override fun onDigitalSignatureFailed(t: Throwable) {
-                        Errors.error(result, t)
-                    }
-                }
-            )
+            })
         }
     }
+
+//    private fun signDataWithDevicePrivateKey(call: MethodCall, result: Result) {
+//        val data: String = call.getRequiredArgument(DATA)
+//        val authentication = buildAuthenticationObject(call, persist = false)
+//
+//        usePowerAuth(call, result) { sdk ->
+//            sdk.calculateDigitalSignature(
+//                context,
+//                authentication,
+//                data.toByteArray(StandardCharsets.UTF_8),
+//                PowerAuthSignatureKeyId.DEVICE_EC,
+//                object : IDigitalSignatureListener {
+//                    override fun onDigitalSignatureSucceed(signature: ByteArray) {
+//                        result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
+//                    }
+//
+//                    override fun onDigitalSignatureFailed(t: Throwable) {
+//                        Errors.error(result, t)
+//                    }
+//                }
+//            )
+//        }
+//    }
 
     private fun fetchUserInfo(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->

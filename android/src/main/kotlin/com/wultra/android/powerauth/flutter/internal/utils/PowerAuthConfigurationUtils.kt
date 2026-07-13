@@ -31,6 +31,7 @@ import io.getlime.security.powerauth.networking.interceptors.BasicHttpAuthentica
 import io.getlime.security.powerauth.networking.interceptors.CustomHeaderRequestInterceptor
 import io.getlime.security.powerauth.networking.ssl.HttpClientSslNoValidationStrategy
 import io.getlime.security.powerauth.sdk.PowerAuthClientConfiguration
+import io.getlime.security.powerauth.sdk.PowerAuthAlgorithm
 import io.getlime.security.powerauth.sdk.PowerAuthConfiguration
 import io.getlime.security.powerauth.sdk.PowerAuthKeychainConfiguration
 
@@ -52,11 +53,38 @@ object PowerAuthConfigurationUtils {
             )
 
         val builder = PowerAuthConfiguration.Builder(instanceId, baseEndpointUrl, configurationString)
-        (map[ALGORITHM] as? Int)?.let { algorithm ->
-            builder.algorithm(algorithm)
+            (map[ALGORITHM] as? String)?.let { algorithm ->
+                builder.algorithm(algorithmFromString(algorithm))
         }
         return builder.build()
     }
+
+        @PowerAuthAlgorithm
+        fun algorithmFromString(value: String): Int {
+            return when (value) {
+                "legacyP256" -> PowerAuthAlgorithm.LEGACY_P256
+                "ecP384" -> PowerAuthAlgorithm.EC_P384
+                "ecP384MlL3" -> PowerAuthAlgorithm.EC_P384_ML_L3
+                "ecP384MlL5" -> PowerAuthAlgorithm.EC_P384_ML_L5
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Unknown PowerAuth algorithm: $value"
+                )
+            }
+        }
+
+        fun algorithmToString(@PowerAuthAlgorithm value: Int): String {
+            return when (value) {
+                PowerAuthAlgorithm.LEGACY_P256 -> "legacyP256"
+                PowerAuthAlgorithm.EC_P384 -> "ecP384"
+                PowerAuthAlgorithm.EC_P384_ML_L3 -> "ecP384MlL3"
+                PowerAuthAlgorithm.EC_P384_ML_L5 -> "ecP384MlL5"
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Unknown native PowerAuth algorithm: $value"
+                )
+            }
+        }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
         val builder = PowerAuthClientConfiguration.Builder()
@@ -149,7 +177,7 @@ object PowerAuthConfigurationUtils {
         return mapOf(
             BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
             CONFIGURATION_STRING to configuration.configuration,
-            ALGORITHM to configuration.algorithm
+            ALGORITHM to algorithmToString(configuration.algorithm)
         )
     }
 

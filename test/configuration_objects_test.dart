@@ -45,7 +45,7 @@ void main() {
           algorithm: algorithm,
         );
 
-        expect(configuration.toMap()['algorithm'], algorithm.value);
+        expect(configuration.toMap()['algorithm'], algorithm.name);
         expect(PowerAuthConfiguration.fromMap(configuration.toMap()).algorithm, algorithm);
       }
     });
@@ -56,7 +56,7 @@ void main() {
           .setMockMethodCallHandler(channel, (call) async {
         expect(call.method, 'getCurrentAlgorithm');
         expect(call.arguments, {'instanceId': 'test-instance'});
-        return PowerAuthAlgorithm.ecP384MlL5.value;
+        return PowerAuthAlgorithm.ecP384MlL5.name;
       });
       addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

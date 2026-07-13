@@ -107,8 +107,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<PowerAuthAlgorithm> getCurrentAlgorithm(String instanceId) async {
-    final result = await invokeMethod<int>('getCurrentAlgorithm', {'instanceId': instanceId});
-    return PowerAuthAlgorithm.fromValue(result);
+    final result = await invokeMethod<String>('getCurrentAlgorithm', {'instanceId': instanceId});
+    return PowerAuthAlgorithm.values.byName(result);
   }
  
   // TODO: Implement when SDK 2.0.0 is available
@@ -319,6 +319,23 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<String> calculateDigitalSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    return await invokeMethod<String>(
+      'calculateDigitalSignature',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'data': data,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
+  }
+
+  @override
   Future<PowerAuthBiometryInfo> getBiometryInfo() async {
     final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo', null);
     return PowerAuthBiometryInfo.fromMap(result);
@@ -356,15 +373,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     return await invokeMethod<String>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'index': index
-    }));
-  }
-
-  @override
-  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) async {
-    return await invokeMethod<String>('signDataWithDevicePrivateKey', await _authenticate(instanceId, authentication, {
-      'instanceId': instanceId,
-      'data': data,
-      'dataFormat': dataFormat.name,
     }));
   }
 

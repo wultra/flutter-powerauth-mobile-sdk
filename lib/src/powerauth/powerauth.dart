@@ -15,6 +15,7 @@
  */
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_biometry_info.dart';
@@ -40,6 +41,7 @@ import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
+import '../model/powerauth_signature_key_id.dart';
 
 /// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
@@ -246,6 +248,21 @@ class PowerAuth {
     useMasterKey,
   );
 
+  /// Calculates a digital signature for UTF-8 encoded [data].
+  ///
+  /// The [signatureKeyId] must identify a specific device signing key, such as
+  /// [PowerAuthSignatureKeyId.deviceEc] or [PowerAuthSignatureKeyId.deviceMlDsa].
+  Future<String> calculateDigitalSignature(
+    PowerAuthAuthentication authentication,
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.calculateDigitalSignature(
+    instanceId,
+    authentication,
+    data,
+    signatureKeyId,
+  );
+
   /// Gets information about the biometric capabilities of the device.
   static Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo();
 
@@ -271,17 +288,6 @@ class PowerAuth {
   /// - [authentication] Authentication used for vault unlocking call.
   /// - [index] Index of the derived key using KDF. 
   Future<String> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
-
-  /// Sign given data with the original device private key (asymetric signature).
-  /// 
-  /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key 
-  /// used for private key decryption. Data is then signed using ECDSA algorithm with this key and can be validated on the server side.
-  /// 
-  /// - [authentication] Authentication used for vault unlocking call.
-  /// - [data] Data to be signed with the private key.
-  /// - [dataFormat] Specifies format of passed data. If not used, then [PowerAuthDataFormat.utf8] is applied.
-  Future<String> signDataWithDevicePrivateKey(PowerAuthAuthentication authentication, String data, {PowerAuthDataFormat dataFormat = PowerAuthDataFormat.utf8}) 
-  => _platform.signDataWithDevicePrivateKey(instanceId, authentication, data, dataFormat);
 
   /// Helper method for grouping biometric authentications.
   /// 

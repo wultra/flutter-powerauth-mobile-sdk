@@ -465,9 +465,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
-      final signature = await _powerAuth.signDataWithDevicePrivateKey(
+      final signature = await _powerAuth.calculateDigitalSignature(
         authentication,
         data,
+        PowerAuthSignatureKeyId.deviceEc,
       );
 
       print('Device private key signature: $signature');
