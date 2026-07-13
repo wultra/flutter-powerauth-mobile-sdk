@@ -46,102 +46,108 @@ main() {
       await cleanupHelper.dispose();
     });
 
-    // test('testValidatePassword', () async {
-    //   // await expectLater(
-    //   //   sdk.validatePassword(await credentials.validPasswordObject()),
-    //   //   completes,
-    //   // );
-    //   await expectLater(
-    //     sdk.validatePassword(await credentials.invalidPasswordObject()),
-    //     throwsA(
-    //       isA<PowerAuthException>().having(
-    //         (e) => e.code,
-    //         "code",
-    //         PowerAuthErrorCode.authenticationError,
-    //       ),
-    //     ),
-    //   );
-    // });
-
-    test('testChangePassword', () async {
-      final passwordChangeData = await sdk.beginPasswordChange(
-        await credentials.validPasswordObject(),
-      );
+    test('testValidatePassword', () async {
       await expectLater(
-        sdk.finishPasswordChange(
-          await credentials.invalidPasswordObject(),
-          passwordChangeData,
-        ),
+        sdk.validatePassword(await credentials.validPasswordObject()),
         completes,
       );
-
-      final reversePasswordChangeData = await sdk.beginPasswordChange(
-        await credentials.invalidPasswordObject(),
-      );
       await expectLater(
-        sdk.finishPasswordChange(
-          await credentials.validPasswordObject(),
-          reversePasswordChangeData,
+        sdk.validatePassword(await credentials.invalidPasswordObject()),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.authenticationError,
+          ),
         ),
-        completes,
       );
- 
-      // await expectLater(
-      //   sdk.validatePassword(await credentials.invalidPasswordObject()),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       PowerAuthErrorCode.authenticationError,
-      //     ),
-      //   ),
-      // );
     });
 
-    // test('testWrongPassword', () async {
-    //   var status = await sdk.fetchActivationStatus();
-    //   final maxFailCount = status.maxFailCount;
-    //   for (var i = 1; i <= maxFailCount; i++) {
-    //     expect(status.state, PowerAuthActivationState.active);
-    //     // await expectLater(
-    //     //   sdk.validatePassword(await credentials.invalidPasswordObject()),
-    //     //   throwsA(
-    //     //     isA<PowerAuthException>().having(
-    //     //       (e) => e.code,
-    //     //       "code",
-    //     //       PowerAuthErrorCode.authenticationError,
-    //     //     ),
-    //     //   ),
-    //     // );
+    test('testChangePassword', () async {
+      await expectLater(
+        sdk.changePassword(
+          await credentials.validPasswordObject(),
+          await credentials.invalidPasswordObject(),
+        ),
+        completes,
+      );
+      await expectLater(
+        sdk.validatePassword(await credentials.invalidPasswordObject()),
+        completes,
+      );
+      await expectLater(
+        sdk.validatePassword(await credentials.validPasswordObject()),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.authenticationError,
+          ),
+        ),
+      );
+      await expectLater(
+        sdk.changePassword(
+          await credentials.invalidPasswordObject(),
+          await credentials.validPasswordObject(),
+        ),
+        completes,
+      );
+      await expectLater(
+        sdk.validatePassword(await credentials.validPasswordObject()),
+        completes,
+      );
+      await expectLater(
+        sdk.validatePassword(await credentials.invalidPasswordObject()),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.authenticationError,
+          ),
+        ),
+      );
+    });
 
-    //     status = await sdk.fetchActivationStatus();
-    //     expect(status.failCount, i);
-    //     expect(status.remainingAttempts, maxFailCount - i);
-    //   }
+    test('testWrongPassword', () async {
+      var status = await sdk.fetchActivationStatus();
+      final maxFailCount = status.maxFailCount;
+      for (var i = 1; i <= maxFailCount; i++) {
+        expect(status.state, PowerAuthActivationState.active);
+        await expectLater(
+          sdk.validatePassword(await credentials.invalidPasswordObject()),
+          throwsA(
+            isA<PowerAuthException>().having(
+              (e) => e.code,
+              "code",
+              PowerAuthErrorCode.authenticationError,
+            ),
+          ),
+        );
 
-    //   expect(status.state, PowerAuthActivationState.blocked);
-    //   expect(status.remainingAttempts, 0);
-    // });
+        status = await sdk.fetchActivationStatus();
+        expect(status.failCount, i);
+        expect(status.remainingAttempts, maxFailCount - i);
+      }
+
+      expect(status.state, PowerAuthActivationState.blocked);
+      expect(status.remainingAttempts, 0);
+    });
 
     test('testReuseUsedPasswordObject', () async {
       final pValid = await credentials.validPasswordObject();
       final pInvalid = await credentials.invalidPasswordObject();
 
-      final passwordChangeData = await sdk.beginPasswordChange(pValid);
+      await expectLater(sdk.changePassword(pValid, pInvalid), completes);
       await expectLater(
-        sdk.finishPasswordChange(pInvalid, passwordChangeData),
-        completes,
+        sdk.validatePassword(pInvalid),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.invalidNativeObject,
+          ),
+        ),
       );
-      // await expectLater(
-      //   sdk.validatePassword(pInvalid),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       PowerAuthErrorCode.invalidNativeObject,
-      //     ),
-      //   ),
-      // );
     });
 
     test('testReusePasswordObjectInAuth', () async {

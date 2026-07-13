@@ -97,28 +97,28 @@ main() {
       }
     });
 
-    // test('testWrongPassword', () async {
-    //   var status = await sdk.fetchActivationStatus();
-    //   final maxFailCount = status.maxFailCount;
-    //   for (var i = 1; i <= maxFailCount; i++) {
-    //     expect(status.state, PowerAuthActivationState.active);
-    //     await expectLater(
-    //       sdk.validatePassword(await credentials.invalidPasswordObject()),
-    //       throwsA(
-    //         isA<PowerAuthException>().having(
-    //           (e) => e.code,
-    //           "code",
-    //           PowerAuthErrorCode.authenticationError,
-    //         ),
-    //       ),
-    //     );
-    //     status = await sdk.fetchActivationStatus();
-    //     expect(status.failCount, i);
-    //     expect(status.remainingAttempts, maxFailCount - i);
-    //   }
-    //   expect(status.state, PowerAuthActivationState.blocked);
-    //   expect(status.remainingAttempts, 0);
-    // });
+    test('testWrongPassword', () async {
+      var status = await sdk.fetchActivationStatus();
+      final maxFailCount = status.maxFailCount;
+      for (var i = 1; i <= maxFailCount; i++) {
+        expect(status.state, PowerAuthActivationState.active);
+        await expectLater(
+          sdk.validatePassword(await credentials.invalidPasswordObject()),
+          throwsA(
+            isA<PowerAuthException>().having(
+              (e) => e.code,
+              "code",
+              PowerAuthErrorCode.authenticationError,
+            ),
+          ),
+        );
+        status = await sdk.fetchActivationStatus();
+        expect(status.failCount, i);
+        expect(status.remainingAttempts, maxFailCount - i);
+      }
+      expect(status.state, PowerAuthActivationState.blocked);
+      expect(status.remainingAttempts, 0);
+    });
 
     test('testDeviceSignedData', () async {
       final dataToSign =

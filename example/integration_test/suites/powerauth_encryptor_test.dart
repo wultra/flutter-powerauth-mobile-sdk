@@ -65,33 +65,33 @@ main() {
       await helper.prepareActiveActivation(
         await credentials.validPasswordObject(),
       );
+      final encryptor = sdk.getEncryptorForActivationScope();
+      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
 
       for (var i = 1; i <= 2; i++) {
-        final encryptor = sdk.getEncryptorForActivationScope();
-        expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-
         // Encrypt request
         expect(await encryptor.canEncryptRequest(), true);
         final requestData = '{}';
         final encrypted = await encryptor.encryptRequest(requestData);
         final decryptor = encrypted.decryptor;
-        expect(encrypted.requestBody, isNotNull);
-        expect(encrypted.requestHeaders, isNotEmpty);
+        expect(encrypted.cryptogram, isNotNull);
+        expect(encrypted.header, isNotNull);
         expect(decryptor, isNotNull);
         expect(decryptor.decryptorScope, encryptor.encryptorScope);
         expect(await decryptor.canDecryptResponse(), true);
 
         // Let's use "user info" service for the test.
-        final response = await helper.callEncryptedSDKEndpoint(
+        final headers = {encrypted.header.name: encrypted.header.value};
+        final response = await helper.callSDKEndpoint(
           '/pa/v3/user/info',
-          encrypted.requestBody,
-          encrypted.requestHeaders,
+          jsonEncode(encrypted.cryptogram.toMap()),
+          headers,
         );
         expect(await decryptor.canDecryptResponse(), true);
 
         // Decrypt response
         final decrypted = await decryptor.decryptResponse(
-          response,
+          PowerAuthCryptogram.fromMap(response),
         );
         expect(decrypted, isNotNull);
         final decryptedObject = jsonDecode(decrypted);
@@ -107,11 +107,11 @@ main() {
         await credentials.validPasswordObject(),
       );
 
-      for (var i = 1; i <= 2; i++) {
-        // Acquire encryptor
-        final encryptor = sdk.getEncryptorForActivationScope();
-        expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
+      // Acquire encryptor
+      final encryptor = sdk.getEncryptorForActivationScope();
+      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
 
+      for (var i = 1; i <= 2; i++) {
         // Encrypt request
         expect(await encryptor.canEncryptRequest(), true);
         final requestData = '{}';
@@ -120,23 +120,24 @@ main() {
           PowerAuthDataFormat.utf8,
         );
         final decryptor = encrypted.decryptor;
-        expect(encrypted.requestBody, isNotNull);
-        expect(encrypted.requestHeaders, isNotNull);
+        expect(encrypted.cryptogram, isNotNull);
+        expect(encrypted.header, isNotNull);
         expect(decryptor, isNotNull);
         expect(decryptor.decryptorScope, encryptor.encryptorScope);
         expect(await decryptor.canDecryptResponse(), true);
 
         // Let's use "user info" service for the test.
-        final response = await helper.callEncryptedSDKEndpoint(
+        final headers = {encrypted.header.name: encrypted.header.value};
+        final response = await helper.callSDKEndpoint(
           '/pa/v3/user/info',
-          encrypted.requestBody,
-          encrypted.requestHeaders,
+          jsonEncode(encrypted.cryptogram.toMap()),
+          headers,
         );
         expect(await decryptor.canDecryptResponse(), true);
 
         // Decrypt response
         final decrypted = await decryptor.decryptResponse(
-          response,
+          PowerAuthCryptogram.fromMap(response),
           PowerAuthDataFormat.utf8,
         );
         expect(decrypted, isNotNull);
@@ -153,11 +154,11 @@ main() {
         await credentials.validPasswordObject(),
       );
 
-      for (var i = 1; i <= 2; i++) {
-        // Acquire encryptor
-        final encryptor = sdk.getEncryptorForActivationScope();
-        expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
+      // Acquire encryptor
+      final encryptor = sdk.getEncryptorForActivationScope();
+      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
 
+      for (var i = 1; i <= 2; i++) {
         // Encrypt request
         expect(await encryptor.canEncryptRequest(), true);
         final data = base64.encode(utf8.encode("{}"));
@@ -166,23 +167,24 @@ main() {
           PowerAuthDataFormat.base64,
         );
         final decryptor = encrypted.decryptor;
-        expect(encrypted.requestBody, isNotNull);
-        expect(encrypted.requestHeaders, isNotNull);
+        expect(encrypted.cryptogram, isNotNull);
+        expect(encrypted.header, isNotNull);
         expect(decryptor, isNotNull);
         expect(decryptor.decryptorScope, encryptor.encryptorScope);
         expect(await decryptor.canDecryptResponse(), true);
 
         // Let's use "user info" service for the test.
-        final response = await helper.callEncryptedSDKEndpoint(
+        final headers = {encrypted.header.name: encrypted.header.value};
+        final response = await helper.callSDKEndpoint(
           '/pa/v3/user/info',
-          encrypted.requestBody,
-          encrypted.requestHeaders,
+          jsonEncode(encrypted.cryptogram.toMap()),
+          headers,
         );
         expect(await decryptor.canDecryptResponse(), true);
 
         // Decrypt response
         final decrypted = await decryptor.decryptResponse(
-          response,
+          PowerAuthCryptogram.fromMap(response),
           PowerAuthDataFormat.base64,
         );
         expect(decrypted, isNotNull);
@@ -213,15 +215,15 @@ main() {
         PowerAuthDataFormat.base64,
       );
       final decryptor = encrypted.decryptor;
-      expect(encrypted.requestBody, isNotNull);
-      expect(encrypted.requestHeaders, isNotNull);
+      expect(encrypted.cryptogram, isNotNull);
+      expect(encrypted.header, isNotNull);
       expect(decryptor, isNotNull);
       expect(await decryptor.canDecryptResponse(), true);
 
       await decryptor.release();
       expect(await decryptor.canDecryptResponse(), false);
 
-      expect(await encryptor.canEncryptRequest(), false);
+      expect(await encryptor.canEncryptRequest(), true);
 
       // Remove activation also deactivate the encryptor
       await sdk.removeActivationWithAuthentication(
@@ -244,8 +246,8 @@ main() {
         PowerAuthDataFormat.base64,
       );
       final decryptor = encrypted.decryptor;
-      expect(encrypted.requestBody, isNotNull);
-      expect(encrypted.requestHeaders, isNotNull);
+      expect(encrypted.cryptogram, isNotNull);
+      expect(encrypted.header, isNotNull);
       expect(decryptor, isNotNull);
       expect(await decryptor.canDecryptResponse(), true);
 
@@ -273,8 +275,8 @@ main() {
 
       // Decrypt response
       final decryptor = encrypted.decryptor;
-      expect(encrypted.requestBody, isNotNull);
-      expect(encrypted.requestHeaders, isNotNull);
+      expect(encrypted.cryptogram, isNotNull);
+      expect(encrypted.header, isNotNull);
       expect(decryptor, isNotNull);
       expect(await decryptor.canDecryptResponse(), true);
 

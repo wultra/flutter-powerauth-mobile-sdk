@@ -43,28 +43,29 @@ main() {
       PowerAuthErrorCode expectedFetchError,
       PowerAuthErrorCode expectedError,
     ) async {
-      // await expectLater(
-      //   sdk.fetchActivationStatus(),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       expectedError,
-      //     ),
-      //   ),
-      // );
-      // await expectLater(
-      //   sdk.removeActivationWithAuthentication(
-      //     await credentials.invalidKnowledge(),
-      //   ),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       expectedError,
-      //     ),
-      //   ),
-      // );
+      // Fetch has a slighgtly different error handling, so it needs a different error code than other API function.
+      await expectLater(
+        sdk.fetchActivationStatus(),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            expectedFetchError,
+          ),
+        ),
+      );
+      await expectLater(
+        sdk.removeActivationWithAuthentication(
+          await credentials.invalidKnowledge(),
+        ),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            expectedError,
+          ),
+        ),
+      );
       await expectLater(
         sdk.requestGetSignature(
           await credentials.knowledge(),
@@ -94,7 +95,10 @@ main() {
         ),
       );
       await expectLater(
-        sdk.beginPasswordChange(await credentials.validPasswordObject()),
+        sdk.changePassword(
+          await credentials.validPasswordObject(),
+          await credentials.invalidPasswordObject(),
+        ),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -106,7 +110,7 @@ main() {
       await expectLater(
         sdk.addBiometryFactor(
           await credentials.validPasswordObject(),
-          PowerAuthBiometricPrompt(promptMessage: "desc", promptTitle: "add Biometry Factor"),
+          PowerAuthBiometricPrompt(promptMessage: "desc"),
         ),
         throwsA(
           isA<PowerAuthException>().having(
@@ -116,18 +120,17 @@ main() {
           ),
         ),
       );
-      // TODO: fetchEncryptiionKey only in 3.3, v4 is fetchSecureVaultKey
-      // await expectLater(
-      //   sdk.fetchEncryptionKey(await credentials.knowledge(), 99),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       expectedError,
-      //     ),
-      //   ),
-      // );
 
+      await expectLater(
+        sdk.fetchEncryptionKey(await credentials.knowledge(), 99),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            expectedError,
+          ),
+        ),
+      );
       await expectLater(
         sdk.signDataWithDevicePrivateKey(await credentials.knowledge(), 'Data'),
         throwsA(
@@ -138,24 +141,8 @@ main() {
           ),
         ),
       );
-      //TODO: Validate password is deprecated without replacement
-      // await expectLater(
-      //   sdk.validatePassword(await credentials.validPasswordObject()),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       expectedError,
-      //     ),
-      //   ),
-      // );
-
-      // expect(
-      //   await sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false),
-      //   isFalse,
-      // );
       await expectLater(
-        sdk.removeBiometryFactor(),
+        sdk.validatePassword(await credentials.validPasswordObject()),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -165,21 +152,35 @@ main() {
         ),
       );
 
-      // await expectLater(
-      //   sdk.offlineSignature(
-      //     await credentials.knowledge(),
-      //     '/some/uriid',
-      //     'MDEyMzQ1Njc=',
-      //     null,
-      //   ),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       expectedFetchError,
-      //     ),
-      //   ),
-      // );
+      expect(
+        await sdk.verifyServerSignedData('c2lnbmF0dXJl', 'c2lnbmF0dXJl', false),
+        isFalse,
+      );
+      await expectLater(
+        sdk.removeBiometryFactor(),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.biometryNotConfigured,
+          ),
+        ),
+      );
+      await expectLater(
+        sdk.offlineSignature(
+          await credentials.knowledge(),
+          '/some/uriid',
+          'MDEyMzQ1Njc=',
+          null,
+        ),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.missingActivation,
+          ),
+        ),
+      );
     }
 
     Future<void> createActivationTest(bool useSignature) async {
@@ -190,14 +191,11 @@ main() {
       expect(await sdk.getActivationFingerprint(), isNull);
       expect(await sdk.getExternalPendingOperation(), isNull);
 
- 
-
       await runFailingMethodsDuringActivation(
         'BEGIN',
-        PowerAuthErrorCode.invalidActivationState,
+        PowerAuthErrorCode.missingActivation,
         PowerAuthErrorCode.missingActivation,
       );
-
       await expectLater(
         sdk.persistActivation(await credentials.invalidKnowledge()),
         throwsA(
@@ -221,12 +219,11 @@ main() {
       final result = await sdk.createActivation(activation);
       expect(result, isNotNull);
       expect(result.activationFingerprint, isNotNull);
-      expect(await sdk.hasPendingActivation(), true);
 
       await runFailingMethodsDuringActivation(
         'AFTER_CREATE',
-        PowerAuthErrorCode.invalidActivationState,
-        PowerAuthErrorCode.invalidActivationState,
+        PowerAuthErrorCode.pendingActivation,
+        PowerAuthErrorCode.missingActivation,
       );
       await expectLater(
         sdk.createActivation(activation),
@@ -361,7 +358,10 @@ main() {
       expect(await sdk.canStartActivation(), true);
       await helper.createActivation();
       expect(helper.createdActivation?.activationCode, isNotNull);
-      expect(helper.createdActivation?.activationCodeSignature, isNotNull);
+      expect(
+        helper.createdActivation?.activationCodeSignature,
+        isNotNull,
+      );
     });
 
     test('testOIDCActivationData', () async {

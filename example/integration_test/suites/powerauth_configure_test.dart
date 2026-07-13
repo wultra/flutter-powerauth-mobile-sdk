@@ -289,7 +289,7 @@ main() {
         ),
       );
       await expectLater(
-        sdk.beginPasswordChange(emptyPassword),
+        sdk.changePassword(emptyPassword, emptyPassword),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -338,16 +338,16 @@ main() {
           ),
         ),
       );
-      // await expectLater(
-      //   sdk.validatePassword(emptyPassword),
-      //   throwsA(
-      //     isA<PowerAuthException>().having(
-      //       (e) => e.code,
-      //       "code",
-      //       PowerAuthErrorCode.instanceNotConfigured,
-      //     ),
-      //   ),
-      // );
+      await expectLater(
+        sdk.validatePassword(emptyPassword),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
+      );
       await expectLater(
         sdk.groupedBiometricAuthentication(signAuth, (auth) async {}),
         throwsA(
@@ -547,14 +547,14 @@ main() {
       expect(await sdk1.hasValidActivation(), true);
       expect(await sdk2.hasValidActivation(), true);
 
-      // await expectLater(
-      //   helper1.sdk.validatePassword(await getPassword1()),
-      //   completes,
-      // );
-      // await expectLater(
-      //   helper2.sdk.validatePassword(await getPassword2()),
-      //   completes,
-      // );
+      await expectLater(
+        helper1.sdk.validatePassword(await getPassword1()),
+        completes,
+      );
+      await expectLater(
+        helper2.sdk.validatePassword(await getPassword2()),
+        completes,
+      );
 
       await helper1.sdk.deconfigure();
       await helper2.sdk.deconfigure();
@@ -585,14 +585,14 @@ main() {
       expect(await helper1.sdk.hasValidActivation(), true);
       expect(await helper2.sdk.hasValidActivation(), true);
 
-      // await expectLater(
-      //   helper1.sdk.validatePassword(await getPassword1()),
-      //   completes,
-      // );
-      // await expectLater(
-      //   helper2.sdk.validatePassword(await getPassword2()),
-      //   completes,
-      // );
+      await expectLater(
+        helper1.sdk.validatePassword(await getPassword1()),
+        completes,
+      );
+      await expectLater(
+        helper2.sdk.validatePassword(await getPassword2()),
+        completes,
+      );
 
       await expectLater(
         helper1.sdk.removeActivationWithAuthentication(

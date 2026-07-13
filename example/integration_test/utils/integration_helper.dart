@@ -233,26 +233,6 @@ class IntegrationHelper {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  /// Calls a PowerAuth Standard RESTful API endpoint with an already end-to-end-encrypted request
-  /// body (as produced by `PowerAuthEncryptor.encryptRequest()`), and returns the raw encrypted
-  /// response body, Base64 encoded, ready to be passed into `PowerAuthDecryptor.decryptResponse()`.
-  Future<String> callEncryptedSDKEndpoint(
-    String endpoint,
-    String requestBodyBase64,
-    List<PowerAuthEncryptionHttpHeader> requestHeaders,
-  ) async {
-    final url = Uri.parse("${(await sdk.configuration).baseEndpointUrl}/$endpoint");
-    final headers = <String, String>{
-      for (final header in requestHeaders) header.name: header.value,
-    };
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: base64Decode(requestBodyBase64),
-    );
-    return base64Encode(response.bodyBytes);
-  }
-
   Future<Map<String, dynamic>> _makeCall(
     String? payload,
     String stringUrl, {
