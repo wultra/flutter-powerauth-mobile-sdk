@@ -59,16 +59,40 @@ object PowerAuthBiometryUtils {
     fun buildBiometricPrompt(
         activity: FragmentActivity,
         promptMap: Map<String, Any>?,
-        allowNoPrompt: Boolean
+        allowNoPrompt: Boolean,
+        authenticateOnBiometricKeySetup: Boolean = true
     ): PowerAuthBiometricPrompt {
-        if (promptMap == null && allowNoPrompt) {
-            return PowerAuthBiometricPrompt.noPromptForBiometricKeySetup(activity)
+        if (promptMap == null) {
+            if (allowNoPrompt && !authenticateOnBiometricKeySetup) {
+                return PowerAuthBiometricPrompt.noPromptForBiometricKeySetup(activity)
+            }
+            throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                if (allowNoPrompt) {
+                    "Biometric prompt is required when authenticateOnBiometricKeySetup is enabled."
+                } else {
+                    "Biometric prompt is required for biometric authentication."
+                }
+            )
         }
 
+        val title = (promptMap[PROMPT_TITLE] as? String)?.takeIf { it.isNotBlank() }
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Biometric prompt title is required on Android."
+            )
+        val message = (promptMap[PROMPT_MESSAGE] as? String)?.takeIf { it.isNotBlank() }
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Biometric prompt message is required on Android."
+            )
+
         val builder = PowerAuthBiometricPrompt.Builder(activity)
-        (promptMap?.get(PROMPT_TITLE) as? String)?.let { builder.setTitle(it) }
-        (promptMap?.get(PROMPT_SUBTITLE) as? String)?.let { builder.setSubtitle(it) }
-        (promptMap?.get(PROMPT_MESSAGE) as? String)?.let { builder.setDescription(it) }
+            .setTitle(title)
+            .setDescription(message)
+        (promptMap[PROMPT_SUBTITLE] as? String)?.takeIf { it.isNotBlank() }?.let {
+            builder.setSubtitle(it)
+        }
         return builder.build()
     }
 

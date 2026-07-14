@@ -62,7 +62,7 @@ class IntegrationHelper {
 
     // PERSIST ACTIVATION LOCALLY
 
-    await sdk.persistActivation(setupBiometry ? PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password, biometricPrompt: PowerAuthBiometricPrompt(promptMessage: biometryPrompt)) : PowerAuthAuthentication.persistWithPassword(password));
+    await sdk.persistActivation(setupBiometry ? PowerAuthAuthentication.persistWithPasswordAndBiometry(password: password, biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "test", promptMessage: biometryPrompt)) : PowerAuthAuthentication.persistWithPassword(password));
 
     // COMMIT ACTIVATION ON THE SERVER
 

@@ -258,6 +258,30 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return findAndProcessObject(id, type, OPT_SET_USE)
     }
 
+    /**
+     * Transform an object and mark it as used while holding the register lock.
+     *
+     * This is useful for one-shot native objects whose independent copy must be created before
+     * the register cleanup job is allowed to destroy the registered instance.
+     */
+    fun <T : Any, R : Any> useObjectAndTransform(
+        id: String,
+        type: Class<T>,
+        transform: (T) -> R
+    ): R? = lock.withLock {
+        val holder = managedObjects[id] ?: return@withLock null
+        val instance = holder.obj.managedInstance()
+
+        if (!holder.isStillValid || !type.isInstance(instance)) {
+            return@withLock null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        val result = transform(instance as T)
+        holder.setUsed()
+        return@withLock result
+    }
+
     fun <T : Any> touchObject(id: String, type: Class<T>): T? = lock.withLock {
         return findAndProcessObject(id, type, OPT_TOUCH)
     }

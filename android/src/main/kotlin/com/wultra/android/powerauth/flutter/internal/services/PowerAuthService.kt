@@ -58,6 +58,7 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthSignatureUtils.signatureKeyIdFromString
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
+import java.util.concurrent.atomic.AtomicBoolean
 import io.getlime.security.powerauth.sdk.PowerAuthToken
 import java.nio.charset.StandardCharsets
 
@@ -419,27 +420,46 @@ internal class PowerAuthService(
 
     private fun persistActivation(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
-            val authenticationObject = buildAuthenticationObject(call, persist = true)
+            val authenticationObject = buildAuthenticationObject(
+                call,
+                persist = true,
+                authenticateOnBiometricKeySetup = sdk.biometricConfiguration.isAuthenticateOnBiometricKeySetup
+            )
+            val authenticationReleased = AtomicBoolean(false)
 
-            sdk.persistActivationWithAuthentication(
-                context,
-                authenticationObject,
-                object : IPersistActivationListener {
-                    override fun onPersistActivationCancelled(userCancel: Boolean) {
-                        Errors.error(
+            fun releaseAuthentication() {
+                if (authenticationReleased.compareAndSet(false, true)) {
+                    authenticationObject.destroy()
+                }
+            }
+
+            try {
+                sdk.persistActivationWithAuthentication(
+                    context,
+                    authenticationObject,
+                    object : IPersistActivationListener {
+                        override fun onPersistActivationCancelled(userCancel: Boolean) {
+                            releaseAuthentication()
+                            Errors.error(
                                 result,
                                 PowerAuthErrorException(PowerAuthErrorCodes.OPERATION_CANCELED)
                             )
-                    }
+                        }
 
-                    override fun onPersistActivationFailed(t: Throwable) {
-                        Errors.error(result, t)
-                    }
+                        override fun onPersistActivationFailed(t: Throwable) {
+                            releaseAuthentication()
+                            Errors.error(result, t)
+                        }
 
-                    override fun onPersistActivationSucceeded() {
-                        result.success(null)
-                    }
-                })
+                        override fun onPersistActivationSucceeded() {
+                            releaseAuthentication()
+                            result.success(null)
+                        }
+                    })
+            } catch (t: Throwable) {
+                releaseAuthentication()
+                throw t
+            }
         }
     }
 
@@ -690,26 +710,43 @@ internal class PowerAuthService(
         usePowerAuthOnMainThread(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
-            val corePassword = buildPasswordObject(passwordMap, use = true)
-
             val activity = validateFragmentActivity(getCurrentActivity())
-
-            val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
-
-            sdk.addBiometryFactor(
-                context,
-                corePassword,
-                prompt,
-                object : IAddBiometryFactorListener {
-                    override fun onAddBiometryFactorSucceed() {
-                        result.success(null)
-                    }
-
-                    override fun onAddBiometryFactorFailed(error: Throwable) {
-                        Errors.error(result, error)
-                    }
-                }
+            val prompt = buildBiometricPrompt(
+                activity,
+                promptMap,
+                allowNoPrompt = true,
+                authenticateOnBiometricKeySetup = sdk.biometricConfiguration.isAuthenticateOnBiometricKeySetup
             )
+            val corePassword = buildOwnedPasswordObject(passwordMap)
+            val passwordReleased = AtomicBoolean(false)
+
+            fun releasePassword() {
+                if (passwordReleased.compareAndSet(false, true)) {
+                    corePassword.destroy()
+                }
+            }
+
+            try {
+                sdk.addBiometryFactor(
+                    context,
+                    corePassword,
+                    prompt,
+                    object : IAddBiometryFactorListener {
+                        override fun onAddBiometryFactorSucceed() {
+                            releasePassword()
+                            result.success(null)
+                        }
+
+                        override fun onAddBiometryFactorFailed(error: Throwable) {
+                            releasePassword()
+                            Errors.error(result, error)
+                        }
+                    }
+                )
+            } catch (t: Throwable) {
+                releasePassword()
+                throw t
+            }
         }
     }
 
@@ -857,17 +894,33 @@ internal class PowerAuthService(
 
     private fun buildAuthenticationObject(
         call: MethodCall,
-        persist: Boolean
+        persist: Boolean,
+        authenticateOnBiometricKeySetup: Boolean = true
     ): PowerAuthAuthentication {
         val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
         val passwordMap = authMap[PASSWORD] as? Map<String, Any>
-        val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
-        val activity = validateFragmentActivity(getCurrentActivity())
+
+        val persistPrompt = if (persist && useBiometry) {
+            val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
+            val activity = validateFragmentActivity(getCurrentActivity())
+            buildBiometricPrompt(
+                activity,
+                promptMap,
+                allowNoPrompt = true,
+                authenticateOnBiometricKeySetup = authenticateOnBiometricKeySetup
+            )
+        } else {
+            null
+        }
 
         val password: Password? = if (passwordMap != null) {
-            buildPasswordObject(passwordMap, use = true)
+            if (persist) {
+                buildOwnedPasswordObject(passwordMap)
+            } else {
+                buildPasswordObject(passwordMap, use = true)
+            }
         } else {
             null
         }
@@ -881,43 +934,26 @@ internal class PowerAuthService(
             }
 
             if (useBiometry) {
-                val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
-                val activity = validateFragmentActivity(getCurrentActivity())
-                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
-
-                PowerAuthAuthentication.persistWithPasswordAndBiometry(password, prompt)
-
-//                val biometricKeyBytes = biometryKeyId?.let { keyId ->
-//                    objectRegister.useObject(keyId, SecureData::class.java)
-//                        ?: throw WrapperException(
-//                            Errors.EC_INVALID_NATIVE_OBJECT,
-//                            "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired. This key is required if biometryKeyId is explicitly provided for persisting."
-//                        )
-//                }
-
-//                if (biometricKeyBytes != null) {
-//                    PowerAuthAuthentication.persistWithPasswordAndBiometry(
-//                        password,
-//                        biometricKeyBytes
-//                    )
-//                } else {
-//                }
+                PowerAuthAuthentication.persistWithPasswordAndBiometry(
+                    password,
+                    checkNotNull(persistPrompt)
+                )
             } else {
                 PowerAuthAuthentication.persistWithPassword(password)
             }
         } else {
-//            val biometryKeyBytes = biometryKeyId?.let { keyId ->
-//                objectRegister.useObject(keyId, SecureData::class.java)
-//                    ?: throw WrapperException(
-//                        Errors.EC_INVALID_NATIVE_OBJECT,
-//                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
-//                    )
-//            }
+            val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
+            val biometryKeyBytes = biometryKeyId?.let { keyId ->
+                objectRegister.useObject(keyId, SecureData::class.java)
+                    ?: throw WrapperException(
+                        Errors.EC_INVALID_NATIVE_OBJECT,
+                        "Biometric key for ID '$keyId' (from biometryKeyId) not found or expired for signing."
+                    )
+            }
 
 
-            if (useBiometry) {
-                val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
-                PowerAuthAuthentication.possessionWithBiometry(prompt)
+            if (biometryKeyBytes != null) {
+                PowerAuthAuthentication.possessionWithBiometry(biometryKeyBytes)
             } else if (password != null) {
                 PowerAuthAuthentication.possessionWithPassword(password)
             } else {
@@ -936,6 +972,27 @@ internal class PowerAuthService(
                 }
 
                 return managedPassword ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "PowerAuthPassword object with ID '$objectIdValue' is no longer valid or not found."
+                )
+            }
+        }
+
+        throw WrapperException(
+            Errors.EC_WRONG_PARAMETER,
+            "Invalid password argument. Expected a map with 'objectId' string."
+        )
+    }
+
+    private fun buildOwnedPasswordObject(passwordArgMap: Map<String, Any>): Password {
+        passwordArgMap[OBJECT_ID]?.let { objectIdValue ->
+            if (objectIdValue is String) {
+                return objectRegister.useObjectAndTransform(
+                    objectIdValue,
+                    Password::class.java
+                ) { password ->
+                    password.copyToImmutable()
+                } ?: throw WrapperException(
                     Errors.EC_INVALID_NATIVE_OBJECT,
                     "PowerAuthPassword object with ID '$objectIdValue' is no longer valid or not found."
                 )

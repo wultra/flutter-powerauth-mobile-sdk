@@ -59,8 +59,22 @@ class NativeObjectRegister {
     return await _platform.debugCommand(NativeObjectCmd.touch, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
   }
 
-  static Future<bool> removeObject(String objectId, NativeObjectType type) async {
-    return await _platform.debugCommand(NativeObjectCmd.release, NativeObjectCmdData(objectId: objectId, objectType: type)) as bool;
+  static Future<bool> removeObject(
+    String objectId,
+    NativeObjectType type,
+  ) async {
+    return await _platform.debugCommand(
+          NativeObjectCmd.release,
+          NativeObjectCmdData(objectId: objectId, objectType: type),
+        )
+        as bool;
+  }
+
+  static Future<void> setCleanupPeriod(int milliseconds) async {
+    await _platform.debugCommand(
+      NativeObjectCmd.setPeriod,
+      NativeObjectCmdData(cleanupPeriod: milliseconds),
+    );
   }
 
   static Future<List<NativeObjectInfo>> debugDump(String? instanceId) => _platform.debugDump(instanceId);

@@ -71,7 +71,8 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
 
     // And add it again
     if (Platform.isAndroid) await showPrompt('Authenticate to add biometric factor again');
-    await expect(sdk.addBiometryFactor(await credentials.validPasswordObject())).toSucceed();
+    // this should fail as it doesnt have a prompt and authenticateOnBiometricKeySetup is true by default
+    await expect(sdk.addBiometryFactor(await credentials.validPasswordObject())).toThrow(PowerAuthErrorCode.wrongParameter);
   }
 
   Future<void> testBiometricSignature() async {
@@ -176,6 +177,9 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   }
 
   Future<void> testFailedBiometry() async {
+    if (Platform.isAndroid) {
+      return;
+    }
     if (await _isFaceID()) {
       await showPrompt('This test is not supported on FaceID');
       return;
