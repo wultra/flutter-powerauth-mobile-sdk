@@ -62,7 +62,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   String? _activationFingerprint;
   PowerAuthActivationStatus? _activationStatus;
   bool? _hasBiometryFactor;
-  PowerAuthBiometryInfo? _biometryInfo;
+  PowerAuthBiometricStatus? _biometricStatus;
 
   // Logging related state
   final List<PowerAuthLog> _logs = [];
@@ -163,7 +163,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.getActivationIdentifier(),
         _powerAuth.getActivationFingerprint(),
         _powerAuth.hasBiometryFactor(),
-        PowerAuth.getBiometryInfo(),
+        _powerAuth.getBiometricStatus(),
         _powerAuth.currentAlgorithm,
       ]);
 
@@ -174,7 +174,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationId = results[3] as String?;
         _activationFingerprint = results[4] as String?;
         _hasBiometryFactor = results[5] as bool?;
-        _biometryInfo = results[6] as PowerAuthBiometryInfo?;
+        _biometricStatus = results[6] as PowerAuthBiometricStatus?;
         _currentAlgorithm = results[7] as PowerAuthAlgorithm?;
         _activationStatus = activationStatus;
       });
@@ -191,7 +191,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationId = null;
         _activationFingerprint = null;
         _hasBiometryFactor = null;
-        _biometryInfo = null;
+        _biometricStatus = null;
         _currentAlgorithm = null;
         _activationStatus = null;
       });
@@ -204,7 +204,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationId = null;
         _activationFingerprint = null;
         _hasBiometryFactor = null;
-        _biometryInfo = null;
+        _biometricStatus = null;
         _activationStatus = null;
       });
     }
@@ -237,7 +237,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       _activationFingerprint = null;
       _activationStatus = null;
       _hasBiometryFactor = null;
-      _biometryInfo = null;
+      _biometricStatus = null;
       _currentAlgorithm = null;
     });
   }
@@ -777,9 +777,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     }
         
 
-    String formatBiometryType(PowerAuthBiometryInfo? info) => info?.biometryType.name ?? 'Unknown';
+    String formatBiometryType(PowerAuthBiometricStatus? status) => status?.biometryType.name ?? 'Unknown';
 
-    String formatBiometryStatus(PowerAuthBiometryInfo? info) => info?.canAuthenticate.name ?? 'Unknown';
+    String formatBiometryStatus(PowerAuthBiometricStatus? status) => status?.systemStatus.name ?? 'Unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -796,10 +796,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         Text('Activation Status: ${formatStatus(_activationStatus)}'),
         Text('Has Biometry Factor: ${formatBool(_hasBiometryFactor)}'),
         Text(
-          'Biometry Info Available: ${formatBool(_biometryInfo?.isAvailable)}',
+          'Biometric Authentication Available: ${formatBool(_biometricStatus?.isAuthenticationWithBiometricsAvailable)}',
         ),
-        Text('Biometry Info Type: ${formatBiometryType(_biometryInfo)}'),
-        Text('Biometry Info Status: ${formatBiometryStatus(_biometryInfo)}'),
+        Text('Biometry Type: ${formatBiometryType(_biometricStatus)}'),
+        Text('Biometric System Status: ${formatBiometryStatus(_biometricStatus)}'),
       ],
     );
   }

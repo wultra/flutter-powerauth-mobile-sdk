@@ -16,55 +16,44 @@
 
 package com.wultra.android.powerauth.flutter.internal.utils
 
-import android.content.Context
-import android.os.Build
 import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_MESSAGE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_SUBTITLE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PROMPT_TITLE
-import io.flutter.plugin.common.MethodChannel.Result
-import io.getlime.security.powerauth.biometry.BiometricAuthentication
 import io.getlime.security.powerauth.biometry.BiometricStatus
 import io.getlime.security.powerauth.biometry.BiometryType
 import io.getlime.security.powerauth.keychain.KeychainProtection
 import io.getlime.security.powerauth.sdk.PowerAuthBiometricPrompt
-import io.getlime.security.powerauth.sdk.PowerAuthSDK
+import io.getlime.security.powerauth.sdk.PowerAuthBiometricStatus
 
 object PowerAuthBiometryUtils {
 
-    fun getBiometryInfo(context: Context, result: Result) {
-        try {
-            val isAvailable = BiometricAuthentication.isBiometricAuthenticationAvailable(context)
-
-            val biometryType = when (BiometricAuthentication.getBiometryType(context)) {
-                BiometryType.NONE -> "none"
-                BiometryType.FINGERPRINT -> "fingerprint"
-                BiometryType.FACE -> "face"
-                BiometryType.IRIS -> "iris"
-                BiometryType.GENERIC -> "generic"
-                else -> "generic"
-            }
-
-            val canAuthenticate = when (BiometricAuthentication.canAuthenticate(context)) {
-                BiometricStatus.OK -> "ok"
-                BiometricStatus.NOT_ENROLLED -> "notEnrolled"
-                BiometricStatus.NOT_AVAILABLE -> "notAvailable"
-                BiometricStatus.NOT_SUPPORTED -> "notSupported"
-                else -> "notSupported"
-            }
-
-            val map = mapOf(
-                "isAvailable" to isAvailable,
-                "biometryType" to biometryType,
-                "canAuthenticate" to canAuthenticate
-            )
-
-            result.success(map)
-        } catch (t: Throwable) {
-            Errors.error(result, t)
+    fun biometricStatusToMap(status: PowerAuthBiometricStatus): Map<String, Any> {
+        val systemStatus = when (status.systemStatus) {
+            BiometricStatus.OK -> "ok"
+            BiometricStatus.NOT_ENROLLED -> "notEnrolled"
+            BiometricStatus.NOT_AVAILABLE -> "notAvailable"
+            BiometricStatus.NOT_SUPPORTED -> "notSupported"
+            else -> "notSupported"
         }
+
+        val biometryType = when (status.biometryType) {
+            BiometryType.NONE -> "none"
+            BiometryType.FINGERPRINT -> "fingerprint"
+            BiometryType.FACE -> "face"
+            BiometryType.IRIS -> "iris"
+            BiometryType.GENERIC -> "generic"
+            else -> "generic"
+        }
+
+        return mapOf(
+            "isAuthenticationWithBiometricsAvailable" to status.isAuthenticationWithBiometricsAvailable,
+            "isBiometricFactorConfigured" to status.isBiometricFactorConfigured,
+            "systemStatus" to systemStatus,
+            "biometryType" to biometryType
+        )
     }
 
     fun buildBiometricPrompt(
@@ -81,47 +70,6 @@ object PowerAuthBiometryUtils {
         (promptMap?.get(PROMPT_SUBTITLE) as? String)?.let { builder.setSubtitle(it) }
         (promptMap?.get(PROMPT_MESSAGE) as? String)?.let { builder.setDescription(it) }
         return builder.build()
-    }
-
-    @Throws(WrapperException::class)
-    fun validateBiometryBeforeUse(context: Context, sdk: PowerAuthSDK) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            when (val status = BiometricAuthentication.canAuthenticate(context)) {
-                BiometricStatus.OK -> {
-                    if (sdk.hasValidActivation() && !sdk.hasBiometryFactor(context)) {
-                        throw WrapperException(
-                            Errors.EC_BIOMETRY_NOT_CONFIGURED,
-                            "Biometry factor is not configured for this activation."
-                        )
-                    }
-                }
-
-                BiometricStatus.NOT_AVAILABLE -> throw WrapperException(
-                    Errors.EC_BIOMETRY_NOT_AVAILABLE,
-                    "Biometry is not available on this device currently."
-                )
-
-                BiometricStatus.NOT_ENROLLED -> throw WrapperException(
-                    Errors.EC_BIOMETRY_NOT_ENROLLED,
-                    "No biometry enrolled on the device."
-                )
-
-                BiometricStatus.NOT_SUPPORTED -> throw WrapperException(
-                    Errors.EC_BIOMETRY_NOT_SUPPORTED,
-                    "Biometry is not supported on this device."
-                )
-
-                else -> throw WrapperException(
-                    Errors.EC_BIOMETRY_NOT_AVAILABLE,
-                    "Biometry check failed with status: $status"
-                )
-            }
-        } else {
-            throw WrapperException(
-                Errors.EC_BIOMETRY_NOT_SUPPORTED,
-                "Biometry requires Android 6.0 (API 23) or higher"
-            )
-        }
     }
 
     @KeychainProtection

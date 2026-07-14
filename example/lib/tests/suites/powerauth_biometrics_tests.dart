@@ -26,7 +26,7 @@ class PowerAuthBiometricsTests extends TestSuiteWithActivation {
     final activatioData = await helper.createActivation(autoCommit: true);
     final activation = PowerAuthActivation.fromActivationCode(activationCode: activatioData.activationCode, name: "Test");
     await expect(await sdk.createActivation(activation)).toSucceed();
-    final persistAuth = PowerAuthAuthentication.persistWithPasswordAndBiometry(password: await credentials.validPasswordObject(), biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Persist data pls"));
+    final persistAuth = PowerAuthAuthentication.persistWithPasswordAndBiometry(password: await credentials.validPasswordObject(), biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Pls" ,promptMessage: "Persist data pls"));
     await expect(sdk.persistActivation(persistAuth)).toSucceed();
     await expect(sdk.hasBiometryFactor()).toBe(true);
   }

@@ -47,9 +47,8 @@ import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.authorizationHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.biometricStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getBiometryInfo
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateBiometryBeforeUse
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateFragmentActivity
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
@@ -146,7 +145,8 @@ internal class PowerAuthService(
         const val REQUEST_SIGNATURE = "requestSignature"
         const val OFFLINE_SIGNATURE = "offlineSignature"
         const val VERIFY_SERVER_SIGNED_DATA = "verifyServerSignedData"
-        const val GET_BIOMETRY_INFO = "getBiometryInfo"
+        const val GET_BIOMETRIC_STATUS = "getBiometricStatus"
+        const val IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE = "isAuthenticationWithBiometricsAvailable"
         const val ADD_BIOMETRY_FACTOR = "addBiometryFactor"
         const val HAS_BIOMETRY_FACTOR = "hasBiometryFactor"
         const val REMOVE_BIOMETRY_FACTOR = "removeBiometryFactor"
@@ -199,7 +199,8 @@ internal class PowerAuthService(
             HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
             HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
             HandlerNames.VERIFY_SERVER_SIGNED_DATA to this::verifyServerSignedData,
-            HandlerNames.GET_BIOMETRY_INFO to this::getBiometryInfo,
+            HandlerNames.GET_BIOMETRIC_STATUS to this::getBiometricStatus,
+            HandlerNames.IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE to this::isAuthenticationWithBiometricsAvailable,
             HandlerNames.ADD_BIOMETRY_FACTOR to this::addBiometryFactor,
             HandlerNames.HAS_BIOMETRY_FACTOR to this::hasBiometryFactor,
             HandlerNames.REMOVE_BIOMETRY_FACTOR to this::removeBiometryFactor,
@@ -691,8 +692,6 @@ internal class PowerAuthService(
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val corePassword = buildPasswordObject(passwordMap, use = true)
 
-            // validateBiometryBeforeUse(sdk) // TODO: Real?
-
             val activity = validateFragmentActivity(getCurrentActivity())
 
             val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = true)
@@ -742,8 +741,6 @@ internal class PowerAuthService(
         usePowerAuthOnMainThread(call, result) { sdk ->
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
-
-            validateBiometryBeforeUse(context, sdk) // TODO: REAL?
 
             val activity = validateFragmentActivity(getCurrentActivity())
             val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
@@ -1203,9 +1200,16 @@ internal class PowerAuthService(
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun getBiometryInfo(call: MethodCall, result: Result) {
-        getBiometryInfo(context, result)
+    private fun getBiometricStatus(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) {sdk ->
+            result.success(biometricStatusToMap(sdk.getBiometricStatus(context)))
+        }
+    }
+
+    private fun isAuthenticationWithBiometricsAvailable(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.isAuthenticationWithBiometricsAvailable(context))
+        }
     }
 
     private fun isTimeSynchronized(call: MethodCall, result: Result) {

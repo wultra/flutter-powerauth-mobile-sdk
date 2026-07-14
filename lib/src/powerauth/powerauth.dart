@@ -17,8 +17,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
@@ -263,9 +263,6 @@ class PowerAuth {
     signatureKeyId,
   );
 
-  /// Gets information about the biometric capabilities of the device.
-  static Future<PowerAuthBiometryInfo> getBiometryInfo() => _platform.getBiometryInfo();
-
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
   /// The optional [prompt] is used for the system biometric dialog if needed during key setup (Android specific).
@@ -276,6 +273,12 @@ class PowerAuth {
 
   /// Checks if a biometry key exists locally for the current activation.
   Future<bool> hasBiometryFactor() => _platform.hasBiometryFactor(instanceId);
+
+  /// Gets the biometric authentication status for the current activation.
+  Future<PowerAuthBiometricStatus> getBiometricStatus() => _platform.getBiometricStatus(instanceId);
+
+  /// Checks whether biometric authentication is available for the current activation.
+  Future<bool> isAuthenticationWithBiometricsAvailable() => _platform.isAuthenticationWithBiometricsAvailable(instanceId);
 
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);

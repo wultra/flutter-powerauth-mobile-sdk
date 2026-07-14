@@ -342,12 +342,6 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthBiometryInfo> getBiometryInfo() async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometryInfo', null);
-    return PowerAuthBiometryInfo.fromMap(result);
-  }
-
-  @override
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [
@@ -363,6 +357,21 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @override
   Future<bool> hasBiometryFactor(String instanceId) async {
     return await invokeMethod<bool>('hasBiometryFactor', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
+  Future<PowerAuthBiometricStatus> getBiometricStatus(String instanceId) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('getBiometricStatus', {
+      'instanceId': instanceId,
+    });
+    return PowerAuthBiometricStatus.fromMap(result);
+  }
+
+  @override
+  Future<bool> isAuthenticationWithBiometricsAvailable(String instanceId) async {
+    return await invokeMethod<bool>('isAuthenticationWithBiometricsAvailable', {
       'instanceId': instanceId,
     });
   }

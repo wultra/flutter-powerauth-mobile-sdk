@@ -203,6 +203,6 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   }
 
   Future<bool> _isFaceID() async {
-    return !Platform.isAndroid && (await PowerAuth.getBiometryInfo()).biometryType == PowerAuthBiometryType.face;
+    return !Platform.isAndroid && (await sdk.getBiometricStatus()).biometryType == PowerAuthBiometryType.face;
   }
 }

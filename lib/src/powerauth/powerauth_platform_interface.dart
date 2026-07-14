@@ -27,8 +27,8 @@ import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_authentication.dart';
 import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
-import '../model/powerauth_biometry_info.dart';
 import '../model/powerauth_client_configuration.dart';
 import '../model/powerauth_configuration.dart';
 import '../model/powerauth_create_activation_result.dart';
@@ -242,10 +242,6 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<PowerAuthBiometryInfo> getBiometryInfo() {
-    throw UnimplementedError('getBiometryInfo() has not been implemented.');
-  }
-
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [
@@ -256,6 +252,14 @@ abstract class PowerAuthPlatform extends PlatformInterface {
 
   Future<bool> hasBiometryFactor(String instanceId) {
     throw UnimplementedError('hasBiometryFactor() has not been implemented.');
+  }
+
+  Future<PowerAuthBiometricStatus> getBiometricStatus(String instanceId) {
+    throw UnimplementedError('getBiometricStatus() has not been implemented.');
+  }
+
+  Future<bool> isAuthenticationWithBiometricsAvailable(String instanceId) {
+    throw UnimplementedError('isAuthenticationWithBiometricsAvailable() has not been implemented.');
   }
 
   Future<void> removeBiometryFactor(String instanceId) {

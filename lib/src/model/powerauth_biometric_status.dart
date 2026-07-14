@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Wultra s.r.o.
+ * Copyright 2026 Wultra s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,29 +56,32 @@ enum PowerAuthBiometryStatus {
   lockout,
 }
 
-/// Contains complex information about the type and state of biometry on the device.
-class PowerAuthBiometryInfo {
+/// Contains information about the availability of biometric authentication
+/// for a PowerAuth instance.
+class PowerAuthBiometricStatus {
 
-  /// Whether biometric authentication is supported on the system.
-  /// Note: On iOS, this is `false` if biometry is not enrolled or locked down.
-  /// Use [biometryType] and [canAuthenticate] for more details.
-  final bool isAvailable;
+  /// Whether biometric authentication is fully available for the current activation.
+  final bool isAuthenticationWithBiometricsAvailable;
 
-  /// The type of biometry supported on the system.
+  /// Whether a biometric factor is configured for the current activation.
+  final bool isBiometricFactorConfigured;
+
+  /// The current biometric authentication status reported by the system.
+  final PowerAuthBiometryStatus systemStatus;
+
+  /// The type of biometric authentication available on the device.
   final PowerAuthBiometryType biometryType;
 
-  /// Check whether biometric authentication is available and biometric data are enrolled.
-  final PowerAuthBiometryStatus canAuthenticate;
-
-  PowerAuthBiometryInfo({
-    required this.isAvailable,
+  PowerAuthBiometricStatus({
+    required this.isAuthenticationWithBiometricsAvailable,
+    required this.isBiometricFactorConfigured,
+    required this.systemStatus,
     required this.biometryType,
-    required this.canAuthenticate,
   });
 
-  factory PowerAuthBiometryInfo.fromMap(Map<dynamic, dynamic> map) {
+  factory PowerAuthBiometricStatus.fromMap(Map<dynamic, dynamic> map) {
     PowerAuthBiometryType parseType(String? typeString) {
-      if (typeString == null) { 
+      if (typeString == null) {
         return PowerAuthBiometryType.none;
       }
 
@@ -109,10 +112,11 @@ class PowerAuthBiometryInfo {
       }
     }
 
-    return PowerAuthBiometryInfo(
-      isAvailable: map['isAvailable'] as bool,
+    return PowerAuthBiometricStatus(
+      isAuthenticationWithBiometricsAvailable: map['isAuthenticationWithBiometricsAvailable'] as bool,
+      isBiometricFactorConfigured: map['isBiometricFactorConfigured'] as bool,
+      systemStatus: parseStatus(map['systemStatus'] as String?),
       biometryType: parseType(map['biometryType'] as String?),
-      canAuthenticate: parseStatus(map['canAuthenticate'] as String?),
     );
   }
 }
