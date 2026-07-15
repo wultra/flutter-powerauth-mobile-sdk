@@ -242,6 +242,19 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<String> calculateJwsSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'calculateJwsSignature() has not been implemented.',
+    );
+  }
+
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [

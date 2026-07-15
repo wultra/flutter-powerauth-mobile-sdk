@@ -483,6 +483,75 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
+  Future<void> _calculateJwsSignature(
+    String password,
+    String data,
+  ) async {
+    if (!_isConfigured) {
+      return _setError('Instance not configured');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final signature = await _powerAuth.calculateJwsSignature(
+        authentication,
+        data,
+        null,
+        false,
+        PowerAuthSignatureKeyId.device,
+      );
+
+      print('JWS signature: $signature');
+      _setError('JWS Signature: $signature');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'JWS signing failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during JWS signing: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _calculateJwsSignatureWithBiometry(String data) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+    if (_hasBiometryFactor != true) {
+      return _setError('Biometry factor not available');
+    }
+
+    _setLoading(true);
+    try {
+      final prompt = PowerAuthBiometricPrompt(
+        promptTitle: "JWS Signature",
+        promptMessage: "Authenticate for JWS signature.",
+      );
+      final authentication = PowerAuthAuthentication.biometry(
+        biometricPrompt: prompt,
+      );
+      final signature = await _powerAuth.calculateJwsSignature(
+        authentication,
+        data,
+        null,
+        false,
+        PowerAuthSignatureKeyId.device,
+      );
+
+      print('JWS signature (Bio): $signature');
+      _setError('JWS Signature (Bio): $signature');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'JWS signing (Bio) failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during JWS signing (Bio): $e');
+    }
+    _setLoading(false);
+  }
+
   void _setLoading(bool loading) {
     if (!mounted) return;
 
@@ -1086,6 +1155,46 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Sign Data with Device Private Key'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Calculate JWS Signature (PWD)',
+                    fields: {'Password': true, 'Data': false},
+                    initialValues: {'Data': defaultBody},
+                    onSubmit: (values) {
+                      _calculateJwsSignature(
+                        values['Password']!,
+                        values['Data']!,
+                      );
+                    },
+                  ),
+          child: const Text('Calculate JWS Signature (PWD)'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Calculate JWS Signature (Bio)',
+                    fields: {'Data': false},
+                    initialValues: {'Data': defaultBody},
+                    onSubmit: (values) {
+                      _calculateJwsSignatureWithBiometry(values['Data']!);
+                    },
+                  ),
+          child: const Text('Calculate JWS Signature (Bio)'),
         ),
 
         const SizedBox(height: 8),

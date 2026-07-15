@@ -89,8 +89,10 @@ internal class PowerAuthService(
         const val BODY = "body"
         const val NONCE = "nonce"
         const val DATA = "data"
+        const val DATA_TYPE = "dataType"
         const val SIGNATURE = "signature"
         const val SIGNATURE_KEY_ID = "signatureKeyId"
+        const val COMPACT = "compact"
         const val USE_MASTER_KEY = "useMasterKey"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
@@ -161,6 +163,7 @@ internal class PowerAuthService(
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
         const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
         const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
+        const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
         const val IS_TIME_SYNCHRONIZED = "isTimeSynchronized"
@@ -215,6 +218,7 @@ internal class PowerAuthService(
             HandlerNames.GENERATE_HEADER_FOR_TOKEN to this::generateHeaderForToken,
             HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
             HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
+            HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
             HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
             HandlerNames.IS_TIME_SYNCHRONIZED to this::isTimeSynchronized,
@@ -1206,6 +1210,34 @@ internal class PowerAuthService(
                     }
 
             })
+        }
+    }
+
+    private fun calculateJwsSignature(call: MethodCall, result: Result) {
+        val data: String = call.getRequiredArgument(DATA)
+        val dataType: String? = call.argument(DATA_TYPE)
+        val compact: Boolean = call.getRequiredArgument(COMPACT)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+        val authentication = buildAuthenticationObject(call, persist = false)
+
+        usePowerAuth(call, result) { sdk ->
+            sdk.calculateJwsSignature(
+                context,
+                authentication,
+                data.toByteArray(StandardCharsets.UTF_8),
+                dataType,
+                compact,
+                keyId,
+                object: IJwsSignatureListener {
+                    override fun onJwsSignatureSucceed(signedData: String, compactForm: Boolean) {
+                        result.success(signedData)
+                    }
+
+                    override fun onJwsSignatureFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                }
+            )
         }
     }
 

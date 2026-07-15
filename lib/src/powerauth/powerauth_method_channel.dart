@@ -342,6 +342,27 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<String> calculateJwsSignature(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    return await invokeMethod<String>(
+      'calculateJwsSignature',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'data': data,
+        'dataType': dataType,
+        'compact': compact,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
+  }
+
+  @override
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [

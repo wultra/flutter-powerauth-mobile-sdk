@@ -263,6 +263,26 @@ class PowerAuth {
     signatureKeyId,
   );
 
+  /// Calculates a JWS signature for UTF-8 encoded [data].
+  ///
+  /// The optional [dataType] is added to the protected JOSE header as `typ`.
+  /// If [compact] is `true`, the result is a compact JWT. Otherwise, a full
+  /// JWS object is returned.
+  Future<String> calculateJwsSignature(
+    PowerAuthAuthentication authentication,
+    String data,
+    String? dataType,
+    bool compact,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.calculateJwsSignature(
+    instanceId,
+    authentication,
+    data,
+    dataType,
+    compact,
+    signatureKeyId,
+  );
+
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
   /// The optional [prompt] is used for the system biometric dialog if needed during key setup (Android specific).
