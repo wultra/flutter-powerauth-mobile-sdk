@@ -53,6 +53,7 @@ object Errors {
     const val EC_WRONG_PARAMETER: String = "wrongParameter"
     const val EC_PROTOCOL_UPGRADE: String = "protocolUpgrade"
     const val EC_PENDING_PROTOCOL_UPGRADE: String = "pendingProtocolUpgrade"
+    const val EC_UPGRADE_SDK: String = "upgradeSdk"
     const val EC_BIOMETRY_NOT_SUPPORTED: String = "biometryNotSupported"
     const val EC_BIOMETRY_NOT_AVAILABLE: String = "biometryNotAvailable"
     const val EC_BIOMETRY_NOT_RECOGNIZED: String = "biometryNotRecognized"
@@ -60,6 +61,7 @@ object Errors {
     const val EC_BIOMETRY_NOT_ENROLLED: String = "biometryNotEnrolled"
     const val EC_TIME_SYNCHRONIZATION: String = "timeSynchronization"
     const val EC_BIOMETRY_LOCKOUT: String = "biometryLockout"
+    const val EC_OTHER: String = "other"
     const val EC_UNKNOWN_ERROR: String = "unknownError"
 
     fun getErrorCodeFromError(@PowerAuthErrorCodes error: Int): String {
@@ -80,12 +82,14 @@ object Errors {
             PowerAuthErrorCodes.WRONG_PARAMETER -> EC_WRONG_PARAMETER
             PowerAuthErrorCodes.PROTOCOL_UPGRADE -> EC_PROTOCOL_UPGRADE
             PowerAuthErrorCodes.PENDING_PROTOCOL_UPGRADE -> EC_PENDING_PROTOCOL_UPGRADE
+            PowerAuthErrorCodes.UPGRADE_SDK -> EC_UPGRADE_SDK
             PowerAuthErrorCodes.BIOMETRY_NOT_SUPPORTED -> EC_BIOMETRY_NOT_SUPPORTED
             PowerAuthErrorCodes.BIOMETRY_NOT_AVAILABLE -> EC_BIOMETRY_NOT_AVAILABLE
             PowerAuthErrorCodes.BIOMETRY_NOT_RECOGNIZED -> EC_BIOMETRY_NOT_RECOGNIZED
             PowerAuthErrorCodes.BIOMETRY_NOT_ENROLLED -> EC_BIOMETRY_NOT_ENROLLED
             PowerAuthErrorCodes.BIOMETRY_LOCKOUT -> EC_BIOMETRY_LOCKOUT
             PowerAuthErrorCodes.TIME_SYNCHRONIZATION -> EC_TIME_SYNCHRONIZATION
+            PowerAuthErrorCodes.OTHER -> EC_OTHER
             else -> EC_UNKNOWN_ERROR
         }
     }

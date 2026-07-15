@@ -76,6 +76,9 @@ enum PowerAuthErrorCode {
   /// The requested function is not available during the protocol upgrade.
   pendingProtocolUpgrade,
 
+  /// Local activation data was created by a newer PowerAuth SDK version.
+  upgradeSdk,
+
   /// Error code for situation when biometric prompt is canceled by the user.
   biometryCancel,
 
@@ -123,6 +126,9 @@ enum PowerAuthErrorCode {
 
   /// The requested function is not available due to an external application is doing the sensitive operation (iOS Specific).
   externalPendingOperation,
+
+  /// An error not covered by a more specific PowerAuth error code.
+  other,
 
   /// Failed with unexpected error.
   unknownError,
