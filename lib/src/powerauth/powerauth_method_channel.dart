@@ -310,17 +310,17 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<bool> verifyServerSignedData(
+  Future<void> verifyDigitalSignature(
     String instanceId,
-    String data,
     String signature,
-    bool useMasterKey,
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
   ) async {
-    return await invokeMethod<bool>('verifyServerSignedData', {
+    await invokeMethod<void>('verifyDigitalSignature', {
       'instanceId': instanceId,
-      'data': data,
       'signature': signature,
-      'useMasterKey': useMasterKey,
+      'data': data,
+      'signatureKeyId': signatureKeyId.name,
     });
   }
 

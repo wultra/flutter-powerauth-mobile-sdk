@@ -220,14 +220,14 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('offlineSignature() has not been implemented.');
   }
 
-  Future<bool> verifyServerSignedData(
+  Future<void> verifyDigitalSignature(
     String instanceId,
-    String data,
     String signature,
-    bool useMasterKey,
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
   ) {
     throw UnimplementedError(
-      'verifyServerSignedData() has not been implemented.',
+      'verifyDigitalSignature() has not been implemented.',
     );
   }
 

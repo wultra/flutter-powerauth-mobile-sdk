@@ -425,24 +425,23 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
-  Future<void> _verifyServerSignedData(
+  Future<void> _verifyDigitalSignature(
     String data,
     String signature,
-    bool useMasterKey,
   ) async {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
 
     _setLoading(true);
     try {
-      final isValid = await _powerAuth.verifyServerSignedData(
-        data,
+      await _powerAuth.verifyDigitalSignature(
         signature,
-        useMasterKey,
+        data,
+        PowerAuthSignatureKeyId.masterEc,
       );
-      print('Server signature verification result: $isValid');
+      print('Server signature verification succeeded.');
 
       // TODO: temporarily using the error banner as a success also...
-      _setError('Server Signature Verified: $isValid');
+      _setError('Server Signature Verified');
     } on PowerAuthException catch (e) {
       _setError(
         'Server signature verification failed: ${e.message} (${e.code})',
@@ -479,6 +478,41 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
     } catch (e) {
       _setError('Unexpected error during device private key signing: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _calculateAndVerifyDigitalSignature(
+    String password,
+    String data,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final signature = await _powerAuth.calculateDigitalSignature(
+        authentication,
+        data,
+        PowerAuthSignatureKeyId.deviceEc,
+      );
+      await _powerAuth.verifyDigitalSignature(
+        signature,
+        data,
+        PowerAuthSignatureKeyId.deviceEc,
+      );
+
+      print('Digital signature calculated and verified: $signature');
+      _setError('Digital Signature Calculated and Verified: $signature');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Digital signature round-trip failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during digital signature round-trip: $e');
     }
     _setLoading(false);
   }
@@ -1164,6 +1198,26 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : () => _showSignatureInputDialog(
                     context,
+                    title: 'Calculate and Verify Digital Signature',
+                    fields: {'Password': true, 'Data': false},
+                    initialValues: {'Data': defaultBody},
+                    onSubmit: (values) {
+                      _calculateAndVerifyDigitalSignature(
+                        values['Password']!,
+                        values['Data']!,
+                      );
+                    },
+                  ),
+          child: const Text('Calculate and Verify Digital Signature'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
                     title: 'Calculate JWS Signature (PWD)',
                     fields: {'Password': true, 'Data': false},
                     initialValues: {'Data': defaultBody},
@@ -1261,10 +1315,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     title: 'Verify Server Signature',
                     fields: {'Data': false, 'Signature (Base64)': false},
                     onSubmit: (values) {
-                      _verifyServerSignedData(
+                      _verifyDigitalSignature(
                         values['Data']!,
                         values['Signature (Base64)']!,
-                        true,
                       );
                     },
                   ),

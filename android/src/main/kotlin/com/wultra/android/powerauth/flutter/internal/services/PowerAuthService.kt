@@ -93,7 +93,6 @@ internal class PowerAuthService(
         const val SIGNATURE = "signature"
         const val SIGNATURE_KEY_ID = "signatureKeyId"
         const val COMPACT = "compact"
-        const val USE_MASTER_KEY = "useMasterKey"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
         const val BIOMETRIC_PROMPT = "biometricPrompt"
@@ -147,7 +146,7 @@ internal class PowerAuthService(
         const val REQUEST_GET_SIGNATURE = "requestGetSignature"
         const val REQUEST_SIGNATURE = "requestSignature"
         const val OFFLINE_SIGNATURE = "offlineSignature"
-        const val VERIFY_SERVER_SIGNED_DATA = "verifyServerSignedData"
+        const val VERIFY_DIGITAL_SIGNATURE = "verifyDigitalSignature"
         const val GET_BIOMETRIC_STATUS = "getBiometricStatus"
         const val IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE = "isAuthenticationWithBiometricsAvailable"
         const val ADD_BIOMETRY_FACTOR = "addBiometryFactor"
@@ -202,7 +201,7 @@ internal class PowerAuthService(
             HandlerNames.REQUEST_GET_SIGNATURE to this::requestGetSignature,
             HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
             HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
-            HandlerNames.VERIFY_SERVER_SIGNED_DATA to this::verifyServerSignedData,
+            HandlerNames.VERIFY_DIGITAL_SIGNATURE to this::verifyDigitalSignature,
             HandlerNames.GET_BIOMETRIC_STATUS to this::getBiometricStatus,
             HandlerNames.IS_AUTHENTICATION_WITH_BIOMETRICS_AVAILABLE to this::isAuthenticationWithBiometricsAvailable,
             HandlerNames.ADD_BIOMETRY_FACTOR to this::addBiometryFactor,
@@ -694,19 +693,18 @@ internal class PowerAuthService(
         }
     }
 
-    private fun verifyServerSignedData(call: MethodCall, result: Result) {
+    private fun verifyDigitalSignature(call: MethodCall, result: Result) {
+        val signature: String = call.getRequiredArgument(SIGNATURE)
+        val data: String = call.getRequiredArgument(DATA)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
         usePowerAuth(call, result) { sdk ->
-            val dataString: String = call.getRequiredArgument(DATA)
-            val signature: String = call.getRequiredArgument(SIGNATURE)
-//            val useMasterKey: Boolean = call.argument<Boolean>(USE_MASTER_KEY) ?: false
-
-            val dataBytes = dataString.toByteArray()
-            val signatureBytes = Base64.decode(signature, Base64.DEFAULT)
-
-            val isValid = sdk.verifyDigitalSignature(dataBytes, signatureBytes,
-                PowerAuthSignatureKeyId.MASTER_EC)
-
-            result.success(isValid)
+            sdk.verifyDigitalSignature(
+                Base64.decode(signature, Base64.DEFAULT),
+                data.toByteArray(StandardCharsets.UTF_8),
+                keyId
+            )
+            result.success(null)
         }
     }
 

@@ -34,6 +34,9 @@ enum PowerAuthErrorCode {
   /// Error code for error in signature calculation.
   signatureError,
 
+  /// Digital or JWS signature is not valid.
+  wrongSignature,
+
   /// Error code for error that occurs when activation state is invalid.
   invalidActivationState,
 

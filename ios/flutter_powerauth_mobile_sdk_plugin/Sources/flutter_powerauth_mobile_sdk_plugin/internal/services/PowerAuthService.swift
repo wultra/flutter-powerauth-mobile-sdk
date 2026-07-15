@@ -55,7 +55,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "requestGetSignature": requestGetSignature,
         "requestSignature": requestSignature,
         "offlineSignature": offlineSignature,
-        "verifyServerSignedData": verifyServerSignedData,
         "getBiometryInfo": getBiometryInfo,
         "addBiometryFactor": addBiometryFactor,
         "hasBiometryFactor": hasBiometryFactor,
@@ -102,7 +101,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case data
         case dataFormat
         case signature
-        case useMasterKey
         case prompt
         case isReusable
         case isBiometry
@@ -494,22 +492,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let data = bodyString?.data(using: .utf8)
             
             result(try sdk.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce))
-        }
-    }
-    
-    private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, _ in
-            
-            let stringData: String = try call.requireParameter(Args.data)
-            let signature: String = try call.requireParameter(Args.signature)
-            let masterKey: Bool = call.getParameter(Args.useMasterKey) ?? false
-            
-            guard let data = stringData.data(using: .utf8) else {
-                throw PluginException(.unknownError, message: "Failed to convert string to data")
-            }
-            
-            let verifyResult = sdk.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
-            result(verifyResult)
         }
     }
     

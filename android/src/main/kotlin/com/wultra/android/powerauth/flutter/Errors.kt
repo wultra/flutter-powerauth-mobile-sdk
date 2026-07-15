@@ -40,6 +40,7 @@ object Errors {
     const val EC_SUCCEED: String = "succeed"
     const val EC_NETWORK_ERROR: String = "networkError"
     const val EC_SIGNATURE_ERROR: String = "signatureError"
+    const val EC_WRONG_SIGNATURE: String = "wrongSignature"
     const val EC_INVALID_ACTIVATION_STATE: String = "invalidActivationState"
     const val EC_INVALID_ACTIVATION_DATA: String = "invalidActivationData"
     const val EC_MISSING_ACTIVATION: String = "missingActivation"
@@ -66,6 +67,7 @@ object Errors {
             PowerAuthErrorCodes.SUCCEED -> EC_SUCCEED
             PowerAuthErrorCodes.NETWORK_ERROR -> EC_NETWORK_ERROR
             PowerAuthErrorCodes.SIGNATURE_ERROR -> EC_SIGNATURE_ERROR
+            PowerAuthErrorCodes.WRONG_SIGNATURE -> EC_WRONG_SIGNATURE
             PowerAuthErrorCodes.INVALID_ACTIVATION_STATE -> EC_INVALID_ACTIVATION_STATE
             PowerAuthErrorCodes.INVALID_ACTIVATION_DATA -> EC_INVALID_ACTIVATION_DATA
             PowerAuthErrorCodes.MISSING_ACTIVATION -> EC_MISSING_ACTIVATION
@@ -142,4 +144,4 @@ object Errors {
 
         result.error(code, message, details)
     }
-} 
+}

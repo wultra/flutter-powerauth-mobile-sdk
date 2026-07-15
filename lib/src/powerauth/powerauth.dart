@@ -231,21 +231,20 @@ class PowerAuth {
     body,
   );
 
-  /// Verifies data signed by the PowerAuth server's public key.
+  /// Verifies a Base64 encoded digital [signature] for UTF-8 encoded [data].
   ///
-  /// - [data]: The original data that was signed (as a String).
-  /// - [signature]: The Base64 encoded signature received from the server.
-  /// - [useMasterKey]: If `true`, use the Master Server Public Key for verification.
-  ///                   If `false`, use the current Personalized Server Public Key.
-  Future<bool> verifyServerSignedData(
-    String data,
+  /// The [signatureKeyId] must identify a specific verification key. If the
+  /// signature is invalid, a [PowerAuthException] with
+  /// [PowerAuthErrorCode.wrongSignature] is thrown.
+  Future<void> verifyDigitalSignature(
     String signature,
-    bool useMasterKey,
-  ) => _platform.verifyServerSignedData(
+    String data,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.verifyDigitalSignature(
     instanceId,
-    data,
     signature,
-    useMasterKey,
+    data,
+    signatureKeyId,
   );
 
   /// Calculates a digital signature for UTF-8 encoded [data].
