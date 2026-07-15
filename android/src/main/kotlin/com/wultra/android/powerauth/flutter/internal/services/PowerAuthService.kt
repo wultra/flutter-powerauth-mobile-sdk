@@ -83,6 +83,7 @@ internal class PowerAuthService(
         const val OLD_PASSWORD = "oldPassword"
         const val NEW_PASSWORD = "newPassword"
         const val PASSWORD_CHANGE_DATA = "passwordChangeData"
+        const val UPGRADE_BIOMETRY = "upgradeBiometry"
         const val URI_ID = "uriId"
         const val QUERY_PARAMS = "queryParams"
         const val METHOD = "method"
@@ -139,6 +140,8 @@ internal class PowerAuthService(
         const val GET_ACTIVATION_IDENTIFIER = "getActivationIdentifier"
         const val GET_ACTIVATION_FINGERPRINT = "getActivationFingerprint"
         const val FETCH_ACTIVATION_STATUS = "fetchActivationStatus"
+        const val HAS_PROTOCOL_UPGRADE_AVAILABLE = "hasProtocolUpgradeAvailable"
+        const val START_PROTOCOL_UPGRADE = "startProtocolUpgrade"
         const val REMOVE_ACTIVATION_LOCAL = "removeActivationLocal"
         const val REMOVE_ACTIVATION_WITH_AUTHENTICATION = "removeActivationWithAuthentication"
         const val CREATE_ACTIVATION = "createActivation"
@@ -197,6 +200,8 @@ internal class PowerAuthService(
             HandlerNames.GET_ACTIVATION_IDENTIFIER to this::getActivationIdentifier,
             HandlerNames.GET_ACTIVATION_FINGERPRINT to this::getActivationFingerprint,
             HandlerNames.FETCH_ACTIVATION_STATUS to this::fetchActivationStatus,
+            HandlerNames.HAS_PROTOCOL_UPGRADE_AVAILABLE to this::hasProtocolUpgradeAvailable,
+            HandlerNames.START_PROTOCOL_UPGRADE to this::startProtocolUpgrade,
             HandlerNames.REMOVE_ACTIVATION_LOCAL to this::removeActivationLocal,
             HandlerNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION to this::removeActivationWithAuthentication,
             HandlerNames.CREATE_ACTIVATION to this::createActivation,
@@ -383,6 +388,60 @@ internal class PowerAuthService(
                     Errors.error(result, t)
                 }
             })
+        }
+    }
+
+    private fun hasProtocolUpgradeAvailable(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.hasProtocolUpgradeAvailable())
+        }
+    }
+
+    private fun startProtocolUpgrade(call: MethodCall, result: Result) {
+        usePowerAuthOnMainThread(call, result) { sdk ->
+            val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
+            val upgradeBiometry = call.argument<Boolean>(UPGRADE_BIOMETRY) ?: false
+            val biometricSetupPrompt = if (upgradeBiometry) {
+                val activity = validateFragmentActivity(getCurrentActivity())
+                PowerAuthBiometricPrompt.noPromptForBiometricKeySetup(activity)
+            } else null
+            val corePassword = buildOwnedPasswordObject(passwordMap)
+            val passwordReleased = AtomicBoolean(false)
+
+            fun releasePassword() {
+                if (passwordReleased.compareAndSet(false, true)) {
+                    corePassword.destroy()
+                }
+            }
+
+            val listener = object : IProtocolUpgradeListener {
+                override fun onProtocolUpgradeSucceed(upgradeResult: ProtocolUpgradeResult) {
+                    releasePassword()
+                    result.success(
+                        mapOf(
+                            "activationStatusFetchRequired" to upgradeResult.isActivationStatusFetchRequired,
+                            "activationFingerprint" to upgradeResult.activationFingerprint,
+                            "biometryFactorRemoved" to upgradeResult.isBiometryFactorRemoved
+                        )
+                    )
+                }
+
+                override fun onProtocolUpgradeFailed(throwable: Throwable) {
+                    releasePassword()
+                    Errors.error(result, throwable)
+                }
+            }
+
+            try {
+                if (biometricSetupPrompt != null) {
+                    sdk.startProtocolUpgrade(context, corePassword, biometricSetupPrompt, listener)
+                } else {
+                    sdk.startProtocolUpgrade(context, corePassword, listener)
+                }
+            } catch (t: Throwable) {
+                releasePassword()
+                throw t
+            }
         }
     }
 

@@ -52,6 +52,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   bool _isLoading = false;
   bool _isInitialized = false;
   PowerAuthAlgorithm? _selectedAlgorithm;
+  bool _authenticateOnBiometricKeySetup = true;
   PowerAuthAlgorithm? _currentAlgorithm;
   String? _errorMessage;
   bool _isConfigured = false;
@@ -61,6 +62,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   String? _activationId;
   String? _activationFingerprint;
   PowerAuthActivationStatus? _activationStatus;
+  bool? _hasProtocolUpgradeAvailable;
   bool? _hasBiometryFactor;
   PowerAuthBiometricStatus? _biometricStatus;
 
@@ -104,7 +106,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
           algorithm: _selectedAlgorithm,
         );
 
-        final biometryConfig = PowerAuthBiometryConfiguration();
+        final biometryConfig = PowerAuthBiometryConfiguration(
+          authenticateOnBiometricKeySetup: _authenticateOnBiometricKeySetup,
+        );
         final keychainConfig = PowerAuthKeychainConfiguration();
         final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
         final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "fapp");
@@ -165,6 +169,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _powerAuth.hasBiometryFactor(),
         _powerAuth.getBiometricStatus(),
         _powerAuth.currentAlgorithm,
+        _powerAuth.hasProtocolUpgradeAvailable(),
       ]);
 
       setState(() {
@@ -176,6 +181,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _hasBiometryFactor = results[5] as bool?;
         _biometricStatus = results[6] as PowerAuthBiometricStatus?;
         _currentAlgorithm = results[7] as PowerAuthAlgorithm?;
+        _hasProtocolUpgradeAvailable = results[8] as bool?;
         _activationStatus = activationStatus;
       });
 
@@ -193,6 +199,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _hasBiometryFactor = null;
         _biometricStatus = null;
         _currentAlgorithm = null;
+        _hasProtocolUpgradeAvailable = null;
         _activationStatus = null;
       });
     } catch (e) {
@@ -205,6 +212,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         _activationFingerprint = null;
         _hasBiometryFactor = null;
         _biometricStatus = null;
+        _hasProtocolUpgradeAvailable = null;
         _activationStatus = null;
       });
     }
@@ -236,6 +244,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       _activationId = null;
       _activationFingerprint = null;
       _activationStatus = null;
+      _hasProtocolUpgradeAvailable = null;
       _hasBiometryFactor = null;
       _biometricStatus = null;
       _currentAlgorithm = null;
@@ -335,6 +344,50 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       _setError('Activation removal failed: ${e.message} (${e.code})');
     } catch (e) {
       _setError('Unexpected error during activation removal: $e');
+    }
+    _setLoading(false);
+  }
+
+  Future<void> _startProtocolUpgrade(
+    String password, {
+    required bool upgradeBiometry,
+  }) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+    if (_hasProtocolUpgradeAvailable != true) {
+      return _setError('Protocol upgrade is not available');
+    }
+    if (upgradeBiometry && _hasBiometryFactor != true) {
+      return _setError('Biometry factor not available');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final result = await _powerAuth.startProtocolUpgrade(
+        paPassword,
+        upgradeBiometry: upgradeBiometry,
+      );
+
+      print(
+        'Protocol upgrade succeeded. '
+        'Activation status fetch required: ${result.activationStatusFetchRequired}, '
+        'fingerprint: ${result.activationFingerprint}, '
+        'biometry removed: ${result.biometryFactorRemoved}',
+      );
+
+      await _refreshState();
+      _setError(
+        'Protocol upgrade succeeded. '
+        'Status fetch required: ${result.activationStatusFetchRequired}, '
+        'fingerprint: ${result.activationFingerprint ?? "pending"}, '
+        'biometry removed: ${result.biometryFactorRemoved}',
+      );
+    } on PowerAuthException catch (e) {
+      _setError('Protocol upgrade failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected protocol upgrade error: $e');
     }
     _setLoading(false);
   }
@@ -768,6 +821,10 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
             if (!_isInitialized) const SizedBox(height: 10),
 
+            if (!_isInitialized) _buildBiometricKeySetupSelector(),
+
+            if (!_isInitialized) const SizedBox(height: 10),
+
             if (_errorMessage != null)
               _buildErrorBanner(_errorMessage!, _clearError),
             const SizedBox(height: 10),
@@ -960,6 +1017,21 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     );
   }
 
+  Widget _buildBiometricKeySetupSelector() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: const Text('Authenticate on biometric key setup'),
+      value: _authenticateOnBiometricKeySetup,
+      onChanged: _isLoading
+          ? null
+          : (value) {
+              setState(() {
+                _authenticateOnBiometricKeySetup = value;
+              });
+            },
+    );
+  }
+
   Widget _buildErrorBanner(String message, VoidCallback onDismiss) {
     return MaterialBanner(
       padding: const EdgeInsets.all(12),
@@ -1005,6 +1077,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         Text('Activation ID: ${_activationId ?? "Unknown"}'),
         Text('Activation Fingerprint: ${_activationFingerprint ?? "Unknown"}'),
         Text('Activation Status: ${formatStatus(_activationStatus)}'),
+        Text(
+          'Protocol Upgrade Available: ${formatBool(_hasProtocolUpgradeAvailable)}',
+        ),
         Text('Has Biometry Factor: ${formatBool(_hasBiometryFactor)}'),
         Text(
           'Biometric Authentication Available: ${formatBool(_biometricStatus?.isAuthenticationWithBiometricsAvailable)}',
@@ -1068,6 +1143,45 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Persist Activation (Password+Bio)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasProtocolUpgradeAvailable != true
+                  ? null
+                  : () => _showInputDialog(
+                    context,
+                    title: 'Protocol Upgrade (PWD)',
+                    label: 'Password',
+                    isPassword: true,
+                    onSubmit: (password) {
+                      _startProtocolUpgrade(password, upgradeBiometry: false);
+                    },
+                  ),
+          child: const Text('Protocol Upgrade (PWD)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasProtocolUpgradeAvailable != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : () => _showInputDialog(
+                    context,
+                    title: 'Protocol Upgrade (Migrate Biometry)',
+                    label: 'Password',
+                    isPassword: true,
+                    onSubmit: (password) {
+                      _startProtocolUpgrade(password, upgradeBiometry: true);
+                    },
+                  ),
+          child: const Text('Protocol Upgrade (Migrate Biometry)'),
         ),
         const SizedBox(height: 8),
         ElevatedButton(

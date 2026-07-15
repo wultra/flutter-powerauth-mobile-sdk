@@ -35,6 +35,7 @@ import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
 import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_protocol_upgrade_result.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
 
@@ -144,6 +145,22 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthActivationStatus> fetchActivationStatus(String instanceId) {
     throw UnimplementedError(
       'fetchActivationStatus() has not been implemented.',
+    );
+  }
+
+  Future<bool> hasProtocolUpgradeAvailable(String instanceId) {
+    throw UnimplementedError(
+      'hasProtocolUpgradeAvailable() has not been implemented.',
+    );
+  }
+
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    String instanceId,
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) {
+    throw UnimplementedError(
+      'startProtocolUpgrade() has not been implemented.',
     );
   }
 

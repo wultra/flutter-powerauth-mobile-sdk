@@ -206,6 +206,30 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<bool> hasProtocolUpgradeAvailable(String instanceId) async {
+    return await invokeMethod<bool>('hasProtocolUpgradeAvailable', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    String instanceId,
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>(
+      'startProtocolUpgrade',
+      {
+        'instanceId': instanceId,
+        'password': await password.toRawPasswordMap(),
+        'upgradeBiometry': upgradeBiometry,
+      },
+    );
+    return PowerAuthProtocolUpgradeResult.fromMap(result);
+  }
+
+  @override
   Future<void> removeActivationLocal(String instanceId) async {
     await invokeMethod<void>('removeActivationLocal', {
       'instanceId': instanceId,

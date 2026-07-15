@@ -43,6 +43,7 @@ import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_signature_key_id.dart';
 import '../model/powerauth_secure_vault_key.dart';
+import '../model/powerauth_protocol_upgrade_result.dart';
 
 /// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
@@ -148,6 +149,32 @@ class PowerAuth {
   /// Fetches the latest activation status from the PowerAuth server.
   /// This may involve network communication and potential protocol upgrades.
   Future<PowerAuthActivationStatus> fetchActivationStatus() => _platform.fetchActivationStatus(instanceId);
+
+  /// Returns `true` if a protocol upgrade is available for the current activation.
+  ///
+  /// The result reflects locally stored activation status. Call
+  /// [fetchActivationStatus] first to obtain the latest information from the
+  /// PowerAuth server.
+  Future<bool> hasProtocolUpgradeAvailable() => _platform.hasProtocolUpgradeAvailable(instanceId);
+
+  /// Starts a protocol upgrade for the current activation.
+  ///
+  /// The [password] is required to authorize the upgrade. Set
+  /// [upgradeBiometry] to `true` to migrate an existing local biometry factor.
+  /// Biometry migration is supported only when `authenticateOnBiometricKeySetup`
+  /// is disabled. Otherwise, use the default value and add the biometry factor
+  /// again after the upgrade if it was removed.
+  ///
+  /// If the returned result has `activationStatusFetchRequired` set to `true`,
+  /// call [fetchActivationStatus] to finish the upgrade.
+  Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
+    PowerAuthPassword password, {
+    bool upgradeBiometry = false,
+  }) => _platform.startProtocolUpgrade(
+    instanceId,
+    password,
+    upgradeBiometry: upgradeBiometry,
+  );
 
   /// Removes the activation state locally from the device.
   /// This does **not** inform the server. Use this only if the activation
