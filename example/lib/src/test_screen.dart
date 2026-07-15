@@ -586,6 +586,106 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
+  Future<void> _testSecureVaultWithPassword(String password) async {
+    final paPassword = await PowerAuthPassword.fromString(password);
+    final authentication = PowerAuthAuthentication.password(paPassword);
+    await _testSecureVault(
+      authentication,
+      PowerAuthSecureVaultKeyId.knowledge,
+      'Password',
+    );
+  }
+
+  Future<void> _testLegacyEncryptionKey(String password) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      // ignore: deprecated_member_use
+      final encryptionKey = await _powerAuth.fetchEncryptionKey(
+        authentication,
+        1000,
+      );
+      final message = 'Legacy encryption key fetch succeeded. '
+          'Index: 1000, key size: ${base64Decode(encryptionKey).length} bytes.';
+      print(message);
+      _setError(message);
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Legacy encryption key fetch failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected legacy encryption key fetch error: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> _testSecureVaultWithBiometry() async {
+    final prompt = PowerAuthBiometricPrompt(
+      promptTitle: 'Secure Vault',
+      promptMessage: 'Authenticate to fetch a Secure Vault key.',
+    );
+    final authentication = PowerAuthAuthentication.biometry(
+      biometricPrompt: prompt,
+    );
+    await _testSecureVault(
+      authentication,
+      PowerAuthSecureVaultKeyId.knowledgeOrBiometry,
+      'Biometry',
+    );
+  }
+
+  Future<void> _testSecureVault(
+    PowerAuthAuthentication authentication,
+    PowerAuthSecureVaultKeyId keyIdentifier,
+    String authenticationType,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    PowerAuthSecureVaultKey? vaultKey;
+    try {
+      vaultKey = await _powerAuth.fetchSecureVaultKey(
+        authentication,
+        keyIdentifier,
+      );
+      final derivedKey = await vaultKey.deriveKey(1000, 32);
+      final repeatedKey = await vaultKey.deriveKey(1000, 32);
+
+      await vaultKey.release();
+      var releaseVerified = false;
+      try {
+        await vaultKey.deriveKey(1000, 32);
+      } on StateError {
+        releaseVerified = true;
+      }
+
+      final message = 'Secure Vault ($authenticationType) succeeded. '
+          'Key ID: ${keyIdentifier.name}, '
+          'derived size: ${base64Decode(derivedKey).length} bytes, '
+          'stable derivation: ${derivedKey == repeatedKey}, '
+          'release verified: $releaseVerified.';
+      print(message);
+      _setError(message);
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Secure Vault ($authenticationType) failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected Secure Vault ($authenticationType) error: $e');
+    } finally {
+      await vaultKey?.release();
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool loading) {
     if (!mounted) return;
 
@@ -739,6 +839,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               ),
               const SizedBox(height: 10),
               _buildPasswordButtons(),
+              const SizedBox(height: 20),
+
+              Text(
+                'Secure Vault',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              _buildSecureVaultButtons(),
               const SizedBox(height: 20),
 
               Text(
@@ -1158,6 +1266,56 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Change Password (Online)'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecureVaultButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showInputDialog(
+                    context,
+                    title: 'Test Legacy Encryption Key (PWD)',
+                    label: 'Password',
+                    isPassword: true,
+                    onSubmit: (password) {
+                      _testLegacyEncryptionKey(password);
+                    },
+                  ),
+          child: const Text('Test Legacy Encryption Key (PWD)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showInputDialog(
+                    context,
+                    title: 'Test Secure Vault (PWD)',
+                    label: 'Password',
+                    isPassword: true,
+                    onSubmit: (password) {
+                      _testSecureVaultWithPassword(password);
+                    },
+                  ),
+          child: const Text('Test Secure Vault (PWD)'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading ||
+                      !_isConfigured ||
+                      _hasValidActivation != true ||
+                      _hasBiometryFactor != true
+                  ? null
+                  : _testSecureVaultWithBiometry,
+          child: const Text('Test Secure Vault (Bio)'),
         ),
       ],
     );

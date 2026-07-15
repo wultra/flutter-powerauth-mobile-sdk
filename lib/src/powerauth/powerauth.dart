@@ -42,6 +42,7 @@ import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_secure_vault_key.dart';
 
 /// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
@@ -309,7 +310,31 @@ class PowerAuth {
   /// 
   /// - [authentication] Authentication used for vault unlocking call.
   /// - [index] Index of the derived key using KDF. 
+  @Deprecated('Legacy protocol 3.3 only. Migrate the activation and use fetchSecureVaultKey() with protocol 4.0.')
   Future<String> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
+
+  /// Fetches a base Secure Vault key for subsequent key derivation.
+  ///
+  /// This method is available only for activations using PowerAuth protocol 4.0.
+  /// The returned object keeps the base key on the native side and must be
+  /// released as soon as all required keys have been derived.
+  ///
+  /// - [authentication] Authentication used for the vault unlocking call.
+  /// - [keyIdentifier] Secure Vault key to retrieve.
+  Future<PowerAuthSecureVaultKey> fetchSecureVaultKey(
+    PowerAuthAuthentication authentication,
+    PowerAuthSecureVaultKeyId keyIdentifier,
+  ) async {
+    final objectId = await _platform.fetchSecureVaultKey(
+      instanceId,
+      authentication,
+      keyIdentifier.name,
+    );
+    return PowerAuthSecureVaultKey.fromNative(
+      keyIdentifier: keyIdentifier,
+      objectId: objectId,
+    );
+  }
 
   /// Helper method for grouping biometric authentications.
   /// 

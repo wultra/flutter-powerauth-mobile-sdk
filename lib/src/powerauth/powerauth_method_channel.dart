@@ -413,6 +413,30 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<String> fetchSecureVaultKey(String instanceId, PowerAuthAuthentication authentication, String keyIdentifier) async {
+    return await invokeMethod<String>('fetchSecureVaultKey', await _authenticate(instanceId, authentication, {
+      'instanceId': instanceId,
+      'keyIdentifier': keyIdentifier,
+    }));
+  }
+
+  @override
+  Future<String> deriveSecureVaultKey(String objectId, int index, int keySize) async {
+    return await invokeMethod<String>('deriveSecureVaultKey', {
+      'objectId': objectId,
+      'index': index,
+      'keySize': keySize,
+    });
+  }
+
+  @override
+  Future<void> releaseSecureVaultKey(String objectId) async {
+    await invokeMethod<void>('releaseSecureVaultKey', {
+      'objectId': objectId,
+    });
+  }
+
+  @override
   Future<bool> hasLocalToken(String instanceId, String tokenName) async {
     return await invokeMethod('hasLocalToken', {
       'instanceId': instanceId,

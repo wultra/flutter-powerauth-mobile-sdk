@@ -115,6 +115,8 @@ internal class PowerAuthService(
         const val CONFIGURATION_STRING = "configuration"
         const val ALGORITHM = "algorithm"
         const val OBJECT_ID = "objectId"
+        const val KEY_IDENTIFIER = "keyIdentifier"
+        const val KEY_SIZE = "keySize"
         const val TOKEN_NAME = "tokenName"
         const val OIDC_PARAMETERS = "oidcParameters"
 
@@ -161,6 +163,9 @@ internal class PowerAuthService(
         const val REMOVE_ALL_LOCAL_TOKENS = "removeAllLocalTokens"
         const val GENERATE_HEADER_FOR_TOKEN = "generateHeaderForToken"
         const val FETCH_ENCRYPTION_KEY = "fetchEncryptionKey"
+        const val FETCH_SECURE_VAULT_KEY = "fetchSecureVaultKey"
+        const val DERIVE_SECURE_VAULT_KEY = "deriveSecureVaultKey"
+        const val RELEASE_SECURE_VAULT_KEY = "releaseSecureVaultKey"
         const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
         const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
         const val FETCH_USER_INFO = "fetchUserInfo"
@@ -216,6 +221,9 @@ internal class PowerAuthService(
             HandlerNames.REMOVE_ALL_LOCAL_TOKENS to this::removeAllLocalTokens,
             HandlerNames.GENERATE_HEADER_FOR_TOKEN to this::generateHeaderForToken,
             HandlerNames.FETCH_ENCRYPTION_KEY to this::fetchEncryptionKey,
+            HandlerNames.FETCH_SECURE_VAULT_KEY to this::fetchSecureVaultKey,
+            HandlerNames.DERIVE_SECURE_VAULT_KEY to this::deriveSecureVaultKey,
+            HandlerNames.RELEASE_SECURE_VAULT_KEY to this::releaseSecureVaultKey,
             HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
             HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
@@ -1183,6 +1191,77 @@ internal class PowerAuthService(
                         Errors.error(result, t)
                     }
                 }
+            )
+        }
+    }
+
+    private fun fetchSecureVaultKey(call: MethodCall, result: Result) {
+        val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+        val keyIdentifier = secureVaultKeyIdFromString(call.getRequiredArgument(KEY_IDENTIFIER))
+        val authentication = buildAuthenticationObject(call, persist = false)
+
+        usePowerAuth(call, result) { sdk ->
+            sdk.fetchSecureVaultKey(
+                context,
+                authentication,
+                keyIdentifier,
+                object : IFetchSecureVaultKeyListener {
+                    override fun onFetchSecureVaultKeySucceed(vaultKey: PowerAuthSecureVaultKey) {
+                        val objectId = objectRegister.registerObject(
+                            ManagedAny.wrap(vaultKey),
+                            instanceId,
+                            listOf(ReleasePolicy.manual())
+                        )
+                        result.success(objectId)
+                    }
+
+                    override fun onFetchSecureVaultKeyFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
+                }
+            )
+        }
+    }
+
+    private fun deriveSecureVaultKey(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val index: Number = call.getRequiredArgument("index")
+            val keySize: Int = call.getRequiredArgument(KEY_SIZE)
+            val vaultKey = objectRegister.touchObject(objectId, PowerAuthSecureVaultKey::class.java)
+                ?: throw WrapperException(
+                    Errors.EC_INVALID_NATIVE_OBJECT,
+                    "Secure Vault key object '$objectId' is no longer valid."
+                )
+            val derivedKey = vaultKey.deriveKey(index.toLong(), keySize)
+            try {
+                result.success(Base64.encodeToString(derivedKey.sensitiveData, Base64.NO_WRAP))
+            } finally {
+                derivedKey.destroy()
+            }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun releaseSecureVaultKey(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            objectRegister.removeObject(objectId, PowerAuthSecureVaultKey::class.java)
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    @PowerAuthSecureVaultKeyId
+    private fun secureVaultKeyIdFromString(value: String): Int {
+        return when (value) {
+            "knowledge" -> PowerAuthSecureVaultKeyId.KNOWLEDGE
+            "knowledgeOrBiometry" -> PowerAuthSecureVaultKeyId.KNOWLEDGE_OR_BIOMETRY
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Unknown Secure Vault key identifier: $value"
             )
         }
     }

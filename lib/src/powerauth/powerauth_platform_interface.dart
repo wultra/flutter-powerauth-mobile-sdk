@@ -283,6 +283,18 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
   }
 
+  Future<String> fetchSecureVaultKey(String instanceId, PowerAuthAuthentication authentication, String keyIdentifier) {
+    throw UnimplementedError('fetchSecureVaultKey() has not been implemented.');
+  }
+
+  Future<String> deriveSecureVaultKey(String objectId, int index, int keySize) {
+    throw UnimplementedError('deriveSecureVaultKey() has not been implemented.');
+  }
+
+  Future<void> releaseSecureVaultKey(String objectId) {
+    throw UnimplementedError('releaseSecureVaultKey() has not been implemented.');
+  }
+
 
   Future<bool> hasLocalToken(String instanceId, String tokenName) {
     throw UnimplementedError('hasLocalToken() has not been implemented.');
