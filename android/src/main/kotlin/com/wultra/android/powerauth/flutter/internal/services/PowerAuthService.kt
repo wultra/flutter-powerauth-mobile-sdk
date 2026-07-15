@@ -51,6 +51,7 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtil
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateFragmentActivity
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthClientConfiguration
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthBiometricConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.algorithmToString
@@ -106,15 +107,17 @@ internal class PowerAuthService(
         const val PROMPT_MESSAGE = "promptMessage"
         const val PROMPT_TITLE = "promptTitle"
         const val PROMPT_SUBTITLE = "promptSubtitle"
-        const val LINK_ITEMS_TO_CURRENT_SET = "linkItemsToCurrentSet"
+        const val INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE = "invalidateBiometricFactorAfterChange"
         const val CONFIRM_BIOMETRIC_AUTHENTICATION = "confirmBiometricAuthentication"
         const val AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP = "authenticateOnBiometricKeySetup"
         const val FALLBACK_TO_SHARED_BIOMETRY_KEY = "fallbackToSharedBiometryKey"
+        const val USE_LEGACY_SYMMETRIC_KEY = "useLegacySymmetricKey"
         const val MINIMAL_REQUIRED_KEYCHAIN_PROTECTION = "minimalRequiredKeychainProtection"
         const val BIOMETRY_KEY_ID = "biometryKeyId"
         const val BASE_ENDPOINT_URL = "baseEndpointUrl"
         const val CONFIGURATION_STRING = "configuration"
         const val ALGORITHM = "algorithm"
+        const val OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH = "offlineAuthenticationCodeComponentLength"
         const val OBJECT_ID = "objectId"
         const val KEY_IDENTIFIER = "keyIdentifier"
         const val KEY_SIZE = "keySize"
@@ -259,11 +262,12 @@ internal class PowerAuthService(
                 val powerAuthConfiguration =
                     buildPowerAuthConfiguration(instanceId, configurationMap)
                 val clientConfiguration = buildPowerAuthClientConfiguration(clientConfigMap)
-                val keychainConfiguration =
-                    buildPowerAuthKeychainConfiguration(keychainConfigMap, biometryConfigMap)
+                val biometricConfiguration = buildPowerAuthBiometricConfiguration(biometryConfigMap)
+                val keychainConfiguration = buildPowerAuthKeychainConfiguration(keychainConfigMap)
 
                 val sdkBuilder = PowerAuthSDK.Builder(powerAuthConfiguration)
                     .clientConfiguration(clientConfiguration)
+                    .biometricConfiguration(biometricConfiguration)
                     .keychainConfiguration(keychainConfiguration)
 
                 val sdk = sdkBuilder.build(context)
