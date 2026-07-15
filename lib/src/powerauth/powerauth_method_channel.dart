@@ -280,7 +280,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  Future<PowerAuthHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String uriId, [
@@ -294,11 +294,11 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         'queryParams': queryParams
       })
     );
-    return PowerAuthAuthorizationHttpHeader.fromMap(result);
+    return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> requestSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
@@ -314,7 +314,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         'body': body
       })
     );
-    return PowerAuthAuthorizationHttpHeader.fromMap(result);
+    return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override
@@ -508,11 +508,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<Map> generateHeaderForToken(String instanceId, String tokenName) async {
-    return await invokeMethod('generateHeaderForToken', {
+  Future<PowerAuthHttpHeader> generateHeaderForToken(String instanceId, String tokenName) async {
+    final result = await invokeMethod<Map<dynamic, dynamic>>('generateHeaderForToken', {
       'instanceId': instanceId,
       'tokenName': tokenName,
     });
+    return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override

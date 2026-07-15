@@ -45,7 +45,7 @@ import com.wultra.android.powerauth.flutter.ManagedAny
 import com.wultra.android.powerauth.flutter.ReleasePolicy
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.authorizationHeaderToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.httpHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.biometricStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
@@ -693,14 +693,7 @@ internal class PowerAuthService(
                     uriId,
                     queryParams
                 )
-            result.success(authorizationHeaderToMap(header))
-
-
-//            if (header.powerAuthErrorCode == PowerAuthErrorCodes.SUCCEED) {
-//                result.success(authorizationHeaderToMap(header))
-//            } else {
-//                throw PowerAuthErrorException(header.powerAuthErrorCode)
-//            }
+            result.success(httpHeaderToMap(header))
         }
     }
 
@@ -719,7 +712,7 @@ internal class PowerAuthService(
                     requestData
                 )
 
-                    result.success(authorizationHeaderToMap(header))
+                    result.success(httpHeaderToMap(header))
 
         }
     }
@@ -1218,7 +1211,7 @@ internal class PowerAuthService(
 
             sdk.tokenStore.generateAuthenticationHeader(context, tokenName, object: IGenerateTokenHeaderListener {
                 override fun onGenerateTokenHeaderSucceeded(header: PowerAuthHttpHeader) {
-                    result.success(mapOf("key" to header.key, "value" to header.value))
+                    result.success(httpHeaderToMap(header))
                 }
 
                 override fun onGenerateTokenHeaderFailed(t: Throwable) {

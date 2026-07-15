@@ -28,7 +28,7 @@ import 'powerauth_platform_interface.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_http_header.dart';
 import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_configuration.dart';
 import '../powerauth_password/powerauth_password.dart';
@@ -209,7 +209,7 @@ class PowerAuth {
   /// - [authentication]: Specifies the factors to use for signing.
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/user/detail").
   /// - [queryParams]: Optional query parameters to include in the signature calculation.
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  Future<PowerAuthHttpHeader> requestGetSignature(
     PowerAuthAuthentication authentication,
     String uriId, [
     Map<String, String>? queryParams,
@@ -226,7 +226,7 @@ class PowerAuth {
   /// - [method]: The HTTP method (e.g., "POST", "PUT").
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/transfer").
   /// - [body]: Optional request body data (as a String) to include in the signature calculation.
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> requestSignature(
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [

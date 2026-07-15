@@ -25,6 +25,13 @@ class PowerAuthHttpHeader {
 
   PowerAuthHttpHeader({required this.name, required this.value});
 
+  factory PowerAuthHttpHeader.fromMap(Map<dynamic, dynamic> map) {
+    return PowerAuthHttpHeader(
+      name: map['name'] as String,
+      value: map['value'] as String,
+    );
+  }
+
   Map<String, String> toMap() {
     return {'name': name, 'value': value};
   }

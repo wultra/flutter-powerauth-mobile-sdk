@@ -30,7 +30,6 @@ export 'src/model/powerauth_algorithm.dart';
 export 'src/model/powerauth_activation_state.dart';
 export 'src/model/powerauth_activation_status.dart';
 export 'src/model/powerauth_authentication.dart';
-export 'src/model/powerauth_authorization_http_header.dart';
 export 'src/model/powerauth_configuration.dart';
 export 'src/model/powerauth_create_activation_result.dart';
 export 'src/model/powerauth_error.dart';

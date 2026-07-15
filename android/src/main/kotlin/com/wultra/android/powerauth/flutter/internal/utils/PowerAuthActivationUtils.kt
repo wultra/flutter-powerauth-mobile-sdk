@@ -40,13 +40,9 @@ object PowerAuthActivationUtils {
         )
     }
 
-    fun authorizationHeaderToMap(header: PowerAuthHttpHeader): Map<String, String> {
-//        if (header.powerAuthErrorCode != PowerAuthErrorCodes.SUCCEED) {
-//            throw PowerAuthErrorException(header.powerAuthErrorCode)
-//        }
-
+    fun httpHeaderToMap(header: PowerAuthHttpHeader): Map<String, String> {
         return mapOf(
-            "key" to header.key,
+            "name" to header.key,
             "value" to header.value
         )
     }

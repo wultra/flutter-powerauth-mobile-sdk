@@ -2221,8 +2221,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         uriId,
       );
 
-      print('GET Signature Header (PWD): ${header.key}: ${header.value}');
-      _setError('GET Header (PWD): ${header.key}: ${header.value}');
+      print('GET Signature Header (PWD): ${header.name}: ${header.value}');
+      _setError('GET Header (PWD): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('GET signature (PWD) failed: ${e.message} (${e.code})');
     } catch (e) {
@@ -2251,8 +2251,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         uriId,
       );
 
-      print('GET Signature Header (Bio): ${header.key}: ${header.value}');
-      _setError('GET Header (Bio): ${header.key}: ${header.value}');
+      print('GET Signature Header (Bio): ${header.name}: ${header.value}');
+      _setError('GET Header (Bio): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('GET signature (Bio) failed: ${e.message} (${e.code})');
     } catch (e) {
@@ -2280,9 +2280,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         body,
       );
 
-      print('POST Signature Header (PWD): ${header.key}: ${header.value}');
+      print('POST Signature Header (PWD): ${header.name}: ${header.value}');
       print('For payload: ${base64Encode(utf8.encode(body))}');
-      _setError('POST Header (PWD): ${header.key}: ${header.value}');
+      _setError('POST Header (PWD): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (PWD) failed: ${e.message} (${e.code})');
     } catch (e) {
@@ -2317,9 +2317,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         body,
       );
 
-      print('POST Signature Header (Bio): ${header.key}: ${header.value}');
+      print('POST Signature Header (Bio): ${header.name}: ${header.value}');
       print('For payload: ${base64Encode(utf8.encode(body))}');
-      _setError('POST Header (Bio): ${header.key}: ${header.value}');
+      _setError('POST Header (Bio): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (Bio) failed: ${e.message} (${e.code})');
     } catch (e) {

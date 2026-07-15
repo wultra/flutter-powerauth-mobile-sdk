@@ -26,7 +26,7 @@ import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_algorithm.dart';
 import '../model/powerauth_authentication.dart';
-import '../model/powerauth_authorization_http_header.dart';
+import '../model/powerauth_http_header.dart';
 import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
 import '../model/powerauth_client_configuration.dart';
@@ -208,7 +208,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('finishPasswordChange() has not been implemented.');
   }
 
-  Future<PowerAuthAuthorizationHttpHeader> requestGetSignature(
+  Future<PowerAuthHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String uriId, [
@@ -217,7 +217,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('requestGetSignature() has not been implemented.');
   }
 
-  Future<PowerAuthAuthorizationHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> requestSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
@@ -337,7 +337,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('removeAccessToken() has not been implemented.');
   }
 
-  Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
+  Future<PowerAuthHttpHeader> generateHeaderForToken(String instanceId, String tokenName) {
     throw UnimplementedError('generateHeaderForToken() has not been implemented.');
   }
 
