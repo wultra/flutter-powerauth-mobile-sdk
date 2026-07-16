@@ -151,6 +151,7 @@ internal class PowerAuthService(
         const val PERSIST_ACTIVATION = "persistActivation"
         const val BEGIN_PASSWORD_CHANGE = "beginPasswordChange"
         const val FINISH_PASSWORD_CHANGE = "finishPasswordChange"
+        const val RELEASE_PASSWORD_CHANGE_DATA = "releasePasswordChangeData"
         const val REQUEST_GET_SIGNATURE = "requestGetSignature"
         const val REQUEST_SIGNATURE = "requestSignature"
         const val OFFLINE_SIGNATURE = "offlineSignature"
@@ -211,6 +212,7 @@ internal class PowerAuthService(
             HandlerNames.PERSIST_ACTIVATION to this::persistActivation,
             HandlerNames.BEGIN_PASSWORD_CHANGE to this::beginPasswordChange,
             HandlerNames.FINISH_PASSWORD_CHANGE to this::finishPasswordChange,
+            HandlerNames.RELEASE_PASSWORD_CHANGE_DATA to this::releasePasswordChangeData,
             HandlerNames.REQUEST_GET_SIGNATURE to this::requestGetSignature,
             HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
             HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
@@ -632,56 +634,102 @@ internal class PowerAuthService(
 //    }
 
     private fun beginPasswordChange(call: MethodCall, result: Result) {
-        val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
-        val oldPassword = buildPasswordObject(oldPasswordMap, use = true).copyToImmutable()
-
         usePowerAuth(call, result) { sdk ->
-            sdk.beginPasswordChange(context, oldPassword, object : IBeginPasswordChangeListener {
-                override fun onBeginPasswordChangeSucceed(passwordChangeData: PowerAuthPasswordChangeData) {
-                    oldPassword.clear()
-                    val objectId = objectRegister.registerObject(
-                        ManagedAny.wrap(passwordChangeData),
-                        call.getRequiredArgument(INSTANCE_ID),
-                        listOf(
-                            ReleasePolicy.afterUse(1),
-                            ReleasePolicy.expire(Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
-                        )
-                    )
-                    result.success(objectId)
-                }
+            val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
+            val oldPassword = buildOwnedPasswordObject(oldPasswordMap)
+            val passwordReleased = AtomicBoolean(false)
 
-                override fun onBeginPasswordChangeFailed(t: Throwable) {
-                    oldPassword.clear()
-                    Errors.error(result, t)
+            fun releasePassword() {
+                if (passwordReleased.compareAndSet(false, true)) {
+                    oldPassword.destroy()
                 }
-            })
+            }
 
+            try {
+                sdk.beginPasswordChange(context, oldPassword, object : IBeginPasswordChangeListener {
+                    override fun onBeginPasswordChangeSucceed(passwordChangeData: PowerAuthPasswordChangeData) {
+                        try {
+                            val objectId = objectRegister.registerObject(
+                                ManagedAny.wrap(passwordChangeData) { it.secureClear() },
+                                call.getRequiredArgument(INSTANCE_ID),
+                                listOf(
+                                    ReleasePolicy.afterUse(1),
+                                    ReleasePolicy.expire(Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
+                                )
+                            )
+                            result.success(objectId)
+                        } catch (t: Throwable) {
+                            passwordChangeData.secureClear()
+                            Errors.error(result, t)
+                        }
+                    }
+
+                    override fun onBeginPasswordChangeFailed(t: Throwable) {
+                        releasePassword()
+                        Errors.error(result, t)
+                    }
+                })
+            } catch (t: Throwable) {
+                releasePassword()
+                throw t
+            }
         }
     }
 
     private fun finishPasswordChange(call: MethodCall, result: Result) {
-        val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
-        val newPassword = buildPasswordObject(newPasswordMap, use = true).copyToImmutable()
-        val passwordChangeDataId: String = call.getRequiredArgument(PASSWORD_CHANGE_DATA)
-        val passwordChangeData = objectRegister.useObject(passwordChangeDataId, PowerAuthPasswordChangeData::class.java)
-            ?: throw WrapperException(
-                Errors.EC_INVALID_NATIVE_OBJECT,
-                "Password change data object '$passwordChangeDataId' is no longer valid or not found."
-            )
+        usePowerAuth(call, result) { sdk ->
+            val newPasswordMap: Map<String, Any> = call.getRequiredArgument(NEW_PASSWORD)
+            val newPassword = buildOwnedPasswordObject(newPasswordMap)
+            val passwordChangeData = try {
+                val passwordChangeDataId: String = call.getRequiredArgument(PASSWORD_CHANGE_DATA)
+                objectRegister.useObject(
+                    passwordChangeDataId,
+                    PowerAuthPasswordChangeData::class.java
+                )
+                    ?: throw WrapperException(
+                        Errors.EC_INVALID_NATIVE_OBJECT,
+                        "Password change data object '$passwordChangeDataId' is no longer valid or not found."
+                    )
+            } catch (t: Throwable) {
+                newPassword.destroy()
+                throw t
+            }
+            val sensitiveDataReleased = AtomicBoolean(false)
 
-        usePowerAuth(call, result) {sdk ->
-            sdk.finishPasswordChange(context, newPassword, passwordChangeData, object : IFinishPasswordChangeListener {
-                override fun onFinishPasswordChangeSucceed() {
-                    newPassword.clear()
-                    result.success(null)
+            fun releaseSensitiveData() {
+                if (sensitiveDataReleased.compareAndSet(false, true)) {
+                    newPassword.destroy()
+                    passwordChangeData.secureClear()
                 }
+            }
 
-                override fun onFinishPasswordChangeFailed(t: Throwable) {
-                    newPassword.clear()
-                    Errors.error(result, t)
-                }
-            } )
+            try {
+                sdk.finishPasswordChange(context, newPassword, passwordChangeData, object : IFinishPasswordChangeListener {
+                    override fun onFinishPasswordChangeSucceed() {
+                        releaseSensitiveData()
+                        result.success(null)
+                    }
 
+                    override fun onFinishPasswordChangeFailed(t: Throwable) {
+                        releaseSensitiveData()
+                        Errors.error(result, t)
+                    }
+                })
+            } catch (t: Throwable) {
+                releaseSensitiveData()
+                throw t
+            }
+        }
+    }
+
+    private fun releasePasswordChangeData(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            objectRegister.findObject(objectId, PowerAuthPasswordChangeData::class.java)?.secureClear()
+            objectRegister.removeObject(objectId, PowerAuthPasswordChangeData::class.java)
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
         }
     }
 

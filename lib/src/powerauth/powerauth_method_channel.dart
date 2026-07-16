@@ -280,6 +280,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<void> releasePasswordChangeData(String objectId) async {
+    await invokeMethod<void>('releasePasswordChangeData', {
+      'objectId': objectId,
+    });
+  }
+
+  @override
   Future<PowerAuthHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,

@@ -44,6 +44,7 @@ import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_signature_key_id.dart';
 import '../model/powerauth_secure_vault_key.dart';
 import '../model/powerauth_protocol_upgrade_result.dart';
+import '../model/powerauth_password_change_data.dart';
 
 /// Main class for interacting with the PowerAuth Mobile Flutter SDK.
 ///
@@ -198,11 +199,28 @@ class PowerAuth {
   /// Requires [authentication] (password and, optionally, biometry) to secure the local activation state.
   Future<void> persistActivation(PowerAuthAuthentication authentication) => _platform.persistActivation(instanceId, authentication);
 
-    /// Begins a password change by validating the [oldPassword] on the server.
-  Future<String> beginPasswordChange(PowerAuthPassword oldPassword) => _platform.beginPasswordChange(instanceId, oldPassword);
+  /// Begins a password change by validating the [oldPassword] on the server.
+  ///
+  /// Call [PowerAuthPasswordChangeData.release] if the operation is abandoned.
+  Future<PowerAuthPasswordChangeData> beginPasswordChange(PowerAuthPassword oldPassword) async {
+    final objectId = await _platform.beginPasswordChange(instanceId, oldPassword);
+    return PowerAuthPasswordChangeData.fromNative(
+      objectId: objectId,
+    );
+  }
 
   /// Finishes a password change initiated by [beginPasswordChange].
-  Future<void> finishPasswordChange(PowerAuthPassword newPassword, String passwordChangeData) => _platform.finishPasswordChange(instanceId, newPassword, passwordChangeData);
+  ///
+  /// The [passwordChangeData] object is consumed and released by this call,
+  /// regardless of whether the operation succeeds or fails.
+  Future<void> finishPasswordChange(
+    PowerAuthPassword newPassword,
+    PowerAuthPasswordChangeData passwordChangeData,
+  ) async {
+    await passwordChangeData.executeAndRelease(
+      (objectId) => _platform.finishPasswordChange(instanceId, newPassword, objectId),
+    );
+  }
 
   /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
   ///

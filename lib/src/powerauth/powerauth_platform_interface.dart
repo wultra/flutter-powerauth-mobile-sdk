@@ -208,6 +208,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('finishPasswordChange() has not been implemented.');
   }
 
+  Future<void> releasePasswordChangeData(String objectId) {
+    throw UnimplementedError(
+      'releasePasswordChangeData() has not been implemented.',
+    );
+  }
+
   Future<PowerAuthHttpHeader> requestGetSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
