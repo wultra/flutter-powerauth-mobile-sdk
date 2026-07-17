@@ -104,6 +104,7 @@ internal class PowerAuthService(
         const val ADDITIONAL_ACTIVATION_OTP = "additionalActivationOtp"
         const val CUSTOM_ATTRIBUTES = "customAttributes"
         const val IS_BIOMETRY = "isBiometry"
+        const val IS_PERSIST = "isPersist"
         const val PROMPT_MESSAGE = "promptMessage"
         const val PROMPT_TITLE = "promptTitle"
         const val PROMPT_SUBTITLE = "promptSubtitle"
@@ -498,7 +499,6 @@ internal class PowerAuthService(
         usePowerAuthOnMainThread(call, result) { sdk ->
             val authenticationObject = buildAuthenticationObject(
                 call,
-                persist = true,
                 authenticateOnBiometricKeySetup = sdk.biometricConfiguration.isAuthenticateOnBiometricKeySetup
             )
             val authenticationReleased = AtomicBoolean(false)
@@ -772,7 +772,7 @@ internal class PowerAuthService(
 
     private fun offlineSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            val authentication = buildAuthenticationObject(call, persist = false)
+            val authentication = buildAuthenticationObject(call)
             val uriId: String = call.getRequiredArgument(URI_ID)
             val nonce: String = call.getRequiredArgument(NONCE)
             val bodyString: String? = call.argument(BODY)
@@ -1021,13 +1021,26 @@ internal class PowerAuthService(
 
     private fun buildAuthenticationObject(
         call: MethodCall,
-        persist: Boolean,
         authenticateOnBiometricKeySetup: Boolean = true
     ): PowerAuthAuthentication {
         val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
+        // Reconstruct the native object from its serialized purpose. The core SDK
+        // remains responsible for validating whether the called operation accepts it.
+        val persist = authMap[IS_PERSIST] as? Boolean
+            ?: throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Missing isPersist in authentication object."
+            )
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
         val passwordMap = authMap[PASSWORD] as? Map<String, Any>
+        val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
+        if (!persist && useBiometry && biometryKeyId.isNullOrEmpty()) {
+            throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "biometryKeyId is required for biometric authentication."
+            )
+        }
 
         val persistPrompt = if (persist && useBiometry) {
             val promptMap = authMap[BIOMETRIC_PROMPT] as? Map<String, Any>
@@ -1062,7 +1075,6 @@ internal class PowerAuthService(
                     PowerAuthAuthentication.persistWithPassword(ownedPassword)
                 }
             } else {
-                val biometryKeyId = authMap[BIOMETRY_KEY_ID] as? String
                 biometryKey = biometryKeyId?.let { keyId ->
                     objectRegister.useObjectAndTransform(keyId, SecureData::class.java) { key ->
                         key.copy()
@@ -1098,7 +1110,7 @@ internal class PowerAuthService(
         call: MethodCall,
         block: (PowerAuthAuthentication) -> T
     ): T {
-        val authentication = buildAuthenticationObject(call, persist = false)
+        val authentication = buildAuthenticationObject(call)
         return try {
             block(authentication)
         } finally {

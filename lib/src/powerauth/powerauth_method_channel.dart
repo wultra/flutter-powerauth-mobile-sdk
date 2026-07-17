@@ -38,16 +38,10 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) async {
+    final auth = _getInternalAuthentication(authentication);
 
-    // We expect that the authentication object is an instance of InternalAuth,
-    // which is used for method channel operations. If it's not, we throw an exception.
-    final auth = authentication as InternalAuth?;
-
-    if (auth == null) {
-      throw PowerAuthException(code: PowerAuthErrorCode.unknownError, message: "PowerAuthAuthentication must be an InternalAuth instance for method channel operations.");
-    }
-
-    // If the authentication is for activation persist, we return it directly (persist does not need biometric authentication).
+    // Persistence authentication does not need biometric resolution. Keep its
+    // declared purpose intact so the native SDK can validate its usage.
     if (auth.forActivationPersist) {
       return auth;
     }
@@ -63,14 +57,23 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
     // On both platforms we need to fetch the key for every biometric authentication.
     // If the key is already set, use it.
-    if (auth.useBiometry && auth.biometryKeyId == null) {
+    if (auth.useBiometry &&
+        (auth.biometryKeyId == null || auth.biometryKeyId!.isEmpty)) {
       final isReusable = auth.isReusable || makeReusable;
       auth.isReusable = isReusable;
-      auth.biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
+      final biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
         'instanceId': instanceId,
         'prompt': auth.biometricPrompt?.toMap(),
         'isReusable': isReusable,
       });
+      if (biometryKeyId == null || biometryKeyId.isEmpty) {
+        throw PowerAuthException(
+          code: PowerAuthErrorCode.invalidNativeObject,
+          message:
+              'Biometric authentication did not produce a valid native key.',
+        );
+      }
+      auth.biometryKeyId = biometryKeyId;
     }
     return auth;
   }
@@ -116,7 +119,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
       ),
     );
   }
- 
+
   // TODO: Implement when SDK 2.0.0 is available
   // @override
   // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) async {
@@ -252,7 +255,11 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
 
   @override
   Future<void> persistActivation(String instanceId, PowerAuthAuthentication authentication) async {
-    await invokeMethod<void>('persistActivation', await _authenticate(instanceId, authentication, {'instanceId': instanceId}));
+    final auth = _getInternalAuthentication(authentication);
+    await invokeMethod<void>(
+      'persistActivation',
+      await auth.prepareAuthArguments({'instanceId': instanceId}),
+    );
   }
 
   @override
@@ -587,5 +594,16 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   Future<Map<String, dynamic>> _authenticate(String instanceId, PowerAuthAuthentication authentication, Map<String, dynamic> baseArgs) async {
     final resolvedAuth = await resolveAuthentication(instanceId, authentication);
     return await resolvedAuth.prepareAuthArguments(baseArgs);
+  }
+
+  InternalAuth _getInternalAuthentication(PowerAuthAuthentication authentication) {
+    if (authentication is! InternalAuth) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.wrongParameter,
+        message:
+            'PowerAuthAuthentication must be created with one of its factory constructors.',
+      );
+    }
+    return authentication;
   }
 }
