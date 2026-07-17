@@ -15,7 +15,6 @@
  */
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
@@ -38,7 +37,6 @@ import '../powerauth_encryptor/powerauth_encryptor.dart';
 import 'powerauth_token_store.dart';
 import 'powerauth_time_synchronization_service.dart';
 import '../model/powerauth_create_activation_result.dart';
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_signature_key_id.dart';
@@ -410,24 +408,25 @@ class PowerAuth {
       }  
   }
 
-  /// Returns an encryptor for application scope.
+  /// Acquires a single-use encryptor for application scope.
   ///
-  /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// Encryption is available without activation.
-  PowerAuthEncryptor getEncryptorForApplicationScope() {
-    return PowerAuthRequestEncryptor(
-      encryptorScope: PowerAuthEncryptorScope.application,
+  /// Encryption is available without activation. Acquire a new encryptor for
+  /// every request and response exchange and release it in a `finally` block.
+  Future<PowerAuthEncryptor> getEncryptorForApplicationScope() {
+    return PowerAuthEncryptorImpl.acquire(
+      scope: PowerAuthEncryptorScope.application,
       powerAuthInstanceId: instanceId,
     );
   }
 
-  /// Returns an encryptor for activation scope.
+  /// Acquires a single-use encryptor for activation scope.
   ///
-  /// The encryptor is reusable and can be used to encrypt multiple requests.
-  /// Encryption requires valid activation.
-  PowerAuthEncryptor getEncryptorForActivationScope() {
-    return PowerAuthRequestEncryptor(
-      encryptorScope: PowerAuthEncryptorScope.activation,
+  /// A valid activation is required at acquisition time. Acquire a new
+  /// encryptor for every request and response exchange and release it in a
+  /// `finally` block.
+  Future<PowerAuthEncryptor> getEncryptorForActivationScope() {
+    return PowerAuthEncryptorImpl.acquire(
+      scope: PowerAuthEncryptorScope.activation,
       powerAuthInstanceId: instanceId,
     );
   }

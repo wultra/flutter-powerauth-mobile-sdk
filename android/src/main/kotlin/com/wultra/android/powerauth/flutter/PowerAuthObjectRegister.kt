@@ -263,6 +263,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      *
      * This is useful for one-shot native objects whose independent copy must be created before
      * the register cleanup job is allowed to destroy the registered instance.
+     * Not suitable for heavy operations, as it locks the whole register
      */
     fun <T : Any, R : Any> useObjectAndTransform(
         id: String,

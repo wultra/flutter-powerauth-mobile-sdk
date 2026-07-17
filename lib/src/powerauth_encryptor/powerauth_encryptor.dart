@@ -14,130 +14,70 @@
  * limitations under the License.
  */
 
-import 'dart:async';
+import 'dart:typed_data';
 
-import 'package:meta/meta.dart';
-
-import '../model/base_native_object.dart';
-import '../model/base_releasable_object.dart';
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_encryptor.dart';
-import '../model/powerauth_encryption_http_header.dart';
+import '../model/powerauth_http_header.dart';
 import 'powerauth_encryptor_platform_interface.dart';
 
-/// Implementation of [PowerAuthEncryptor] that uses the platform interface.
-class PowerAuthRequestEncryptor extends BaseNativeObject implements PowerAuthEncryptor {
-
-  static PowerAuthEncryptorPlatform get _platform => PowerAuthEncryptorPlatform.instance;
-
-  /// Scope of this encryptor.
-  @override
-  final PowerAuthEncryptorScope encryptorScope;
-
-  /// Instance identifier of PowerAuth instance owning this encryptor.
-  final String powerAuthInstanceId;
-
-  /// Autorelease time in ms.
-  final int? autoReleaseTimeMillis;
-
-  /// Creates a new instance of [PowerAuthRequestEncryptor].
-  ///
-  /// [scope] is the scope of the encryptor.
-  /// [powerAuthInstanceId] is the instance identifier of PowerAuth class owning this encryptor.
-  /// [autoReleaseTimeMillis] is the autorelease timeout in milliseconds. The value is used only for testing purposes.
-  PowerAuthRequestEncryptor({
-    required this.encryptorScope,
-    required this.powerAuthInstanceId,
-    this.autoReleaseTimeMillis,
-  });
+/// Platform-backed implementation of [PowerAuthEncryptor].
+///
+/// This class is internal to the package. Applications acquire an encryptor
+/// from `PowerAuth`.
+class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
+  static PowerAuthEncryptorPlatform get _platform =>
+      PowerAuthEncryptorPlatform.instance;
 
   @override
-  @protected
-  Future<String> createNativeObject() async {
-    return _platform.initialize(
-      scope: encryptorScope,
+  final PowerAuthEncryptorScope scope;
+
+  final String _objectId;
+
+  PowerAuthEncryptorImpl._({required this.scope, required this._objectId});
+
+  /// Acquires and registers one native encryptor.
+  static Future<PowerAuthEncryptor> acquire({
+    required PowerAuthEncryptorScope scope,
+    required String powerAuthInstanceId,
+  }) async {
+    final objectId = await _platform.initialize(
+      scope: scope,
       powerAuthInstanceId: powerAuthInstanceId,
-      autoReleaseTimeMillis: autoReleaseTimeMillis,
+    );
+    return PowerAuthEncryptorImpl._(scope: scope, objectId: objectId);
+  }
+
+  @override
+  Future<bool> canEncryptRequest() {
+    return _platform.canEncryptRequest(_objectId);
+  }
+
+  @override
+  Future<bool> canDecryptResponse() {
+    return _platform.canDecryptResponse(_objectId);
+  }
+
+  @override
+  Future<PowerAuthEncryptedRequest> encryptRequest(
+    Uint8List? requestBody,
+  ) async {
+    final result = await _platform.encryptRequest(_objectId, requestBody);
+    final headers = (result['requestHeaders'] as List<dynamic>)
+        .map((header) => PowerAuthHttpHeader.fromMap(header as Map))
+        .toList(growable: false);
+    return PowerAuthEncryptedRequest(
+      requestBody: result['requestBody'] as Uint8List,
+      requestHeaders: headers,
     );
   }
 
   @override
-  @protected
-  Future<void> releaseNativeObject(String objectId) async {
-    return _platform.release(objectId);
+  Future<Uint8List> decryptResponse(Uint8List responseBody) {
+    return _platform.decryptResponse(_objectId, responseBody);
   }
 
   @override
-  Future<bool> canEncryptRequest() async {
-    try {
-      return await withObjectId((id) => _platform.canEncryptRequest(id));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  @override
-  Future<PowerAuthEncryptedRequestData> encryptRequest(
-    String body, [
-    PowerAuthDataFormat bodyFormat = PowerAuthDataFormat.utf8,
-  ]) async {
-    return await withObjectId((id) async {
-      final result = await _platform.encryptRequest(id, body, bodyFormat);
-      final headers = (result['requestHeaders'] as List)
-          .map((e) => PowerAuthEncryptionHttpHeader.fromMap(e as Map))
-          .toList();
-      return PowerAuthEncryptedRequestData(
-        requestBody: result['requestBody'],
-        requestHeaders: headers,
-        decryptor: PowerAuthResponseDecryptor(
-          decryptorScope: encryptorScope,
-          objectId: result['decryptorId'],
-        ),
-      );
-    });
-  }
-}
-
-/// Implementation of [PowerAuthDecryptor] that uses the platform interface.
-class PowerAuthResponseDecryptor extends BaseReleasableObject implements PowerAuthDecryptor {
-
-  static PowerAuthEncryptorPlatform get _platform => PowerAuthEncryptorPlatform.instance;
-
-  /// Scope of this decryptor.
-  @override
-  final PowerAuthEncryptorScope decryptorScope;
-
-  /// Creates a new instance of [PowerAuthResponseDecryptor].
-  ///
-  /// [decryptorScope] is the original scope used in the encryptor.
-  /// [objectId] is the native object identifier.
-  PowerAuthResponseDecryptor({
-    required this.decryptorScope,
-    required String objectId,
-  }) {
-    this.objectId = objectId;
-  }
-
-  @override
-  @protected
-  Future<void> releaseNativeObject(String objectId) async {
-    return _platform.release(objectId);
-  }
-
-  @override
-  Future<bool> canDecryptResponse() async {
-    try {
-      return await withObjectId((id) => _platform.canDecryptResponse(id));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  @override
-  Future<String> decryptResponse(
-    String responseBody, [
-    PowerAuthDataFormat outputDataFormat = PowerAuthDataFormat.utf8,
-  ]) async {
-    return await withObjectId((id) => _platform.decryptResponse(id, responseBody, outputDataFormat));
+  Future<void> release() {
+    return _platform.release(_objectId);
   }
 }

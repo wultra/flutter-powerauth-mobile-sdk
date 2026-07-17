@@ -47,14 +47,9 @@ internal object Constants {
     const val PASSWORD_KEY_KEEP_ALIVE_TIME = 5 * 60 * 1_000
 
     /**
-     * Time interval in milliseconds to keep encryptor object valid in memory.
+     * Maximum inactivity interval for an abandoned encryptor object in memory.
      */
-    const val ENCRYPTOR_KEY_KEEP_ALIVE_TIME = 5 * 60 * 1_000
-
-    /**
-     * Time interval in milliseconds to keep decryptor object valid in memory.
-     */
-    const val DECRYPTOR_KEY_KEEP_ALIVE_TIME = 5 * 60 * 1_000
+    const val ENCRYPTOR_KEEP_ALIVE_TIME = 5 * 60 * 1_000
 
     /**
      * Upper limit for Unicode Code Point.
@@ -67,4 +62,4 @@ internal object Constants {
      * provided to authentication dialog.
      */
     const val MISSING_REQUIRED_STRING = "< missing >"
-} 
+}

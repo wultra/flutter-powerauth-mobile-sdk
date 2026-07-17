@@ -699,6 +699,7 @@ internal class PowerAuthService(
             fun releaseSensitiveData() {
                 if (sensitiveDataReleased.compareAndSet(false, true)) {
                     newPassword.destroy()
+                    //TODO: This doesn't destroy/clear the copyToImmutable() password, needs a fix. Now the password gets destroyed with java GC
                     passwordChangeData.secureClear()
                 }
             }

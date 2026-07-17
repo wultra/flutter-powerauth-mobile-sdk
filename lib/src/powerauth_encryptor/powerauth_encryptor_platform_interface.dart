@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_encryptor.dart';
 import 'powerauth_encryptor_method_channel.dart';
 
 /// Platform interface for [PowerAuthEncryptor].
 abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
-
   PowerAuthEncryptorPlatform() : super(token: _token);
 
   static final Object _token = Object();
@@ -35,53 +33,45 @@ abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
   /// The default instance of [PowerAuthEncryptorPlatform] to use.
   static PowerAuthEncryptorPlatform get instance => _instance;
 
-  /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [PowerAuthEncryptorPlatform] when
-  /// they register themselves.
+  /// Sets the platform-specific implementation.
   static set instance(PowerAuthEncryptorPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }
 
-  /// Initialize a new encryptor instance.
+  /// Acquires and registers a native encryptor.
   Future<String> initialize({
     required PowerAuthEncryptorScope scope,
     required String powerAuthInstanceId,
-    int? autoReleaseTimeMillis,
   }) {
     throw UnimplementedError('initialize() has not been implemented.');
   }
 
-  /// Release the encryptor instance.
+  /// Releases the native encryptor.
   Future<void> release(String objectId) {
     throw UnimplementedError('release() has not been implemented.');
   }
 
-  /// Check if the encryptor can encrypt a request.
+  /// Checks whether the native encryptor can encrypt a request.
   Future<bool> canEncryptRequest(String objectId) {
     throw UnimplementedError('canEncryptRequest() has not been implemented.');
   }
 
-  /// Encrypt a request.
-  Future<Map> encryptRequest(
+  /// Encrypts raw request bytes.
+  Future<Map<dynamic, dynamic>> encryptRequest(
     String objectId,
-    String body,
-    PowerAuthDataFormat bodyFormat,
+    Uint8List? requestBody,
   ) {
     throw UnimplementedError('encryptRequest() has not been implemented.');
   }
 
-  /// Check if the decryptor can decrypt a response.
+  /// Checks whether the native encryptor can decrypt a response.
   Future<bool> canDecryptResponse(String objectId) {
     throw UnimplementedError('canDecryptResponse() has not been implemented.');
   }
 
-  /// Decrypt a response.
-  Future<String> decryptResponse(
-    String objectId,
-    String responseBody,
-    PowerAuthDataFormat outputDataFormat,
-  ) {
+  /// Decrypts a raw encrypted response body.
+  Future<Uint8List> decryptResponse(String objectId, Uint8List responseBody) {
     throw UnimplementedError('decryptResponse() has not been implemented.');
   }
 }

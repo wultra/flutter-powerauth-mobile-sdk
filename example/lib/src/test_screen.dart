@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/tests.dart';
+import 'package:http/http.dart' as http;
 
 import '../config.dart';
 import 'debug_helper.dart';
@@ -739,6 +740,90 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     }
   }
 
+  Future<void> _testEndToEndEncryption() async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    PowerAuthEncryptor? encryptor;
+    try {
+      encryptor = await _powerAuth.getEncryptorForActivationScope();
+      final canEncryptBefore = await encryptor.canEncryptRequest();
+      final canDecryptBefore = await encryptor.canDecryptResponse();
+      if (!canEncryptBefore || canDecryptBefore) {
+        throw StateError('Unexpected initial encryptor state.');
+      }
+
+      final encrypted = await encryptor.encryptRequest(
+        Uint8List.fromList(utf8.encode('{}')),
+      );
+
+      final canEncryptAfterEncryption = await encryptor.canEncryptRequest();
+      final canDecryptAfterEncryption = await encryptor.canDecryptResponse();
+      if (canEncryptAfterEncryption || !canDecryptAfterEncryption) {
+        throw StateError('Unexpected encryptor state after encryption.');
+      }
+
+      final configuration = await _powerAuth.configuration;
+      final baseEndpoint = configuration.baseEndpointUrl.replaceFirst(
+        RegExp(r'/+$'),
+        '',
+      );
+      final currentAlgorithm = await _powerAuth.currentAlgorithm;
+      final protocolVersion = currentAlgorithm == PowerAuthAlgorithm.legacy
+          ? 'v3'
+          : 'v4';
+      final response = await http.post(
+        Uri.parse('$baseEndpoint/pa/$protocolVersion/user/info'),
+        headers: {
+          'content-type': 'application/json; charset=UTF-8',
+          for (final header in encrypted.requestHeaders)
+            header.name: header.value,
+        },
+        body: encrypted.requestBody,
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw StateError(
+          'Encrypted HTTP request failed with status ${response.statusCode}: '
+          '${response.body}',
+        );
+      }
+
+      final cleartext = await encryptor.decryptResponse(response.bodyBytes);
+      final canEncryptAfterDecryption = await encryptor.canEncryptRequest();
+      final canDecryptAfterDecryption = await encryptor.canDecryptResponse();
+      if (canEncryptAfterDecryption || canDecryptAfterDecryption) {
+        throw StateError('Unexpected encryptor state after decryption.');
+      }
+
+      final decodedResponse = jsonDecode(utf8.decode(cleartext));
+      final formattedResponse = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(decodedResponse);
+      final message =
+          'Initial state: encrypt=$canEncryptBefore, decrypt=$canDecryptBefore\n'
+          'After encryption: encrypt=$canEncryptAfterEncryption, '
+          'decrypt=$canDecryptAfterEncryption\n'
+          'After decryption: encrypt=$canEncryptAfterDecryption, '
+          'decrypt=$canDecryptAfterDecryption\n\n'
+          'Endpoint: /pa/$protocolVersion/user/info\n'
+          'Decrypted response:\n$formattedResponse';
+      print(message);
+      if (mounted) {
+        await _showSimpleDialog('End-to-End Encryption', message);
+      }
+    } on PowerAuthException catch (e) {
+      _setError('End-to-end encryption failed: ${e.message} (${e.code})');
+    } catch (e) {
+      _setError('Unexpected end-to-end encryption error: $e');
+    } finally {
+      await encryptor?.release();
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool loading) {
     if (!mounted) return;
 
@@ -904,6 +989,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               ),
               const SizedBox(height: 10),
               _buildSecureVaultButtons(),
+              const SizedBox(height: 20),
+
+              Text(
+                'End-to-End Encryption',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              _buildEncryptionButtons(),
               const SizedBox(height: 20),
 
               Text(
@@ -1430,6 +1523,21 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   ? null
                   : _testSecureVaultWithBiometry,
           child: const Text('Test Secure Vault (Bio)'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEncryptionButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : _testEndToEndEncryption,
+          child: const Text('Test Activation-Scoped E2EE Round Trip'),
         ),
       ],
     );
