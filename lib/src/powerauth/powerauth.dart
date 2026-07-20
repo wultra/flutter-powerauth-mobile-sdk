@@ -307,6 +307,25 @@ class PowerAuth {
     signatureKeyId,
   );
 
+  /// Verifies JWS or JWT signed data using the specified key.
+  ///
+  /// If [compact] is `true`, [signature] is expected to be a compact JWT.
+  /// Otherwise, a full JWS object is expected. If [strict] is `true`, all
+  /// selected keys must successfully verify their corresponding signatures.
+  /// If verification fails, a [PowerAuthException] is thrown.
+  Future<void> verifyJwsSignature(
+    String signature,
+    bool compact,
+    bool strict,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.verifyJwsSignature(
+    instanceId,
+    signature,
+    compact,
+    strict,
+    signatureKeyId,
+  );
+
   /// Calculates a JWS signature for UTF-8 encoded [data].
   ///
   /// The optional [dataType] is added to the protected JOSE header as `typ`.

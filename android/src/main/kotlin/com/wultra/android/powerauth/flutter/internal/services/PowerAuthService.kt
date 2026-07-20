@@ -94,6 +94,7 @@ internal class PowerAuthService(
         const val SIGNATURE = "signature"
         const val SIGNATURE_KEY_ID = "signatureKeyId"
         const val COMPACT = "compact"
+        const val STRICT = "strict"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
         const val BIOMETRIC_PROMPT = "biometricPrompt"
@@ -174,6 +175,7 @@ internal class PowerAuthService(
         const val DERIVE_SECURE_VAULT_KEY = "deriveSecureVaultKey"
         const val RELEASE_SECURE_VAULT_KEY = "releaseSecureVaultKey"
         const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
+        const val VERIFY_JWS_SIGNATURE = "verifyJwsSignature"
         const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
@@ -235,6 +237,7 @@ internal class PowerAuthService(
             HandlerNames.DERIVE_SECURE_VAULT_KEY to this::deriveSecureVaultKey,
             HandlerNames.RELEASE_SECURE_VAULT_KEY to this::releaseSecureVaultKey,
             HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
+            HandlerNames.VERIFY_JWS_SIGNATURE to this::verifyJwsSignature,
             HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
             HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
@@ -1415,6 +1418,18 @@ internal class PowerAuthService(
                     }
                 )
             }
+        }
+    }
+
+    private fun verifyJwsSignature(call: MethodCall, result: Result) {
+        val signature: String = call.getRequiredArgument(SIGNATURE)
+        val compact: Boolean = call.getRequiredArgument(COMPACT)
+        val strict: Boolean = call.getRequiredArgument(STRICT)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
+        usePowerAuth(call, result) { sdk ->
+            sdk.verifyJwsSignature(signature, compact, strict, keyId)
+            result.success(null)
         }
     }
 

@@ -605,6 +605,44 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
+  Future<void> _calculateAndVerifyJwsSignature(
+    String password,
+    String data,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final signature = await _powerAuth.calculateJwsSignature(
+        authentication,
+        data,
+        null,
+        false,
+        PowerAuthSignatureKeyId.device,
+      );
+      await _powerAuth.verifyJwsSignature(
+        signature,
+        false,
+        true,
+        PowerAuthSignatureKeyId.device,
+      );
+
+      print('JWS signature calculated and verified: $signature');
+      _setError('JWS Signature Calculated and Verified: $signature');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'JWS signature round-trip failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during JWS signature round-trip: $e');
+    }
+    _setLoading(false);
+  }
+
   Future<void> _calculateJwsSignatureWithBiometry(String data) async {
     if (!_isConfigured || _hasValidActivation != true) {
       return _setError('Instance not configured or no valid activation');
@@ -1611,6 +1649,26 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Calculate JWS Signature (PWD)'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Calculate and Verify JWS Signature',
+                    fields: {'Password': true, 'Data': false},
+                    initialValues: {'Data': defaultBody},
+                    onSubmit: (values) {
+                      _calculateAndVerifyJwsSignature(
+                        values['Password']!,
+                        values['Data']!,
+                      );
+                    },
+                  ),
+          child: const Text('Calculate and Verify JWS Signature'),
         ),
 
         const SizedBox(height: 8),

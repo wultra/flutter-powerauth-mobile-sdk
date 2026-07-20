@@ -380,6 +380,23 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<void> verifyJwsSignature(
+    String instanceId,
+    String signature,
+    bool compact,
+    bool strict,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    await invokeMethod<void>('verifyJwsSignature', {
+      'instanceId': instanceId,
+      'signature': signature,
+      'compact': compact,
+      'strict': strict,
+      'signatureKeyId': signatureKeyId.name,
+    });
+  }
+
+  @override
   Future<String> calculateJwsSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
