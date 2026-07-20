@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'dart:typed_data';
+
 import 'base_releasable_object.dart';
 import '../powerauth/powerauth_platform_interface.dart';
 
@@ -44,11 +46,11 @@ class PowerAuthSecureVaultKey extends BaseReleasableObject {
     this.objectId = objectId;
   }
 
-  /// Derives a key and returns it as a Base64 encoded string.
+  /// Derives a key and returns it as raw bytes.
   ///
   /// [index] identifies the derived key and [keySize] specifies its size in
   /// bytes. The minimum supported key size is 16 bytes.
-  Future<String> deriveKey(int index, int keySize) => withObjectId(
+  Future<Uint8List> deriveKey(int index, int keySize) => withObjectId(
     (objectId) => _platform.deriveSecureVaultKey(objectId, index, keySize),
   );
 

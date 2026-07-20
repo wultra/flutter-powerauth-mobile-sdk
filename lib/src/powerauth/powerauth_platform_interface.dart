@@ -245,7 +245,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
 
   Future<void> verifyDigitalSignature(
     String instanceId,
-    String signature,
+    Uint8List signature,
     String data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) {
@@ -254,7 +254,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<String> calculateDigitalSignature(
+  Future<Uint8List> calculateDigitalSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String data,
@@ -302,7 +302,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('removeBiometryFactor() has not been implemented.');
   }
 
-  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
+  Future<Uint8List> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
     throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
   }
 
@@ -310,7 +310,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('fetchSecureVaultKey() has not been implemented.');
   }
 
-  Future<String> deriveSecureVaultKey(String objectId, int index, int keySize) {
+  Future<Uint8List> deriveSecureVaultKey(String objectId, int index, int keySize) {
     throw UnimplementedError('deriveSecureVaultKey() has not been implemented.');
   }
 

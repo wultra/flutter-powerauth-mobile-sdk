@@ -15,6 +15,7 @@
  */
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import '../model/powerauth_biometric_status.dart';
 import '../model/powerauth_biometry_configuration.dart';
@@ -275,13 +276,13 @@ class PowerAuth {
     body,
   );
 
-  /// Verifies a Base64 encoded digital [signature] for UTF-8 encoded [data].
+  /// Verifies a digital [signature] provided as raw bytes for UTF-8 encoded [data].
   ///
   /// The [signatureKeyId] must identify a specific verification key. If the
   /// signature is invalid, a [PowerAuthException] with
   /// [PowerAuthErrorCode.wrongSignature] is thrown.
   Future<void> verifyDigitalSignature(
-    String signature,
+    Uint8List signature,
     String data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) => _platform.verifyDigitalSignature(
@@ -291,11 +292,11 @@ class PowerAuth {
     signatureKeyId,
   );
 
-  /// Calculates a digital signature for UTF-8 encoded [data].
+  /// Calculates a digital signature for UTF-8 encoded [data] and returns it as raw bytes.
   ///
   /// The [signatureKeyId] must identify a specific device signing key, such as
   /// [PowerAuthSignatureKeyId.deviceEc] or [PowerAuthSignatureKeyId.deviceMlDsa].
-  Future<String> calculateDigitalSignature(
+  Future<Uint8List> calculateDigitalSignature(
     PowerAuthAuthentication authentication,
     String data,
     PowerAuthSignatureKeyId signatureKeyId,
@@ -346,7 +347,7 @@ class PowerAuth {
   /// Removes the biometry key associated with the current activation locally.
   Future<void> removeBiometryFactor() => _platform.removeBiometryFactor(instanceId);
 
-  /// Generate a derived encryption key with given index. The key is returned in form of base64 encoded string.
+  /// Generate a derived encryption key with given index. The key is returned as raw bytes.
   /// 
   /// This method calls PowerAuth Standard RESTful API endpoint `/pa/vault/unlock` to obtain the vault encryption key used 
   /// for subsequent key derivation using given index.
@@ -354,7 +355,7 @@ class PowerAuth {
   /// - [authentication] Authentication used for vault unlocking call.
   /// - [index] Index of the derived key using KDF. 
   @Deprecated('Legacy protocol 3.3 only. Migrate the activation and use fetchSecureVaultKey() with protocol 4.0.')
-  Future<String> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
+  Future<Uint8List> fetchEncryptionKey(PowerAuthAuthentication authentication, int index) => _platform.fetchEncryptionKey(instanceId, authentication, index);
 
   /// Fetches a base Secure Vault key for subsequent key derivation.
   ///

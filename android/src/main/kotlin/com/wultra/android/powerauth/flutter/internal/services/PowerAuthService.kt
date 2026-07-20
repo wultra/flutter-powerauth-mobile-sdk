@@ -20,7 +20,6 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Base64
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
@@ -813,13 +812,13 @@ internal class PowerAuthService(
     }
 
     private fun verifyDigitalSignature(call: MethodCall, result: Result) {
-        val signature: String = call.getRequiredArgument(SIGNATURE)
+        val signature: ByteArray = call.getRequiredArgument(SIGNATURE)
         val data: String = call.getRequiredArgument(DATA)
         val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
 
         usePowerAuth(call, result) { sdk ->
             sdk.verifyDigitalSignature(
-                Base64.decode(signature, Base64.DEFAULT),
+                signature,
                 data.toByteArray(StandardCharsets.UTF_8),
                 keyId
             )
@@ -1309,7 +1308,8 @@ internal class PowerAuthService(
                     index.toLong(),
                     object : IFetchEncryptionKeyListener {
                         override fun onFetchEncryptionKeySucceed(key: SecureData) {
-                            result.success(Base64.encodeToString(key.sensitiveData, Base64.NO_WRAP))
+                            result.success(key.sensitiveData)
+                            key.destroy()
                         }
 
                         override fun onFetchEncryptionKeyFailed(t: Throwable) {
@@ -1362,7 +1362,7 @@ internal class PowerAuthService(
                 )
             val derivedKey = vaultKey.deriveKey(index.toLong(), keySize)
             try {
-                result.success(Base64.encodeToString(derivedKey.sensitiveData, Base64.NO_WRAP))
+                result.success(derivedKey.sensitiveData)
             } finally {
                 derivedKey.destroy()
             }
@@ -1410,7 +1410,7 @@ internal class PowerAuthService(
                         }
 
                         override fun onDigitalSignatureSucceed(signature: ByteArray) {
-                            result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
+                            result.success(signature)
                         }
                     }
                 )

@@ -488,7 +488,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(true);
     try {
       await _powerAuth.verifyDigitalSignature(
-        signature,
+        base64Decode(signature),
         data,
         PowerAuthSignatureKeyId.masterEc,
       );
@@ -524,8 +524,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         PowerAuthSignatureKeyId.deviceEc,
       );
 
-      print('Device private key signature: $signature');
-      _setError('Device Private Key Signature: $signature');
+      final encodedSignature = base64Encode(signature);
+      print('Device private key signature: $encodedSignature');
+      _setError('Device Private Key Signature: $encodedSignature');
     } on PowerAuthException catch (e) {
       _setError(
         'Device private key signing failed: ${e.message} (${e.code})',
@@ -559,8 +560,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         PowerAuthSignatureKeyId.deviceEc,
       );
 
-      print('Digital signature calculated and verified: $signature');
-      _setError('Digital Signature Calculated and Verified: $signature');
+      final encodedSignature = base64Encode(signature);
+      print('Digital signature calculated and verified: $encodedSignature');
+      _setError('Digital Signature Calculated and Verified: $encodedSignature');
     } on PowerAuthException catch (e) {
       _setError(
         'Digital signature round-trip failed: ${e.message} (${e.code})',
@@ -665,7 +667,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         1000,
       );
       final message = 'Legacy encryption key fetch succeeded. '
-          'Index: 1000, key size: ${base64Decode(encryptionKey).length} bytes.';
+          'Index: 1000, key size: ${encryptionKey.length} bytes.';
       print(message);
       _setError(message);
     } on PowerAuthException catch (e) {
@@ -723,8 +725,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
       final message = 'Secure Vault ($authenticationType) succeeded. '
           'Key ID: ${keyIdentifier.name}, '
-          'derived size: ${base64Decode(derivedKey).length} bytes, '
-          'stable derivation: ${derivedKey == repeatedKey}, '
+          'derived size: ${derivedKey.length} bytes, '
+          'stable derivation: ${listEquals(derivedKey, repeatedKey)}, '
           'release verified: $releaseVerified.';
       print(message);
       _setError(message);

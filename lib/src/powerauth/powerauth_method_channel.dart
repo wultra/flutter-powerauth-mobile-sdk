@@ -350,7 +350,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   @override
   Future<void> verifyDigitalSignature(
     String instanceId,
-    String signature,
+    Uint8List signature,
     String data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) async {
@@ -363,13 +363,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<String> calculateDigitalSignature(
+  Future<Uint8List> calculateDigitalSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
     String data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) async {
-    return await invokeMethod<String>(
+    return await invokeMethod<Uint8List>(
       'calculateDigitalSignature',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
@@ -443,8 +443,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) async {
-    return await invokeMethod<String>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
+  Future<Uint8List> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) async {
+    return await invokeMethod<Uint8List>('fetchEncryptionKey', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'index': index
     }));
@@ -459,8 +459,8 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<String> deriveSecureVaultKey(String objectId, int index, int keySize) async {
-    return await invokeMethod<String>('deriveSecureVaultKey', {
+  Future<Uint8List> deriveSecureVaultKey(String objectId, int index, int keySize) async {
+    return await invokeMethod<Uint8List>('deriveSecureVaultKey', {
       'objectId': objectId,
       'index': index,
       'keySize': keySize,
