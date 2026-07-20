@@ -175,6 +175,26 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     }
 
     /**
+     * Registers an object only if the expected owner is still registered under [ownerId].
+     * The registered object is tagged with [ownerId].
+     */
+    fun <T : Any> registerObjectIfOwnerMatches(
+        ownerId: String,
+        expectedOwner: Any,
+        objectWrapper: IManagedObject<T>,
+        releasePolicies: List<ReleasePolicy>
+    ): String? = lock.withLock {
+        val owner = managedObjects[ownerId]
+        if (owner == null ||
+            !owner.isStillValid ||
+            owner.obj.managedInstance() !== expectedOwner
+        ) {
+            return@withLock null
+        }
+        return@withLock registerObject(objectWrapper, ownerId, releasePolicies)
+    }
+
+    /**
      * Registers an object with an application-provided identifier.
      */
     fun <T : Any> registerObjectWithId(

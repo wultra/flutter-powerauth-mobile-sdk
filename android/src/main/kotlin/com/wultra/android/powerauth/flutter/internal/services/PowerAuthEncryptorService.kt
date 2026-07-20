@@ -91,12 +91,22 @@ internal class PowerAuthEncryptorService(
 
             val listener = object : IGetEncryptorListener {
                 override fun onGetEncryptorSuccess(encryptor: CoreEncryptor) {
-                    val objectId = objectRegister.registerObject(
-                        ManagedAny.wrap(encryptor) { it.destroy() },
-                        null,
-                        listOf(ReleasePolicy.keepAlive(Constants.ENCRYPTOR_KEEP_ALIVE_TIME))
-                    )
-                    result.success(objectId)
+                    try {
+                        //check if sdk has not been deconfigured in the meantime
+                        val objectId = objectRegister.registerObjectIfOwnerMatches(
+                            powerAuthInstanceId,
+                            sdk,
+                            ManagedAny.wrap(encryptor) { it.destroy() },
+                            listOf(ReleasePolicy.keepAlive(Constants.ENCRYPTOR_KEEP_ALIVE_TIME))
+                        ) ?: throw WrapperException(
+                            Errors.EC_INSTANCE_NOT_CONFIGURED,
+                            "PowerAuth instance '$powerAuthInstanceId' not configured."
+                        )
+                        result.success(objectId)
+                    } catch (t: Throwable) {
+                        encryptor.destroy()
+                        Errors.error(result, t)
+                    }
                 }
 
                 override fun onGetEncryptorFailed(t: Throwable) {
