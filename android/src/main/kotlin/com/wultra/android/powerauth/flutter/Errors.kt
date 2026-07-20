@@ -46,7 +46,7 @@ object Errors {
     const val EC_MISSING_ACTIVATION: String = "missingActivation"
     const val EC_PENDING_ACTIVATION: String = "pendingActivation"
     const val EC_BIOMETRY_CANCEL: String = "biometryCancel"
-    const val EC_OPERATION_CANCELED: String = "operationCancel"
+    const val EC_OPERATION_CANCELED: String = "operationCanceled"
     const val EC_INVALID_ACTIVATION_CODE: String = "invalidActivationCode"
     const val EC_INVALID_TOKEN: String = "invalidToken"
     const val EC_ENCRYPTION_ERROR: String = "encryptionError"
@@ -57,10 +57,10 @@ object Errors {
     const val EC_BIOMETRY_NOT_SUPPORTED: String = "biometryNotSupported"
     const val EC_BIOMETRY_NOT_AVAILABLE: String = "biometryNotAvailable"
     const val EC_BIOMETRY_NOT_RECOGNIZED: String = "biometryNotRecognized"
-    const val EC_BIOMETRY_NOT_CONFIGURED: String = "biometryNotConfigured"
     const val EC_BIOMETRY_NOT_ENROLLED: String = "biometryNotEnrolled"
     const val EC_TIME_SYNCHRONIZATION: String = "timeSynchronization"
     const val EC_BIOMETRY_LOCKOUT: String = "biometryLockout"
+    const val EC_INSUFFICIENT_KEYCHAIN_PROTECTION: String = "insufficientKeychainProtection"
     const val EC_OTHER: String = "other"
     const val EC_UNKNOWN_ERROR: String = "unknownError"
 
@@ -89,6 +89,7 @@ object Errors {
             PowerAuthErrorCodes.BIOMETRY_NOT_ENROLLED -> EC_BIOMETRY_NOT_ENROLLED
             PowerAuthErrorCodes.BIOMETRY_LOCKOUT -> EC_BIOMETRY_LOCKOUT
             PowerAuthErrorCodes.TIME_SYNCHRONIZATION -> EC_TIME_SYNCHRONIZATION
+            PowerAuthErrorCodes.INSUFFICIENT_KEYCHAIN_PROTECTION -> EC_INSUFFICIENT_KEYCHAIN_PROTECTION
             PowerAuthErrorCodes.OTHER -> EC_OTHER
             else -> EC_UNKNOWN_ERROR
         }

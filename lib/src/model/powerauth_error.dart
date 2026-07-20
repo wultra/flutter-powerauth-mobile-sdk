@@ -115,6 +115,9 @@ enum PowerAuthErrorCode {
   /// Error in `correctTypedCharacter`.
   invalidCharacter,
 
+  /// Error caused by an invalid native logging configuration.
+  invalidLogLevel,
+
   /// Error when generating a token.
   cannotGenerateToken,
 
@@ -129,6 +132,9 @@ enum PowerAuthErrorCode {
 
   /// An error not covered by a more specific PowerAuth error code.
   other,
+
+  /// Internal error reported by the Flutter native plugin.
+  flutterError,
 
   /// Failed with unexpected error.
   unknownError,
