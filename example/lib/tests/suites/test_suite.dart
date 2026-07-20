@@ -132,13 +132,16 @@ abstract class TestSuiteWithActivation extends TestSuite {
   @protected late PowerAuth sdk;
   @protected late ActivationCredentials credentials;
 
+  @protected
+  PowerAuthBiometryConfiguration? get biometryConfiguration => null;
+
   @override
   Future<void> beforeEach() async {
     await super.beforeEach();
     credentials = ActivationCredentials();
     sdk = PowerAuth(IntegrationHelper.randomString(30));
     helper = IntegrationHelper(sdk);
-    await helper.configure();
+    await helper.configure(biometryConfiguration: biometryConfiguration);
   }
 
   @override

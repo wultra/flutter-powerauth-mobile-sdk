@@ -60,7 +60,6 @@ import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
 import java.util.concurrent.atomic.AtomicBoolean
 import io.getlime.security.powerauth.sdk.PowerAuthToken
-import java.nio.charset.StandardCharsets
 
 internal class PowerAuthService(
     val objectRegister: PowerAuthObjectRegister,
@@ -757,8 +756,7 @@ internal class PowerAuthService(
         usePowerAuth(call, result) { sdk ->
             val method: String = call.getRequiredArgument(METHOD)
             val uriId: String = call.getRequiredArgument(URI_ID)
-            val bodyString: String? = call.argument(BODY)
-            val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
+            val requestData: ByteArray? = call.argument(BODY)
 
             val header = withOwnedAuthentication(call) { authentication ->
                 sdk.authenticationHeaderForRequestWithBody(
@@ -777,8 +775,7 @@ internal class PowerAuthService(
             val authentication = buildAuthenticationObject(call)
             val uriId: String = call.getRequiredArgument(URI_ID)
             val nonce: String = call.getRequiredArgument(NONCE)
-            val bodyString: String? = call.argument(BODY)
-            val requestData: ByteArray? = bodyString?.toByteArray(Charsets.UTF_8)
+            val requestData: ByteArray? = call.argument(BODY)
             val authenticationReleased = AtomicBoolean(false)
 
             fun releaseAuthentication() {
@@ -816,13 +813,13 @@ internal class PowerAuthService(
 
     private fun verifyDigitalSignature(call: MethodCall, result: Result) {
         val signature: ByteArray = call.getRequiredArgument(SIGNATURE)
-        val data: String = call.getRequiredArgument(DATA)
+        val data: ByteArray = call.getRequiredArgument(DATA)
         val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
 
         usePowerAuth(call, result) { sdk ->
             sdk.verifyDigitalSignature(
                 signature,
-                data.toByteArray(StandardCharsets.UTF_8),
+                data,
                 keyId
             )
             result.success(null)
@@ -1397,7 +1394,7 @@ internal class PowerAuthService(
     }
 
     private fun calculateDigitalSignature(call: MethodCall, result: Result) {
-        val data: String = call.getRequiredArgument(DATA)
+        val data: ByteArray = call.getRequiredArgument(DATA)
         val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
 
         usePowerAuth(call, result) { sdk ->
@@ -1405,7 +1402,7 @@ internal class PowerAuthService(
                 sdk.calculateDigitalSignature(
                     context,
                     authentication,
-                    data.toByteArray(StandardCharsets.UTF_8),
+                    data,
                     keyId,
                     object: IDigitalSignatureListener {
                         override fun onDigitalSignatureFailed(t: Throwable) {
@@ -1434,7 +1431,7 @@ internal class PowerAuthService(
     }
 
     private fun calculateJwsSignature(call: MethodCall, result: Result) {
-        val data: String = call.getRequiredArgument(DATA)
+        val data: ByteArray = call.getRequiredArgument(DATA)
         val dataType: String? = call.argument(DATA_TYPE)
         val compact: Boolean = call.getRequiredArgument(COMPACT)
         val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
@@ -1444,7 +1441,7 @@ internal class PowerAuthService(
                 sdk.calculateJwsSignature(
                     context,
                     authentication,
-                    data.toByteArray(StandardCharsets.UTF_8),
+                    data,
                     dataType,
                     compact,
                     keyId,
@@ -1461,29 +1458,6 @@ internal class PowerAuthService(
             }
         }
     }
-
-//    private fun signDataWithDevicePrivateKey(call: MethodCall, result: Result) {
-//        val data: String = call.getRequiredArgument(DATA)
-//        val authentication = buildAuthenticationObject(call, persist = false)
-//
-//        usePowerAuth(call, result) { sdk ->
-//            sdk.calculateDigitalSignature(
-//                context,
-//                authentication,
-//                data.toByteArray(StandardCharsets.UTF_8),
-//                PowerAuthSignatureKeyId.DEVICE_EC,
-//                object : IDigitalSignatureListener {
-//                    override fun onDigitalSignatureSucceed(signature: ByteArray) {
-//                        result.success(Base64.encodeToString(signature, Base64.NO_WRAP))
-//                    }
-//
-//                    override fun onDigitalSignatureFailed(t: Throwable) {
-//                        Errors.error(result, t)
-//                    }
-//                }
-//            )
-//        }
-//    }
 
     private fun fetchUserInfo(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->

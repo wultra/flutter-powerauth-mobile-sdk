@@ -43,7 +43,6 @@ export 'src/model/powerauth_basic_http_authentication.dart';
 export 'src/model/powerauth_http_header.dart';
 export 'src/powerauth_password/powerauth_password.dart';
 export 'src/powerauth/powerauth_token_store.dart';
-export 'src/model/powerauth_data_format.dart';
 export 'src/model/powerauth_encryptor.dart';
 export 'src/model/powerauth_user_info.dart';
 export 'src/model/powerauth_oidc_parameters.dart';

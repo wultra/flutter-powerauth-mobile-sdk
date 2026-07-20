@@ -317,15 +317,16 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body
+    Uint8List? body
   ]) async {
+    final bodySnapshot = body == null ? null : Uint8List.fromList(body);
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'requestSignature',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
         'method': method,
         'uriId': uriId,
-        'body': body
+        'body': bodySnapshot
       })
     );
     return PowerAuthHttpHeader.fromMap(result);
@@ -337,13 +338,14 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body
+    Uint8List? body
   ]) async {
+    final bodySnapshot = body == null ? null : Uint8List.fromList(body);
     return await invokeMethod<String>('offlineSignature', await _authenticate(instanceId, authentication, {
       'instanceId': instanceId,
       'uriId': uriId,
       'nonce': nonce,
-      'body': body
+      'body': bodySnapshot
     }));
   }
 
@@ -351,7 +353,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   Future<void> verifyDigitalSignature(
     String instanceId,
     Uint8List signature,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) async {
     await invokeMethod<void>('verifyDigitalSignature', {
@@ -366,14 +368,15 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   Future<Uint8List> calculateDigitalSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) async {
+    final dataSnapshot = Uint8List.fromList(data);
     return await invokeMethod<Uint8List>(
       'calculateDigitalSignature',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
-        'data': data,
+        'data': dataSnapshot,
         'signatureKeyId': signatureKeyId.name,
       }),
     );
@@ -400,16 +403,17 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   Future<String> calculateJwsSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     String? dataType,
     bool compact,
     PowerAuthSignatureKeyId signatureKeyId,
   ) async {
+    final dataSnapshot = Uint8List.fromList(data);
     return await invokeMethod<String>(
       'calculateJwsSignature',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
-        'data': data,
+        'data': dataSnapshot,
         'dataType': dataType,
         'compact': compact,
         'signatureKeyId': signatureKeyId.name,

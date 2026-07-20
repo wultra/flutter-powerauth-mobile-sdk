@@ -242,12 +242,12 @@ class PowerAuth {
   /// - [authentication]: Specifies the factors to use for signing.
   /// - [method]: The HTTP method (e.g., "POST", "PUT").
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/transfer").
-  /// - [body]: Optional request body data (as a String) to include in the signature calculation.
+  /// - [body]: Optional raw request body data to include in the signature calculation.
   Future<PowerAuthHttpHeader> requestSignature(
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body,
+    Uint8List? body,
   ]) => _platform.requestSignature(
     instanceId,
     authentication,
@@ -262,12 +262,12 @@ class PowerAuth {
   /// - [authentication]: Specifies the factors to use for signing (possession and knowledge recommended).
   /// - [uriId]: The URI identifier associated with the operation being signed.
   /// - [nonce]: A unique cryptographic nonce (Base64 encoded).
-  /// - [body]: Optional data (as a String) included in the signature calculation.
+  /// - [body]: Optional raw data included in the signature calculation.
   Future<String> offlineSignature(
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body,
+    Uint8List? body,
   ]) => _platform.offlineSignature(
     instanceId,
     authentication,
@@ -276,14 +276,14 @@ class PowerAuth {
     body,
   );
 
-  /// Verifies a digital [signature] provided as raw bytes for UTF-8 encoded [data].
+  /// Verifies a digital [signature] for the supplied raw [data].
   ///
   /// The [signatureKeyId] must identify a specific verification key. If the
   /// signature is invalid, a [PowerAuthException] with
   /// [PowerAuthErrorCode.wrongSignature] is thrown.
   Future<void> verifyDigitalSignature(
     Uint8List signature,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) => _platform.verifyDigitalSignature(
     instanceId,
@@ -292,13 +292,13 @@ class PowerAuth {
     signatureKeyId,
   );
 
-  /// Calculates a digital signature for UTF-8 encoded [data] and returns it as raw bytes.
+  /// Calculates a digital signature for the supplied raw [data] and returns it as raw bytes.
   ///
   /// The [signatureKeyId] must identify a specific device signing key, such as
   /// [PowerAuthSignatureKeyId.deviceEc] or [PowerAuthSignatureKeyId.deviceMlDsa].
   Future<Uint8List> calculateDigitalSignature(
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) => _platform.calculateDigitalSignature(
     instanceId,
@@ -326,14 +326,14 @@ class PowerAuth {
     signatureKeyId,
   );
 
-  /// Calculates a JWS signature for UTF-8 encoded [data].
+  /// Calculates a JWS signature for the supplied raw [data].
   ///
   /// The optional [dataType] is added to the protected JOSE header as `typ`.
   /// If [compact] is `true`, the result is a compact JWT. Otherwise, a full
   /// JWS object is returned.
   Future<String> calculateJwsSignature(
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     String? dataType,
     bool compact,
     PowerAuthSignatureKeyId signatureKeyId,

@@ -21,7 +21,6 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_inf
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../logging/powerauth_logging_config.dart';
-import '../model/powerauth_data_format.dart';
 import '../model/powerauth_activation.dart';
 import '../model/powerauth_activation_status.dart';
 import '../model/powerauth_algorithm.dart';
@@ -228,7 +227,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
-    String? body,
+    Uint8List? body,
   ]) {
     throw UnimplementedError('requestSignature() has not been implemented.');
   }
@@ -238,7 +237,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     PowerAuthAuthentication authentication,
     String uriId,
     String nonce, [
-    String? body,
+    Uint8List? body,
   ]) {
     throw UnimplementedError('offlineSignature() has not been implemented.');
   }
@@ -246,7 +245,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<void> verifyDigitalSignature(
     String instanceId,
     Uint8List signature,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) {
     throw UnimplementedError(
@@ -257,7 +256,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<Uint8List> calculateDigitalSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     PowerAuthSignatureKeyId signatureKeyId,
   ) {
     throw UnimplementedError(
@@ -280,7 +279,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<String> calculateJwsSignature(
     String instanceId,
     PowerAuthAuthentication authentication,
-    String data,
+    Uint8List data,
     String? dataType,
     bool compact,
     PowerAuthSignatureKeyId signatureKeyId,

@@ -27,6 +27,8 @@ import '../config.dart';
 import 'debug_helper.dart';
 import 'sections/logging_section.dart';
 
+Uint8List _utf8Bytes(String value) => Uint8List.fromList(utf8.encode(value));
+
 // Helper to generate a fixed-size random nonce
 String _generateRandomNonce() {
   final random = Random.secure();
@@ -489,7 +491,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       await _powerAuth.verifyDigitalSignature(
         base64Decode(signature),
-        data,
+        _utf8Bytes(data),
         PowerAuthSignatureKeyId.masterEc,
       );
       print('Server signature verification succeeded.');
@@ -520,7 +522,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.password(paPassword);
       final signature = await _powerAuth.calculateDigitalSignature(
         authentication,
-        data,
+        _utf8Bytes(data),
         PowerAuthSignatureKeyId.deviceEc,
       );
 
@@ -549,14 +551,15 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
+      final dataBytes = _utf8Bytes(data);
       final signature = await _powerAuth.calculateDigitalSignature(
         authentication,
-        data,
+        dataBytes,
         PowerAuthSignatureKeyId.deviceEc,
       );
       await _powerAuth.verifyDigitalSignature(
         signature,
-        data,
+        dataBytes,
         PowerAuthSignatureKeyId.deviceEc,
       );
 
@@ -587,7 +590,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.password(paPassword);
       final signature = await _powerAuth.calculateJwsSignature(
         authentication,
-        data,
+        _utf8Bytes(data),
         null,
         false,
         PowerAuthSignatureKeyId.device,
@@ -619,7 +622,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.password(paPassword);
       final signature = await _powerAuth.calculateJwsSignature(
         authentication,
-        data,
+        _utf8Bytes(data),
         null,
         false,
         PowerAuthSignatureKeyId.device,
@@ -662,7 +665,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
       final signature = await _powerAuth.calculateJwsSignature(
         authentication,
-        data,
+        _utf8Bytes(data),
         null,
         false,
         PowerAuthSignatureKeyId.device,
@@ -2312,7 +2315,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
     _setLoading(true);
 
-    final fixedData = data.replaceAll("\\n", "\n");
+    final fixedData = _utf8Bytes(data.replaceAll("\\n", "\n"));
 
     try {
       final paPassword = await PowerAuthPassword.fromString(password);
@@ -2345,7 +2348,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       return _setError('Biometry factor not available');
     }
     _setLoading(true);
-    final fixedData = data.replaceAll("\\n", "\n");
+    final fixedData = _utf8Bytes(data.replaceAll("\\n", "\n"));
     try {
       final prompt = PowerAuthBiometricPrompt(
         promptTitle: "Offline Signature",
@@ -2440,16 +2443,17 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     try {
       final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
+      final bodyBytes = _utf8Bytes(body);
 
       final header = await _powerAuth.requestSignature(
         authentication,
         'POST',
         uriId,
-        body,
+        bodyBytes,
       );
 
       print('POST Signature Header (PWD): ${header.name}: ${header.value}');
-      print('For payload: ${base64Encode(utf8.encode(body))}');
+      print('For payload: ${base64Encode(bodyBytes)}');
       _setError('POST Header (PWD): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (PWD) failed: ${e.message} (${e.code})');
@@ -2477,16 +2481,17 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.biometry(
         biometricPrompt: prompt,
       );
+      final bodyBytes = _utf8Bytes(body);
 
       final header = await _powerAuth.requestSignature(
         authentication,
         'POST',
         uriId,
-        body,
+        bodyBytes,
       );
 
       print('POST Signature Header (Bio): ${header.name}: ${header.value}');
-      print('For payload: ${base64Encode(utf8.encode(body))}');
+      print('For payload: ${base64Encode(bodyBytes)}');
       _setError('POST Header (Bio): ${header.name}: ${header.value}');
     } on PowerAuthException catch (e) {
       _setError('POST signature (Bio) failed: ${e.message} (${e.code})');
