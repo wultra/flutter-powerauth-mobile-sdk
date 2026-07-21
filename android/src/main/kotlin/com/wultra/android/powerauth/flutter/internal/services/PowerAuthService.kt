@@ -94,6 +94,8 @@ internal class PowerAuthService(
         const val SIGNATURE_KEY_ID = "signatureKeyId"
         const val COMPACT = "compact"
         const val STRICT = "strict"
+        const val DISTINGUISHED_NAMES = "distinguishedNames"
+        const val SUBJECT_ALT_NAMES = "subjectAltNames"
         const val ACTIVATION_CODE = "activationCode"
         const val PROMPT = "prompt"
         const val BIOMETRIC_PROMPT = "biometricPrompt"
@@ -174,6 +176,7 @@ internal class PowerAuthService(
         const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
         const val VERIFY_JWS_SIGNATURE = "verifyJwsSignature"
         const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
+        const val CREATE_CERTIFICATE_SIGNING_REQUEST = "createCertificateSigningRequest"
         const val FETCH_USER_INFO = "fetchUserInfo"
         const val GET_LAST_FETCHED_USER_INFO = "getLastFetchedUserInfo"
         const val IS_TIME_SYNCHRONIZED = "isTimeSynchronized"
@@ -234,6 +237,7 @@ internal class PowerAuthService(
             HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
             HandlerNames.VERIFY_JWS_SIGNATURE to this::verifyJwsSignature,
             HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
+            HandlerNames.CREATE_CERTIFICATE_SIGNING_REQUEST to this::createCertificateSigningRequest,
             HandlerNames.FETCH_USER_INFO to this::fetchUserInfo,
             HandlerNames.GET_LAST_FETCHED_USER_INFO to this::getLastFetchedUserInfo,
             HandlerNames.IS_TIME_SYNCHRONIZED to this::isTimeSynchronized,
@@ -1310,6 +1314,33 @@ internal class PowerAuthService(
                         }
 
                         override fun onJwsSignatureFailed(t: Throwable) {
+                            Errors.error(result, t)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    private fun createCertificateSigningRequest(call: MethodCall, result: Result) {
+        val distinguishedNames: Map<String, String> = call.getRequiredArgument(DISTINGUISHED_NAMES)
+        val subjectAltNames: List<String>? = call.argument(SUBJECT_ALT_NAMES)
+        val keyId = signatureKeyIdFromString(call.getRequiredArgument(SIGNATURE_KEY_ID))
+
+        usePowerAuth(call, result) { sdk ->
+            withOwnedAuthentication(call) { authentication ->
+                sdk.createCertificateSigningRequest(
+                    context,
+                    authentication,
+                    distinguishedNames,
+                    subjectAltNames,
+                    keyId,
+                    object: ICreateCertificateSigningRequestListener {
+                        override fun onCreateCertificateSigningRequestSucceed(certificateSigningRequest: String) {
+                            result.success(certificateSigningRequest)
+                        }
+
+                        override fun onCreateCertificateSigningRequestFailed(t: Throwable) {
                             Errors.error(result, t)
                         }
                     }

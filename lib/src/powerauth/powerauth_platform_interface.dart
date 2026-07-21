@@ -283,6 +283,18 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<String> createCertificateSigningRequest(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) {
+    throw UnimplementedError(
+      'createCertificateSigningRequest() has not been implemented.',
+    );
+  }
+
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [

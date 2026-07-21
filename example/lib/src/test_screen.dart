@@ -683,6 +683,44 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
+  Future<void> _createCertificateSigningRequest(
+    String password,
+    String commonName,
+    String subjectAltNames,
+  ) async {
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+
+    _setLoading(true);
+    try {
+      final paPassword = await PowerAuthPassword.fromString(password);
+      final authentication = PowerAuthAuthentication.password(paPassword);
+      final sanItems = subjectAltNames
+          .split(',')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .map((item) => item.contains(':') ? item : 'DNS: $item')
+          .toList();
+      final csr = await _powerAuth.createCertificateSigningRequest(
+        authentication,
+        {'CN': commonName},
+        sanItems,
+        PowerAuthSignatureKeyId.deviceEc,
+      );
+
+      print('Certificate Signing Request:\n$csr');
+      _setError('Certificate Signing Request:\n$csr');
+    } on PowerAuthException catch (e) {
+      _setError(
+        'CSR creation failed: ${e.message} (${e.code})',
+      );
+    } catch (e) {
+      _setError('Unexpected error during CSR creation: $e');
+    }
+    _setLoading(false);
+  }
+
   Future<void> _testSecureVaultWithPassword(String password) async {
     final paPassword = await PowerAuthPassword.fromString(password);
     final authentication = PowerAuthAuthentication.password(paPassword);
@@ -1652,6 +1690,34 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     },
                   ),
           child: const Text('Calculate JWS Signature (PWD)'),
+        ),
+
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _isLoading || !_isConfigured || _hasValidActivation != true
+                  ? null
+                  : () => _showSignatureInputDialog(
+                    context,
+                    title: 'Create Certificate Signing Request',
+                    fields: {
+                      'Password': true,
+                      'Common Name': false,
+                      'SANs (comma-separated)': false,
+                    },
+                    initialValues: {
+                      'Common Name': 'example.com',
+                      'SANs (comma-separated)': 'DNS: example.com,DNS: www.example.com',
+                    },
+                    onSubmit: (values) {
+                      _createCertificateSigningRequest(
+                        values['Password']!,
+                        values['Common Name']!,
+                        values['SANs (comma-separated)']!,
+                      );
+                    },
+                  ),
+          child: const Text('Create Certificate Signing Request'),
         ),
 
         const SizedBox(height: 8),

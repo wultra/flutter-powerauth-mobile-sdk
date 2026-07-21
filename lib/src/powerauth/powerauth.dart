@@ -346,6 +346,24 @@ class PowerAuth {
     signatureKeyId,
   );
 
+  /// Creates an X.509 Certificate Signing Request in PEM format.
+  ///
+  /// The request contains the supplied [distinguishedNames], optional
+  /// [subjectAltNames], and the public key identified by [signatureKeyId]. It
+  /// is signed with the corresponding device private key.
+  Future<String> createCertificateSigningRequest(
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) => _platform.createCertificateSigningRequest(
+    instanceId,
+    authentication,
+    distinguishedNames,
+    subjectAltNames,
+    signatureKeyId,
+  );
+
   /// Adds or regenerates the biometry-related factor key locally.
   /// This typically requires vault unlock via the provided [password] ([PowerAuthPassword]).
   /// The optional [prompt] is used for the system biometric dialog if needed during key setup (Android specific).

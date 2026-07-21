@@ -415,6 +415,25 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<String> createCertificateSigningRequest(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    Map<String, String> distinguishedNames,
+    List<String>? subjectAltNames,
+    PowerAuthSignatureKeyId signatureKeyId,
+  ) async {
+    return await invokeMethod<String>(
+      'createCertificateSigningRequest',
+      await _authenticate(instanceId, authentication, {
+        'instanceId': instanceId,
+        'distinguishedNames': distinguishedNames,
+        'subjectAltNames': subjectAltNames,
+        'signatureKeyId': signatureKeyId.name,
+      }),
+    );
+  }
+
+  @override
   Future<void> addBiometryFactor(
     String instanceId,
     PowerAuthPassword password, [
