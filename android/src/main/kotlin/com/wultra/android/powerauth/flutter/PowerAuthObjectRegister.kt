@@ -22,6 +22,7 @@ import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_DEFAULT
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MAX
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MIN
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_REMOVE_DELAY
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import java.util.Random
 import java.util.Timer
 import java.util.TimerTask
@@ -68,6 +69,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         var useCount: Int = 0,
         var removeOrderTime: Long = 0
     ) {
+        private var cleanupPerformed = false
         // TODO: improve
         val policies = if (policies.contains(ReleasePolicy.manual())) null else policies
 
@@ -78,6 +80,18 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
         fun touch() {
             lastUseTime = SystemClock.elapsedRealtime()
+        }
+
+        fun cleanup() {
+            if (cleanupPerformed) return
+            cleanupPerformed = true
+            try {
+                obj.cleanup()
+            } catch (t: Throwable) {
+                PowerAuthLogger.error {
+                    "Failed to clean up native object ${obj.managedInstance()::class.java.simpleName}: ${t.localizedMessage}"
+                }
+            }
         }
 
         /**
@@ -139,7 +153,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     removeOrderTime == 0L || (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
 
                 if (readyNow) {
-                    obj.cleanup()
+                    cleanup()
                 }
 
                 return readyNow
@@ -261,7 +275,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
             OPT_SET_USE -> holder.setUsed()
             OPT_TOUCH -> holder.touch()
             OPT_REMOVE -> if (holder.setRemoved()) {
-                holder.obj.cleanup()
+                holder.cleanup()
                 managedObjects.remove(id)
             }
         }
@@ -312,6 +326,18 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     }
 
     /**
+     * Explicitly releases an object regardless of its type or release policy.
+     */
+    fun releaseObject(id: String): Boolean = lock.withLock {
+        val holder = managedObjects[id] ?: return@withLock false
+
+        holder.cleanup()
+        managedObjects.remove(id)
+        scheduleCleanupJob()
+        return@withLock true
+    }
+
+    /**
      * Removes all objects associated with a specific tag.
      * If tag is null, removes all objects that are not manually managed.
      */
@@ -325,7 +351,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
             // TODO: implement proper filtering!
             if (tag == null || holder.tag == tag) {
                 if (holder.setRemoved()) {
-                    holder.obj.cleanup()
+                    holder.cleanup()
                     iterator.remove()
 
                     changed = true
@@ -346,7 +372,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      * Removes all objects from the register, regardless of policy.
      */
     private fun removeAllObjects() = lock.withLock {
-        managedObjects.values.forEach { it.obj.cleanup() }
+        managedObjects.values.forEach { it.cleanup() }
         managedObjects.clear()
         stopCleanupJob()
     }

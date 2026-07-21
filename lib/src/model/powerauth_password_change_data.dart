@@ -16,34 +16,30 @@
 
 import 'package:meta/meta.dart';
 
-import 'base_releasable_object.dart';
-import '../powerauth/powerauth_platform_interface.dart';
+import 'native_object_handle.dart';
 
 /// Native-backed data required to finish a two-step password change.
 ///
 /// The old password remains only on the native side. The object is consumed
 /// automatically by `PowerAuth.finishPasswordChange()`. Call [release] when
 /// abandoning the operation. Native expiration remains as a final safeguard.
-class PowerAuthPasswordChangeData extends BaseReleasableObject {
-  static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
+class PowerAuthPasswordChangeData {
+  final NativeObjectHandle _handle;
 
   @internal
   PowerAuthPasswordChangeData.fromNative({
     required String objectId,
-  }) {
-    this.objectId = objectId;
-  }
+  }) : _handle = NativeObjectHandle.fromNative(objectId);
 
   @internal
   Future<T> executeAndRelease<T>(Future<T> Function(String objectId) operation) async {
     try {
-      return await withObjectId(operation);
+      return await _handle.withObjectId(operation);
     } finally {
       await release();
     }
   }
 
-  @override
-  Future<void> releaseNativeObject(String objectId) =>
-      _platform.releasePasswordChangeData(objectId);
+  /// Releases the underlying native password change data.
+  Future<void> release() => _handle.release();
 }

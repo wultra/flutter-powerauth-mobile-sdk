@@ -50,6 +50,11 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
     throw UnimplementedError('isValidNativeObject() has not been implemented.');
   }
 
+  /// Releases an object stored in the native object register.
+  Future<void> releaseNativeObject(String objectId) {
+    throw UnimplementedError('releaseNativeObject() has not been implemented.');
+  }
+
   /// Provides methods to manipulate the object register.
   /// 
   /// This function is only available in DEBUG builds of the library.

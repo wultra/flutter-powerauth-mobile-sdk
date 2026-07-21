@@ -48,10 +48,6 @@ abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
   }
 
   /// Releases the native encryptor.
-  Future<void> release(String objectId) {
-    throw UnimplementedError('release() has not been implemented.');
-  }
-
   /// Checks whether the native encryptor can encrypt a request.
   Future<bool> canEncryptRequest(String objectId) {
     throw UnimplementedError('canEncryptRequest() has not been implemented.');

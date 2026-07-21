@@ -16,6 +16,7 @@
 
 import 'dart:typed_data';
 
+import '../model/native_object_handle.dart';
 import '../model/powerauth_encryptor.dart';
 import '../model/powerauth_http_header.dart';
 import 'powerauth_encryptor_platform_interface.dart';
@@ -31,9 +32,10 @@ class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
   @override
   final PowerAuthEncryptorScope scope;
 
-  final String _objectId;
+  final NativeObjectHandle _handle;
 
-  PowerAuthEncryptorImpl._({required this.scope, required this._objectId});
+  PowerAuthEncryptorImpl._({required this.scope, required String objectId})
+    : _handle = NativeObjectHandle.fromNative(objectId);
 
   /// Acquires and registers one native encryptor.
   static Future<PowerAuthEncryptor> acquire({
@@ -49,19 +51,21 @@ class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
 
   @override
   Future<bool> canEncryptRequest() {
-    return _platform.canEncryptRequest(_objectId);
+    return _handle.withObjectId(_platform.canEncryptRequest);
   }
 
   @override
   Future<bool> canDecryptResponse() {
-    return _platform.canDecryptResponse(_objectId);
+    return _handle.withObjectId(_platform.canDecryptResponse);
   }
 
   @override
   Future<PowerAuthEncryptedRequest> encryptRequest(
     Uint8List? requestBody,
   ) async {
-    final result = await _platform.encryptRequest(_objectId, requestBody);
+    final result = await _handle.withObjectId(
+      (objectId) => _platform.encryptRequest(objectId, requestBody),
+    );
     final headers = (result['requestHeaders'] as List<dynamic>)
         .map((header) => PowerAuthHttpHeader.fromMap(header as Map))
         .toList(growable: false);
@@ -73,11 +77,13 @@ class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
 
   @override
   Future<Uint8List> decryptResponse(Uint8List responseBody) {
-    return _platform.decryptResponse(_objectId, responseBody);
+    return _handle.withObjectId(
+      (objectId) => _platform.decryptResponse(objectId, responseBody),
+    );
   }
 
   @override
   Future<void> release() {
-    return _platform.release(_objectId);
+    return _handle.release();
   }
 }

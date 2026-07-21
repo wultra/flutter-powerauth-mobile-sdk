@@ -40,13 +40,6 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform
   }
 
   @override
-  Future<void> release(String objectId) async {
-    await invokeNullableMethod<void>('encryptor_release', {
-      'objectId': objectId,
-    });
-  }
-
-  @override
   Future<bool> canEncryptRequest(String objectId) {
     return invokeMethod<bool>('encryptor_canEncryptRequest', {
       'objectId': objectId,

@@ -43,6 +43,14 @@ class NativeObjectRegisterMethodChannel extends NativeObjectRegisterPlatform
   }
 
   @override
+  Future<void> releaseNativeObject(String objectId) async {
+    await invokeNullableMethod<void>(
+      'register_releaseNativeObject',
+      {'objectId': objectId},
+    );
+  }
+
+  @override
   Future<List<NativeObjectInfo>> debugDump(String? instanceId) async {
     if (!kDebugMode) {
       throw PowerAuthException(

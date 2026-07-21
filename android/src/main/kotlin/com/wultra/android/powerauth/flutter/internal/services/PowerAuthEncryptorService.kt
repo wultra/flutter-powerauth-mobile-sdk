@@ -52,7 +52,6 @@ internal class PowerAuthEncryptorService(
 
     private object HandlerNames {
         const val INITIALIZE = "initialize"
-        const val RELEASE = "release"
         const val CAN_ENCRYPT_REQUEST = "canEncryptRequest"
         const val ENCRYPT_REQUEST = "encryptRequest"
         const val CAN_DECRYPT_RESPONSE = "canDecryptResponse"
@@ -62,7 +61,6 @@ internal class PowerAuthEncryptorService(
     override val handlers by lazy {
         mapOf(
             HandlerNames.INITIALIZE to this::initialize,
-            HandlerNames.RELEASE to this::release,
             HandlerNames.CAN_ENCRYPT_REQUEST to this::canEncryptRequest,
             HandlerNames.ENCRYPT_REQUEST to this::encryptRequest,
             HandlerNames.CAN_DECRYPT_RESPONSE to this::canDecryptResponse,
@@ -119,19 +117,6 @@ internal class PowerAuthEncryptorService(
             } else {
                 sdk.getEncryptorForApplicationScope(listener)
             }
-        } catch (t: Throwable) {
-            Errors.error(result, t)
-        }
-    }
-
-    private fun release(call: MethodCall, result: Result) {
-        try {
-            val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            objectRegister.removeObject(
-                objectId,
-                CoreEncryptor::class.java
-            )
-            result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }

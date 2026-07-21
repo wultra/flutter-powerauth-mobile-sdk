@@ -37,13 +37,15 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
         const val DEBUG_DUMP = "debugDump"
         const val DEBUG_COMMAND = "debugCommand"
         const val IS_VALID_NATIVE_OBJECT = "isValidNativeObject"
+        const val RELEASE_NATIVE_OBJECT = "releaseNativeObject"
     }
 
     override val handlers by lazy {
         mapOf(
             HandlerNames.DEBUG_DUMP to this::debugDump,
             HandlerNames.DEBUG_COMMAND to this::debugCommand,
-            HandlerNames.IS_VALID_NATIVE_OBJECT to this::isValidNativeObject
+            HandlerNames.IS_VALID_NATIVE_OBJECT to this::isValidNativeObject,
+            HandlerNames.RELEASE_NATIVE_OBJECT to this::releaseNativeObject
         )
     }
 
@@ -77,4 +79,14 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
             Errors.error(result, t)
         }
     }
-} 
+
+    private fun releaseNativeObject(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            objectRegister.releaseObject(objectId)
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+}

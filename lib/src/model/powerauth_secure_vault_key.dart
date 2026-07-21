@@ -16,7 +16,7 @@
 
 import 'dart:typed_data';
 
-import 'base_releasable_object.dart';
+import 'native_object_handle.dart';
 import '../powerauth/powerauth_platform_interface.dart';
 
 /// Identifies a base key available from the protocol 4.0 Secure Vault.
@@ -32,8 +32,9 @@ enum PowerAuthSecureVaultKeyId {
 ///
 /// The base key remains on the native side. Call [release] as soon as all
 /// required keys have been derived.
-class PowerAuthSecureVaultKey extends BaseReleasableObject {
+class PowerAuthSecureVaultKey {
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
+  final NativeObjectHandle _handle;
 
   /// Identifier of this Secure Vault key.
   final PowerAuthSecureVaultKeyId keyIdentifier;
@@ -42,19 +43,16 @@ class PowerAuthSecureVaultKey extends BaseReleasableObject {
   PowerAuthSecureVaultKey.fromNative({
     required this.keyIdentifier,
     required String objectId,
-  }) {
-    this.objectId = objectId;
-  }
+  }) : _handle = NativeObjectHandle.fromNative(objectId);
 
   /// Derives a key and returns it as raw bytes.
   ///
   /// [index] identifies the derived key and [keySize] specifies its size in
   /// bytes. The minimum supported key size is 16 bytes.
-  Future<Uint8List> deriveKey(int index, int keySize) => withObjectId(
+  Future<Uint8List> deriveKey(int index, int keySize) => _handle.withObjectId(
     (objectId) => _platform.deriveSecureVaultKey(objectId, index, keySize),
   );
 
-  @override
-  Future<void> releaseNativeObject(String objectId) =>
-      _platform.releaseSecureVaultKey(objectId);
+  /// Releases the underlying native Secure Vault key.
+  Future<void> release() => _handle.release();
 }
