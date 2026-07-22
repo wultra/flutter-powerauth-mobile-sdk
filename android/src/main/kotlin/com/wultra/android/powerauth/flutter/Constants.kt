@@ -47,6 +47,11 @@ internal object Constants {
     const val PASSWORD_KEY_KEEP_ALIVE_TIME = 5 * 60 * 1_000
 
     /**
+     * Time interval in milliseconds to keep secure vault key object valid in memory.
+     */
+    const val SECURE_VAULT_KEY_KEEP_ALIVE_TIME = 5 * 60 * 1_000
+
+    /**
      * Maximum inactivity interval for an abandoned encryptor object in memory.
      */
     const val ENCRYPTOR_KEEP_ALIVE_TIME = 5 * 60 * 1_000

@@ -79,6 +79,16 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('configure() has not been implemented.');
   }
 
+  Future<void> cleanupInstanceData({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+  }) {
+    throw UnimplementedError(
+      'cleanupInstanceData() has not been implemented.',
+    );
+  }
+
   Future<bool> isConfigured(String instanceId) {
     throw UnimplementedError('isConfigured() has not been implemented.');
   }

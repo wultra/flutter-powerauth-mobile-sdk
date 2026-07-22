@@ -119,6 +119,19 @@ class PowerAuth {
     );
   }
 
+  /// Removes incompatible local data after instance configuration fails.
+  ///
+  /// Use the same [configuration] and [keychainConfiguration] that were passed
+  /// to [configure].
+  Future<void> cleanupInstanceData({
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+  }) => _platform.cleanupInstanceData(
+    instanceId: instanceId,
+    configuration: configuration,
+    keychainConfiguration: keychainConfiguration,
+  );
+
   /// Checks if this instance is configured.
   Future<bool> isConfigured() => _platform.isConfigured(instanceId);
 

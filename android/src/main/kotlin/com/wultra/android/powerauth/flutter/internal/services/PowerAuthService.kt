@@ -34,6 +34,7 @@ import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 
 import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Constants
+import com.wultra.android.powerauth.flutter.Constants.SECURE_VAULT_KEY_KEEP_ALIVE_TIME
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.ManagedAny
 import com.wultra.android.powerauth.flutter.ReleasePolicy
@@ -126,6 +127,7 @@ internal class PowerAuthService(
 
     private object HandlerNames {
         const val CONFIGURE = "configure"
+        const val CLEANUP_INSTANCE_DATA = "cleanupInstanceData"
         const val IS_CONFIGURED = "isConfigured"
         const val GET_CONFIGURATION = "getConfiguration"
         const val GET_CURRENT_ALGORITHM = "getCurrentAlgorithm"
@@ -189,6 +191,7 @@ internal class PowerAuthService(
     override val handlers by lazy {
         mapOf(
             HandlerNames.CONFIGURE to this::configure,
+            HandlerNames.CLEANUP_INSTANCE_DATA to this::cleanupInstanceData,
             HandlerNames.IS_CONFIGURED to this::isConfigured,
             HandlerNames.GET_CONFIGURATION to this::getConfiguration,
             HandlerNames.GET_CURRENT_ALGORITHM to this::getCurrentAlgorithm,
@@ -287,6 +290,22 @@ internal class PowerAuthService(
                     "PowerAuth instance '$instanceId' is already configured or registration failed."
                 )
             }
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun cleanupInstanceData(call: MethodCall, result: Result) {
+        try {
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val configurationMap: Map<String, Any> = call.getRequiredArgument(CONFIGURATION)
+            val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
+            val configuration = buildPowerAuthConfiguration(instanceId, configurationMap)
+            val keychainConfiguration = keychainConfigMap?.let {
+                buildPowerAuthKeychainConfiguration(it)
+            }
+            PowerAuthSDK.cleanupInstanceData(context, configuration, keychainConfiguration)
+            result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }
@@ -1229,7 +1248,8 @@ internal class PowerAuthService(
                                 instanceId,
                                 sdk,
                                 ManagedAny.wrap(vaultKey),
-                                listOf(ReleasePolicy.manual())
+                                //manual release with 5 minutes rolling keep alive
+                                listOf(ReleasePolicy.keepAlive(SECURE_VAULT_KEY_KEEP_ALIVE_TIME))
                             ) ?: throw WrapperException(
                                 Errors.EC_INSTANCE_NOT_CONFIGURED,
                                 "PowerAuth instance '$instanceId' not configured."

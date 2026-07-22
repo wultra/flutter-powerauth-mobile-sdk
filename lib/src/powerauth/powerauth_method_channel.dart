@@ -98,6 +98,19 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<void> cleanupInstanceData({
+    required String instanceId,
+    required PowerAuthConfiguration configuration,
+    PowerAuthKeychainConfiguration? keychainConfiguration,
+  }) async {
+    await invokeMethod<void>('cleanupInstanceData', {
+      'instanceId': instanceId,
+      'configuration': configuration.toMap(),
+      'keychainConfiguration': keychainConfiguration?.toMap(),
+    });
+  }
+
+  @override
   Future<bool> isConfigured(String instanceId) async {
     return await invokeMethod<bool>('isConfigured', {'instanceId': instanceId});
   }
