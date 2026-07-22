@@ -34,6 +34,7 @@ import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_keychain_configuration.dart';
 import '../model/powerauth_sharing_configuration.dart';
 import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_device_public_key.dart';
 import '../model/powerauth_protocol_upgrade_result.dart';
 import '../powerauth_password/powerauth_password.dart';
 import 'powerauth_method_channel.dart';
@@ -153,6 +154,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
+  Future<bool> hasPendingProtocolUpgrade(String instanceId) {
+    throw UnimplementedError(
+      'hasPendingProtocolUpgrade() has not been implemented.',
+    );
+  }
+
   Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
     String instanceId,
     PowerAuthPassword password, {
@@ -255,6 +262,15 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   ) {
     throw UnimplementedError(
       'calculateDigitalSignature() has not been implemented.',
+    );
+  }
+
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    String instanceId,
+    PowerAuthDevicePublicKeyFormat format,
+  ) {
+    throw UnimplementedError(
+      'exportDevicePublicKeys() has not been implemented.',
     );
   }
 

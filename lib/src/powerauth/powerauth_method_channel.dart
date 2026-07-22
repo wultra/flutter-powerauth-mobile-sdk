@@ -216,6 +216,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
+  Future<bool> hasPendingProtocolUpgrade(String instanceId) async {
+    return await invokeMethod<bool>('hasPendingProtocolUpgrade', {
+      'instanceId': instanceId,
+    });
+  }
+
+  @override
   Future<PowerAuthProtocolUpgradeResult> startProtocolUpgrade(
     String instanceId,
     PowerAuthPassword password, {
@@ -373,6 +380,20 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         'signatureKeyId': signatureKeyId.name,
       }),
     );
+  }
+
+  @override
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    String instanceId,
+    PowerAuthDevicePublicKeyFormat format,
+  ) async {
+    final result = await invokeMethod<List<dynamic>>('exportDevicePublicKeys', {
+      'instanceId': instanceId,
+      'format': format.name,
+    });
+    return result
+        .map((key) => PowerAuthDevicePublicKeyData.fromMap(key as Map))
+        .toList();
   }
 
   @override

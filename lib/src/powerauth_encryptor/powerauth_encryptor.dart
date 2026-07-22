@@ -63,8 +63,9 @@ class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
   Future<PowerAuthEncryptedRequest> encryptRequest(
     Uint8List? requestBody,
   ) async {
+    final bodySnapshot = requestBody != null ? Uint8List.fromList(requestBody) : null;
     final result = await _handle.withObjectId(
-      (objectId) => _platform.encryptRequest(objectId, requestBody),
+      (objectId) => _platform.encryptRequest(objectId, bodySnapshot),
     );
     final headers = (result['requestHeaders'] as List<dynamic>)
         .map((header) => PowerAuthHttpHeader.fromMap(header as Map))
@@ -77,8 +78,9 @@ class PowerAuthEncryptorImpl implements PowerAuthEncryptor {
 
   @override
   Future<Uint8List> decryptResponse(Uint8List responseBody) {
+    final bodySnapshot = Uint8List.fromList(responseBody);
     return _handle.withObjectId(
-      (objectId) => _platform.decryptResponse(objectId, responseBody),
+      (objectId) => _platform.decryptResponse(objectId, bodySnapshot),
     );
   }
 

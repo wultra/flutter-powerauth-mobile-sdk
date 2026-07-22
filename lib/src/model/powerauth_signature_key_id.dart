@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+/// Cryptographic type of a signature key.
+///
+/// Unlike [PowerAuthSignatureKeyId], this identifies only the cryptographic
+/// key type, not the key's purpose.
+enum PowerAuthSignatureKeyType {
+  /// Elliptic Curve key.
+  ec,
+
+  /// ML-DSA key.
+  mlDsa,
+}
+
 /// Identifies a key used for digital signature calculation or verification.
 enum PowerAuthSignatureKeyId {
   /// All available master server keys.

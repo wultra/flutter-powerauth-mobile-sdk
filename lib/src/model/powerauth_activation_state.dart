@@ -33,4 +33,6 @@ enum PowerAuthActivationState {
   /// The activation is technically blocked. You cannot use it anymore
   /// for the signature calculations.
   deadlock,
+
+  unknown,
 }

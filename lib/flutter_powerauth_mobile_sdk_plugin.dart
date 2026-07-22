@@ -47,6 +47,7 @@ export 'src/model/powerauth_encryptor.dart';
 export 'src/model/powerauth_user_info.dart';
 export 'src/model/powerauth_oidc_parameters.dart';
 export 'src/model/powerauth_signature_key_id.dart';
+export 'src/model/powerauth_device_public_key.dart';
 export 'src/model/powerauth_secure_vault_key.dart';
 export 'src/model/powerauth_protocol_upgrade_result.dart';
 export 'src/model/powerauth_password_change_data.dart';

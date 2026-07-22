@@ -443,10 +443,6 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     private fun performCleanup() = lock.withLock {
         val idsToRemove = ArrayList<String>()
         managedObjects.forEach { (id, holder) ->
-            // Password objects are never auto-removed by the cleanup job.
-//            if (holder.obj.managedInstance() is Password) {
-//                return@forEach
-//            }
             if (holder.isReadyForRemove) {
                 idsToRemove.add(id)
             }

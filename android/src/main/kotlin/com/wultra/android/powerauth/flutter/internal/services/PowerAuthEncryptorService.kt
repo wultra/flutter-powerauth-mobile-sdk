@@ -71,7 +71,7 @@ internal class PowerAuthEncryptorService(
     private fun initialize(call: MethodCall, result: Result) {
         try {
             val scope: String = call.getRequiredArgument(SCOPE)
-            val powerAuthInstanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             val isActivationScope = when (scope) {
                 "application" -> false
                 "activation" -> true
@@ -81,10 +81,10 @@ internal class PowerAuthEncryptorService(
                 )
             }
 
-            val sdk = objectRegister.findObject(powerAuthInstanceId, PowerAuthSDK::class.java)
+            val sdk = objectRegister.findObject(instanceId, PowerAuthSDK::class.java)
                 ?: throw WrapperException(
                     Errors.EC_INSTANCE_NOT_CONFIGURED,
-                    "PowerAuth instance '$powerAuthInstanceId' not configured."
+                    "PowerAuth instance '$instanceId' not configured."
                 )
 
             val listener = object : IGetEncryptorListener {
@@ -92,13 +92,13 @@ internal class PowerAuthEncryptorService(
                     try {
                         //check if sdk has not been deconfigured in the meantime
                         val objectId = objectRegister.registerObjectIfOwnerMatches(
-                            powerAuthInstanceId,
+                            instanceId,
                             sdk,
                             ManagedAny.wrap(encryptor) { it.destroy() },
                             listOf(ReleasePolicy.keepAlive(Constants.ENCRYPTOR_KEEP_ALIVE_TIME))
                         ) ?: throw WrapperException(
                             Errors.EC_INSTANCE_NOT_CONFIGURED,
-                            "PowerAuth instance '$powerAuthInstanceId' not configured."
+                            "PowerAuth instance '$instanceId' not configured."
                         )
                         result.success(objectId)
                     } catch (t: Throwable) {
@@ -160,7 +160,7 @@ internal class PowerAuthEncryptorService(
             return
         }
 
-        withEncryptor(call, result) { encryptor ->
+        withEncryptor(call, result, destroyAfter = true) { encryptor ->
             try {
                 encryptor.decryptResponse(CoreEncryptedResponse(responseBody))
             } catch (e: CoreException) {
@@ -172,23 +172,28 @@ internal class PowerAuthEncryptorService(
     private fun <T : Any> withEncryptor(
         call: MethodCall,
         result: Result,
+        destroyAfter: Boolean = false,
         block: (CoreEncryptor) -> T
     ) {
+        val objectId: String = call.getRequiredArgument(OBJECT_ID)
         try {
-            val objectId: String = call.getRequiredArgument(OBJECT_ID)
             val value = objectRegister.useObjectAndTransform(
                 objectId,
                 CoreEncryptor::class.java
             ) { encryptor ->
                 block(encryptor)
+
             } ?: throw WrapperException(
                 Errors.EC_INVALID_NATIVE_OBJECT,
                 "Encryptor object '$objectId' is no longer valid."
             )
-
             result.success(value)
         } catch (t: Throwable) {
             Errors.error(result, t)
+        } finally {
+            if (destroyAfter) {
+                objectRegister.removeObject(objectId, CoreEncryptor::class.java)
+            }
         }
     }
 

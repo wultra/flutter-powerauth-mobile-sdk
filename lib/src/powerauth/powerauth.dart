@@ -41,6 +41,7 @@ import '../model/powerauth_create_activation_result.dart';
 import '../model/powerauth_error.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_signature_key_id.dart';
+import '../model/powerauth_device_public_key.dart';
 import '../model/powerauth_secure_vault_key.dart';
 import '../model/powerauth_protocol_upgrade_result.dart';
 import '../model/powerauth_password_change_data.dart';
@@ -156,6 +157,9 @@ class PowerAuth {
   /// [fetchActivationStatus] first to obtain the latest information from the
   /// PowerAuth server.
   Future<bool> hasProtocolUpgradeAvailable() => _platform.hasProtocolUpgradeAvailable(instanceId);
+
+  /// Returns `true` if a protocol upgrade has started but has not yet finished.
+  Future<bool> hasPendingProtocolUpgrade() => _platform.hasPendingProtocolUpgrade(instanceId);
 
   /// Starts a protocol upgrade for the current activation.
   ///
@@ -306,6 +310,11 @@ class PowerAuth {
     data,
     signatureKeyId,
   );
+
+  /// Exports device public keys in the requested [format].
+  Future<List<PowerAuthDevicePublicKeyData>> exportDevicePublicKeys(
+    PowerAuthDevicePublicKeyFormat format,
+  ) => _platform.exportDevicePublicKeys(instanceId, format);
 
   /// Verifies JWS or JWT signed data using the specified key.
   ///

@@ -18,8 +18,6 @@ package com.wultra.android.powerauth.flutter.internal.services
 
 import android.content.Context
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
@@ -28,15 +26,12 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.biometry.*
 import io.getlime.security.powerauth.core.*
-import io.getlime.security.powerauth.exception.*
 import io.getlime.security.powerauth.networking.response.*
 import io.getlime.security.powerauth.sdk.*
 import io.getlime.security.powerauth.core.Password
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 
-import androidx.core.util.component1
-import androidx.core.util.component2
 import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Constants
 import com.wultra.android.powerauth.flutter.Errors
@@ -58,7 +53,6 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthSignatureUtils.signatureKeyIdFromString
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
-import java.util.concurrent.atomic.AtomicBoolean
 import io.getlime.security.powerauth.sdk.PowerAuthToken
 
 internal class PowerAuthService(
@@ -90,6 +84,7 @@ internal class PowerAuthService(
         const val NONCE = "nonce"
         const val DATA = "data"
         const val DATA_TYPE = "dataType"
+        const val FORMAT = "format"
         const val SIGNATURE = "signature"
         const val SIGNATURE_KEY_ID = "signatureKeyId"
         const val COMPACT = "compact"
@@ -106,6 +101,7 @@ internal class PowerAuthService(
         const val CUSTOM_ATTRIBUTES = "customAttributes"
         const val IS_BIOMETRY = "isBiometry"
         const val IS_PERSIST = "isPersist"
+        const val IS_REUSABLE = "isReusable"
         const val PROMPT_MESSAGE = "promptMessage"
         const val PROMPT_TITLE = "promptTitle"
         const val PROMPT_SUBTITLE = "promptSubtitle"
@@ -146,6 +142,7 @@ internal class PowerAuthService(
         const val GET_ACTIVATION_FINGERPRINT = "getActivationFingerprint"
         const val FETCH_ACTIVATION_STATUS = "fetchActivationStatus"
         const val HAS_PROTOCOL_UPGRADE_AVAILABLE = "hasProtocolUpgradeAvailable"
+        const val HAS_PENDING_PROTOCOL_UPGRADE = "hasPendingProtocolUpgrade"
         const val START_PROTOCOL_UPGRADE = "startProtocolUpgrade"
         const val REMOVE_ACTIVATION_LOCAL = "removeActivationLocal"
         const val REMOVE_ACTIVATION_WITH_AUTHENTICATION = "removeActivationWithAuthentication"
@@ -174,6 +171,7 @@ internal class PowerAuthService(
         const val FETCH_SECURE_VAULT_KEY = "fetchSecureVaultKey"
         const val DERIVE_SECURE_VAULT_KEY = "deriveSecureVaultKey"
         const val CALCULATE_DIGITAL_SIGNATURE = "calculateDigitalSignature"
+        const val EXPORT_DEVICE_PUBLIC_KEYS = "exportDevicePublicKeys"
         const val VERIFY_JWS_SIGNATURE = "verifyJwsSignature"
         const val CALCULATE_JWS_SIGNATURE = "calculateJwsSignature"
         const val CREATE_CERTIFICATE_SIGNING_REQUEST = "createCertificateSigningRequest"
@@ -207,6 +205,7 @@ internal class PowerAuthService(
             HandlerNames.GET_ACTIVATION_FINGERPRINT to this::getActivationFingerprint,
             HandlerNames.FETCH_ACTIVATION_STATUS to this::fetchActivationStatus,
             HandlerNames.HAS_PROTOCOL_UPGRADE_AVAILABLE to this::hasProtocolUpgradeAvailable,
+            HandlerNames.HAS_PENDING_PROTOCOL_UPGRADE to this::hasPendingProtocolUpgrade,
             HandlerNames.START_PROTOCOL_UPGRADE to this::startProtocolUpgrade,
             HandlerNames.REMOVE_ACTIVATION_LOCAL to this::removeActivationLocal,
             HandlerNames.REMOVE_ACTIVATION_WITH_AUTHENTICATION to this::removeActivationWithAuthentication,
@@ -235,6 +234,7 @@ internal class PowerAuthService(
             HandlerNames.FETCH_SECURE_VAULT_KEY to this::fetchSecureVaultKey,
             HandlerNames.DERIVE_SECURE_VAULT_KEY to this::deriveSecureVaultKey,
             HandlerNames.CALCULATE_DIGITAL_SIGNATURE to this::calculateDigitalSignature,
+            HandlerNames.EXPORT_DEVICE_PUBLIC_KEYS to this::exportDevicePublicKeys,
             HandlerNames.VERIFY_JWS_SIGNATURE to this::verifyJwsSignature,
             HandlerNames.CALCULATE_JWS_SIGNATURE to this::calculateJwsSignature,
             HandlerNames.CREATE_CERTIFICATE_SIGNING_REQUEST to this::createCertificateSigningRequest,
@@ -405,6 +405,12 @@ internal class PowerAuthService(
         }
     }
 
+    private fun hasPendingProtocolUpgrade(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            result.success(sdk.hasPendingProtocolUpgrade())
+        }
+    }
+
     private fun startProtocolUpgrade(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
@@ -531,22 +537,30 @@ internal class PowerAuthService(
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
             //build immutable password
             val oldPassword = buildOwnedPasswordObject(oldPasswordMap)
+            val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
 
             try {
                 sdk.beginPasswordChange(context, oldPassword, object : IBeginPasswordChangeListener {
                     override fun onBeginPasswordChangeSucceed(passwordChangeData: PowerAuthPasswordChangeData) {
                         try {
-                            val objectId = objectRegister.registerObject(
+                            //check if sdk has not been deconfigured in the meantime
+                            val objectId = objectRegister.registerObjectIfOwnerMatches(
+                                instanceId,
+                                sdk,
                                 ManagedAny.wrap(passwordChangeData) {
                                     it.secureClear();
                                     //destroy because immutable
                                     it.oldPassword.destroy();},
-                                call.getRequiredArgument(INSTANCE_ID),
                                 listOf(
-                                    ReleasePolicy.afterUse(1),
                                     ReleasePolicy.expire(Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
                                 )
                             )
+                            if (objectId == null) {
+                                throw WrapperException(
+                                    Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                    "PowerAuth instance '$instanceId' not configured."
+                                )
+                            }
                             result.success(objectId)
                         } catch (t: Throwable) {
                             passwordChangeData.secureClear()
@@ -586,26 +600,21 @@ internal class PowerAuthService(
                 newPassword.destroy()
                 throw t
             }
-
-            fun destroySensitiveData() {
-                newPassword.destroy()
-                objectRegister.useObject(passwordChangeDataId, PowerAuthPasswordChangeData::class.java)
-            }
-
             try {
                 sdk.finishPasswordChange(context, newPassword, passwordChangeData, object : IFinishPasswordChangeListener {
                     override fun onFinishPasswordChangeSucceed() {
-                        destroySensitiveData()
+                        newPassword.destroy()
+                        objectRegister.removeObject(passwordChangeDataId, PowerAuthPasswordChangeData::class.java)
                         result.success(null)
                     }
 
                     override fun onFinishPasswordChangeFailed(t: Throwable) {
-                        destroySensitiveData()
+                        newPassword.destroy()
                         Errors.error(result, t)
                     }
                 })
             } catch (t: Throwable) {
-                destroySensitiveData()
+                newPassword.destroy()
                 throw t
             }
         }
@@ -762,6 +771,7 @@ internal class PowerAuthService(
         usePowerAuthOnMainThread(call, result) { sdk ->
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
+            val isReusable = call.argument<Boolean>(IS_REUSABLE) ?: false
 
             val activity = validateFragmentActivity(getCurrentActivity())
             val prompt = buildBiometricPrompt(activity, promptMap, allowNoPrompt = false)
@@ -793,14 +803,26 @@ internal class PowerAuthService(
 
                         try {
                             val managedKey = ManagedAny.wrap(key) { it.destroy() }
-                            val keyId = objectRegister.registerObject(
-                                managedKey,
+                            val keyId = objectRegister.registerObjectIfOwnerMatches(
                                 instanceId,
-                                listOf(
-                                    ReleasePolicy.afterUse(1),
-                                    ReleasePolicy.expire(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
+                                sdk,
+                                managedKey,
+                                listOfNotNull(
+                                    if (isReusable) null else ReleasePolicy.afterUse(1),
+                                    ReleasePolicy.keepAlive(Constants.BIOMETRY_KEY_KEEP_ALIVE_TIME)
                                 )
                             )
+                            if (keyId == null) {
+                                key.destroy()
+                                Errors.error(
+                                    result,
+                                    WrapperException(
+                                        Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                        "PowerAuth instance '$instanceId' not configured."
+                                    )
+                                )
+                                return
+                            }
                             result.success(keyId)
                         } catch (t: Throwable) {
                             key.destroy()
@@ -1160,11 +1182,7 @@ internal class PowerAuthService(
                 }
 
                 override fun onGenerateTokenHeaderFailed(t: Throwable) {
-                    result.error(
-                        Errors.EC_CANNOT_GENERATE_TOKEN,
-                        "Cannot generate header for this token.",
-                        t
-                    )
+                    Errors.error(result, t)
                 }
             })
         }
@@ -1206,10 +1224,15 @@ internal class PowerAuthService(
                     keyIdentifier,
                     object : IFetchSecureVaultKeyListener {
                         override fun onFetchSecureVaultKeySucceed(vaultKey: PowerAuthSecureVaultKey) {
-                            val objectId = objectRegister.registerObject(
-                                ManagedAny.wrap(vaultKey),
+                            //check if sdk has not been deconfigured in the meantime
+                            val objectId = objectRegister.registerObjectIfOwnerMatches(
                                 instanceId,
+                                sdk,
+                                ManagedAny.wrap(vaultKey),
                                 listOf(ReleasePolicy.manual())
+                            ) ?: throw WrapperException(
+                                Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                "PowerAuth instance '$instanceId' not configured."
                             )
                             result.success(objectId)
                         }
@@ -1278,6 +1301,33 @@ internal class PowerAuthService(
                     }
                 )
             }
+        }
+    }
+
+    private fun exportDevicePublicKeys(call: MethodCall, result: Result) {
+        usePowerAuth(call, result) { sdk ->
+            val format = when (val value: String = call.getRequiredArgument(FORMAT)) {
+                "der" -> PowerAuthDevicePublicKeyFormat.DER
+                "raw" -> PowerAuthDevicePublicKeyFormat.RAW
+                else -> throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Unknown device public key format: $value"
+                )
+            }
+            result.success(sdk.exportDevicePublicKeys(format).map { key ->
+                mapOf(
+                    "keyType" to when (key.keyType) {
+                        PowerAuthSignatureKeyType.EC -> "ec"
+                        PowerAuthSignatureKeyType.ML_DSA -> "mlDsa"
+                        else -> throw WrapperException(
+                            Errors.EC_UNKNOWN_ERROR,
+                            "Unknown signature key type: ${key.keyType}"
+                        )
+                    },
+                    "keyAlgorithm" to key.keyAlgorithm,
+                    "keyData" to key.keyData
+                )
+            })
         }
     }
 
