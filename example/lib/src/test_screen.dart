@@ -798,8 +798,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       var releaseVerified = false;
       try {
         await vaultKey.deriveKey(1000, 32);
-      } on StateError {
-        releaseVerified = true;
+      } on PowerAuthException catch (e) {
+        if (e.code == PowerAuthErrorCode.invalidNativeObject) {
+          releaseVerified = true;
+        } else {
+          rethrow;
+        }
       }
 
       final message = 'Secure Vault ($authenticationType) succeeded. '
