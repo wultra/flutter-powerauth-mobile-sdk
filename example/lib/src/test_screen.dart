@@ -114,7 +114,11 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         );
         final keychainConfig = PowerAuthKeychainConfiguration();
         final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
-        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "fapp");
+        final sharingConfig = PowerAuthSharingConfiguration(
+          appGroup: "group.com.wultra.testGroup",
+          appIdentifier: "SharedInstanceTests",
+          keychainAccessGroup: "fake.accessGroup",
+        );
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
@@ -233,6 +237,25 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   Future<void> _setInstanceId(String newInstanceId) async {
     if (_instanceId == newInstanceId) return;
 
+    _setLoading(true);
+    try {
+      if (await _powerAuth.isConfigured()) {
+        await _powerAuth.deconfigure();
+      }
+    } on PowerAuthException catch (e) {
+      _setError(
+        'Failed to deconfigure PowerAuth instance $_instanceId: '
+        '${e.message} (${e.code})',
+      );
+      _setLoading(false);
+      return;
+    } catch (e) {
+      _setError('Failed to deconfigure PowerAuth instance $_instanceId: $e');
+      _setLoading(false);
+      return;
+    }
+
+    if (!mounted) return;
     setState(() {
       _instanceId = newInstanceId;
       _powerAuth = PowerAuth(_instanceId);
@@ -877,7 +900,16 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       }
 
       final cleartext = await encryptor.decryptResponse(response.bodyBytes);
-     
+      try {
+        await encryptor.canEncryptRequest();
+        throw StateError(
+          'Encryptor remained usable after response decryption.',
+        );
+      } on PowerAuthException catch (e) {
+        if (e.code != PowerAuthErrorCode.invalidNativeObject) {
+          rethrow;
+        }
+      }
 
       final decodedResponse = jsonDecode(utf8.decode(cleartext));
       final formattedResponse = const JsonEncoder.withIndent(
@@ -887,6 +919,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
           'Initial state: encrypt=$canEncryptBefore, decrypt=$canDecryptBefore\n'
           'After encryption: encrypt=$canEncryptAfterEncryption, '
           'decrypt=$canDecryptAfterEncryption\n'
+          'After decryption: release verified\n\n'
           'Endpoint: /pa/$protocolVersion/user/info\n'
           'Decrypted response:\n$formattedResponse';
       print(message);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import PowerAuthCore
+import PowerAuth2
 import Flutter
 
 internal class PowerAuthRegisterService: PowerAuthFlutterService {
@@ -33,7 +33,8 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     let handlers = [
         "register_debugDump": debugDump,
         "register_debugCommand": debugCommand,
-        "register_isValidNativeObject": isValidNativeObject
+        "register_isValidNativeObject": isValidNativeObject,
+        "register_releaseNativeObject": releaseNativeObject
     ]
     
     fileprivate enum Args: String {
@@ -46,6 +47,12 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     private func isValidNativeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let objectId: String = try call.requireParameter(Args.objectId)
         result(register.contains(id: objectId))
+    }
+
+    private func releaseNativeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        let objectId: String = try call.requireParameter(Args.objectId)
+        register.removeAny(id: objectId)
+        result(nil)
     }
     
     #if DEBUG
@@ -116,7 +123,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                 case .number:
                     instance = 42
                 case .password:
-                    instance = PowerAuthCoreMutablePassword()
+                    instance = PowerAuthMutablePassword()
                 }
                 if let instance {
                     let objectId = register.add(object: instance, tag: objectTag, policies: policies)
@@ -135,7 +142,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     let data: Int? = register.remove(id: objectId)
                     result(data != nil)
                 case .password:
-                    let data: PowerAuthCorePassword? = register.remove(id: objectId)
+                    let data: PowerAuthPassword? = register.remove(id: objectId)
                     result(data != nil)
                 case .secureData:
                     let data: PowerAuthData? = register.remove(id: objectId)
@@ -164,7 +171,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     let data: Int? = register.use(id: objectId)
                     result(data != nil)
                 case .password:
-                    let data: PowerAuthCorePassword? = register.use(id: objectId)
+                    let data: PowerAuthPassword? = register.use(id: objectId)
                     result(data != nil)
                 case .secureData:
                     let data: PowerAuthData? = register.use(id: objectId)
@@ -183,7 +190,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     let data: Int? = register.find(id: objectId)
                     result(data != nil)
                 case .password:
-                    let data: PowerAuthCorePassword? = register.find(id: objectId)
+                    let data: PowerAuthPassword? = register.find(id: objectId)
                     result(data != nil)
                 case .secureData:
                     let data: PowerAuthData? = register.find(id: objectId)
@@ -202,7 +209,7 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     let data: Int? = register.touch(id: objectId)
                     result(data != nil)
                 case .password:
-                    let data: PowerAuthCorePassword? = register.touch(id: objectId)
+                    let data: PowerAuthPassword? = register.touch(id: objectId)
                     result(data != nil)
                 case .secureData:
                     let data: PowerAuthData? = register.touch(id: objectId)

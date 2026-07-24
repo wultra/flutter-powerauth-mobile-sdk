@@ -17,7 +17,6 @@
 import Flutter
 import UIKit
 import PowerAuth2
-import PowerAuthCore
 
 internal class PowerAuthUtilsService: PowerAuthFlutterService {
     

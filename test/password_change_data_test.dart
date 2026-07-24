@@ -39,7 +39,7 @@ class _PasswordChangePlatform extends PowerAuthPlatform {
     finishedInstanceId = instanceId;
     finishedObjectId = passwordChangeData;
     if (failFinish) {
-      throw PowerAuthException(code: PowerAuthErrorCode.authenticationError);
+      throw PowerAuthException(code: PowerAuthErrorCode.networkError);
     }
   }
 
@@ -90,7 +90,7 @@ void main() {
         isA<PowerAuthException>().having(
           (e) => e.code,
           'code',
-          PowerAuthErrorCode.authenticationError,
+          PowerAuthErrorCode.networkError,
         ),
       ),
     );

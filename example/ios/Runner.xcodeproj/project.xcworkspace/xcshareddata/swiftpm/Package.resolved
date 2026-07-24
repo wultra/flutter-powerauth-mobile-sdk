@@ -1,12 +1,21 @@
 {
   "pins" : [
     {
-      "identity" : "powerauth-mobile-sdk-spm",
+      "identity" : "cc7",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/wultra/powerauth-mobile-sdk-spm.git",
+      "location" : "https://github.com/wultra/cc7",
       "state" : {
-        "revision" : "e98e570bd527c98ef4ffff950fe2bebf557e4b85",
-        "version" : "1.9.6"
+        "revision" : "f16b141835b3a8ae82608ed098f46417923b5cf7",
+        "version" : "0.7.0"
+      }
+    },
+    {
+      "identity" : "powerauth-mobile-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/wultra/powerauth-mobile-sdk",
+      "state" : {
+        "revision" : "196a065f574a340acdfe547a295a1928c95fea27",
+        "version" : "2.0.0-rc1"
       }
     }
   ],

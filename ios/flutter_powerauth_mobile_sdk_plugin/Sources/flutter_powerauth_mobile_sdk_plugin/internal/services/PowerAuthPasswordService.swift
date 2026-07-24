@@ -17,7 +17,6 @@
 import Foundation
 import Flutter
 import PowerAuth2
-import PowerAuthCore
 
 internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
@@ -30,7 +29,6 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     let handlers = [
         "password_initialize": initialize,
-        "password_release": release,
         "password_clear": clear,
         "password_length": length,
         "password_isEqualTo": isEqual,
@@ -65,13 +63,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         if destroyOnUse {
             policies.append(.afterUse(1))
         }
-        result(register.add(object: PowerAuthCoreMutablePassword(), tag: paInstanceId, policies: policies))
-    }
-    
-    private func release(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let objectId = try call.getObjectId()
-        register.removeAny(id: objectId)
-        result(nil)
+        result(register.add(object: PowerAuthMutablePassword(), tag: paInstanceId, policies: policies))
     }
     
     private func clear(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -118,8 +110,9 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
                 let position = UInt(at)
                 password.insertCharacter(char, at: position)
                 result(password.length())
+            } else {
+                throw PluginException(.wrongParameter, message: "Position is out of range")
             }
-            throw PluginException(.wrongParameter, message: "Position is out of range")
         }
     }
     
@@ -132,8 +125,9 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
                 let position = UInt(at)
                 password.removeCharacter(at: position)
                 result(password.length())
+            } else {
+                throw PluginException(.wrongParameter, message: "Position is out of range")
             }
-            throw PluginException(.wrongParameter, message: "Position is out of range")
         }
     }
     
@@ -145,14 +139,14 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         }
     }
     
-    private func withPassword(id: String, action: (PowerAuthCoreMutablePassword) throws -> Void) throws {
-        guard let password: PowerAuthCoreMutablePassword = register.touch(id: id) else {
+    private func withPassword(id: String, action: (PowerAuthMutablePassword) throws -> Void) throws {
+        guard let password: PowerAuthMutablePassword = register.touch(id: id) else {
             throw PluginException(.invalidNativeObject, message: "Password object is no longer valid")
         }
         try action(password)
     }
     
-    private func withPassword(id: String, character: Int, action: (PowerAuthCoreMutablePassword, UInt32) throws -> Void) throws {
+    private func withPassword(id: String, character: Int, action: (PowerAuthMutablePassword, UInt32) throws -> Void) throws {
         
         guard character >= 0 else {
             throw PluginException(.wrongParameter, message: "CodePoint cannot be negative")
@@ -164,7 +158,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
             throw PluginException(.wrongParameter, message: "CodePoint is too big")
         }
         
-        guard let password: PowerAuthCoreMutablePassword = register.touch(id: id) else {
+        guard let password: PowerAuthMutablePassword = register.touch(id: id) else {
             throw PluginException(.invalidNativeObject, message: "Password object is no longer valid")
         }
         try action(password, codePoint)
