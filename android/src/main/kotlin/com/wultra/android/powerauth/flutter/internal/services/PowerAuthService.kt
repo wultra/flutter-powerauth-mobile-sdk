@@ -79,7 +79,7 @@ internal class PowerAuthService(
         const val PASSWORD_CHANGE_DATA = "passwordChangeData"
         const val UPGRADE_BIOMETRY = "upgradeBiometry"
         const val URI_ID = "uriId"
-        const val QUERY_PARAMS = "queryParams"
+        const val PARAMS = "params"
         const val METHOD = "method"
         const val BODY = "body"
         const val NONCE = "nonce"
@@ -152,8 +152,8 @@ internal class PowerAuthService(
         const val PERSIST_ACTIVATION = "persistActivation"
         const val BEGIN_PASSWORD_CHANGE = "beginPasswordChange"
         const val FINISH_PASSWORD_CHANGE = "finishPasswordChange"
-        const val REQUEST_GET_SIGNATURE = "requestGetSignature"
-        const val REQUEST_SIGNATURE = "requestSignature"
+        const val AUTHENTICATION_HEADER_FOR_REQUEST_WITH_PARAMS = "authenticationHeaderForRequestWithParams"
+        const val AUTHENTICATION_HEADER_FOR_REQUEST_WITH_BODY = "authenticationHeaderForRequestWithBody"
         const val OFFLINE_SIGNATURE = "offlineSignature"
         const val VERIFY_DIGITAL_SIGNATURE = "verifyDigitalSignature"
         const val GET_BIOMETRIC_STATUS = "getBiometricStatus"
@@ -216,8 +216,8 @@ internal class PowerAuthService(
             HandlerNames.PERSIST_ACTIVATION to this::persistActivation,
             HandlerNames.BEGIN_PASSWORD_CHANGE to this::beginPasswordChange,
             HandlerNames.FINISH_PASSWORD_CHANGE to this::finishPasswordChange,
-            HandlerNames.REQUEST_GET_SIGNATURE to this::requestGetSignature,
-            HandlerNames.REQUEST_SIGNATURE to this::requestSignature,
+            HandlerNames.AUTHENTICATION_HEADER_FOR_REQUEST_WITH_PARAMS to this::authenticationHeaderForRequestWithParams,
+            HandlerNames.AUTHENTICATION_HEADER_FOR_REQUEST_WITH_BODY to this::authenticationHeaderForRequestWithBody,
             HandlerNames.OFFLINE_SIGNATURE to this::offlineSignature,
             HandlerNames.VERIFY_DIGITAL_SIGNATURE to this::verifyDigitalSignature,
             HandlerNames.GET_BIOMETRIC_STATUS to this::getBiometricStatus,
@@ -639,24 +639,25 @@ internal class PowerAuthService(
         }
     }
 
-    private fun requestGetSignature(call: MethodCall, result: Result) {
+    private fun authenticationHeaderForRequestWithParams(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
+            val method: String = call.getRequiredArgument(METHOD)
             val uriId: String = call.getRequiredArgument(URI_ID)
-            val queryParams: Map<String, String>? = call.argument(QUERY_PARAMS)
+            val params: Map<String, String>? = call.argument(PARAMS)
 
             val header = withOwnedAuthentication(call) { authentication ->
                 sdk.authenticationHeaderForRequestWithParams(
                     authentication,
-                    "GET",
+                    method,
                     uriId,
-                    queryParams
+                    params
                 )
             }
             result.success(httpHeaderToMap(header))
         }
     }
 
-    private fun requestSignature(call: MethodCall, result: Result) {
+    private fun authenticationHeaderForRequestWithBody(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val method: String = call.getRequiredArgument(METHOD)
             val uriId: String = call.getRequiredArgument(URI_ID)
@@ -885,21 +886,12 @@ internal class PowerAuthService(
                 )
                 val codeVerifier = oidcParameters["codeVerifier"]
 
-                try {
-                    PowerAuthActivation.Builder.oidcActivation(
-                        providerId,
-                        code,
-                        nonce,
-                        codeVerifier
-                    )
-                } catch (e: PowerAuthErrorException) {
-                    throw WrapperException(
-                        Errors.EC_INVALID_ACTIVATION_OBJECT,
-                        "Invalid OIDC parameters provided"
-                    )
-                }
-
-
+                PowerAuthActivation.Builder.oidcActivation(
+                    providerId,
+                    code,
+                    nonce,
+                    codeVerifier
+                )
             }
 
             else -> throw WrapperException(

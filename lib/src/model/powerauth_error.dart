@@ -25,12 +25,6 @@ enum PowerAuthErrorCode {
   /// Error code for error with network connectivity or download.
   networkError,
 
-  /// Failed to authenticate on the server. The code is reported when 401 HTTP status code from the server is received.
-  authenticationError,
-
-  /// Non 200 HTTP status code received from the server. The [PowerAuthException.errorData] dictionary contains more details.
-  responseError,
-
   /// Error code for error in signature calculation.
   signatureError,
 
@@ -60,9 +54,6 @@ enum PowerAuthErrorCode {
 
   /// Error code for accessing an unknown token.
   invalidToken,
-
-  /// Encryptor is not constructed for encryption or decryption.
-  invalidEncryptor,
 
   /// Error code for errors related to end-to-end encryption.
   encryptionError,

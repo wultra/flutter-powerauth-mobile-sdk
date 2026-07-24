@@ -16,6 +16,8 @@
 package com.wultra.android.powerauth.flutter
 
 import io.flutter.plugin.common.MethodChannel.Result
+import io.getlime.security.powerauth.core.CoreErrorCode
+import io.getlime.security.powerauth.core.CoreException
 import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.networking.exceptions.ErrorResponseApiException
@@ -25,13 +27,10 @@ import java.io.IOException
 @Suppress("MemberVisibilityCanBePrivate")
 object Errors {
     const val EC_FLUTTER_ERROR: String = "flutterError"
-    const val EC_AUTHENTICATION_ERROR: String = "authenticationError"
-    const val EC_RESPONSE_ERROR: String = "responseError"
     const val EC_INSTANCE_NOT_CONFIGURED: String = "instanceNotConfigured"
     const val EC_INVALID_CHARACTER: String = "invalidCharacter"
     const val EC_BIOMETRY_FAILED: String = "biometryFailed"
     const val EC_INVALID_ACTIVATION_OBJECT: String = "invalidActivationObject"
-    const val EC_INVALID_ENCRYPTOR: String = "invalidEncryptor"
     const val EC_LOCAL_TOKEN_NOT_AVAILABLE: String = "localTokenNotAvailable"
     const val EC_CANNOT_GENERATE_TOKEN: String = "cannotGenerateToken"
     const val EC_INVALID_NATIVE_OBJECT: String = "invalidNativeObject"
@@ -116,15 +115,31 @@ object Errors {
                 details = errorDetails
             }
 
-            is FailedApiException -> {
-                val httpStatusCode: Int = t.responseCode
-                if (httpStatusCode == 401) {
-                    code = EC_AUTHENTICATION_ERROR
-                    message = "Unauthorized"
-                } else {
-                    code = EC_RESPONSE_ERROR
+            is CoreException -> {
+                code = when (t.errorCode) {
+                    CoreErrorCode.MISSING_ACTIVATION -> EC_MISSING_ACTIVATION
+                    CoreErrorCode.WRONG_ACTIVATION_STATE -> EC_INVALID_ACTIVATION_STATE
+                    CoreErrorCode.WRONG_PARAMETER -> EC_WRONG_PARAMETER
+                    CoreErrorCode.BIOMETRY_NOT_ALLOWED -> EC_BIOMETRY_NOT_AVAILABLE
+                    CoreErrorCode.WRONG_SIGNATURE -> EC_WRONG_SIGNATURE
+                    CoreErrorCode.CANCELED -> EC_OPERATION_CANCELED
+                    CoreErrorCode.TIME_NOT_SYNCHRONIZED -> EC_TIME_SYNCHRONIZATION
+                    CoreErrorCode.PENDING_PROTOCOL_UPGRADE -> EC_PENDING_PROTOCOL_UPGRADE
+                    CoreErrorCode.INVALID_ACTIVATION_DATA -> EC_INVALID_ACTIVATION_DATA
+                    CoreErrorCode.UPGRADE_SDK -> EC_UPGRADE_SDK
+                    else -> EC_OTHER
                 }
+                details = mutableMapOf<String, Any?>(
+                    "originalCode" to t.errorCode,
+                    "originalMessage" to t.message,
+                    "additionalFailureInfo" to t.additionalFailureInfo?.toList(),
+                    "nativeExceptionType" to t.javaClass.simpleName
+                )
+            }
 
+            is FailedApiException -> {
+                code = EC_NETWORK_ERROR
+                val httpStatusCode: Int = t.responseCode
                 val errorDetails = mutableMapOf<String, Any?>(
                     "httpStatusCode" to httpStatusCode,
                     "responseBody" to t.responseBody

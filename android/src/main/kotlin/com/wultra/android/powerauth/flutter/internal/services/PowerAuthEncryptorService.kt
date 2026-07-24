@@ -28,10 +28,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.CoreEncryptedResponse
 import io.getlime.security.powerauth.core.CoreEncryptor
-import io.getlime.security.powerauth.core.CoreErrorCode
-import io.getlime.security.powerauth.core.CoreException
-import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
-import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.networking.response.IGetEncryptorListener
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
@@ -131,11 +127,7 @@ internal class PowerAuthEncryptorService(
     private fun encryptRequest(call: MethodCall, result: Result) {
         withEncryptor(call, result) { encryptor ->
             val requestBody: ByteArray? = call.argument(REQUEST_BODY)
-            val encryptedRequest = try {
-                encryptor.encryptRequest(requestBody)
-            } catch (e: CoreException) {
-                throw translateCoreException(e, "Failed to encrypt request.")
-            }
+            val encryptedRequest = encryptor.encryptRequest(requestBody)
 
             mapOf(
                 "requestBody" to encryptedRequest.requestBody,
@@ -161,11 +153,7 @@ internal class PowerAuthEncryptorService(
         }
 
         withEncryptor(call, result, destroyAfter = true) { encryptor ->
-            try {
-                encryptor.decryptResponse(CoreEncryptedResponse(responseBody))
-            } catch (e: CoreException) {
-                throw translateCoreException(e, "Failed to decrypt response.")
-            }
+            encryptor.decryptResponse(CoreEncryptedResponse(responseBody))
         }
     }
 
@@ -197,21 +185,4 @@ internal class PowerAuthEncryptorService(
         }
     }
 
-    private fun translateCoreException(
-        exception: CoreException,
-        fallbackMessage: String
-    ): Throwable {
-        if (exception.errorCode == CoreErrorCode.NOT_ALLOWED) {
-            return WrapperException(
-                Errors.EC_INVALID_ENCRYPTOR,
-                exception.message ?: fallbackMessage,
-                exception
-            )
-        }
-
-        return PowerAuthErrorException.wrapCoreException(
-            exception,
-            PowerAuthErrorCodes.ENCRYPTION_ERROR
-        )
-    }
 }

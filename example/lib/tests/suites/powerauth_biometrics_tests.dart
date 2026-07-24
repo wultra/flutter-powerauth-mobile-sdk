@@ -46,7 +46,7 @@ class PowerAuthBiometricsTests extends TestSuiteWithActivation {
     await helper.prepareActiveActivation(await credentials.validPasswordObject());
     await expect(sdk.hasBiometryFactor()).toBe(false);
 
-    await expect(sdk.requestSignature(credentials.biometry(), 'POST', '{}', _utf8Bytes('/some/biometry'))).toThrow(PowerAuthErrorCode.biometryNotAvailable);
+    await expect(sdk.authenticationHeaderForRequestWithBody(credentials.biometry(), 'POST', '{}', _utf8Bytes('/some/biometry'))).toThrow(PowerAuthErrorCode.biometryNotConfigured);
 
     await expect(sdk.addBiometryFactor(await credentials.validPasswordObject())).toSucceed();
     await expect(sdk.hasBiometryFactor()).toBe(true);

@@ -238,34 +238,37 @@ class PowerAuth {
     );
   }
 
-  /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a GET request.
+  /// Computes an HTTP authentication header for a request with query parameters.
   ///
   /// - [authentication]: Specifies the factors to use for signing.
+  /// - [method]: The HTTP method (for example, `"GET"`).
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/user/detail").
-  /// - [queryParams]: Optional query parameters to include in the signature calculation.
-  Future<PowerAuthHttpHeader> requestGetSignature(
+  /// - [params]: Optional query parameters to include in the authentication calculation.
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     PowerAuthAuthentication authentication,
+    String method,
     String uriId, [
-    Map<String, String>? queryParams,
-  ]) => _platform.requestGetSignature(
+    Map<String, String>? params,
+  ]) => _platform.authenticationHeaderForRequestWithParams(
     instanceId,
     authentication,
+    method,
     uriId,
-    queryParams,
+    params,
   );
 
-  /// Computes an HTTP signature header (`X-PowerAuth-Authorization`) for a request with a body.
+  /// Computes an HTTP authentication header for a request with a body.
   ///
   /// - [authentication]: Specifies the factors to use for signing.
   /// - [method]: The HTTP method (e.g., "POST", "PUT").
   /// - [uriId]: The URI identifier for the request path (e.g., "/api/transfer").
-  /// - [body]: Optional raw request body data to include in the signature calculation.
-  Future<PowerAuthHttpHeader> requestSignature(
+  /// - [body]: Optional raw request body data to include in the authentication calculation.
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
     Uint8List? body,
-  ]) => _platform.requestSignature(
+  ]) => _platform.authenticationHeaderForRequestWithBody(
     instanceId,
     authentication,
     method,

@@ -877,11 +877,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       }
 
       final cleartext = await encryptor.decryptResponse(response.bodyBytes);
-      final canEncryptAfterDecryption = await encryptor.canEncryptRequest();
-      final canDecryptAfterDecryption = await encryptor.canDecryptResponse();
-      if (canEncryptAfterDecryption || canDecryptAfterDecryption) {
-        throw StateError('Unexpected encryptor state after decryption.');
-      }
+     
 
       final decodedResponse = jsonDecode(utf8.decode(cleartext));
       final formattedResponse = const JsonEncoder.withIndent(
@@ -891,8 +887,6 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
           'Initial state: encrypt=$canEncryptBefore, decrypt=$canDecryptBefore\n'
           'After encryption: encrypt=$canEncryptAfterEncryption, '
           'decrypt=$canDecryptAfterEncryption\n'
-          'After decryption: encrypt=$canEncryptAfterDecryption, '
-          'decrypt=$canDecryptAfterDecryption\n\n'
           'Endpoint: /pa/$protocolVersion/user/info\n'
           'Decrypted response:\n$formattedResponse';
       print(message);
@@ -2457,8 +2451,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final paPassword = await PowerAuthPassword.fromString(password);
       final authentication = PowerAuthAuthentication.password(paPassword);
 
-      final header = await _powerAuth.requestGetSignature(
+      final header = await _powerAuth.authenticationHeaderForRequestWithParams(
         authentication,
+        'GET',
         uriId,
       );
 
@@ -2487,8 +2482,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         biometricPrompt: prompt,
       );
 
-      final header = await _powerAuth.requestGetSignature(
+      final header = await _powerAuth.authenticationHeaderForRequestWithParams(
         authentication,
+        'GET',
         uriId,
       );
 
@@ -2515,7 +2511,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       final authentication = PowerAuthAuthentication.password(paPassword);
       final bodyBytes = _utf8Bytes(body);
 
-      final header = await _powerAuth.requestSignature(
+      final header = await _powerAuth.authenticationHeaderForRequestWithBody(
         authentication,
         'POST',
         uriId,
@@ -2553,7 +2549,7 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       );
       final bodyBytes = _utf8Bytes(body);
 
-      final header = await _powerAuth.requestSignature(
+      final header = await _powerAuth.authenticationHeaderForRequestWithBody(
         authentication,
         'POST',
         uriId,

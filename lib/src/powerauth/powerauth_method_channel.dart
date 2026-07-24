@@ -307,25 +307,27 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   }
 
   @override
-  Future<PowerAuthHttpHeader> requestGetSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     String instanceId,
     PowerAuthAuthentication authentication,
+    String method,
     String uriId, [
-    Map<String, String>? queryParams,
+    Map<String, String>? params,
   ]) async {
     final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'requestGetSignature',
+      'authenticationHeaderForRequestWithParams',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
+        'method': method,
         'uriId': uriId,
-        'queryParams': queryParams
+        'params': params
       })
     );
     return PowerAuthHttpHeader.fromMap(result);
   }
 
   @override
-  Future<PowerAuthHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
@@ -334,7 +336,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
   ]) async {
     final bodySnapshot = body == null ? null : Uint8List.fromList(body);
     final result = await invokeMethod<Map<dynamic, dynamic>>(
-      'requestSignature',
+      'authenticationHeaderForRequestWithBody',
       await _authenticate(instanceId, authentication, {
         'instanceId': instanceId,
         'method': method,

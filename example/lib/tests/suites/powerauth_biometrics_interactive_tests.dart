@@ -112,7 +112,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       // Calculate signature 
       var data = '{}';
       var uriId = '/some/uriId';
-      var header = await sdk.requestSignature(reusableAuth, 'POST', uriId, _utf8Bytes(data));
+      var header = await sdk.authenticationHeaderForRequestWithBody(reusableAuth, 'POST', uriId, _utf8Bytes(data));
       // Verify signature
       var result = await helper.verifySignature("POST", uriId, header.value, data);
       await expect(result.signatureValid).toBe(true);
@@ -122,7 +122,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       data = '{"value":true}';
       uriId = '/another/uriId';
 
-      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, _utf8Bytes(data));
+      header = await sdk.authenticationHeaderForRequestWithBody(reusableAuth, 'POST', uriId, _utf8Bytes(data));
       result = await helper.verifySignature("POST", uriId, header.value, data);
       await expect(result.signatureValid).toBe(true);
 
@@ -131,7 +131,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       data = '{"value":false}';
       uriId = '/another/uriId';
 
-      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, _utf8Bytes(data));
+      header = await sdk.authenticationHeaderForRequestWithBody(reusableAuth, 'POST', uriId, _utf8Bytes(data));
       result = await helper.verifySignature("POST", uriId, header.value, data);
       await expect(result.signatureValid).toBe(true);
 
@@ -146,7 +146,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       data = '{"value":false, "something":true}';
       uriId = '/another/uriId';
 
-      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, _utf8Bytes(data));
+      header = await sdk.authenticationHeaderForRequestWithBody(reusableAuth, 'POST', uriId, _utf8Bytes(data));
       result = await helper.verifySignature("POST", uriId, header.value, data);
       await expect(result.signatureValid).toBe(true);
 
@@ -155,7 +155,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
       data = '{"value":false}';
       uriId = '/another/uriId';
 
-      header = await sdk.requestSignature(reusableAuth, 'POST', uriId, _utf8Bytes(data));
+      header = await sdk.authenticationHeaderForRequestWithBody(reusableAuth, 'POST', uriId, _utf8Bytes(data));
       result = await helper.verifySignature("POST", uriId, header.value, data);
       await expect(result.signatureValid).toBe(true);
     });
@@ -177,7 +177,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     await expect(sdk.hasBiometryFactor()).toBe(true);
     await showPrompt('Please CANCEL authentication dialog');
     final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptMessage: "Please CANCEL this dialog", promptTitle: "Please cancel", cancelButtonTitle: "super cancel"));
-    await expect(sdk.requestSignature(auth, 'POST', '/some/uriId', _utf8Bytes('{}'))).toThrow(PowerAuthErrorCode.biometryCancel);
+    await expect(sdk.authenticationHeaderForRequestWithBody(auth, 'POST', '/some/uriId', _utf8Bytes('{}'))).toThrow(PowerAuthErrorCode.biometryCancel);
   }
 
   Future<void> testFailedBiometry() async {
@@ -196,7 +196,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     // At biometry fail, the fake key is generated and the signature will be invalid
     final uriId = '/some/failed/uriId';
     final body = '{ failedApi: true }';
-    final header = await sdk.requestSignature(auth, 'POST', uriId, _utf8Bytes(body));
+    final header = await sdk.authenticationHeaderForRequestWithBody(auth, 'POST', uriId, _utf8Bytes(body));
     final result = await helper.verifySignature("POST", uriId, header.value, body);
     await expect(result.signatureValid).toBe(false);
   }
@@ -207,7 +207,7 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     await expect(sdk.hasBiometryFactor()).toBe(true);
     await showPrompt('Please FAIL authentication and use fallback button');
     final auth = PowerAuthAuthentication.biometry(biometricPrompt: PowerAuthBiometricPrompt(promptTitle: "Please fail", promptMessage: "Fail and then click the fallback button", fallbackButtonTitle: 'Fallback button'));
-    await expect(sdk.requestSignature(auth, 'POST', '/some/uriId', _utf8Bytes('{}'))).toThrow(PowerAuthErrorCode.biometryFallback);
+    await expect(sdk.authenticationHeaderForRequestWithBody(auth, 'POST', '/some/uriId', _utf8Bytes('{}'))).toThrow(PowerAuthErrorCode.biometryFallback);
   }
 
   Future<bool> _isFaceID() async {

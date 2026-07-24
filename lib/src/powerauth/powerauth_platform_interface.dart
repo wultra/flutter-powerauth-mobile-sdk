@@ -224,23 +224,24 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     throw UnimplementedError('finishPasswordChange() has not been implemented.');
   }
 
-  Future<PowerAuthHttpHeader> requestGetSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithParams(
     String instanceId,
     PowerAuthAuthentication authentication,
+    String method,
     String uriId, [
-    Map<String, String>? queryParams,
+    Map<String, String>? params,
   ]) {
-    throw UnimplementedError('requestGetSignature() has not been implemented.');
+    throw UnimplementedError('authenticationHeaderForRequestWithParams() has not been implemented.');
   }
 
-  Future<PowerAuthHttpHeader> requestSignature(
+  Future<PowerAuthHttpHeader> authenticationHeaderForRequestWithBody(
     String instanceId,
     PowerAuthAuthentication authentication,
     String method,
     String uriId, [
     Uint8List? body,
   ]) {
-    throw UnimplementedError('requestSignature() has not been implemented.');
+    throw UnimplementedError('authenticationHeaderForRequestWithBody() has not been implemented.');
   }
 
   Future<String> offlineSignature(
