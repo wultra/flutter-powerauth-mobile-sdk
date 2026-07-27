@@ -100,7 +100,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case baseEndpointUrl
         case clientConfiguration
         case biometryConfiguration
-        case keychainConfiguration
         case sharingConfiguration
         case activation
         case authentication
@@ -126,14 +125,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case isReusable
         case isBiometry
         case isPersist
-        case accessGroupName
-        case userDefaultsSuiteName
         case invalidateBiometricFactorAfterChange
         case fallbackToDevicePasscode
         case appGroup
         case appIdentifier
         case keychainAccessGroup
-        case sharedMemoryIdentifier
         case customHttpHeaders
         case basicHttpAuthentication
         case connectionTimeout
@@ -160,16 +156,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         let instanceId: String = try call.requireParameter(Args.instanceId)
         let configuration: FlutterMap = try call.requireParameter(Args.configuration)
         let paConfig = try buildPowerAuthConfiguration(instanceId: instanceId, arguments: configuration)
-        
-        if let sharingConfiguration: FlutterMap = call.getParameter(Args.sharingConfiguration) {
-            let sharingConfig = PowerAuthSharingConfiguration(
-                appGroup: try sharingConfiguration.require(Args.appGroup),
-                appIdentifier: try sharingConfiguration.require(Args.appIdentifier),
-                keychainAccessGroup: try sharingConfiguration.require(Args.keychainAccessGroup)
-            )
-            sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get(Args.sharedMemoryIdentifier)
-            paConfig.sharingConfiguration = sharingConfig
-        }
+        try applySharingConfiguration(call.getParameter(Args.sharingConfiguration), to: paConfig)
 
         let clientConfiguration: FlutterMap? = call.getParameter(Args.clientConfiguration)
         let timeout: TimeInterval? = clientConfiguration?.get(Args.connectionTimeout)
@@ -223,20 +210,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
             biometricConfig = bc
         }
 
-        var keychainConfig: PowerAuthKeychainConfiguration?
-        let keychainConfiguration: FlutterMap? = call.getParameter(Args.keychainConfiguration)
-        if let keychainConfiguration {
-            let kc = PowerAuthKeychainConfiguration()
-            kc.keychainAttribute_AccessGroup = keychainConfiguration.get(Args.accessGroupName)
-            kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration.get(Args.userDefaultsSuiteName)
-            keychainConfig = kc
-        }
-
         let sdk = try PowerAuthSDK(
             configuration: paConfig,
             biometricConfiguration: biometricConfig,
             clientConfiguration: clientConfig,
-            keychainConfiguration: keychainConfig
+            keychainConfiguration: nil
         )
         
         let registered = register.add(id: instanceId, tag: instanceId, policies: [.manual()]) {
@@ -253,10 +231,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
         let instanceId: String = try call.requireParameter(Args.instanceId)
         let configuration: FlutterMap = try call.requireParameter(Args.configuration)
         let paConfig = try buildPowerAuthConfiguration(instanceId: instanceId, arguments: configuration)
-        let keychainConfig = buildKeychainConfiguration(call.getParameter(Args.keychainConfiguration))
+        try applySharingConfiguration(call.getParameter(Args.sharingConfiguration), to: paConfig)
         _ = try PowerAuthSDK.cleanupInstanceData(
             configuration: paConfig,
-            keychainConfiguration: keychainConfig
+            keychainConfiguration: nil
         )
         result(nil)
     }
@@ -1155,14 +1133,18 @@ private func buildPowerAuthConfiguration(instanceId: String, arguments: FlutterM
     return configuration
 }
 
-private func buildKeychainConfiguration(_ arguments: FlutterMap?) -> PowerAuthKeychainConfiguration? {
+private func applySharingConfiguration(
+    _ arguments: FlutterMap?,
+    to configuration: PowerAuthConfiguration
+) throws {
     guard let arguments else {
-        return nil
+        return
     }
-    let configuration = PowerAuthKeychainConfiguration()
-    configuration.keychainAttribute_AccessGroup = arguments.get(PowerAuthService.Args.accessGroupName)
-    configuration.keychainAttribute_UserDefaultsSuiteName = arguments.get(PowerAuthService.Args.userDefaultsSuiteName)
-    return configuration
+    configuration.sharingConfiguration = PowerAuthSharingConfiguration(
+        appGroup: try arguments.require(PowerAuthService.Args.appGroup),
+        appIdentifier: try arguments.require(PowerAuthService.Args.appIdentifier),
+        keychainAccessGroup: try arguments.require(PowerAuthService.Args.keychainAccessGroup)
+    )
 }
 
 private extension PowerAuthConfiguration {
@@ -1208,27 +1190,6 @@ private extension PowerAuthClientConfiguration {
             PowerAuthService.Args.connectionTimeout.rawValue: defaultRequestTimeout,
             PowerAuthService.Args.defaultRequestTimeout.rawValue: defaultRequestTimeout,
             PowerAuthService.Args.enableUnsecureTraffic.rawValue: sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
-        ]
-    }
-}
-
-private extension PowerAuthKeychainConfiguration {
-    var serializable: FlutterMap {
-        [
-            PowerAuthService.Args.accessGroupName.rawValue: keychainAttribute_AccessGroup as Any,
-            PowerAuthService.Args.userDefaultsSuiteName.rawValue: keychainAttribute_UserDefaultsSuiteName as Any
-        ]
-    }
-
-}
-
-private extension PowerAuthSharingConfiguration {
-    var serializable: FlutterMap {
-        [
-            PowerAuthService.Args.appGroup.rawValue: appGroup,
-            PowerAuthService.Args.appIdentifier.rawValue: appIdentifier,
-            PowerAuthService.Args.keychainAccessGroup.rawValue: keychainAccessGroup,
-            PowerAuthService.Args.sharedMemoryIdentifier.rawValue: sharedMemoryIdentifier as Any
         ]
     }
 }

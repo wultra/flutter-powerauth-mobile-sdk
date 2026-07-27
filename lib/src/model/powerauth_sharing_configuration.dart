@@ -18,9 +18,9 @@
 ///
 /// Class that represents the activation data sharing settings.
 class PowerAuthSharingConfiguration {
-
-  /// Name of app group that allows you sharing data between multiple applications. Be aware that the value
-  /// overrides [accessGroupName] property if it's provided in [PowerAuthKeychainConfiguration].
+  /// Name of the Apple App Group shared by the participating applications and
+  /// extensions. The SDK uses it for shared `UserDefaults` and cross-process
+  /// activation-state coordination.
   ///
   /// The UTF-8 representation of this string should not exceed 26 bytes, due to internal limitations applied
   /// on the operating system level.
@@ -34,25 +34,14 @@ class PowerAuthSharingConfiguration {
   /// own applications.
   final String appIdentifier;
 
-  /// Keychain access group name used by the PowerAuthSDK keychain instances.
+  /// Apple Keychain Sharing access group used by the participating
+  /// applications and extensions to access the same PowerAuth activation data.
   final String keychainAccessGroup;
-
-  /// Optional identifier of memory shared between the applications in app group. If identifier is not provided
-  /// then PowerAuthSDK calculate unique identifier based on [PowerAuth.instanceId].
-  ///
-  /// You can set this property in case that PowerAuth SDK generates identifier that collide with your application's
-  /// functionality. The configuration of PowerAuthSDK instance always contains an actual identifier used for its
-  /// shared memory initialization, so you can test whether the generated identifier is OK.
-  ///
-  /// The length of identifier cannot exceed 4 bytes if represented as UTF8 string. This is an operating system
-  /// limitation.
-  final String? sharedMemoryIdentifier;
 
   PowerAuthSharingConfiguration({
     required this.appGroup,
     required this.appIdentifier,
     required this.keychainAccessGroup,
-    this.sharedMemoryIdentifier,
   });
 
   Map<String, dynamic> toMap() {
@@ -60,7 +49,6 @@ class PowerAuthSharingConfiguration {
       'appGroup': appGroup,
       'appIdentifier': appIdentifier,
       'keychainAccessGroup': keychainAccessGroup,
-      'sharedMemoryIdentifier': sharedMemoryIdentifier,
     };
   }
 
@@ -69,7 +57,6 @@ class PowerAuthSharingConfiguration {
       appGroup: map['appGroup'] as String,
       appIdentifier: map['appIdentifier'] as String,
       keychainAccessGroup: map['keychainAccessGroup'] as String,
-      sharedMemoryIdentifier: map['sharedMemoryIdentifier'] as String?,
     );
   }
 }

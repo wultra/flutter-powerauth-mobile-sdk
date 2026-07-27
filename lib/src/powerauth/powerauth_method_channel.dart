@@ -102,11 +102,13 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     required String instanceId,
     required PowerAuthConfiguration configuration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) async {
     await invokeMethod<void>('cleanupInstanceData', {
       'instanceId': instanceId,
       'configuration': configuration.toMap(),
       'keychainConfiguration': keychainConfiguration?.toMap(),
+      'sharingConfiguration': sharingConfiguration?.toMap(),
     });
   }
 
