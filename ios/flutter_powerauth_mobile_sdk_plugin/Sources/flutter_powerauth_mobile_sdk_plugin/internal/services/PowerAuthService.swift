@@ -303,8 +303,14 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func getExternalPendingOperation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             if let pendingOperation = sdk.externalPendingOperation {
+                let externalOperationType = switch pendingOperation.externalOperationType {
+                case .activation: "activation"
+                case .protocolUpgrade: "protocolUpgrade"
+                @unknown default:
+                    throw PluginException(.unknownError, message: "Unknown native external operation type.")
+                }
                 result([
-                    "externalOperationType": pendingOperation.externalOperationType == .activation ? "activation" : "protocolUpgrade",
+                    "externalOperationType": externalOperationType,
                     "externalApplicationId": pendingOperation.externalApplicationId
                 ])
             } else {
@@ -631,10 +637,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let keys = try sdk.exportDevicePublicKeys(format: format)
             result(try keys.map { key in
                 let keyType: String
-                switch key.keyType.rawValue {
-                case 0: keyType = "ec"
-                case 1: keyType = "mlDsa"
-                default:
+                switch key.keyType {
+                case .EC: keyType = "ec"
+                case .ML_DSA: keyType = "mlDsa"
+                @unknown default:
                     throw PluginException(.unknownError, message: "Unknown native signature key type.")
                 }
                 return [
@@ -1161,10 +1167,10 @@ private extension PowerAuthConfiguration {
 private extension PowerAuthAlgorithm {
     static func from(serialized value: String) throws -> PowerAuthAlgorithm {
         switch value {
-        case "legacy": return PowerAuthAlgorithm(rawValue: 0)!
-        case "p384": return PowerAuthAlgorithm(rawValue: 1)!
-        case "p384l3": return PowerAuthAlgorithm(rawValue: 2)!
-        case "p384l5": return PowerAuthAlgorithm(rawValue: 3)!
+        case "legacy": return .LEGACY_P256
+        case "p384": return .EC_P384
+        case "p384l3": return .EC_P384_ML_L3
+        case "p384l5": return .EC_P384_ML_L5
         default:
             throw PluginException(.wrongParameter, message: "Unknown PowerAuth algorithm: \(value)")
         }
@@ -1172,12 +1178,12 @@ private extension PowerAuthAlgorithm {
 
     var serializable: String {
         get throws {
-            switch rawValue {
-            case 0: return "legacy"
-            case 1: return "p384"
-            case 2: return "p384l3"
-            case 3: return "p384l5"
-            default:
+            switch self {
+            case .LEGACY_P256: return "legacy"
+            case .EC_P384: return "p384"
+            case .EC_P384_ML_L3: return "p384l3"
+            case .EC_P384_ML_L5: return "p384l5"
+            @unknown default:
                 throw PluginException(.wrongParameter, message: "Unknown native PowerAuth algorithm.")
             }
         }
@@ -1239,16 +1245,16 @@ private func copySecureData(_ secureData: PowerAuthSecureData) -> Data {
 private func signatureKeyId(_ call: FlutterMethodCall) throws -> PowerAuthSignatureKeyId {
     let value: String = try call.requireParameter(PowerAuthService.Args.signatureKeyId)
     switch value {
-    case "master": return PowerAuthSignatureKeyId(rawValue: 0x00)!
-    case "masterEc": return PowerAuthSignatureKeyId(rawValue: 0x01)!
-    case "masterMlDsa": return PowerAuthSignatureKeyId(rawValue: 0x02)!
-    case "server": return PowerAuthSignatureKeyId(rawValue: 0x10)!
-    case "serverEc": return PowerAuthSignatureKeyId(rawValue: 0x11)!
-    case "serverMlDsa": return PowerAuthSignatureKeyId(rawValue: 0x12)!
-    case "device": return PowerAuthSignatureKeyId(rawValue: 0x20)!
-    case "deviceEc": return PowerAuthSignatureKeyId(rawValue: 0x21)!
-    case "deviceMlDsa": return PowerAuthSignatureKeyId(rawValue: 0x22)!
-    case "macPersonalized": return PowerAuthSignatureKeyId(rawValue: 0x30)!
+    case "master": return .master
+    case "masterEc": return .master_EC
+    case "masterMlDsa": return .master_ML_DSA
+    case "server": return .server
+    case "serverEc": return .server_EC
+    case "serverMlDsa": return .server_ML_DSA
+    case "device": return .device
+    case "deviceEc": return .device_EC
+    case "deviceMlDsa": return .device_ML_DSA
+    case "macPersonalized": return .macPersonalized
     default:
         throw PluginException(.wrongParameter, message: "Unknown signature key identifier: \(value)")
     }
