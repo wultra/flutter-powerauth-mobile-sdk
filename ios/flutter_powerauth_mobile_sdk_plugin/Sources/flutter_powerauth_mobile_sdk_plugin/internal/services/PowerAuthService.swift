@@ -143,7 +143,6 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case keySize
         case keyIdentifier
         case objectId
-        case upgradeBiometry
     }
     
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
@@ -385,8 +384,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     }
                     result([
                         "activationStatusFetchRequired": upgradeResult.activationStatusFetchRequired,
-                        "activationFingerprint": upgradeResult.activationFingerprint as Any,
-                        "biometryFactorRemoved": false
+                        "activationFingerprint": upgradeResult.activationFingerprint as Any
                     ])
                 }
             }
