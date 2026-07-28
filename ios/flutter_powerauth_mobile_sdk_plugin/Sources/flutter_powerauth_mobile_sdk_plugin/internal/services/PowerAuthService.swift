@@ -70,7 +70,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "addBiometryFactor": addBiometryFactor,
         "hasBiometryFactor": hasBiometryFactor,
         "removeBiometryFactor": removeBiometryFactor,
-        "authenticateWithBiometry": authenticateWithBiometry,
+        "authenticateUsingBiometry": authenticateUsingBiometry,
         "fetchEncryptionKey": fetchEncryptionKey,
         "fetchSecureVaultKey": fetchSecureVaultKey,
         "deriveSecureVaultKey": deriveSecureVaultKey,
@@ -766,7 +766,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         }
     }
     
-    private func authenticateWithBiometry(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+    private func authenticateUsingBiometry(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let prompt: FlutterMap? = call.getParameter(Args.prompt)
             let isReusable = call.getParameter(Args.isReusable) ?? false
