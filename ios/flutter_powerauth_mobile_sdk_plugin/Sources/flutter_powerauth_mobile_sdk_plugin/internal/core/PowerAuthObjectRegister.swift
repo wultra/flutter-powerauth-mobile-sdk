@@ -148,7 +148,7 @@ internal class PowerAuthObjectRegister {
     @discardableResult
     func removeAny(id: String) -> Any? {
         return lock.synchronized {
-            return self.findManagedObject(id: id, action: .remove, validateType: false)
+            return register.removeValue(forKey: id)?.object
         }
     }
     
