@@ -161,7 +161,7 @@ internal class PowerAuthService(
         const val ADD_BIOMETRY_FACTOR = "addBiometryFactor"
         const val HAS_BIOMETRY_FACTOR = "hasBiometryFactor"
         const val REMOVE_BIOMETRY_FACTOR = "removeBiometryFactor"
-        const val AUTHENTICATE_WITH_BIOMETRY = "authenticateWithBiometry"
+        const val AUTHENTICATE_USING_BIOMETRY = "authenticateUsingBiometry"
         const val REQUEST_ACCESS_TOKEN = "requestAccessToken"
         const val REMOVE_ACCESS_TOKEN = "removeAccessToken"
         const val HAS_LOCAL_TOKEN = "hasLocalToken"
@@ -225,7 +225,7 @@ internal class PowerAuthService(
             HandlerNames.ADD_BIOMETRY_FACTOR to this::addBiometryFactor,
             HandlerNames.HAS_BIOMETRY_FACTOR to this::hasBiometryFactor,
             HandlerNames.REMOVE_BIOMETRY_FACTOR to this::removeBiometryFactor,
-            HandlerNames.AUTHENTICATE_WITH_BIOMETRY to this::authenticateWithBiometry,
+            HandlerNames.AUTHENTICATE_USING_BIOMETRY to this::authenticateUsingBiometry,
             HandlerNames.REQUEST_ACCESS_TOKEN to this::requestAccessToken,
             HandlerNames.REMOVE_ACCESS_TOKEN to this::removeAccessToken,
             HandlerNames.HAS_LOCAL_TOKEN to this::hasLocalToken,
@@ -787,7 +787,7 @@ internal class PowerAuthService(
         }
     }
 
-    private fun authenticateWithBiometry(call: MethodCall, result: Result) {
+    private fun authenticateUsingBiometry(call: MethodCall, result: Result) {
         usePowerAuthOnMainThread(call, result) { sdk ->
             val promptMap: Map<String, Any>? = call.argument(PROMPT)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)

@@ -61,7 +61,7 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
         (auth.biometryKeyId == null || auth.biometryKeyId!.isEmpty)) {
       final isReusable = auth.isReusable || makeReusable;
       auth.isReusable = isReusable;
-      final biometryKeyId = await invokeNullableMethod<String>('authenticateWithBiometry', {
+      final biometryKeyId = await invokeNullableMethod<String>('authenticateUsingBiometry', {
         'instanceId': instanceId,
         'prompt': auth.biometricPrompt?.toMap(),
         'isReusable': isReusable,
