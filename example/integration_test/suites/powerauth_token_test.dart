@@ -16,6 +16,7 @@
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import '../utils/activation_credentials.dart';
+import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -45,68 +46,43 @@ main() {
 
       final t1 = 'possessionToken';
       final t1Cred = credentials.possession();
-      t1Invcred() async {
-        return await credentials.knowledge();
-      }
+      final t1InvalidCredentials = await credentials.knowledge();
 
       final t2 = 'knowledgeToken';
-      t2Cred() async {
-        return await credentials.knowledge();
-      }
-
-      final t2Invcred = credentials.possession();
+      Future<PowerAuthAuthentication> t2Credentials() =>
+          credentials.knowledge();
+      final t2InvalidCredentials = credentials.possession();
 
       final tokenStore = sdk.tokenStore;
 
       expect(await tokenStore.hasLocalToken(t1), false);
       expect(await tokenStore.hasLocalToken(t2), false);
 
-      expect(
-        () async => await tokenStore.generateHeaderForToken(t1),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.cannotGenerateToken,
-          ),
-        ),
+      await expectLater(
+        tokenStore.generateHeaderForToken(t1),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidToken),
       );
-      expect(
-        () async => await tokenStore.generateHeaderForToken(t2),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.cannotGenerateToken,
-          ),
-        ),
+      await expectLater(
+        tokenStore.generateHeaderForToken(t2),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidToken),
       );
-      expect(
-        () async => await tokenStore.getLocalToken(t1),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
-          ),
-        ),
+      await expectLater(
+        tokenStore.getLocalToken(t1),
+        throwsPowerAuthCode(PowerAuthErrorCode.localTokenNotAvailable),
       );
-      expect(
-        () async => await tokenStore.getLocalToken(t2),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.localTokenNotAvailable,
-          ),
-        ),
+      await expectLater(
+        tokenStore.getLocalToken(t2),
+        throwsPowerAuthCode(PowerAuthErrorCode.localTokenNotAvailable),
       );
 
       final token1 = await tokenStore.requestAccessToken(t1, t1Cred);
       expect(token1.tokenIdentifier, isNotNull);
       expect(token1.tokenName, t1);
 
-      final token2 = await tokenStore.requestAccessToken(t2, await t2Cred());
+      final token2 = await tokenStore.requestAccessToken(
+        t2,
+        await t2Credentials(),
+      );
       expect(token2.tokenIdentifier, isNotNull);
       expect(token2.tokenName, t2);
 
@@ -118,7 +94,10 @@ main() {
       final token1a = await tokenStore.requestAccessToken(t1, t1Cred);
       expect(token1a.tokenIdentifier, token1.tokenIdentifier);
       expect(token1a.tokenName, t1);
-      final token2a = await tokenStore.requestAccessToken(t2, await t2Cred());
+      final token2a = await tokenStore.requestAccessToken(
+        t2,
+        await t2Credentials(),
+      );
       expect(token2a.tokenIdentifier, token2.tokenIdentifier);
       expect(token2a.tokenName, t2);
 
@@ -129,38 +108,20 @@ main() {
       expect(token2b.tokenIdentifier, token2.tokenIdentifier);
       expect(token2b.tokenName, t2);
       await expectLater(
-        tokenStore.requestAccessToken(t1, await t1Invcred()),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.wrongParameter,
-          ),
-        ),
+        tokenStore.requestAccessToken(t1, t1InvalidCredentials),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
       );
       await expectLater(
-        tokenStore.requestAccessToken(t2, t2Invcred),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.wrongParameter,
-          ),
-        ),
+        tokenStore.requestAccessToken(t2, t2InvalidCredentials),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
       );
-      expect(tokenStore.generateHeaderForToken(t1), completes);
-      expect(tokenStore.generateHeaderForToken(t2), completes);
-      expect(tokenStore.removeLocalToken(t1), completes);
+      await expectLater(tokenStore.generateHeaderForToken(t1), completes);
+      await expectLater(tokenStore.generateHeaderForToken(t2), completes);
+      await expectLater(tokenStore.removeLocalToken(t1), completes);
       expect(await tokenStore.hasLocalToken(t1), false);
-      expect(
+      await expectLater(
         tokenStore.generateHeaderForToken(t1),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.cannotGenerateToken,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidToken),
       );
       await expectLater(tokenStore.removeAccessToken(t2), completes);
 
@@ -169,13 +130,7 @@ main() {
 
       await expectLater(
         tokenStore.generateHeaderForToken(t2),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.cannotGenerateToken,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidToken),
       );
     });
 
@@ -187,9 +142,7 @@ main() {
       final t1 = 'possessionToken';
       final t1Cred = credentials.possession();
       final t2 = 'knowledgeToken';
-      t2Cred() async {
-        return await credentials.knowledge();
-      }
+      final t2Credentials = await credentials.knowledge();
 
       final activationId = await sdk.getActivationIdentifier();
 
@@ -199,11 +152,12 @@ main() {
       expect(token1.tokenIdentifier, isNotNull);
       expect(token1.tokenName, t1);
 
-      final token2 = await tokenStore.requestAccessToken(t2, await t2Cred());
+      final token2 = await tokenStore.requestAccessToken(t2, t2Credentials);
       expect(token2.tokenIdentifier, isNotNull);
       expect(token2.tokenName, t2);
 
-      await sdk.timeSynchronizationService.resetTimeSynchronization(); // force time sync
+      await sdk.timeSynchronizationService
+          .resetTimeSynchronization(); // force time sync
 
       final header1 = await tokenStore.generateHeaderForToken(t1);
       expect(header1.value, isNotNull);

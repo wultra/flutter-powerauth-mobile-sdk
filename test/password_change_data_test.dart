@@ -16,10 +16,10 @@
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_platform_interface.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _PasswordChangePlatform extends PowerAuthPlatform {
-  int releaseCount = 0;
   String? finishedObjectId;
   String? finishedInstanceId;
   bool failFinish = false;
@@ -42,26 +42,38 @@ class _PasswordChangePlatform extends PowerAuthPlatform {
       throw PowerAuthException(code: PowerAuthErrorCode.networkError);
     }
   }
+}
+
+class _NativeObjectRegisterPlatform extends NativeObjectRegisterPlatform {
+  int releaseCount = 0;
 
   @override
-  Future<void> releasePasswordChangeData(String objectId) async {
+  Future<void> releaseNativeObject(String objectId) async {
     expect(objectId, 'password-change-data');
     releaseCount++;
   }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late PowerAuthPlatform originalPlatform;
+  late NativeObjectRegisterPlatform originalRegisterPlatform;
   late _PasswordChangePlatform platform;
+  late _NativeObjectRegisterPlatform registerPlatform;
 
   setUp(() {
     originalPlatform = PowerAuthPlatform.instance;
+    originalRegisterPlatform = NativeObjectRegisterPlatform.instance;
     platform = _PasswordChangePlatform();
+    registerPlatform = _NativeObjectRegisterPlatform();
     PowerAuthPlatform.instance = platform;
+    NativeObjectRegisterPlatform.instance = registerPlatform;
   });
 
   tearDown(() {
     PowerAuthPlatform.instance = originalPlatform;
+    NativeObjectRegisterPlatform.instance = originalRegisterPlatform;
   });
 
   test('finish consumes and releases password change data', () async {
@@ -73,10 +85,10 @@ void main() {
     await powerAuth.finishPasswordChange(newPassword, changeData);
     expect(platform.finishedInstanceId, 'test-instance');
     expect(platform.finishedObjectId, 'password-change-data');
-    expect(platform.releaseCount, 1);
+    expect(registerPlatform.releaseCount, 1);
 
     await changeData.release();
-    expect(platform.releaseCount, 1);
+    expect(registerPlatform.releaseCount, 1);
   });
 
   test('finish failure still releases password change data', () async {
@@ -94,16 +106,34 @@ void main() {
         ),
       ),
     );
-    expect(platform.releaseCount, 1);
+    expect(registerPlatform.releaseCount, 1);
   });
 
   test('abandoned password change data can be released', () async {
     final powerAuth = PowerAuth('test-instance');
     final changeData = await powerAuth.beginPasswordChange(PowerAuthPassword());
     await changeData.release();
-    expect(platform.releaseCount, 1);
+    expect(registerPlatform.releaseCount, 1);
 
     await changeData.release();
-    expect(platform.releaseCount, 1);
+    expect(registerPlatform.releaseCount, 1);
+  });
+
+  test('second finish fails through the released native handle', () async {
+    final powerAuth = PowerAuth('test-instance');
+    final changeData = await powerAuth.beginPasswordChange(PowerAuthPassword());
+
+    await powerAuth.finishPasswordChange(PowerAuthPassword(), changeData);
+    await expectLater(
+      powerAuth.finishPasswordChange(PowerAuthPassword(), changeData),
+      throwsA(
+        isA<PowerAuthException>().having(
+          (error) => error.code,
+          'code',
+          PowerAuthErrorCode.invalidNativeObject,
+        ),
+      ),
+    );
+    expect(registerPlatform.releaseCount, 1);
   });
 }

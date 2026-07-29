@@ -47,7 +47,7 @@ main() {
         activationCode: activationData.activationCode,
         name: 'Automated',
       );
-      expect(await sdk.createActivation(activation), isNot(throwsException));
+      await expectLater(sdk.createActivation(activation), completes);
 
       final password = await credentials.validPasswordObject();
       final persistAuth =
@@ -72,26 +72,56 @@ main() {
       expect(await sdk.hasBiometryFactor(), isFalse);
 
       // Biometry not available in runner so adding a factor should fail
+      final systemStatus = (await sdk.getBiometricStatus()).systemStatus;
+      final expectedCode =
+          Platform.isIOS
+              ? PowerAuthErrorCode.biometryNotAvailable
+              : switch (systemStatus) {
+                PowerAuthBiometryStatus.notSupported =>
+                  PowerAuthErrorCode.biometryNotSupported,
+                PowerAuthBiometryStatus.notEnrolled =>
+                  PowerAuthErrorCode.biometryNotEnrolled,
+                PowerAuthBiometryStatus.notAvailable =>
+                  PowerAuthErrorCode.biometryNotAvailable,
+                PowerAuthBiometryStatus.lockout =>
+                  PowerAuthErrorCode.biometryLockout,
+                PowerAuthBiometryStatus.ok =>
+                  throw StateError(
+                    'This runner reports available biometry; use the device suite instead.',
+                  ),
+              };
       await expectLater(
         sdk.addBiometryFactor(await credentials.validPasswordObject()),
         throwsA(
           isA<PowerAuthException>().having(
-            (e) => e.code,
+            (error) => error.code,
             'code',
-            anyOf(
-              PowerAuthErrorCode.biometryNotAvailable,
-              PowerAuthErrorCode.biometryNotEnrolled,
-            ),
+            expectedCode,
           ),
         ),
       );
     }, skip: Platform.isAndroid);
 
-    test('get biometry info', () async {
-      final info = await PowerAuth.getBiometryInfo();
+    test(
+      'configured instance without activation has unavailable biometry',
+      () async {
+        expect(await sdk.hasValidActivation(), isFalse);
+        expect(await sdk.hasBiometryFactor(), isFalse);
 
-      expect(info.isAvailable, isFalse);
-      expect(info.canAuthenticate == PowerAuthBiometryStatus.ok, isFalse);
-    });
+        final status = await sdk.getBiometricStatus();
+        final available = await sdk.isAuthenticationWithBiometricsAvailable();
+        expect(status.isBiometricFactorConfigured, isFalse);
+        expect(status.isAuthenticationWithBiometricsAvailable, isFalse);
+        expect(available, status.isAuthenticationWithBiometricsAvailable);
+        if (status.systemStatus == PowerAuthBiometryStatus.ok) {
+          expect(
+            available,
+            isFalse,
+            reason:
+                'System biometry alone is insufficient without activation and factor.',
+          );
+        }
+      },
+    );
   });
 }

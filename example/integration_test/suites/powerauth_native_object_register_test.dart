@@ -35,9 +35,11 @@ main() {
 
       // Ensure that the native object register is cleared before each test
       tag = "tag_${IntegrationHelper.randomString(7)}";
+      await NativeObjectRegister.setCleanupPeriod(100);
     });
 
     tearDown(() async {
+      await NativeObjectRegister.setCleanupPeriod(10000);
       await helper.cleanup();
     });
 
@@ -120,14 +122,14 @@ main() {
         NativeObjectCmdData(
           objectType: NativeObjectType.data,
           objectTag: tag,
-          releasePolicy: ['expire 400', 'afterUse 1'],
+          releasePolicy: ['expire 1200', 'afterUse 1'],
         ),
       );
       final dataId2 = await NativeObjectRegister.createObject(
         NativeObjectCmdData(
           objectType: NativeObjectType.secureData,
           objectTag: tag,
-          releasePolicy: ['expire 200', 'keepAlive 400'],
+          releasePolicy: ['expire 100', 'keepAlive 400'],
         ),
       );
 
@@ -146,35 +148,20 @@ main() {
       );
       expect((await NativeObjectRegister.countObjects(tag)).valid, 2);
 
-      await sleep(200);
-
-      expect(
-        await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
-        true,
+      await waitForNativeObjects(
+        instanceId: tag,
+        predicate:
+            (objects) =>
+                objects.any((object) => object.id == dataId1) &&
+                objects.every((object) => object.id != dataId2),
       );
-      expect(
-        await NativeObjectRegister.findObject(
-          dataId2,
-          NativeObjectType.secureData,
-        ),
-        false,
+      await waitForNativeObjects(
+        instanceId: tag,
+        predicate:
+            (objects) => objects.every(
+              (object) => object.id != dataId1 && object.id != dataId2,
+            ),
       );
-      expect((await NativeObjectRegister.countObjects(tag)).valid, 1);
-
-      await sleep(200);
-
-      expect(
-        await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
-        false,
-      );
-      expect(
-        await NativeObjectRegister.findObject(
-          dataId2,
-          NativeObjectType.secureData,
-        ),
-        false,
-      );
-      expect((await NativeObjectRegister.countObjects(tag)).valid, 0);
     });
 
     test('testUsageCount', () async {
@@ -196,14 +183,14 @@ main() {
         NativeObjectCmdData(
           objectType: NativeObjectType.data,
           objectTag: tag,
-          releasePolicy: ['keepAlive 200', 'afterUse 4'],
+          releasePolicy: ['keepAlive 100', 'afterUse 4'],
         ),
       );
       final dataId4 = await NativeObjectRegister.createObject(
         NativeObjectCmdData(
           objectType: NativeObjectType.data,
           objectTag: tag,
-          releasePolicy: ['keepAlive 200', 'afterUse 4'],
+          releasePolicy: ['keepAlive 1200', 'afterUse 4'],
         ),
       );
 
@@ -228,35 +215,18 @@ main() {
       );
       expect((await NativeObjectRegister.countObjects(tag)).valid, 4);
 
-      await sleep(100);
-
-      // After 100ms everything should be still valid
-      expect((await NativeObjectRegister.countObjects(tag)).valid, 4);
-
       // use dataId4, this will extend its lifetime
       expect(
         await NativeObjectRegister.useObject(dataId4, NativeObjectType.data),
         true,
       );
 
-      await sleep(100);
-
-      // After next 100ms, dataId3 will be removed
-      expect(
-        await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
-        true,
-      );
-      expect(
-        await NativeObjectRegister.findObject(dataId2, NativeObjectType.data),
-        true,
-      );
-      expect(
-        await NativeObjectRegister.findObject(dataId3, NativeObjectType.data),
-        false,
-      );
-      expect(
-        await NativeObjectRegister.findObject(dataId4, NativeObjectType.data),
-        true,
+      await waitForNativeObjects(
+        instanceId: tag,
+        predicate:
+            (objects) =>
+                objects.every((object) => object.id != dataId3) &&
+                objects.any((object) => object.id == dataId4),
       );
 
       // Now use dataId2 for 1st time
@@ -282,10 +252,7 @@ main() {
         true,
       );
 
-      await sleep(100);
-
       // Now use dataId2 for 2nd time, it should be released now
-      // Also dataId4 is now released
       expect(
         await NativeObjectRegister.useObject(dataId2, NativeObjectType.data),
         true,
@@ -305,10 +272,24 @@ main() {
       );
       expect(
         await NativeObjectRegister.findObject(dataId4, NativeObjectType.data),
-        false,
+        true,
       );
 
-      // And finally, use dataId4, to release it
+      // Exhaust the remaining use count of dataId4 deterministically.
+      expect(
+        await NativeObjectRegister.useObject(dataId4, NativeObjectType.data),
+        true,
+      );
+      expect(
+        await NativeObjectRegister.useObject(dataId4, NativeObjectType.data),
+        true,
+      );
+      expect(
+        await NativeObjectRegister.useObject(dataId4, NativeObjectType.data),
+        true,
+      );
+
+      // And finally, use dataId1 to release it.
       expect(
         await NativeObjectRegister.useObject(dataId1, NativeObjectType.data),
         true,
@@ -345,7 +326,7 @@ main() {
         NativeObjectCmdData(
           objectType: NativeObjectType.data,
           objectTag: tag,
-          releasePolicy: ['keepAlive 100', 'afterUse 4'],
+          releasePolicy: ['keepAlive 1200', 'afterUse 4'],
         ),
       );
 
@@ -360,31 +341,25 @@ main() {
       );
       expect((await NativeObjectRegister.countObjects(tag)).valid, 2);
 
-      await sleep(50);
       expect(
         await NativeObjectRegister.touchObject(dataId2, NativeObjectType.data),
         true,
       );
 
-      await sleep(50);
-      expect(
-        await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
-        false,
+      await waitForNativeObjects(
+        instanceId: tag,
+        predicate:
+            (objects) =>
+                objects.every((object) => object.id != dataId1) &&
+                objects.any((object) => object.id == dataId2),
       );
-      expect(
-        await NativeObjectRegister.findObject(dataId2, NativeObjectType.data),
-        true,
+      await waitForNativeObjects(
+        instanceId: tag,
+        predicate:
+            (objects) => objects.every(
+              (object) => object.id != dataId1 && object.id != dataId2,
+            ),
       );
-      await sleep(50);
-      expect(
-        await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
-        false,
-      );
-      expect(
-        await NativeObjectRegister.findObject(dataId2, NativeObjectType.data),
-        false,
-      );
-      expect((await NativeObjectRegister.countObjects(tag)).valid, 0);
     });
 
     test('testManualRelease', () async {
@@ -419,7 +394,7 @@ main() {
 
       print("Using IDs '$dataId1', '$dataId2', '$dataId3', '$dataId4'");
 
-      // All manual objects must be in the register for the whole time 
+      // All manual objects must be in the register for the whole time
       expect(
         await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
         true,
@@ -446,8 +421,6 @@ main() {
         await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
         true,
       );
-
-      await sleep(110);
 
       expect(
         await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),

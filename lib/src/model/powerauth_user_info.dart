@@ -16,19 +16,21 @@
 
 /// The `PowerAuthUserInfo` object contains additional information about the end-user.
 class PowerAuthUserInfo {
-
   /// Map with all claims representing information about the user.
   final Map _claims;
+
   /// Optional address of the end-user.
   final PowerAuthUserAddress? userAddress;
 
   /// Construct object with map with claims.
   /// [claims] Map with all claims representing information about the user.
   PowerAuthUserInfo(Map? claims)
-      : _claims = claims ?? {},
-        userAddress = claims?['address'] is Map<String, dynamic>
-            ? PowerAuthUserAddress(claims!['address'] as Map<String, dynamic>)
-            : null;
+    : _claims = claims ?? {},
+      userAddress = claims?['address'] is Map
+          ? PowerAuthUserAddress(
+              Map<String, dynamic>.from(claims!['address'] as Map),
+            )
+          : null;
 
   /// Full collection of claims received from the server.
   Map get allClaims => _claims;
@@ -93,7 +95,6 @@ class PowerAuthUserInfo {
 
 /// The `PowerAuthUserAddress` object contains address of end-user.
 class PowerAuthUserAddress {
-
   /// Map with all claims representing information about the user's address.
   final Map<String, dynamic> _claims;
 
@@ -105,11 +106,13 @@ class PowerAuthUserAddress {
   Map<String, dynamic> get allClaims => _claims;
 
   /// The full mailing address, with multiple lines if necessary.
-  String? get formatted => (_claims['formatted'] as String?)?.valueAsMultilineString();
+  String? get formatted =>
+      (_claims['formatted'] as String?)?.valueAsMultilineString();
 
   /// The street address component, which may include house number, street name, post office box,
   /// and other multi-line information.
-  String? get street => (_claims['street_address'] as String?)?.valueAsMultilineString();
+  String? get street =>
+      (_claims['street_address'] as String?)?.valueAsMultilineString();
 
   /// City or locality component.
   String? get locality => _claims['locality'] as String?;

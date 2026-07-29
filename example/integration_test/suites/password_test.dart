@@ -15,6 +15,7 @@
  */
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import '../utils/integration_helper.dart';
 import '../utils/object_cleanup_helper.dart';
 
@@ -27,19 +28,26 @@ main() {
     late ObjectCleanupHelper cleanupHelper;
     late IntegrationHelper helper;
     late PowerAuth sdk;
+    late String sdkInstanceId;
 
     setUp(() async {
       cleanupHelper = ObjectCleanupHelper();
 
-      sdk = PowerAuth(IntegrationHelper.randomString(30));
+      sdkInstanceId = IntegrationHelper.randomString(30);
+      sdk = PowerAuth(sdkInstanceId);
       helper = IntegrationHelper(sdk);
       await helper.configure();
+      await NativeObjectRegister.setCleanupPeriod(100);
     });
 
     tearDown(() async {
+      await NativeObjectRegister.setCleanupPeriod(10000);
       await helper.cleanup();
       await cleanupHelper.dispose();
     });
+
+    bool isPasswordObject(NativeObjectInfo object) =>
+        object.className.contains('Password');
 
     Future<PowerAuthPassword> importPassword(String password) {
       return PowerAuthPassword.fromString(password);
@@ -228,187 +236,157 @@ main() {
     test('testAutomaticCleanup', () async {
       final p1 = PowerAuthPassword(
         destroyOnUse: false,
-        powerAuthInstanceId: null,
-        autoReleaseTimeMillis: 100,
+        powerAuthInstanceId: sdkInstanceId,
+        autoReleaseTimeMillis: 1000,
       );
       final p2 = PowerAuthPassword(
         destroyOnUse: false,
-        powerAuthInstanceId: null,
+        powerAuthInstanceId: sdkInstanceId,
         autoReleaseTimeMillis: 100,
       );
       cleanupHelper.cleanup.addAll([p1, p2]);
 
-      // Right after construct the identifier is not set
-      final id1AfterCreate = p1.objectId;
-      final id2AfterCreate = p2.objectId;
-      expect(id1AfterCreate, isNull);
-      expect(id2AfterCreate, isNull);
+      final before = await NativeObjectRegister.debugDump(sdkInstanceId);
+      final beforeIds = before.map((object) => object.id).toSet();
 
-      // We have to call at least some function to create underlying native object
+      // Construction is lazy, so no password exists before the first operation.
+      expect(
+        (await NativeObjectRegister.debugDump(
+          sdkInstanceId,
+        )).where(isPasswordObject).map((object) => object.id).toSet(),
+        before.where(isPasswordObject).map((object) => object.id).toSet(),
+      );
+
       expect(await p1.isEmpty(), true, reason: "1");
+      final p1Info = await waitForNewNativeObject(
+        instanceId: sdkInstanceId,
+        previousIds: beforeIds,
+        matches: isPasswordObject,
+      );
       expect(await p2.length(), 0);
-
-      // Now identifiers are available, but no cleanup was called
-      final id1AfterAccess = p1.objectId!;
-      final id2AfterAccess = p2.objectId!;
-      expect(id1AfterAccess, isNotNull);
-      expect(id2AfterAccess, isNotNull);
-
-      // Wait for 50ms
-      await sleep(50);
-      // Both passwords should exist now
-      expect(
-        await NativeObjectRegister.findObject(
-          id1AfterAccess,
-          NativeObjectType.password,
-        ),
-        true,
-        reason: "2",
+      final p2Info = await waitForNewNativeObject(
+        instanceId: sdkInstanceId,
+        previousIds: {...beforeIds, p1Info.id},
+        matches: isPasswordObject,
       );
-      // Access 1st password, to extend it's lifetime
+
       expect(
-        await NativeObjectRegister.findObject(
-          id2AfterAccess,
-          NativeObjectType.password,
-        ),
-        true,
-        reason: "3",
+        (await NativeObjectRegister.debugDump(sdkInstanceId))
+            .where((object) => object.id == p1Info.id || object.id == p2Info.id)
+            .length,
+        2,
       );
-      // Add a character to p1, to extend it's lifetime
+
       await p1.addCodePoint(48);
-      // Wait for another 50ms, p2 should be released now
-      await sleep(50);
-
-      expect(
-        await NativeObjectRegister.findObject(
-          id1AfterAccess,
-          NativeObjectType.password,
-        ),
-        true,
-        reason: "4",
-      );
-      expect(
-        await NativeObjectRegister.findObject(
-          id2AfterAccess,
-          NativeObjectType.password,
-        ),
-        false,
+      await waitForNativeObjects(
+        instanceId: sdkInstanceId,
+        predicate:
+            (objects) =>
+                objects.any((object) => object.id == p1Info.id) &&
+                objects.every((object) => object.id != p2Info.id),
       );
 
-      // native p2 is no longer valid, but its identifier is still set in JS object
-      expect(p2.objectId, isNotNull);
-      // Now extend p1 again
       expect(await p1.isEmpty(), false);
-      // And access p2 again. Invalid native object should be thrown
-      expect(
+      await expectLater(
         p2.isEmpty(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
 
-      // Wait for another 100ms, so both passwords will be released
-      await sleep(100);
-
-      expect(
+      await waitForNativeObjects(
+        instanceId: sdkInstanceId,
+        predicate:
+            (objects) => objects.every((object) => object.id != p1Info.id),
+      );
+      await expectLater(
         p1.isEmpty(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
     });
 
     test('testReleaseAfterUse', () async {
       final p1 = PowerAuthPassword(
         destroyOnUse: true,
-        powerAuthInstanceId: null,
+        powerAuthInstanceId: sdkInstanceId,
         autoReleaseTimeMillis: 100,
       );
       final p2 = PowerAuthPassword(
         destroyOnUse: true,
-        powerAuthInstanceId: null,
+        powerAuthInstanceId: sdkInstanceId,
         autoReleaseTimeMillis: 100,
       );
       cleanupHelper.cleanup.addAll([p1, p2]);
 
+      final beforeIds =
+          (await NativeObjectRegister.debugDump(
+            sdkInstanceId,
+          )).map((object) => object.id).toSet();
       await p1.addCodePoint(48);
       expect(await p1.isEmpty(), false);
+      final p1Info = await waitForNewNativeObject(
+        instanceId: sdkInstanceId,
+        previousIds: beforeIds,
+        matches: isPasswordObject,
+      );
       expect(await p2.isEmpty(), true);
-
-      final id1AfterAccess = p1.objectId!;
-      final id2AfterAccess = p2.objectId!;
+      final p2Info = await waitForNewNativeObject(
+        instanceId: sdkInstanceId,
+        previousIds: {...beforeIds, p1Info.id},
+        matches: isPasswordObject,
+      );
 
       expect(
         await NativeObjectRegister.useObject(
-          id1AfterAccess,
+          p1Info.id,
           NativeObjectType.password,
         ),
         true,
       );
       expect(
         await NativeObjectRegister.useObject(
-          id2AfterAccess,
+          p2Info.id,
           NativeObjectType.password,
         ),
         true,
       );
 
       // Both object should be invalid when used once
-      expect(
+      await expectLater(
         p1.isEmpty(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
-      expect(
+      await expectLater(
         p2.isEmpty(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
 
-      expect(
-        await NativeObjectRegister.findObject(
-          id1AfterAccess,
-          NativeObjectType.password,
-        ),
-        false,
+      final invalidObjects = await NativeObjectRegister.debugDump(
+        sdkInstanceId,
       );
       expect(
-        await NativeObjectRegister.findObject(
-          id2AfterAccess,
-          NativeObjectType.password,
-        ),
-        false,
+        invalidObjects
+            .where((object) => object.id == p1Info.id || object.id == p2Info.id)
+            .every((object) => object.isValid == false),
+        isTrue,
+      );
+      await waitForNativeObjects(
+        instanceId: sdkInstanceId,
+        predicate:
+            (objects) => objects.every(
+              (object) => object.id != p1Info.id && object.id != p2Info.id,
+            ),
       );
     });
 
     test('testManualRelease', () async {
       var p1 = PowerAuthPassword(
         destroyOnUse: false,
-        powerAuthInstanceId: null,
-        autoReleaseTimeMillis: 100,
+        powerAuthInstanceId: sdkInstanceId,
+        autoReleaseTimeMillis: 1200,
       );
       var p2 = PowerAuthPassword(
         destroyOnUse: true,
-        powerAuthInstanceId: null,
-        autoReleaseTimeMillis: 100,
+        powerAuthInstanceId: sdkInstanceId,
+        autoReleaseTimeMillis: 1200,
       );
       cleanupHelper.cleanup.addAll([p1, p2]);
 
@@ -420,67 +398,70 @@ main() {
       expect(await p1.isEmpty(), false);
       expect(await p2.isEmpty(), true);
 
-      var id1AfterAccess = p1.objectId!;
-      var id2AfterAccess = p2.objectId!;
-      expect(id1AfterAccess, isNotNull);
-      expect(id2AfterAccess, isNotNull);
+      final passwordIds =
+          (await NativeObjectRegister.debugDump(
+            sdkInstanceId,
+          )).where(isPasswordObject).map((object) => object.id).toSet();
+      expect(passwordIds.length, 2);
 
       // Now manually release passwords
       await p1.release();
       await p2.release();
+      await waitForNativeObjects(
+        instanceId: sdkInstanceId,
+        predicate:
+            (objects) =>
+                objects.every((object) => !passwordIds.contains(object.id)),
+      );
 
       // Both passwords should be released and throw on access
-      expect(
+      await expectLater(
         p1.addCharacter('1'),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
-      expect(
+      await expectLater(
         p2.addCharacter('1'),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
 
       // Instantiate again
       p1 = PowerAuthPassword(
         destroyOnUse: false,
-        powerAuthInstanceId: null,
-        autoReleaseTimeMillis: 100,
+        powerAuthInstanceId: sdkInstanceId,
+        autoReleaseTimeMillis: 1200,
       );
       p2 = PowerAuthPassword(
         destroyOnUse: true,
-        powerAuthInstanceId: null,
-        autoReleaseTimeMillis: 100,
+        powerAuthInstanceId: sdkInstanceId,
+        autoReleaseTimeMillis: 1200,
       );
+      cleanupHelper.cleanup.addAll([p1, p2]);
 
       await p1.addCodePoint(48);
       expect(await p1.isEmpty(), false);
       expect(await p2.isEmpty(), true);
+      final repeatedReleaseIds =
+          (await NativeObjectRegister.debugDump(
+            sdkInstanceId,
+          )).where(isPasswordObject).map((object) => object.id).toSet();
+      expect(repeatedReleaseIds.length, 2);
 
       // Now release for multiple times, to make sure that function doesn't fail
       await p1.release();
       await p2.release();
       await p1.release();
       await p2.release();
+      await waitForNativeObjects(
+        instanceId: sdkInstanceId,
+        predicate:
+            (objects) => objects.every(
+              (object) => !repeatedReleaseIds.contains(object.id),
+            ),
+      );
     });
 
     test('testGlobalRelease', () async {
-      // Dummy values for PA configuration
-      final config = PowerAuthConfiguration(
-        configuration:
-            "ARDUHbAKHLrIHQHyDWTQrA9SEDI7+KWhWMMnxWlNWpITDtsBAUEEJavzIZpq2wyAN5EOlGPK3XonwdDBWB1MHlEIGSPfahORoWH+wctzmJj8fSf/oO2Tbvy4ACC5sIu2HsCSz6+E8Q==",
-        baseEndpointUrl: "http://localhost/wrong",
-      );
+      final config = await sdk.configuration;
 
       // Owner object represents an instance of PowerAuth class that typically owns various object types
       final powerAuthInstanceId = IntegrationHelper.randomString(10);
@@ -530,63 +511,35 @@ main() {
       expect(await p1.isEmpty(), false);
       expect(await p2.isEmpty(), true);
 
-      final id1AfterAccess = p1.objectId!;
-      final id2AfterAccess = p2.objectId!;
-
-      expect(
-        await NativeObjectRegister.findObject(
-          id1AfterAccess,
-          NativeObjectType.password,
-        ),
-        true,
+      final ownedObjects = await NativeObjectRegister.debugDump(
+        powerAuthInstanceId,
       );
-      expect(
-        await NativeObjectRegister.findObject(
-          id2AfterAccess,
-          NativeObjectType.password,
-        ),
-        true,
-      );
+      final passwordIds =
+          ownedObjects
+              .where(isPasswordObject)
+              .map((object) => object.id)
+              .toSet();
+      expect(passwordIds.length, 2);
 
       // Now deconfigure PA instance
       await powerAuth.deconfigure();
 
       // Both passwords should be released
-      expect(
-        await NativeObjectRegister.findObject(
-          id1AfterAccess,
-          NativeObjectType.password,
-        ),
-        false,
-      );
-      expect(
-        await NativeObjectRegister.findObject(
-          id2AfterAccess,
-          NativeObjectType.password,
-        ),
-        false,
+      await waitForNativeObjects(
+        instanceId: powerAuthInstanceId,
+        predicate:
+            (objects) =>
+                objects.every((object) => !passwordIds.contains(object.id)),
       );
 
       // Both passwords should be invalid when accessed
-      expect(
+      await expectLater(
         p1.isEmpty(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
-      expect(
+      await expectLater(
         p2.length(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
     });
   });

@@ -23,8 +23,16 @@ class ObjectCleanupHelper {
     for (final o in cleanup.reversed) {
       if (o is PowerAuthPassword) {
         await o.release();
+      } else if (o is PowerAuthEncryptor) {
+        await o.release();
+      } else if (o is PowerAuthSecureVaultKey) {
+        await o.release();
+      } else if (o is PowerAuthPasswordChangeData) {
+        await o.release();
       } else if (o is PowerAuth) {
-        o.deconfigure();
+        if (await o.isConfigured()) {
+          await o.deconfigure();
+        }
       }
     }
     cleanup.clear();

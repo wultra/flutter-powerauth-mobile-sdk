@@ -152,7 +152,16 @@ main() {
 
     test('testUserInfoIntegration', () async {
       final userID = IntegrationHelper.randomString(20);
-      final createdActivation = await helper.createActivation(userId: userID);
+      final expectedUserInfo = helper.userInfo(userID);
+      final storeResult = await helper.fillUserInfo(expectedUserInfo);
+      expect(storeResult['status'], 'OK');
+
+      expect(await sdk.getLastFetchedUserInfo(), isNull);
+
+      final createdActivation = await helper.createActivation(
+        userId: userID,
+        autoCommit: true,
+      );
       final result = await sdk.createActivation(
         PowerAuthActivation.fromActivationCode(
           activationCode: createdActivation.activationCode,
@@ -165,15 +174,23 @@ main() {
         ),
       );
       final userInfo = result.userInfo;
+      final cachedUserInfo = await sdk.getLastFetchedUserInfo();
       expect(userInfo, isNotNull);
-      expect(sdk.getLastFetchedUserInfo(), isNotNull);
-      expect(userInfo?.subject, userID);
-      expect((await sdk.getLastFetchedUserInfo())?.subject, userID);
+      expect(userInfo?.subject, expectedUserInfo.subject);
+      expect(userInfo?.email, expectedUserInfo.email);
+      expect(cachedUserInfo?.subject, expectedUserInfo.subject);
+      expect(cachedUserInfo?.email, expectedUserInfo.email);
+      expect(
+        cachedUserInfo?.userAddress?.formatted,
+        expectedUserInfo.userAddress?.formatted,
+      );
+      expect(
+        cachedUserInfo?.userAddress?.street,
+        expectedUserInfo.userAddress?.street,
+      );
 
       final fetchedUserInfo = await sdk.fetchUserInfo();
-      expect(fetchedUserInfo, isNotNull);
-      expect(fetchedUserInfo.subject, userID);
-      expect(fetchedUserInfo.subject, userInfo?.subject);
+      expect(fetchedUserInfo.subject, expectedUserInfo.subject);
     });
   });
 }

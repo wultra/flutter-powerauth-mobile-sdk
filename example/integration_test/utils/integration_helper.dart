@@ -16,6 +16,7 @@
 
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:http/http.dart' as http;
@@ -85,6 +86,7 @@ class IntegrationHelper {
     await _makeCall(
       '{ "externalUserId": "test" }',
       "${AppConfig.cloudUrl}/v2/registrations/${resp.registrationId}/commit",
+      backend: _IntegrationBackend.cloud,
     );
   }
 
@@ -146,6 +148,7 @@ class IntegrationHelper {
     final resp = await _makeCall(
       body,
       "${AppConfig.cloudUrl}/v2/registrations",
+      backend: _IntegrationBackend.cloud,
     );
     final created = CreatedActivation.fromJson(resp);
     createdActivation = created;
@@ -156,6 +159,7 @@ class IntegrationHelper {
     await _makeCall(
       "{}",
       "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}/commit",
+      backend: _IntegrationBackend.cloud,
     );
   }
 
@@ -163,6 +167,7 @@ class IntegrationHelper {
     await _makeCall(
       "",
       "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}",
+      backend: _IntegrationBackend.cloud,
       method: HtptMethod.delete,
     );
   }
@@ -173,6 +178,7 @@ class IntegrationHelper {
     final resp = await _makeCall(
       "",
       "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}",
+      backend: _IntegrationBackend.cloud,
       method: HtptMethod.get,
     );
     return RegistrationDetail.fromJson(resp);
@@ -185,6 +191,7 @@ class IntegrationHelper {
     await _makeCall(
       "{\"change\":\"${change.toString()}\"}",
       "${AppConfig.cloudUrl}/v2/registrations/${registrationId ?? createdActivation?.registrationId}",
+      backend: _IntegrationBackend.cloud,
       method: HtptMethod.put,
     );
   }
@@ -193,19 +200,21 @@ class IntegrationHelper {
     String method,
     String uriId,
     String authHeader,
-    String body,
-  ) async {
-    final payload = """
-        {
-          "method": "$method",
-          "uriId": "$uriId",
-          "authHeader": "${authHeader.replaceAll("\"", "\\\"")}",
-          "requestBody": "${base64Encode(utf8.encode(body))}"
-        }
-        """;
+    String body, {
+    Map<String, String>? queryParams,
+  }) async {
+    final isGet = method.toUpperCase() == 'GET';
+    final payload = jsonEncode({
+      'method': method,
+      'uriId': uriId,
+      'authHeader': authHeader,
+      'requestBody': isGet ? null : base64Encode(utf8.encode(body)),
+      'queryParams': isGet ? queryParams : null,
+    });
     final resp = await _makeCall(
       payload,
       "${AppConfig.cloudUrl}/v2/signature/verify",
+      backend: _IntegrationBackend.cloud,
       method: HtptMethod.post,
     );
     return SignatureResponse.fromJson(resp);
@@ -217,29 +226,116 @@ class IntegrationHelper {
           "authHeader": "${authHeader.replaceAll("\"", "\\\"")}"
         }
         """;
-    final resp = await _makeCall(payload, "${AppConfig.cloudUrl}/v2/token/verify", method: HtptMethod.post);
+    final resp = await _makeCall(
+      payload,
+      "${AppConfig.cloudUrl}/v2/token/verify",
+      backend: _IntegrationBackend.cloud,
+      method: HtptMethod.post,
+    );
     return TokenResponse.fromJson(resp);
+  }
+
+  /// Creates deterministic user claims for user-info integration tests.
+  PowerAuthUserInfo userInfo(String userId) {
+    return PowerAuthUserInfo({
+      'sub': userId,
+      'name': 'Name $userId',
+      'given_name': 'given',
+      'family_name': 'family',
+      'middle_name': 'middle',
+      'nickname': 'nickname',
+      'preferred_username': 'preferred$userId',
+      'profile': 'https://wultra.com/profile',
+      'picture': 'https://wultra.com/icon.png',
+      'website': 'https://wultra.com',
+      'email': '$userId@wultra.com',
+      'email_verified': true,
+      'phone_number': '+56 (2) 687 2400',
+      'phone_number_verified': true,
+      'gender': 'female',
+      'birthdate': '2000-04-01',
+      'zoneinfo': 'Europe/Prague',
+      'locale': 'cs-CZ',
+      'updated_at': 1746120021,
+      'address': {
+        'formatted': 'Street 1, Prague, Czech Republic',
+        'street_address': 'Street 1',
+        'locality': 'Prague',
+        'region': 'Prague',
+        'postal_code': '10000',
+        'country': 'Czech Republic',
+      },
+    });
+  }
+
+  /// Stores user claims in User Data Store.
+  Future<Map<String, dynamic>> fillUserInfo(PowerAuthUserInfo userInfo) async {
+    await AppConfig.ensureLoaded();
+    if (AppConfig.isUdsConfigMissing()) {
+      throw StateError(
+        'User Data Store configuration is missing. Set UDS_SERVER_URL, '
+        'UDS_SERVER_USERNAME, and UDS_SERVER_PASSWORD in example/.env.',
+      );
+    }
+
+    final subject = userInfo.subject;
+    if (subject == null) {
+      throw ArgumentError.value(userInfo, 'userInfo', 'Subject is required');
+    }
+    final userId = Uri.encodeQueryComponent(subject);
+    return _makeCall(
+      jsonEncode(userInfo.allClaims),
+      "${AppConfig.udsServerUrl}/public/user-claims?userId=$userId",
+      backend: _IntegrationBackend.userDataStore,
+    );
   }
 
   // --- HELPER FUNCTIONS ---
 
-  Future<Map<String, dynamic>> callSDKEndpoint(
-    String endpoint,
-    String body,
-    Map<String, String>? headers,
-  ) async {
-    final url = Uri.parse("${(await sdk.configuration).baseEndpointUrl}/$endpoint");
-    final response = await http.post(url, headers: headers, body: body);
-    return jsonDecode(response.body) as Map<String, dynamic>;
+  Future<RawHttpResponse> callRawSDKEndpoint(
+    String endpoint, {
+    Uint8List? body,
+    Iterable<PowerAuthHttpHeader> headers = const [],
+  }) async {
+    final configuration = await sdk.configuration;
+    final algorithm = await sdk.currentAlgorithm;
+    final apiVersion =
+        algorithm == PowerAuthAlgorithm.legacy ? 'pa/v3' : 'pa/v4';
+    final base = configuration.baseEndpointUrl.replaceFirst(RegExp(r'/+$'), '');
+    final path = endpoint.replaceFirst(RegExp(r'^/+'), '');
+    final url = Uri.parse('$base/$apiVersion/$path');
+    final response = await http.post(
+      url,
+      headers: {for (final header in headers) header.name: header.value},
+      body: body,
+    );
+    final result = RawHttpResponse(
+      statusCode: response.statusCode,
+      headers: response.headers,
+      bodyBytes: response.bodyBytes,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(
+        'SDK endpoint $url failed with HTTP ${response.statusCode}; '
+        'headers=${response.headers}; bodyBytes=${response.bodyBytes}',
+      );
+    }
+    return result;
   }
 
   Future<Map<String, dynamic>> _makeCall(
     String? payload,
     String stringUrl, {
+    required _IntegrationBackend backend,
     HtptMethod method = HtptMethod.post,
   }) async {
     final url = Uri.parse(stringUrl);
-    final creds = "${AppConfig.cloudLogin}:${AppConfig.cloudPassword}";
+    final creds = switch (backend) {
+      _IntegrationBackend.cloud =>
+        "${AppConfig.cloudLogin}:${AppConfig.cloudPassword}",
+      _IntegrationBackend.userDataStore =>
+        "${AppConfig.udsServerUsername}:${AppConfig.udsServerPassword}",
+    };
     Map<String, String>? headers = {
       "authorization": "Basic ${base64Encode(utf8.encode(creds))}",
       'content-type': jsonMediaType,
@@ -278,6 +374,20 @@ class IntegrationHelper {
 }
 
 enum HtptMethod { get, post, put, delete, patch }
+
+enum _IntegrationBackend { cloud, userDataStore }
+
+class RawHttpResponse {
+  final int statusCode;
+  final Map<String, String> headers;
+  final Uint8List bodyBytes;
+
+  RawHttpResponse({
+    required this.statusCode,
+    required this.headers,
+    required this.bodyBytes,
+  });
+}
 
 class CreatedActivation {
   final String activationCode;
@@ -418,7 +528,7 @@ class TokenResponse {
     required this.userId,
     required this.registrationId,
     required this.registrationStatus,
-    required this.signatureType
+    required this.signatureType,
   });
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
@@ -427,7 +537,7 @@ class TokenResponse {
       userId: json['userId'],
       registrationId: json['registrationId'],
       registrationStatus: json['registrationStatus'],
-      signatureType: json['signatureType']
+      signatureType: json['signatureType'],
     );
   }
 }
