@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -23,6 +24,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 
 class IntegrationHelper {
+  static const _httpRequestTimeout = Duration(seconds: 30);
+  static const _httpRequestAttempts = 3;
+
   final jsonMediaType = "application/json; charset=UTF-8";
   final PowerAuth sdk;
   CreatedActivation? createdActivation;
@@ -304,10 +308,13 @@ class IntegrationHelper {
     final base = configuration.baseEndpointUrl.replaceFirst(RegExp(r'/+$'), '');
     final path = endpoint.replaceFirst(RegExp(r'^/+'), '');
     final url = Uri.parse('$base/$apiVersion/$path');
-    final response = await http.post(
+    final response = await _sendHttpRequest(
       url,
-      headers: {for (final header in headers) header.name: header.value},
-      body: body,
+      (client) => client.post(
+        url,
+        headers: {for (final header in headers) header.name: header.value},
+        body: body,
+      ),
     );
     final result = RawHttpResponse(
       statusCode: response.statusCode,
@@ -345,23 +352,79 @@ class IntegrationHelper {
 
     switch (method) {
       case HtptMethod.get:
-        response = await http.get(url, headers: headers);
+        response = await _sendHttpRequest(
+          url,
+          (client) => client.get(url, headers: headers),
+        );
         break;
       case HtptMethod.put:
-        response = await http.put(url, headers: headers, body: payload);
+        response = await _sendHttpRequest(
+          url,
+          (client) => client.put(url, headers: headers, body: payload),
+        );
         break;
       case HtptMethod.delete:
-        response = await http.delete(url, headers: headers);
+        response = await _sendHttpRequest(
+          url,
+          (client) => client.delete(url, headers: headers),
+        );
         break;
       case HtptMethod.patch:
-        response = await http.patch(url, headers: headers, body: payload);
+        response = await _sendHttpRequest(
+          url,
+          (client) => client.patch(url, headers: headers, body: payload),
+        );
         break;
       default:
-        response = await http.post(url, headers: headers, body: payload);
+        response = await _sendHttpRequest(
+          url,
+          (client) => client.post(url, headers: headers, body: payload),
+        );
         break;
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
+
+  Future<http.Response> _sendHttpRequest(
+    Uri url,
+    Future<http.Response> Function(http.Client client) send,
+  ) async {
+    for (var attempt = 1; attempt <= _httpRequestAttempts; attempt++) {
+      final client = http.Client();
+      try {
+        final response = await send(client).timeout(_httpRequestTimeout);
+        if (!_isTransientHttpStatus(response.statusCode) ||
+            attempt == _httpRequestAttempts) {
+          return response;
+        }
+        print(
+          'HTTP $url returned ${response.statusCode} '
+          '(attempt $attempt/$_httpRequestAttempts); retrying.',
+        );
+      } catch (error) {
+        final isTransient =
+            error is TimeoutException || error is http.ClientException;
+        if (!isTransient || attempt == _httpRequestAttempts) {
+          rethrow;
+        }
+        print(
+          'HTTP $url failed with $error '
+          '(attempt $attempt/$_httpRequestAttempts); retrying.',
+        );
+      } finally {
+        client.close();
+      }
+      await Future<void>.delayed(Duration(seconds: attempt));
+    }
+    throw StateError('Unreachable HTTP retry state for $url');
+  }
+
+  bool _isTransientHttpStatus(int statusCode) =>
+      statusCode == 408 ||
+      statusCode == 429 ||
+      statusCode == 502 ||
+      statusCode == 503 ||
+      statusCode == 504;
 
   static String randomString(int length) {
     const chars =
