@@ -19,6 +19,10 @@ import PowerAuth2
 
 internal extension FlutterError {
     
+    /// Translates native SDK and transport failures into the stable error codes exposed to Dart.
+    ///
+    /// REST failures preserve the response metadata shape used by the Android implementation so
+    /// callers can handle server errors consistently on both platforms.
     convenience init(thrownByPlugin: Error) {
         if let pe = thrownByPlugin as? PluginException {
             self.init(code: pe.code, message: pe.message, details: pe.details)

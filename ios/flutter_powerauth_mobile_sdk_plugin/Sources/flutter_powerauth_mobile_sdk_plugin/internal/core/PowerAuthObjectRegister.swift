@@ -17,6 +17,10 @@
 import PowerAuth2
 import Flutter
 
+/// Thread-safe storage for SDK instances and short-lived native objects referenced by Dart handles.
+///
+/// Child objects use their SDK instance identifier as a tag so deconfiguration can release the
+/// instance and all associated sensitive objects in one operation.
 internal class PowerAuthObjectRegister {
     
     private let lock = Lock()
@@ -148,6 +152,8 @@ internal class PowerAuthObjectRegister {
     @discardableResult
     func removeAny(id: String) -> Any? {
         return lock.synchronized {
+            // Explicit release must also remove an object whose automatic release policy has
+            // already expired, so this intentionally bypasses validity and type checks.
             return register.removeValue(forKey: id)?.object
         }
     }

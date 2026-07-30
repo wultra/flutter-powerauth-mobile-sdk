@@ -56,6 +56,8 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
                 guard let encryptor else {
                     throw PluginException(.unknownError, message: "PowerAuth SDK returned neither an encryptor nor an error.")
                 }
+                // Encryptor acquisition is asynchronous. Register it only if this exact SDK
+                // instance is still configured; the instance ID may have been reused meanwhile.
                 guard let objectId = self.register.add(
                     object: encryptor,
                     ifOwnerMatches: sdk,
@@ -99,6 +101,8 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
     private func decryptResponse(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId: String = try call.requireParameter(Args.objectId)
         defer {
+            // A request encryptor can decrypt only its matching response. Release the handle
+            // after the attempt regardless of whether native decryption succeeds.
             register.removeAny(id: objectId)
         }
         guard let encryptor: PowerAuthEncryptor = register.touch(id: objectId) else {

@@ -209,6 +209,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
             biometricConfig = bc
         }
 
+        // PowerAuth 2.x keeps native keychain storage names internal on Apple platforms.
+        // Activation sharing is configured on PowerAuthConfiguration above.
         let sdk = try PowerAuthSDK(
             configuration: paConfig,
             biometricConfiguration: biometricConfig,
@@ -373,8 +375,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let passwordMap: FlutterMap = try call.requireParameter(Args.password)
             let password = try self.usePassword(passwordMap).copyToImmutable()
 
+            // Unlike Android, the Apple SDK preserves the biometric factor automatically and
+            // therefore has no upgradeBiometry input or biometryFactorRemoved result.
             sdk.startProtocolUpgrade(password: password) { upgradeResult, error in
                 wrap {
+                    // Keep the immutable password captured until the asynchronous operation ends.
                     _ = password
                     if let error {
                         throw error
@@ -403,6 +408,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             sdk.removeActivation(with: auth) { error in
                 wrap {
+                    // Authentication owns copied credentials required by the native async task.
                     _ = auth
                     if let error {
                         throw error
@@ -496,6 +502,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let oldPassword = try self.usePassword(oldPasswordMap).copyToImmutable()
             sdk.beginPasswordChange(oldPassword: oldPassword) { changeData, error in
                 wrap {
+                    // Keep the copied password alive until native verification completes.
                     _ = oldPassword
                     if let error {
                         throw error
@@ -503,6 +510,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     guard let changeData else {
                         throw PluginException(.unknownError, message: "PowerAuth SDK returned neither password change data nor an error.")
                     }
+                    // Do not expose change data produced by an SDK that was deconfigured while
+                    // the network request was running.
                     guard let objectId = self.register.add(
                         object: changeData,
                         ifOwnerMatches: sdk,
@@ -1067,6 +1076,11 @@ internal class PowerAuthService: PowerAuthFlutterService {
         return try register.usePassword(dict: dict)
     }
     
+    /// Builds an authentication object that owns copies of credentials consumed from the register.
+    ///
+    /// Callers starting asynchronous native operations must capture the returned object until
+    /// their callback finishes. This prevents password or biometric key material from being
+    /// released while the native SDK still uses it.
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
         
         let dict: FlutterMap = try call.requireParameter(Args.authentication)
