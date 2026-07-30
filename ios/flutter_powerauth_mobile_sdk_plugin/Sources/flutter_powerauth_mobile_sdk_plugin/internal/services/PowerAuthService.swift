@@ -33,11 +33,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "isConfigured": isConfigured,
         "getConfiguration": getConfiguration,
         "getCurrentAlgorithm": getCurrentAlgorithm,
-        //TODO: Implements when SDK 2.0.0 is available
-        // "getClientConfiguration": getClientConfiguration,
-        // "getBiometryConfiguration": getBiometryConfiguration,
-        // "getKeychainConfiguration": getKeychainConfiguration,
-        // "getSharingConfiguration": getSharingConfiguration,
+        "getClientConfiguration": getClientConfiguration,
+        "getBiometryConfiguration": getBiometryConfiguration,
+        "getKeychainConfiguration": getKeychainConfiguration,
+        "getSharingConfiguration": getSharingConfiguration,
         "deconfigure": deconfigure,
         "hasValidActivation": hasValidActivation,
         "canStartActivation": canStartActivation,
@@ -126,6 +125,10 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case isPersist
         case invalidateBiometricFactorAfterChange
         case fallbackToDevicePasscode
+        case confirmBiometricAuthentication
+        case authenticateOnBiometricKeySetup
+        case fallbackToSharedBiometryKey
+        case useLegacySymmetricKey
         case appGroup
         case appIdentifier
         case keychainAccessGroup
@@ -133,7 +136,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case customHttpHeaders
         case basicHttpAuthentication
         case connectionTimeout
-        case defaultRequestTimeout
+        case readTimeout
         case enableUnsecureTraffic
         case name
         case value
@@ -251,31 +254,32 @@ internal class PowerAuthService: PowerAuthFlutterService {
             result(try sdk.currentAlgorithm.serializable)
         }
     }
-    //TODO: implement when SDK 2.0.0 is available
-    //
-    // private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-    //     try usePowerAuth(call, result) { sdk, _ in
-    //         result(sdk.clientConfiguration.serializable)
-    //     }
-    // }
-    //
-    // private func getBiometryConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-    //     try usePowerAuth(call, result) { sdk, _ in
-    //         result(sdk.keychainConfiguration.biometrySerializable)
-    //     }
-    // }
-    //
-    // private func getKeychainConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-    //     try usePowerAuth(call, result) { sdk, _ in
-    //         result(sdk.keychainConfiguration.serializable)
-    //     }
-    // }
-    //
-    // private func getSharingConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-    //     try usePowerAuth(call, result) { sdk, _ in
-    //         result(sdk.configuration.sharingConfiguration?.serializable)
-    //     }
-    // }
+
+    private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.clientConfiguration.serializable)
+        }
+    }
+
+    private func getBiometryConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.biometricConfiguration.serializable)
+        }
+    }
+
+    private func getKeychainConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { _, _ in
+            // The Flutter keychain model exposes Android-specific protection
+            // levels and therefore has no Apple representation.
+            result(nil)
+        }
+    }
+
+    private func getSharingConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
+            result(sdk.configuration.sharingConfiguration?.serializable)
+        }
+    }
 
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
@@ -1154,8 +1158,34 @@ private extension PowerAuthClientConfiguration {
     var serializable: FlutterMap {
         [
             PowerAuthService.Args.connectionTimeout.rawValue: defaultRequestTimeout,
-            PowerAuthService.Args.defaultRequestTimeout.rawValue: defaultRequestTimeout,
+            // Apple platforms use a single request timeout.
+            PowerAuthService.Args.readTimeout.rawValue: defaultRequestTimeout,
             PowerAuthService.Args.enableUnsecureTraffic.rawValue: sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
+        ]
+    }
+}
+
+private extension PowerAuthBiometricConfiguration {
+    var serializable: FlutterMap {
+        [
+            PowerAuthService.Args.invalidateBiometricFactorAfterChange.rawValue: invalidateBiometricFactorAfterChange,
+            PowerAuthService.Args.fallbackToDevicePasscode.rawValue: allowFallbackToDevicePasscode,
+            // The remaining options are Android-only. Return their Flutter
+            // defaults to keep the platform-independent model complete.
+            PowerAuthService.Args.confirmBiometricAuthentication.rawValue: false,
+            PowerAuthService.Args.authenticateOnBiometricKeySetup.rawValue: true,
+            PowerAuthService.Args.fallbackToSharedBiometryKey.rawValue: true,
+            PowerAuthService.Args.useLegacySymmetricKey.rawValue: false
+        ]
+    }
+}
+
+private extension PowerAuthSharingConfiguration {
+    var serializable: FlutterMap {
+        [
+            PowerAuthService.Args.appGroup.rawValue: appGroup,
+            PowerAuthService.Args.appIdentifier.rawValue: appIdentifier,
+            PowerAuthService.Args.keychainAccessGroup.rawValue: keychainAccessGroup
         ]
     }
 }

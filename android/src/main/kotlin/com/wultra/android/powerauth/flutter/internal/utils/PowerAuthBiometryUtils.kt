@@ -107,6 +107,19 @@ object PowerAuthBiometryUtils {
         }
     }
 
+    fun keychainProtectionToString(@KeychainProtection protection: Int): String {
+        return when (protection) {
+            KeychainProtection.NONE -> "none"
+            KeychainProtection.SOFTWARE -> "software"
+            KeychainProtection.HARDWARE -> "hardware"
+            KeychainProtection.STRONGBOX -> "strongbox"
+            else -> throw WrapperException(
+                Errors.EC_INVALID_NATIVE_OBJECT,
+                "Unknown native keychain protection level: $protection"
+            )
+        }
+    }
+
     @Throws(WrapperException::class)
     fun validateFragmentActivity(activity: FragmentActivity?): FragmentActivity {
         if (activity == null) {
