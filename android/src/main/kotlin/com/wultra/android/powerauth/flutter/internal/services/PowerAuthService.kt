@@ -1242,10 +1242,17 @@ internal class PowerAuthService(
                                 ManagedAny.wrap(vaultKey),
                                 //manual release with 5 minutes rolling keep alive
                                 listOf(ReleasePolicy.keepAlive(SECURE_VAULT_KEY_KEEP_ALIVE_TIME))
-                            ) ?: throw WrapperException(
-                                Errors.EC_INSTANCE_NOT_CONFIGURED,
-                                "PowerAuth instance '$instanceId' not configured."
                             )
+                            if (objectId == null) {
+                                Errors.error(
+                                    result,
+                                    WrapperException(
+                                        Errors.EC_INSTANCE_NOT_CONFIGURED,
+                                        "PowerAuth instance '$instanceId' not configured."
+                                    )
+                                )
+                                return
+                            }
                             result.success(objectId)
                         }
 
