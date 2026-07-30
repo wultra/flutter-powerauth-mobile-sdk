@@ -22,7 +22,7 @@ import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 import '../utils/object_cleanup_helper.dart';
 
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 main() {
   group('Signature tests', () {

@@ -18,7 +18,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import '../utils/integration_helper.dart';
 
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 import '../utils/helper_functions.dart';
 
