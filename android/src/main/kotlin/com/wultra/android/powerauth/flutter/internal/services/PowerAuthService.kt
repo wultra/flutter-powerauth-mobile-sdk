@@ -554,7 +554,7 @@ internal class PowerAuthService(
     private fun beginPasswordChange(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
             val oldPasswordMap: Map<String, Any> = call.getRequiredArgument(OLD_PASSWORD)
-            //build immutable password
+            // Keep this immutable copy alive until the asynchronous callback completes.
             val oldPassword = buildOwnedPasswordObject(oldPasswordMap)
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
 
@@ -562,13 +562,13 @@ internal class PowerAuthService(
                 sdk.beginPasswordChange(context, oldPassword, object : IBeginPasswordChangeListener {
                     override fun onBeginPasswordChangeSucceed(passwordChangeData: PowerAuthPasswordChangeData) {
                         try {
-                            //check if sdk has not been deconfigured in the meantime
+                            // Do not expose change data produced by an SDK that was deconfigured
+                            // while the network request was running.
                             val objectId = objectRegister.registerObjectIfOwnerMatches(
                                 instanceId,
                                 sdk,
                                 ManagedAny.wrap(passwordChangeData) {
                                     it.secureClear();
-                                    //destroy because immutable
                                     it.oldPassword.destroy();},
                                 listOf(
                                     ReleasePolicy.expire(Constants.PASSWORD_KEY_KEEP_ALIVE_TIME)
@@ -583,7 +583,6 @@ internal class PowerAuthService(
                             result.success(objectId)
                         } catch (t: Throwable) {
                             passwordChangeData.secureClear()
-                            //destroy because immutable
                             oldPassword.destroy()
                             Errors.error(result, t)
                         }
@@ -677,7 +676,7 @@ internal class PowerAuthService(
 
     private fun offlineSignature(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            //async use of credentials in native method, use manual destroy of auth
+            // This asynchronous API needs explicit credential cleanup in both callback paths.
             val authentication = buildAuthenticationObject(call)
 
             val uriId: String = call.getRequiredArgument(URI_ID)
@@ -915,8 +914,11 @@ internal class PowerAuthService(
         return activationBuilder.build()
     }
 
-    /*
-    build auth object from serialized auth, use password and own it. Must be destroyed after operation finish
+    /**
+     * Builds an authentication object that owns copies of credentials consumed from the register.
+     *
+     * The caller must destroy the returned object after the native operation finishes so copied
+     * password and biometric key material is cleared deterministically.
      */
     private fun buildAuthenticationObject(
         call: MethodCall,
@@ -953,7 +955,7 @@ internal class PowerAuthService(
         } else {
             null
         }
-        //create new immutable password that gets destroyed with auth object
+        // Copy before consuming a one-shot handle so the returned authentication owns its data.
         var password = passwordMap?.let { buildOwnedPasswordObject(it) }
         var biometryKey: SecureData? = null
 
@@ -995,7 +997,7 @@ internal class PowerAuthService(
                 }
             }
 
-            //just a precaution
+            // Ownership has moved to the authentication object.
             password = null
             biometryKey = null
             return authentication
@@ -1006,8 +1008,8 @@ internal class PowerAuthService(
         }
     }
 
-    /*
-    helper to destroy auth after synchronous operation
+    /**
+     * Executes a synchronous operation and always destroys its copied authentication data.
      */
     private fun <T> withOwnedAuthentication(
         call: MethodCall,
@@ -1021,8 +1023,8 @@ internal class PowerAuthService(
         }
     }
 
-    /*
-    use password from register and return a new immutable password
+    /**
+     * Consumes one use of a registered password and returns an independently owned immutable copy.
      */
     private fun buildOwnedPasswordObject(passwordArgMap: Map<String, Any>): Password {
         passwordArgMap[OBJECT_ID]?.let { objectIdValue ->
@@ -1235,12 +1237,14 @@ internal class PowerAuthService(
                     keyIdentifier,
                     object : IFetchSecureVaultKeyListener {
                         override fun onFetchSecureVaultKeySucceed(vaultKey: PowerAuthSecureVaultKey) {
-                            //check if sdk has not been deconfigured in the meantime
+                            // Do not expose a key produced by an SDK that was deconfigured while
+                            // the network request was running.
                             val objectId = objectRegister.registerObjectIfOwnerMatches(
                                 instanceId,
                                 sdk,
                                 ManagedAny.wrap(vaultKey),
-                                //manual release with 5 minutes rolling keep alive
+                                // The Dart handle may release it earlier; otherwise inactivity
+                                // limits how long the key remains in memory.
                                 listOf(ReleasePolicy.keepAlive(SECURE_VAULT_KEY_KEEP_ALIVE_TIME))
                             )
                             if (objectId == null) {
@@ -1463,21 +1467,19 @@ internal class PowerAuthService(
 
     private fun localTimeAdjustment(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
+            // Native millisecond values are Longs, which map to Dart ints.
             result.success(sdk.timeSynchronizationService.localTimeAdjustment)
         }
     }
 
     private fun localTimeAdjustmentPrecision(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
             result.success(sdk.timeSynchronizationService.localTimeAdjustmentPrecision)
         }
     }
 
     private fun currentTime(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            // double is expected on the Flutter side
             result.success(sdk.timeSynchronizationService.currentTime)
         }
     }

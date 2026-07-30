@@ -94,7 +94,12 @@ object Errors {
         }
     }
 
-    // TODO: this is mostly copy-pase from RN, we might need some more/better translation to Flutter errors
+    /**
+     * Translates SDK, core, and transport failures into the stable error codes exposed to Dart.
+     *
+     * REST failures use the same response metadata shape as iOS so callers can handle server
+     * errors consistently on both platforms.
+     */
     fun error(result: Result, t: Throwable) {
         var code = EC_FLUTTER_ERROR
         var message = t.message ?: "An unknown error occurred."

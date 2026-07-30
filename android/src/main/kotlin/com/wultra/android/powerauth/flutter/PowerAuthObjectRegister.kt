@@ -33,9 +33,11 @@ import io.getlime.security.powerauth.core.Password
 import java.nio.charset.StandardCharsets
 
 /**
- * Object register that allows exposing native objects.
- * The object is identified by a unique identifier created at the time of registration
- * or by an application-provided identifier.
+ * Thread-safe storage for SDK instances and short-lived native objects referenced by Dart handles.
+ *
+ * Objects are identified by generated or application-provided identifiers. Child objects use
+ * their SDK instance identifier as a tag so deconfiguration can release the instance and all
+ * associated sensitive objects in one operation.
  */
 class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
@@ -70,7 +72,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         var removeOrderTime: Long = 0
     ) {
         private var cleanupPerformed = false
-        // TODO: improve
+        // A null policy list is the internal representation of manual ownership.
         val policies = if (policies.contains(ReleasePolicy.manual())) null else policies
 
         fun setUsed() {
@@ -190,7 +192,9 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
     /**
      * Registers an object only if the expected owner is still registered under [ownerId].
-     * The registered object is tagged with [ownerId].
+     *
+     * The identity check and insertion are atomic. This prevents an asynchronous callback from
+     * attaching a child to a new SDK instance that reused the same identifier after deconfiguration.
      */
     fun <T : Any> registerObjectIfOwnerMatches(
         ownerId: String,
@@ -339,7 +343,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
     /**
      * Removes all objects associated with a specific tag.
-     * If tag is null, removes all objects that are not manually managed.
+     * If [tag] is null, removes every object regardless of ownership policy.
      */
     fun removeAllObjectsWithTag(tag: String?) = lock.withLock {
         val iterator = managedObjects.entries.iterator()

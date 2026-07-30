@@ -86,7 +86,8 @@ internal class PowerAuthEncryptorService(
             val listener = object : IGetEncryptorListener {
                 override fun onGetEncryptorSuccess(encryptor: CoreEncryptor) {
                     try {
-                        //check if sdk has not been deconfigured in the meantime
+                        // Encryptor acquisition is asynchronous. Register it only if this exact
+                        // SDK instance is still configured.
                         val objectId = objectRegister.registerObjectIfOwnerMatches(
                             instanceId,
                             sdk,
@@ -180,6 +181,8 @@ internal class PowerAuthEncryptorService(
             Errors.error(result, t)
         } finally {
             if (destroyAfter) {
+                // A request encryptor can decrypt only its matching response. Release it after
+                // the attempt regardless of whether native decryption succeeds.
                 objectRegister.removeObject(objectId, CoreEncryptor::class.java)
             }
         }
