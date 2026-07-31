@@ -62,7 +62,7 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('restores all effective native configurations', () async {
+  test('restores native-readable fields and omits request interceptors', () async {
     final client = await sdk.clientConfiguration;
     final biometry = await sdk.biometryConfiguration;
     final keychain = await sdk.keychainConfiguration;
@@ -71,6 +71,8 @@ void main() {
     expect(client.enableUnsecureTraffic, isTrue);
     expect(client.connectionTimeout, 12.5);
     expect(client.readTimeout, 17.0);
+    expect(client.toMap()['customHttpHeaders'], isNull);
+    expect(client.toMap()['basicHttpAuthentication'], isNull);
 
     expect(biometry.invalidateBiometricFactorAfterChange, isFalse);
     expect(biometry.fallbackToDevicePasscode, isTrue);

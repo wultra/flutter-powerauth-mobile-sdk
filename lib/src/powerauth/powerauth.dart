@@ -83,7 +83,14 @@ class PowerAuth {
   /// Returns the algorithm currently used for communication with the PowerAuth Server.
   Future<PowerAuthAlgorithm> get currentAlgorithm async => (await _platform.getCurrentAlgorithm(instanceId));
 
-  /// Returns the effective client configuration used for this instance.
+  /// Returns the native-readable client configuration used for this instance.
+  ///
+  /// The returned configuration does not include
+  /// [PowerAuthClientConfiguration.customHttpHeaders] or
+  /// [PowerAuthClientConfiguration.basicHttpAuthentication]. Native SDKs
+  /// transform those settings into request interceptors and cannot reliably
+  /// reconstruct the original values. Keep the original client configuration
+  /// if it will be needed to configure a new instance later.
   Future<PowerAuthClientConfiguration> get clientConfiguration async =>
       await _platform.getClientConfiguration(instanceId);
 

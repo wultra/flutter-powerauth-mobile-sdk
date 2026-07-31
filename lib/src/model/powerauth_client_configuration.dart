@@ -19,7 +19,12 @@ import 'package:meta/meta.dart';
 import 'powerauth_basic_http_authentication.dart';
 import 'powerauth_http_header.dart';
 
-/// Class that contains configuration for RESTful API client used internally by SDK.
+/// Class that contains configuration for the RESTful API client used internally
+/// by the SDK.
+///
+/// Configurations returned by `PowerAuth.clientConfiguration` contain only
+/// settings that the native SDK can expose. Request-interceptor settings are
+/// input-only and are not present in returned configurations.
 class PowerAuthClientConfiguration {
 
   /// Defines whether unsecured connection is allowed. Defaults to `false`.
@@ -32,13 +37,18 @@ class PowerAuthClientConfiguration {
   /// Defaults to 20 seconds.
   final double readTimeout;
 
-  /// Custom HTTP headers that will be added to each HTTP request produced by this library.
-  /// internal because native does not return this value to Dart.
+  /// Custom HTTP headers added to each HTTP request produced by this library.
+  ///
+  /// This setting is input-only because native SDKs store it as a request
+  /// interceptor and cannot reliably return the original value to Dart.
   @internal
   final List<PowerAuthHttpHeader>? customHttpHeaders;
 
-  /// Basic HTTP Authentication that will be added to each HTTP request produced by this library.
-  /// internal because native does not return this value to Dart.
+  /// Basic HTTP Authentication added to each HTTP request produced by this
+  /// library.
+  ///
+  /// This setting is input-only because native SDKs store it as a request
+  /// interceptor and cannot return the original credentials to Dart.
   @internal
   final PowerAuthBasicHttpAuthentication? basicHttpAuthentication;
 

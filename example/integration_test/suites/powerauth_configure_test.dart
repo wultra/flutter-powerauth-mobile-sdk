@@ -612,6 +612,9 @@ main() {
 
       final config1 = await sdk1.configuration;
       final config2 = await sdk2.configuration;
+      // These fixtures do not use custom headers or Basic HTTP
+      // Authentication. Such settings become native request interceptors and
+      // are intentionally not included in the returned client configuration.
       final clientConfig1 = await sdk1.clientConfiguration;
       final clientConfig2 = await sdk2.clientConfiguration;
       final keychainConfig1 = await sdk1.keychainConfiguration;
@@ -655,7 +658,8 @@ main() {
       await runMethodsThatMustFail(helper1.sdk);
       await runMethodsThatMustFail(helper2.sdk);
 
-      // Reconfigure. This technically re-create native SDK objects on behalf
+      // Reconfigure from the native-readable configuration fields. This
+      // recreates the native SDK objects.
       await helper1.sdk.configure(
         configuration: config1,
         clientConfiguration: clientConfig1,
