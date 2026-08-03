@@ -1176,32 +1176,6 @@ private extension PowerAuthConfiguration {
     }
 }
 
-private extension PowerAuthAlgorithm {
-    static func from(serialized value: String) throws -> PowerAuthAlgorithm {
-        switch value {
-        case "legacy": return .LEGACY_P256
-        case "p384": return .EC_P384
-        case "p384l3": return .EC_P384_ML_L3
-        case "p384l5": return .EC_P384_ML_L5
-        default:
-            throw PluginException(.wrongParameter, message: "Unknown PowerAuth algorithm: \(value)")
-        }
-    }
-
-    var serializable: String {
-        get throws {
-            switch self {
-            case .LEGACY_P256: return "legacy"
-            case .EC_P384: return "p384"
-            case .EC_P384_ML_L3: return "p384l3"
-            case .EC_P384_ML_L5: return "p384l5"
-            @unknown default:
-                throw PluginException(.wrongParameter, message: "Unknown native PowerAuth algorithm.")
-            }
-        }
-    }
-}
-
 private extension PowerAuthClientConfiguration {
     var serializable: FlutterMap {
         [
