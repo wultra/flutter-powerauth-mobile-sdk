@@ -55,6 +55,20 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
     throw UnimplementedError('releaseNativeObject() has not been implemented.');
   }
 
+  /// Removes a test object of the expected type from the native object register.
+  ///
+  /// This function is available only in DEBUG builds of the library.
+  Future<bool> removeObject(String objectId, NativeObjectType type) {
+    throw UnimplementedError('removeObject() has not been implemented.');
+  }
+
+  /// Changes the cleanup period used by native object register tests.
+  ///
+  /// This function is available only in DEBUG builds of the library.
+  Future<void> setCleanupPeriod(int milliseconds) {
+    throw UnimplementedError('setCleanupPeriod() has not been implemented.');
+  }
+
   /// Provides methods to manipulate the object register.
   /// 
   /// This function is only available in DEBUG builds of the library.
@@ -71,12 +85,10 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
 // Command type
 enum NativeObjectCmd {
   create,
-  release,
   releaseAll,
   use,
   find,
-  touch,
-  setPeriod
+  touch
 }
 
 /// Result returned from debugCommand()

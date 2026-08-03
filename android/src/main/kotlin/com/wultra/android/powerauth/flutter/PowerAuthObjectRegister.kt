@@ -330,6 +330,15 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
     }
 
     /**
+     * Removes an object only when it matches the expected debug object type.
+     */
+    internal fun removeObject(id: String, objectType: String?): Boolean {
+        val clazz = getClassForObjectType(objectType)
+            ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
+        return removeObject(id, clazz) != null
+    }
+
+    /**
      * Explicitly releases an object regardless of its type or release policy.
      */
     fun releaseObject(id: String): Boolean = lock.withLock {
@@ -385,7 +394,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         return !id.isNullOrEmpty()
     }
 
-    private fun setCleanupPeriod(periodMs: Long) = lock.withLock {
+    internal fun setCleanupPeriod(periodMs: Long) = lock.withLock {
         cleanupPeriodMs = if (periodMs in CLEANUP_PERIOD_MIN..CLEANUP_PERIOD_MAX) {
             periodMs
         } else {
@@ -550,19 +559,6 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                 return null
             }
 
-            "release" -> {
-                val objectIdNonNull = objectId ?: throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Missing objectId"
-                )
-                val objectType = data["objectType"] as? String
-                val clazz = getClassForObjectType(objectType)
-                    ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
-                val removedInstance = removeObject(objectIdNonNull, clazz)
-
-                return removedInstance != null
-            }
-
             "releaseAll" -> {
                 val tag = data["objectTag"] as? String
                 removeAllObjectsWithTag(tag)
@@ -604,15 +600,6 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                     ?: throw WrapperException(Errors.EC_WRONG_PARAMETER, "Unknown objectType")
 
                 return touchObject(objectIdNonNull, clazz) != null
-            }
-
-            "setPeriod" -> {
-                val period = data["cleanupPeriod"] as? Int
-                if (period != null) {
-                    setCleanupPeriod(period.toLong())
-                }
-
-                return null
             }
 
             else -> throw WrapperException(

@@ -49,8 +49,8 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthBiometricConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthSignatureUtils.signatureKeyIdFromString
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
@@ -122,6 +122,20 @@ internal class PowerAuthService(
         const val KEY_SIZE = "keySize"
         const val TOKEN_NAME = "tokenName"
         const val OIDC_PARAMETERS = "oidcParameters"
+
+        @JvmStatic
+        private fun cleanupInstanceData(
+            context: Context,
+            instanceId: String,
+            configurationMap: Map<String, Any>,
+            keychainConfigMap: Map<String, Any>?
+        ) {
+            val configuration = buildPowerAuthConfiguration(instanceId, configurationMap)
+            val keychainConfiguration = keychainConfigMap?.let {
+                buildPowerAuthKeychainConfiguration(it)
+            }
+            PowerAuthSDK.cleanupInstanceData(context, configuration, keychainConfiguration)
+        }
 
     }
 
@@ -300,11 +314,7 @@ internal class PowerAuthService(
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             val configurationMap: Map<String, Any> = call.getRequiredArgument(CONFIGURATION)
             val keychainConfigMap = call.argument<Map<String, Any>>(KEYCHAIN_CONFIGURATION)
-            val configuration = buildPowerAuthConfiguration(instanceId, configurationMap)
-            val keychainConfiguration = keychainConfigMap?.let {
-                buildPowerAuthKeychainConfiguration(it)
-            }
-            PowerAuthSDK.cleanupInstanceData(context, configuration, keychainConfiguration)
+            PowerAuthService.cleanupInstanceData(context, instanceId, configurationMap, keychainConfigMap)
             result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)

@@ -53,7 +53,7 @@ class NativeObjectHandle {
     if (initializer == null) {
       throw PowerAuthException(
         code: PowerAuthErrorCode.invalidNativeObject,
-        message: 'Native object is not initialized.',
+        message: 'Native object cannot be initialized because initializer is missing.',
       );
     }
 

@@ -28,12 +28,13 @@ import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.A
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.MINIMAL_REQUIRED_KEYCHAIN_PROTECTION
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.USE_LEGACY_SYMMETRIC_KEY
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmFromString
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getKeychainProtectionFromString
 import io.getlime.security.powerauth.networking.interceptors.BasicHttpAuthenticationRequestInterceptor
 import io.getlime.security.powerauth.networking.interceptors.CustomHeaderRequestInterceptor
 import io.getlime.security.powerauth.networking.ssl.HttpClientSslNoValidationStrategy
 import io.getlime.security.powerauth.sdk.PowerAuthClientConfiguration
-import io.getlime.security.powerauth.sdk.PowerAuthAlgorithm
 import io.getlime.security.powerauth.sdk.PowerAuthBiometricConfiguration
 import io.getlime.security.powerauth.sdk.PowerAuthConfiguration
 import io.getlime.security.powerauth.sdk.PowerAuthKeychainConfiguration
@@ -63,33 +64,6 @@ object PowerAuthConfigurationUtils {
             builder.offlineAuthenticationCodeComponentLength(length)
         }
         return builder.build()
-    }
-
-    @PowerAuthAlgorithm
-    fun algorithmFromString(value: String): Int {
-        return when (value) {
-            "legacy" -> PowerAuthAlgorithm.LEGACY_P256
-            "p384" -> PowerAuthAlgorithm.EC_P384
-            "p384l3" -> PowerAuthAlgorithm.EC_P384_ML_L3
-            "p384l5" -> PowerAuthAlgorithm.EC_P384_ML_L5
-            else -> throw WrapperException(
-                Errors.EC_WRONG_PARAMETER,
-                "Unknown PowerAuth algorithm: $value"
-            )
-        }
-    }
-
-    fun algorithmToString(@PowerAuthAlgorithm value: Int): String {
-        return when (value) {
-            PowerAuthAlgorithm.LEGACY_P256 -> "legacy"
-            PowerAuthAlgorithm.EC_P384 -> "p384"
-            PowerAuthAlgorithm.EC_P384_ML_L3 -> "p384l3"
-            PowerAuthAlgorithm.EC_P384_ML_L5 -> "p384l5"
-            else -> throw WrapperException(
-                Errors.EC_WRONG_PARAMETER,
-                "Unknown native PowerAuth algorithm: $value"
-            )
-        }
     }
 
     fun buildPowerAuthClientConfiguration(clientConfigMap: Map<String, Any>?): PowerAuthClientConfiguration {
