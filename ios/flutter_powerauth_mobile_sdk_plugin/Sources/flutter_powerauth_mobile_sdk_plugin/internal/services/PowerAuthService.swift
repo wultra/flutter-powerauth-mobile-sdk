@@ -472,7 +472,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     
                     result([
                         "activationFingerprint": activationResult.activationFingerprint,
-                        "customAttributes": activationResult.customAttributes ?? [:],
+                        "customAttributes": activationResult.customAttributes as? Any,
                         "userInfoClaims": activationResult.userInfo?.allClaims as? Any
                     ])
                 }
