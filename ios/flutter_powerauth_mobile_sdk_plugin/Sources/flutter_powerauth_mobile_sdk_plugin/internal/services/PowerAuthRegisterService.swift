@@ -34,12 +34,16 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         "register_debugDump": debugDump,
         "register_debugCommand": debugCommand,
         "register_isValidNativeObject": isValidNativeObject,
-        "register_releaseNativeObject": releaseNativeObject
+        "register_releaseNativeObject": releaseNativeObject,
+        "register_removeObject": removeObject,
+        "register_setCleanupPeriod": setCleanupPeriod
     ]
     
     fileprivate enum Args: String {
         case objectId
         case instanceId
+        case objectType
+        case cleanupPeriod
         case command
         case data
     }
@@ -63,12 +67,10 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     
     enum NativeObjectCmd: String {
         case create
-        case release
         case releaseAll
         case use
         case find
         case touch
-        case setPeriod
     }
     
     
@@ -130,25 +132,6 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                     result(objectId)
                     return
                 }
-            }
-        } else if command == "release" {
-            // The "release" command release object with given identifier and returns true / false whether object was removed.
-            if let objectId {
-                switch objectType {
-                case .data:
-                    let data: PowerAuthData? = register.remove(id: objectId)
-                    result(data != nil)
-                case .number:
-                    let data: Int? = register.remove(id: objectId)
-                    result(data != nil)
-                case .password:
-                    let data: PowerAuthPassword? = register.remove(id: objectId)
-                    result(data != nil)
-                case .secureData:
-                    let data: PowerAuthData? = register.remove(id: objectId)
-                    result(data != nil)
-                }
-                return
             }
         } else if command == "releaseAll" {
             // The "releaseAll" command release all objects with a specified tag. If tag is nil, then releases all objects
@@ -217,15 +200,33 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
                 }
                 return
             }
-        } else if command == "setPeriod" {
-            // TODO: improve?
-            if let period = options["cleanupPeriod"] as? Int {
-                register.setCleanupPeriod(period)
-            }
-            result(nil)
-            return
         }
         throw PluginException(.wrongParameter, message: "Wrong parameter for cmd \(command), \(options)")
+    }
+
+    private func removeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        let objectId: String = try call.requireParameter(Args.objectId)
+        let type: String = try call.requireParameter(Args.objectType)
+        guard let objectType = NativeObjectType(rawValue: type) else {
+            throw PluginException(.wrongParameter, message: "Unknown object type parameter")
+        }
+        switch objectType {
+        case .data, .secureData:
+            let data: PowerAuthData? = register.remove(id: objectId)
+            result(data != nil)
+        case .number:
+            let number: Int? = register.remove(id: objectId)
+            result(number != nil)
+        case .password:
+            let password: PowerAuthPassword? = register.remove(id: objectId)
+            result(password != nil)
+        }
+    }
+
+    private func setCleanupPeriod(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        let cleanupPeriod: Int = try call.requireParameter(Args.cleanupPeriod)
+        register.setCleanupPeriod(cleanupPeriod)
+        result(nil)
     }
     #else
     
@@ -234,6 +235,14 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
     }
     
     private func debugCommand(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        result(nil)
+    }
+
+    private func removeObject(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
+        result(nil)
+    }
+
+    private func setCleanupPeriod(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         result(nil)
     }
     #endif
