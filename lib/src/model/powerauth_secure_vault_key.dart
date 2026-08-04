@@ -17,6 +17,7 @@
 import 'dart:typed_data';
 
 import 'native_object_handle.dart';
+import 'powerauth_error.dart';
 import '../powerauth/powerauth_platform_interface.dart';
 
 /// Identifies a base key available from the protocol 4.0 Secure Vault.
@@ -49,9 +50,19 @@ class PowerAuthSecureVaultKey {
   ///
   /// [index] identifies the derived key and [keySize] specifies its size in
   /// bytes. The minimum supported key size is 16 bytes.
-  Future<Uint8List> deriveKey(int index, int keySize) => _handle.withObjectId(
-    (objectId) => _platform.deriveSecureVaultKey(objectId, index, keySize),
-  );
+  Future<Uint8List> deriveKey(int index, int keySize) async {
+    if (index < 0 || keySize < 16) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.wrongParameter,
+        message: index < 0
+            ? 'Secure Vault key index must not be negative.'
+            : 'Secure Vault derived key size must be at least 16 bytes.',
+      );
+    }
+    return await _handle.withObjectId(
+      (objectId) => _platform.deriveSecureVaultKey(objectId, index, keySize),
+    );
+  }
 
   /// Releases the underlying native Secure Vault key.
   Future<void> release() => _handle.release();
