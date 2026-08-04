@@ -88,26 +88,6 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         let objectId = options["objectId"] as? String
         let objectTag = options["objectTag"] as? String
 
-        if command == "setPeriod" {
-            if let period = options["cleanupPeriod"] as? Int {
-                register.setCleanupPeriod(period)
-            }
-            result(nil)
-            return
-        }
-
-        if command == "releaseAll" {
-            // Release all objects with a specified tag. If tag is nil, release
-            // every object from the register.
-            if let objectTag {
-                register.removeAll(tag: objectTag)
-            } else {
-                register.removeAll()
-            }
-            result(nil)
-            return
-        }
-
         guard let ot = options["objectType"] as? String, let objectType = NativeObjectType(rawValue: ot) else {
             throw PluginException(.wrongParameter, message: "Unknown object type parameter")
         }
