@@ -76,6 +76,6 @@ Future<void> hashExample() async {
 
 Notes
 
-- Randomness comes from secure OS providers through native PowerAuthCore.
+- Randomness comes from secure operating-system providers through the underlying native PowerAuth SDK.
 - The SHA-256 output is always exactly 32 bytes.
 - Both utilities are asynchronous as they call into native code via a method channel.

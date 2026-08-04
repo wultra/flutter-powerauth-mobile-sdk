@@ -4,7 +4,10 @@ This document describes the compatibility between the PowerAuth Mobile Flutter S
 
 ## Server Requirements
 
-To use this Flutter SDK, your PowerAuth Server must be running version **1.9.0** or higher. The SDK is compatible with all PowerAuth Server versions 1.9.x and above.
+PowerAuth Mobile Flutter SDK 2.0 supports PowerAuth protocol 4.0 and legacy protocol 3.3. The server requirement depends on the configured algorithm:
+
+- `PowerAuthAlgorithm.p384`, `p384l3`, and `p384l5` require PowerAuth Server version `2.0.0` or later.
+- `PowerAuthAlgorithm.legacy` requires PowerAuth Server version `1.9.0` or later.
 
 ## Flutter SDK as a Wrapper
 
@@ -14,9 +17,10 @@ For more information about the native PowerAuth Mobile SDK, please refer to the 
 
 ## Compatibility Table
 
-| Flutter SDK Version | Native SDK   | Server version |
-|---------------------|--------------|----------------|
-| `1.0.x` - `1.4.x`   | `1.9.x`      | `1.9.+`        |
+| Flutter SDK Version | Native SDK | Protocol | Server Version |
+|---|---|---|---|
+| `2.0.x` | `2.0.x` | `4.0` or `3.3` | `2.0+` or `1.9+` |
+| `1.0.x` - `1.4.x` | `1.9.x` | `3.3` | `1.9+` |
 
 ## Read Next
 

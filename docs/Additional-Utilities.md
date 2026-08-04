@@ -40,7 +40,7 @@ Migrates the iOS keychain initialization state between two [activation data shar
 
 PowerAuth SDK for iOS keeps track of whether the application has been reinstalled. When you start sharing activation data between your application and its extension (or when you change the app group used for sharing), this state must be moved to the new setup. Otherwise the SDK may evaluate the locally stored activation incorrectly after the configuration change.
 
-This mechanism mirrors the native [UserDefaults migration](https://developers.wultra.com/components/powerauth-mobile-sdk/1.9.x/documentation/PowerAuth-SDK-for-iOS-Extensions#userdefaults-migration) described in the PowerAuth SDK for iOS Extensions documentation.
+This mechanism mirrors the native UserDefaults migration required when the sharing setup changes. See [Activation Data Sharing](Activation-Data-Sharing.md) for the complete Flutter setup and the current native documentation link.
 
 > [!IMPORTANT]
 > Call this method at the application's startup, **before** any `PowerAuth` instance is configured and used.

@@ -37,11 +37,10 @@ if (await powerAuth.hasValidActivation()) {
                 // user about this situation and remove activation locally
                 // via "await powerAuth.removeActivationLocal()"
                 print("Activation is technically blocked");
-            case PowerAuthActivationState.created:
-                // Activation has just been created. This is the internal
-                // state on the server and therefore can be ignored
-                // on the mobile application.
-                print("Activation was created");
+            case PowerAuthActivationState.unknown:
+                // The server returned a state that this SDK does not know.
+                // Do not treat this state as a removed activation.
+                print("Activation state is unknown");
         }
 
         // Failed login attempts, remaining = max - current
@@ -58,7 +57,39 @@ if (await powerAuth.hasValidActivation()) {
 }
 ```
 
-Note that the status fetch may fail at an unrecoverable error `PowerAuthErrorCode.protocolUpgrade`, meaning that it's not possible to upgrade the PowerAuth protocol to a newer version. In this case, it's recommended to [remove the activation locally](Device-Activation-Removal.md).
+The status fetch can fail with the unrecoverable `PowerAuthErrorCode.protocolUpgrade` error. This error means that the SDK cannot upgrade the PowerAuth protocol. In this case, [remove the activation locally](Device-Activation-Removal.md).
+
+## Authenticated Protocol Upgrade
+
+The fetched activation status can show that a protocol upgrade is available. The upgrade requires the knowledge factor:
+
+```dart
+await powerAuth.fetchActivationStatus();
+
+if (await powerAuth.hasProtocolUpgradeAvailable()) {
+    final password = await PowerAuthPassword.fromString("1234");
+    final result = await powerAuth.startProtocolUpgrade(password);
+
+    if (result.activationStatusFetchRequired) {
+        await powerAuth.fetchActivationStatus();
+    }
+
+    final upgradedFingerprint = result.activationFingerprint ??
+        await powerAuth.getActivationFingerprint();
+    // If your activation flow presents or records the activation fingerprint,
+    // process the new fingerprint after the upgrade is complete.
+
+    if (result.biometryFactorRemoved) {
+        // Add the biometry factor again after the upgrade.
+    }
+}
+```
+
+On Android, set `upgradeBiometry` to `true` to migrate an existing biometry factor. This option works only when `authenticateOnBiometricKeySetup` is `false`. On iOS, the SDK preserves an existing biometry factor automatically.
+
+When `activationStatusFetchRequired` is `false`, `result.activationFingerprint` contains the new fingerprint. When a status fetch is required, that result property is `null`; finish the upgrade and obtain the current value with `getActivationFingerprint()` instead.
+
+If `hasPendingProtocolUpgrade()` returns `true`, call `fetchActivationStatus()` to finish the upgrade. Some SDK operations are not available while an upgrade is pending.
 
 To get more information about activation states, check the [Activation States](https://github.com/wultra/powerauth-crypto/blob/develop/docs/Activation.md#activation-states) chapter available in our [powerauth-crypto](https://github.com/wultra/powerauth-crypto) repository.
 

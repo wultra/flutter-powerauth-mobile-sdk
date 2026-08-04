@@ -295,8 +295,8 @@ class PowerAuth {
     body,
   );
 
-  /// Computes an offline PowerAuth signature.
-  /// This signature can be validated offline (e.g., on another device or by a backend).
+  /// Computes an offline PowerAuth authentication code.
+  /// This code can be validated over an out-of-band channel.
   ///
   /// - [authentication]: Specifies the factors to use for signing (possession and knowledge recommended).
   /// - [uriId]: The URI identifier associated with the operation being signed.

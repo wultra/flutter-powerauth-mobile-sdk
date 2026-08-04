@@ -20,8 +20,10 @@ class PowerAuthActivationCode {
   /// If created from an activation code, contains the code without the signature part.
   final String activationCode;
 
-  /// Signature calculated from [activationCode].
-  /// Typically optional if the user typed the code manually.
+  /// Legacy signature suffix parsed from the input, if present.
+  ///
+  /// SDK 2.0 does not verify this value and the activation process ignores it.
+  /// Use [activationCode] after parsing and stripping the suffix.
   final String? activationSignature;
 
   PowerAuthActivationCode({
@@ -32,7 +34,6 @@ class PowerAuthActivationCode {
   factory PowerAuthActivationCode.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthActivationCode(
       activationCode: map['activationCode'] as String,
-      // TODO: handle potential null from native if signature isn't present
       activationSignature: map['activationSignature'] as String?,
     );
   }

@@ -2,11 +2,20 @@
 
 ## TBA
 
-* Updates minimum supported SDK version to Flutter 3.44/Dart 3.12.
-* Migrates to built-in Kotlin
-* The `configuration` property was changed to asynchronous
-* The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration` and `sharingConfiguration` properties were changed to asynchronous and now return the effective native configurations
+* Updated the native PowerAuth Mobile SDK dependencies to version 2.0.
+* Added PowerAuth protocol 4.0 algorithms and authenticated protocol upgrade support.
+* Added new APIs for digital and JWS signatures, certificate signing requests, device public-key export, biometric status, and Secure Vault keys.
+* Replaced password change with the two-step `beginPasswordChange()` and `finishPasswordChange()` API.
+* Replaced request-signature methods with `authenticationHeaderForRequestWithParams()` and `authenticationHeaderForRequestWithBody()`.
+* Changed end-to-end encryption to use a single-use `PowerAuthEncryptor` for each request and response exchange.
+* Changed binary input and output from encoded strings to `Uint8List`.
+* Updated the minimum supported SDK version to Flutter 3.44 and Dart 3.12.
+* Updated the minimum supported Android version to Android 6.0 (API 23).
+* Migrated to built-in Kotlin.
+* Changed the `configuration` property to an asynchronous property.
+* Changed the `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration`, and `sharingConfiguration` properties to asynchronous properties that return the effective native configurations.
 * PowerAuth configuration now outlives the Dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70). 
+* For all breaking changes, see the [migration guide from version 1.4.x to 2.0.x](Migration-from-1.4-to-2.0.md).
 
 ## 1.4.0
 

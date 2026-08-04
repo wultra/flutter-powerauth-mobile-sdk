@@ -4,10 +4,11 @@ The PowerAuth Mobile SDK provides a comprehensive logging system that captures i
 
 ## 1. Listening to Logs
 
-The primary way to interact with the logging system is by listening to the log stream. All log entries, regardless of their origin and level, are broadcast through this stream. The stream is exposed via the `PowerAuthDebug` class.
-Accessing the stream is only possible in **debug** builds.
+The primary way to interact with the logging system is by listening to the log stream exposed by the `PowerAuthDebug` class. The stream receives enabled log entries at or above the configured level from the Dart plugin and native wrappers.
 
-Listening to the `PowerAuthDebug.logStream` for the first time will automatically initialize the native log listeners with default configuration, ensuring that no logs are lost.
+Listening to `PowerAuthDebug.logStream` for the first time initializes the native log listener. Log events produced before the first listener is attached are not buffered.
+
+Logging may contain operational or sensitive diagnostic data. Keep it disabled in production applications.
 
 **Example:**
 ```dart
@@ -42,7 +43,7 @@ By default, logging is **enabled** in debug builds and **disabled** in release b
 
 The `PowerAuthLoggingConfig` class has the following properties:
 - `enabled`: A `bool` to turn logging on or off (defaults to `kDebugMode`).
-- `level`: A `PowerAuthLogLevel` enum value that sets the minimum level of logs to be processed (defaults to `.info`). Note that changes to this setting do not affect the logs being broadcast to the log stream, as all logs are broadcast regardless of their level. Only the logs printed to the platform console are affected by this setting.
+- `level`: A `PowerAuthLogLevel` enum value that sets the minimum processed level (defaults to `.info`). Entries below this level are not sent to the stream or console.
 - `logToConsole`: A `bool` that controls whether logs are also printed to the platform console (defaults to `true`).
 
 **Example:**
@@ -60,10 +61,10 @@ Future<void> setupMyApplication() async {
       ),
     );
   } else {
-    // In production, you might want to only log critical errors.
+    // Do not collect PowerAuth diagnostics in production.
     await PowerAuthDebug.configureLogging(
       const PowerAuthLoggingConfig(
-        enabled: true,
+        enabled: false,
         level: PowerAuthLogLevel.error,
         logToConsole: false,
       ),
@@ -74,7 +75,7 @@ Future<void> setupMyApplication() async {
 
 **Using the default configuration:**
 ```dart
-// Use all defaults (enabled in debug mode, info level, console logging on)
+// Defaults: enabled in debug mode, info level, console logging on.
 await PowerAuthDebug.configureLogging(const PowerAuthLoggingConfig());
 ```
 

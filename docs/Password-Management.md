@@ -2,49 +2,32 @@
 
 ## Password Change
 
-Since the device does not know the password and is unable to verify the password without the help of the server-side, you need to first call an endpoint that verifies a signature computed with the password.
+The device cannot validate a password without help from PowerAuth Server. Use the two-step password change API. The first step validates the old password and returns native-backed change data. The second step sets the new password.
 
 ```dart
-// Change password from "oldPassword" to "newPassword".
+final oldPassword = await PowerAuthPassword.fromString("oldPassword");
+final newPassword = await PowerAuthPassword.fromString("newPassword");
+final changeData = await powerAuth.beginPasswordChange(oldPassword);
+
 try {
-    await powerAuth.changePassword(await PowerAuthPassword.fromString("oldPassword"), await PowerAuthPassword.fromString("newPassword"));
+    await powerAuth.finishPasswordChange(newPassword, changeData);
 } on PowerAuthException catch (e) {
     print('Change failed: ${e.code}');
-} catch (e) {
-    print('Unexpected error: $e');
+} finally {
+    // finishPasswordChange() releases the object automatically.
+    // Repeated calls to release() are safe. This call also covers an abandoned operation.
+    await changeData.release();
 }
 ```
 
-This method calls `/pa/v3/signature/validate` under the hood with a 2FA signature with the provided original password to verify the password correctness.
+`finishPasswordChange()` consumes and releases `PowerAuthPasswordChangeData` after success or failure. Call `release()` if the user stops the operation before the second step.
 
 ## Password Validation
 
-You can validate a password by calling the `validatePassword` method.
-
-```dart
-// Ask for a password
-final password = await PowerAuthPassword.fromString("1234");
-
-// Validate password on the server
-try {
-    await powerAuth.validatePassword(password);
-    // password valid
-} catch (e) {
-    // password invalid or other error (networking fail, for example)
-    return;
-}
-```
+Version 2.0 removes `validatePassword()` and does not provide a direct replacement. A separate password validation step can create a security problem. Run the operation that requires the password and handle its result.
 
 <!-- begin box warning -->
-Note that validating user password **should not be done** in situation that precedes the signature calculation, as it's not needed.
-If a user enters a wrong PIN should be handled in the calculation call itself and then verified via the `fetchActivationStatus` call.
-
-Example where validation is **not needed**:
-
-1. Call `requestSignature` with a wrong password
-2. The call will fail with the `PowerAuthErrorCode.authenticationError` error
-3. This means most likely the user entered the wrong password
-4. Call `fetchActivationStatus` to verify how many attempts are left or if the activation is blocked.
+Do not validate a password before a signature calculation. If an authenticated operation fails, call `fetchActivationStatus()` to get the remaining attempts and the activation state.
 <!-- end -->
 
 ## Read Next

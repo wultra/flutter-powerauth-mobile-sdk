@@ -5,7 +5,7 @@ The SDK internally uses time synchronized with the PowerAuth Server for its cryp
 Use the following code to get the service responsible for the time synchronization: 
 
 ```dart
-final timeService = powerAuthSDK.timeSynchronizationService;
+final timeService = powerAuth.timeSynchronizationService;
 ```
 
 ### Automatic Time Synchronization
@@ -57,6 +57,16 @@ if (await timeService.isTimeSynchronized()) {
 ```
 
 The precision value represents a maximum absolute deviation of synchronized time against the actual time on the server. For example, a value `500` means that the time provided by the `currentTime()` method maybe 0.5 seconds ahead or behind the actual time on the server. If the precision is not sufficient for your purpose, for example, if you need to display a real-time countdown in your application, then try to synchronize the time manually. The precision basically depends on how quickly is the synchronization response received and processed from the server. A faster response results in higher precision.
+
+For diagnostics, `localTimeAdjustment()` returns the calculated local clock difference in milliseconds. This value is informational and should not replace `currentTime()` in application logic.
+
+You can explicitly discard the synchronized state when testing or when application logic requires a new synchronization:
+
+```dart
+await timeService.resetTimeSynchronization();
+```
+
+After the reset, `isTimeSynchronized()` returns `false` until automatic or manual synchronization succeeds.
 
 ## Read Next
 

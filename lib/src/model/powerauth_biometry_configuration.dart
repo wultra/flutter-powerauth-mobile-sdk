@@ -29,6 +29,11 @@ class PowerAuthBiometryConfiguration {
   /// If set to `true`, then the key protected with the biometry can be accessed also with a device passcode.
   /// If set, then `invalidateBiometricFactorAfterChange` option has no effect. The default is `false`, so fallback
   /// to device's passcode is not enabled.
+  ///
+  /// Do not enable this option when the application must distinguish biometric
+  /// authentication from knowledge-factor authentication. If the device
+  /// passcode unlocks the key, the resulting authentication is no longer proof
+  /// that the user authenticated with biometry.
   final bool fallbackToDevicePasscode;
 
   /// ### Android specific

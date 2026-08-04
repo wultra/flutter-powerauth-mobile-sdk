@@ -7,7 +7,7 @@
 The tokens are simple, locally cached objects, producing timestamp-based authorization headers. Be aware that tokens are NOT a replacement for general PowerAuth signatures. They are helpful in situations when the signatures are too heavy or too complicated for implementation. Each token has the following properties:
 
 - It needs a PowerAuth signature for its creation (e.g., you need to provide a `PowerAuthAuthentication` object)
-- It has a unique identifier on the server. This identifier is not exposed to the public API, but the DEBUG version of the SDK can reveal that identifier in the debugger.
+- It has a unique identifier on the server. The Flutter `PowerAuthToken.tokenIdentifier` property exposes it for diagnostics, but application logic should normally use the symbolic token name.
 - It has a symbolic name (e.g., "MyToken") defined by the application programmer to identify already created tokens.
 - It can generate timestamp-based authorization HTTP headers.
 - It can be used concurrently. Token's private data doesn't change in time.
@@ -32,6 +32,17 @@ try {
 ```
 
 The token can be locally cached on the device. You can test this situation by calling `await powerAuth.tokenStore.hasLocalToken("MyToken")`.
+
+To retrieve only an existing local token without creating it or making a server request, use:
+
+```dart
+if (await powerAuth.tokenStore.hasLocalToken("MyToken")) {
+    final token = await powerAuth.tokenStore.getLocalToken("MyToken");
+    print("Local token: ${token.tokenName}");
+}
+```
+
+`getLocalToken()` throws `PowerAuthErrorCode.localTokenNotAvailable` when the token is not present. Use `hasLocalToken()` first when absence is an expected state.
 
 ## Generating Authorization Header
 

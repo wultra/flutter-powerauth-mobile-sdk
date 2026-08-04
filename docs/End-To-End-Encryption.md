@@ -1,102 +1,82 @@
 # End-To-End Encryption
 
-The PowerAuth SDK supports two basic modes of end-to-end encryption, based on the ECIES scheme:
+PowerAuth SDK supports two end-to-end encryption scopes:
 
-- In an "application" scope, the encryptor can be acquired and used during the whole lifetime of the application.
-- In an "activation" scope, the encryptor can be acquired only if the `PowerAuth` instance has a valid activation. The encryptor created for this mode is cryptographically bound to the parameters agreed upon during the activation process. You can combine this encryption with [PowerAuth Symmetric Multi-Factor Signature](Data-Signing.md#symmetric-multi-factor-signature) in "encrypt-then-sign" mode.
+- In the **application** scope, encryption is available without an activation.
+- In the **activation** scope, encryption requires a valid activation. You can combine this scope with a [PowerAuth Symmetric Multi-Factor Authentication Code](Data-Signing.md#symmetric-multi-factor-authentication-code) in encrypt-then-sign mode.
 
-For both scenarios, you need to acquire the `PowerAuthEncryptor` object, which will then provide an interface for the request encryption and the response decryption.
+Use one `PowerAuthEncryptor` for one request and response exchange. The same object encrypts the request and decrypts its response.
 
-The following steps are typically required for a full E2EE request and response processing:
+The following example shows a complete exchange:
 
-1. Acquire the right encryptor from the `PowerAuth` instance. For example:
-   ```dart
-   // Encryptor for "application" scope.
-   final encryptor = powerAuth.getEncryptorForApplicationScope();
-   // ...or similar, for an "activation" scope.
-   final encryptor = powerAuth.getEncryptorForActivationScope();
-   ```
+```dart
+// Use getEncryptorForApplicationScope() if the endpoint does not require an activation.
+final encryptor = await powerAuth.getEncryptorForActivationScope();
 
-1. Encode the plaintext body into a format that best fits your purpose. You can use plain string or Base64 encoded data:
-   ```dart
-   String requestData;
-   PowerAuthDataFormat requestDataFormat;
-   if (binaryData) {
-       // If you need to encrypt the binary data, such as an image, then you can encode it as BASE64
-       requestDataFormat = PowerAuthDataFormat.base64;
-       requestData = 'iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
-   } else {
-       // Regular JSON request can be encrypted as a plain string
-       requestDataFormat = PowerAuthDataFormat.utf8;
-       requestData = jsonEncode({
-          "message": "Hello World!",
-          "code": "HELLO"
-       });
-   }
-   ```
+try {
+    // Serialize the request payload to bytes.
+    final requestBody = Uint8List.fromList(
+        utf8.encode(jsonEncode({
+            "message": "Hello World!",
+            "code": "HELLO",
+        })),
+    );
 
-1. Encrypt the plaintext request data:
-   ```dart
-   // 2nd parameter is optional, if not provided, then 'UTF8' is applied.
-   final encryptedData = await encryptor.encryptRequest(requestData, requestDataFormat);
-   // Keep decryptor object for later to properly decrypt the response from the server.
-   // The decryptor is always unique for each request.
-   final decryptor = encryptedData.decryptor;
-   // Cryptogram contains encrypted data
-   final cryptogram = encryptedData.cryptogram;
-   // Content of HTTP header
-   final header = encryptedData.header;
-   ```
+    // Encrypt the request.
+    final encryptedRequest = await encryptor.encryptRequest(requestBody);
 
-1. Construct and execute the HTTP request:
-   ```dart
-   // Headers
-   final headers = { header.name: header.value };
-   // Request body
-   // This may depend on the endpoint, but the cryptogram is typically serialized as-is, or it's embedded
-   // in another structure, such as:
-   // {
-   //     requestObject: cryptogram
-   // }
-   final body = jsonEncode(encryptedData.cryptogram.toMap());
-   // Fetch data
-   final configuration = await sdk.configuration;
-   final url = Uri.parse("${configuration.baseEndpointUrl}/$endpoint");
-   final response = await http.post(url, headers: headers, body: body);
-   // The response object is typically also PowerAuthCryptogram
-   final responseObject = jsonDecode(response.body) as Map<String, dynamic>;
-   ```
+    // Add all encryption headers to the HTTP request.
+    final headers = <String, String>{
+        for (final header in encryptedRequest.requestHeaders)
+            header.name: header.value,
+    };
 
-1. Now, decrypt the response. Depending on what type of data you expect, you can specify `ut8` or `base64` output data format:
-   ```dart
-   final responseDataFormat = PowerAuthDataFormat.utf8;
-   // 2nd parameter is optional, if not provided, then 'utf8' is applied.
-   final decryptedData = await decryptor.decryptResponse(PowerAuthCryptogram.fromMap(response), responseDataFormat);
-   final decryptedObject = jsonDecode(decryptedData);
-   ```
+    final configuration = await powerAuth.configuration;
+    final url = Uri.parse("${configuration.baseEndpointUrl}/$endpoint");
+    final response = await http.post(
+        url,
+        headers: headers,
+        body: encryptedRequest.requestBody,
+    );
 
-## Sign encrypted request
+    // Decrypt the raw response body with the same encryptor.
+    final clearResponse = await encryptor.decryptResponse(response.bodyBytes);
+    final responseObject = jsonDecode(utf8.decode(clearResponse));
+} finally {
+    await encryptor.release();
+}
+```
 
-If the endpoint require also [PowerAuth Signature](Data-Signing.md#symmetric-multi-factor-signature), then you have to encrypt your request data first, construct the request body with using the cryptogram and then sign the whole body. In this case, the encryption header can be omitted because the header from the signature calculation already contains enough information to process the request on the server.
+Acquire a new encryptor for each exchange. After `encryptRequest()`, the object cannot encrypt another request. After `decryptResponse()`, the object is no longer valid.
 
-## Native object lifetime
+If the server returns a non-success HTTP status, process the PowerAuth REST error response. Do not pass an unencrypted error response to `decryptResponse()`.
 
-Both `PowerAuthEncryptor` and `PowerAuthDecryptor` implementations use underlying native objects with a limited lifetime behind the scenes. The following rules are applied:
+Implementing application-specific end-to-end encryption is a non-trivial task. Contact Wultra before deployment if you need guidance for your scenario.
 
-- `PowerAuthEncryptor`
-  - Releases its internal native object after 5 minutes of inactivity. If used again, then the native object is re-created automatically.
-  - The object is released when its parent `PowerAuth` instance is deconfigured. After this, encryption is no longer available.
-  - If the encryptor is activation-scoped and the parent `PowerAuth` instance has no activation, then encryption is not available.
-  - You can use the `canEncryptRequest()` function to test whether the encryption is available.
+## Sign an Encrypted Request
 
-- `PowerAuthDecryptor`
-  - Decryption is always one-time operation, so by callling `decryptResponse()` is underlying native object released.
-  - The object is released when its parent `PowerAuth` instance is deconfigured.
-  - If the decryptor is activation-scoped and the parent `PowerAuth` instance has no activation, then decryption is not available.
-  - Releases its internal native object after 5 minutes of inactivity.
-  - You can use the `canDecryptResponse()` function to test whether the decryption is available.
+To use encrypt-then-sign mode, first encrypt the request body. Then calculate the authentication header from `encryptedRequest.requestBody`:
 
-Both objects provide a `release()` function to release the underlying native object manually.
+```dart
+final authenticationHeader =
+    await powerAuth.authenticationHeaderForRequestWithBody(
+        authentication,
+        "POST",
+        uriId,
+        encryptedRequest.requestBody,
+    );
+```
+
+For an activation-scoped encryptor, the authentication header contains the information that the server needs to decrypt the request. In this case, you do not need to add `encryptedRequest.requestHeaders`.
+
+## Native Object Lifetime
+
+The encryptor owns a native object. Apply these rules:
+
+- Call `release()` in a `finally` block.
+- Repeated calls to `release()` are safe.
+- Deconfiguration of the parent `PowerAuth` instance invalidates the encryptor.
+- A released or consumed encryptor reports `PowerAuthErrorCode.invalidNativeObject` if you use it again.
 
 ## Read Next
 
