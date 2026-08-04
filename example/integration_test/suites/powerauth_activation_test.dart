@@ -323,10 +323,8 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
-      skip:
-          Platform.isIOS
-              ? 'Blocked by an offline-signature bug in the native iOS SDK.'
-              : false,
+      // Blocked by an offline-signature bug in the native iOS SDK.
+      skip: Platform.isIOS,
     );
 
     test(
@@ -345,10 +343,8 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
-      skip:
-          Platform.isIOS
-              ? 'Blocked by an offline-signature bug in the native iOS SDK.'
-              : false,
+      // Blocked by an offline-signature bug in the native iOS SDK.
+      skip: Platform.isIOS,
     );
 
     test('testFetchActivationStatus', () async {
