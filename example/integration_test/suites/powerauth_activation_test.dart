@@ -164,10 +164,6 @@ main() {
     }
 
     Future<void> expectOfflineSignatureRejectedWithoutValidActivation() async {
-      // TODO: this tests doesnt work now on ios due to a bug in native sdk
-      if (Platform.isIOS) {
-        return;
-      }
       await expectLater(
         sdk
             .offlineSignature(
@@ -327,6 +323,10 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
+      skip:
+          Platform.isIOS
+              ? 'Blocked by an offline-signature bug in the native iOS SDK.'
+              : false,
     );
 
     test(
@@ -345,6 +345,10 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
+      skip:
+          Platform.isIOS
+              ? 'Blocked by an offline-signature bug in the native iOS SDK.'
+              : false,
     );
 
     test('testFetchActivationStatus', () async {

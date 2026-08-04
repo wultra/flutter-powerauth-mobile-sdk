@@ -15,6 +15,7 @@
  */
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import '../utils/integration_helper.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +40,13 @@ main() {
     });
 
     tearDown(() async {
+      await NativeObjectRegisterPlatform.instance.debugCommand(
+        NativeObjectCmd.releaseAll,
+        NativeObjectCmdData(
+          objectTag: tag,
+          objectType: NativeObjectType.data,
+        ),
+      );
       await NativeObjectRegister.setCleanupPeriod(10000);
       await helper.cleanup();
     });

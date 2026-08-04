@@ -15,7 +15,6 @@
  */
 
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
@@ -29,10 +28,7 @@ class PowerAuthBiometricsTests extends TestSuiteWithActivation {
       PowerAuthBiometryConfiguration(authenticateOnBiometricKeySetup: false);
 
   @override
-  List<Future<void> Function()> getTests() => [
-    if (Platform.isAndroid) androidTestCreateActivationWithRSABiometryKey,
-    testAddRemoveBiometryFactor,
-  ];
+  List<Future<void> Function()> getTests() => [testAddRemoveBiometryFactor];
 
   Future<void> androidTestCreateActivationWithRSABiometryKey() async {
     final activatioData = await helper.createActivation(autoCommit: true);

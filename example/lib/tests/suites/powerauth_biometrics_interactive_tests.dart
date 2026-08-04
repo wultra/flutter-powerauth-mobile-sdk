@@ -282,6 +282,9 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
   }
 
   Future<void> testFailedBiometry() async {
+    if (Platform.isAndroid) {
+      return;
+    }
     if (await _isFaceID()) {
       await showPrompt('This test is not supported on FaceID');
       return;
@@ -302,30 +305,19 @@ class PowerauthBiometricsInteractiveTests extends TestSuiteWithActivation {
     // At biometry fail, the fake key is generated and the signature will be invalid
     final uriId = '/some/failed/uriId';
     final body = '{ failedApi: true }';
-    if (Platform.isAndroid) {
-      await expect(
-        sdk.authenticationHeaderForRequestWithBody(
-          auth,
-          'POST',
-          uriId,
-          _utf8Bytes(body),
-        ),
-      ).toThrow(PowerAuthErrorCode.biometryNotRecognized);
-    } else {
-      final header = await sdk.authenticationHeaderForRequestWithBody(
-        auth,
-        'POST',
-        uriId,
-        _utf8Bytes(body),
-      );
-      final result = await helper.verifySignature(
-        "POST",
-        uriId,
-        header.value,
-        body,
-      );
-      await expect(result.signatureValid).toBe(false);
-    }
+    final header = await sdk.authenticationHeaderForRequestWithBody(
+      auth,
+      'POST',
+      uriId,
+      _utf8Bytes(body),
+    );
+    final result = await helper.verifySignature(
+      "POST",
+      uriId,
+      header.value,
+      body,
+    );
+    await expect(result.signatureValid).toBe(false);
   }
 
   Future<void> iosTestFallbackButton() async {

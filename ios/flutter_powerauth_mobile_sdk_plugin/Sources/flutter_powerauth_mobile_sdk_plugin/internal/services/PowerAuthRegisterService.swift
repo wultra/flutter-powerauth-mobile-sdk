@@ -87,7 +87,6 @@ internal class PowerAuthRegisterService: PowerAuthFlutterService {
         
         let objectId = options["objectId"] as? String
         let objectTag = options["objectTag"] as? String
-
         guard let ot = options["objectType"] as? String, let objectType = NativeObjectType(rawValue: ot) else {
             throw PluginException(.wrongParameter, message: "Unknown object type parameter")
         }

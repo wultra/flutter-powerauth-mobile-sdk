@@ -355,6 +355,7 @@ class IntegrationHelper {
         response = await _sendHttpRequest(
           url,
           (client) => client.get(url, headers: headers),
+          retry: true,
         );
         break;
       case HtptMethod.put:
@@ -387,29 +388,31 @@ class IntegrationHelper {
 
   Future<http.Response> _sendHttpRequest(
     Uri url,
-    Future<http.Response> Function(http.Client client) send,
-  ) async {
-    for (var attempt = 1; attempt <= _httpRequestAttempts; attempt++) {
+    Future<http.Response> Function(http.Client client) send, {
+    bool retry = false,
+  }) async {
+    final attempts = retry ? _httpRequestAttempts : 1;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
       final client = http.Client();
       try {
         final response = await send(client).timeout(_httpRequestTimeout);
         if (!_isTransientHttpStatus(response.statusCode) ||
-            attempt == _httpRequestAttempts) {
+            attempt == attempts) {
           return response;
         }
         print(
           'HTTP $url returned ${response.statusCode} '
-          '(attempt $attempt/$_httpRequestAttempts); retrying.',
+          '(attempt $attempt/$attempts); retrying.',
         );
       } catch (error) {
         final isTransient =
             error is TimeoutException || error is http.ClientException;
-        if (!isTransient || attempt == _httpRequestAttempts) {
+        if (!isTransient || attempt == attempts) {
           rethrow;
         }
         print(
           'HTTP $url failed with $error '
-          '(attempt $attempt/$_httpRequestAttempts); retrying.',
+          '(attempt $attempt/$attempts); retrying.',
         );
       } finally {
         client.close();
