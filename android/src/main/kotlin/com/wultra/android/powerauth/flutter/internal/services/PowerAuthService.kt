@@ -42,6 +42,7 @@ import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.httpHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.biometricStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.buildBiometricPrompt
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.validateFragmentActivity
@@ -49,7 +50,6 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthBiometricConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.algorithmToString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.biometryConfigurationToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.clientConfigurationToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
