@@ -15,6 +15,29 @@
  */
 
 import PowerAuth2
+import LocalAuthentication
+
+internal enum PowerAuthBiometryUtils {
+
+    static func authenticationContext(from prompt: FlutterMap?) throws -> LAContext {
+        guard
+            let promptMessage = prompt?["promptMessage"] as? String,
+            !promptMessage.isEmpty
+        else {
+            throw PluginException(
+                .wrongParameter,
+                message: "Missing 'promptMessage' in prompt parameter"
+            )
+        }
+
+        let context = LAContext()
+        context.localizedReason = promptMessage
+        context.localizedCancelTitle = prompt?["cancelButtonTitle"] as? String
+        // An empty title hides the fallback button.
+        context.localizedFallbackTitle = prompt?["fallbackButtonTitle"] as? String ?? ""
+        return context
+    }
+}
 
 internal extension PowerAuthBiometricStatus {
 

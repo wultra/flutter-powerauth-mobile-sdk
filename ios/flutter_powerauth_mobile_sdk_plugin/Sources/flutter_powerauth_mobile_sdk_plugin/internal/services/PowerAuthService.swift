@@ -17,7 +17,6 @@
 import Flutter
 import UIKit
 import PowerAuth2
-import LocalAuthentication
 
 internal class PowerAuthService: PowerAuthFlutterService {
     
@@ -344,15 +343,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     guard let status else {
                         throw PluginException(.unknownError, message: "PowerAuth SDK returned neither an activation status nor an error.")
                     }
-                    let response: [String: Any?] = [
-                        "state": status.state.serializable,
-                        "failCount": status.failCount,
-                        "maxFailCount": status.maxFailCount,
-                        "remainingAttempts": status.remainingAttempts,
-                        "customObject": status.customObject
-                    ]
-                    
-                    result(response)
+                    result(status.serializable)
                 }
             }
         }
@@ -470,11 +461,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                         throw PluginException(.unknownError, message: "PowerAuth SDK returned neither an activation result nor an error.")
                     }
                     
-                    result([
-                        "activationFingerprint": activationResult.activationFingerprint,
-                        "customAttributes": activationResult.customAttributes as? Any,
-                        "userInfoClaims": activationResult.userInfo?.allClaims as? Any
-                    ])
+                    result(activationResult.serializable)
                 }
             }
         }
@@ -785,17 +772,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, wrap in
             let prompt: FlutterMap? = call.getParameter(Args.prompt)
             let isReusable = call.getParameter(Args.isReusable) ?? false
-            
-            guard let promptMessage = prompt?["promptMessage"] as? String, !promptMessage.isEmpty else {
-                throw PluginException(.wrongParameter, message: "Missing 'promptMessage' in prompt parameter")
-            }
-            
-            let cancelButton = prompt?["cancelButtonTitle"] as? String
-            let fallbackButton = prompt?["fallbackButtonTitle"] as? String
-            let context = LAContext()
-            context.localizedReason = promptMessage
-            context.localizedCancelTitle = cancelButton
-            context.localizedFallbackTitle = fallbackButton ?? "" // empty string hides the button
+            let context = try PowerAuthBiometryUtils.authenticationContext(from: prompt)
             let instanceId: String = try call.requireParameter(Args.instanceId)
             // The native task is intentionally not exposed because the Dart API has no cancel handle.
             _ = sdk.authenticateUsingBiometry(withContext: context) { authentication, error in

@@ -16,6 +16,30 @@
 
 import PowerAuth2
 
+internal extension PowerAuthActivationStatus {
+
+    var serializable: [String: Any?] {
+        [
+            "state": state.serializable,
+            "failCount": failCount,
+            "maxFailCount": maxFailCount,
+            "remainingAttempts": remainingAttempts,
+            "customObject": customObject
+        ]
+    }
+}
+
+internal extension PowerAuthActivationResult {
+
+    var serializable: [String: Any?] {
+        [
+            "activationFingerprint": activationFingerprint,
+            "customAttributes": customAttributes,
+            "userInfoClaims": userInfo?.allClaims
+        ]
+    }
+}
+
 internal extension PowerAuthActivationState {
 
     var serializable: String {
