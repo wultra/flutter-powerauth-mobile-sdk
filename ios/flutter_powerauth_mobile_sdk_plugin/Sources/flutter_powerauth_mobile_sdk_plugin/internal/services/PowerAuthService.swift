@@ -573,7 +573,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, _ in
             let signature = try call.requiredDataParameter(Args.signature)
             let data = try call.requiredDataParameter(Args.data)
-            let key = try signatureKeyId(call)
+            let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
+            let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
             _ = try sdk.verifyDigitalSignature(signature: signature, forData: data, withKey: key)
             result(nil)
         }
@@ -614,7 +615,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
     private func calculateDigitalSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let data = try call.requiredDataParameter(Args.data)
-            let key = try signatureKeyId(call)
+            let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
+            let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
             let auth = try constructAuthentication(call)
             sdk.calculateDigitalSignature(authentication: auth, forData: data, withKey: key) { signature, error in
                 wrap {
@@ -664,11 +666,13 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let signature: String = try call.requireParameter(Args.signature)
             let compact: Bool = try call.requireParameter(Args.compact)
             let strict: Bool = try call.requireParameter(Args.strict)
+            let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
+            let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
             _ = try sdk.verifyJwsSignature(
                 signature: signature,
                 compact: compact,
                 strict: strict,
-                withKey: try signatureKeyId(call)
+                withKey: key
             )
             result(nil)
         }
@@ -679,7 +683,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let data = try call.requiredDataParameter(Args.data)
             let dataType: String? = call.getParameter(Args.dataType)
             let compact: Bool = try call.requireParameter(Args.compact)
-            let key = try signatureKeyId(call)
+            let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
+            let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
             let auth = try constructAuthentication(call)
             sdk.calculateJwsSignature(
                 authentication: auth,
@@ -706,7 +711,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, wrap in
             let distinguishedNames: [String: String] = try call.requireParameter(Args.distinguishedNames)
             let subjectAltNames: [String]? = call.getParameter(Args.subjectAltNames)
-            let key = try signatureKeyId(call)
+            let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
+            let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
             let auth = try constructAuthentication(call)
             sdk.createCertificateSigningRequest(
                 authentication: auth,
@@ -1186,64 +1192,8 @@ private extension PowerAuthClientConfiguration {
     }
 }
 
-private extension PowerAuthActivationState {
-    var serializable: String {
-        return switch (self) {
-        case .pendingCommit: "pendingCommit"
-        case .active: "active"
-        case .blocked: "blocked"
-        case .removed: "removed"
-        case .deadlock: "deadlock"
-        @unknown default: "unknown"
-        }
-    }
-}
-
-private extension PowerAuthBiometricStatus {
-    var serializable: FlutterMap {
-        let status = switch systemStatus {
-        case .available: "ok"
-        case .notSupported: "notSupported"
-        case .notEnrolled: "notEnrolled"
-        case .notAvailable: "notAvailable"
-        case .lockout: "lockout"
-        @unknown default: "notAvailable"
-        }
-        let type = switch biometryType {
-        case .touchID: "fingerprint"
-        case .faceID: "face"
-        case .none: "none"
-        @unknown default: "none"
-        }
-        return [
-            "isAuthenticationWithBiometricsAvailable": isAuthenticationWithBiometricsAvailable,
-            "isBiometricFactorConfigured": isBiometricFactorConfigured,
-            "systemStatus": status,
-            "biometryType": type
-        ]
-    }
-}
-
 private func copySecureData(_ secureData: PowerAuthSecureData) -> Data {
     return secureData.sensitiveData.withUnsafeBytes { Data($0) }
-}
-
-private func signatureKeyId(_ call: FlutterMethodCall) throws -> PowerAuthSignatureKeyId {
-    let value: String = try call.requireParameter(PowerAuthService.Args.signatureKeyId)
-    switch value {
-    case "master": return .master
-    case "masterEc": return .master_EC
-    case "masterMlDsa": return .master_ML_DSA
-    case "server": return .server
-    case "serverEc": return .server_EC
-    case "serverMlDsa": return .server_ML_DSA
-    case "device": return .device
-    case "deviceEc": return .device_EC
-    case "deviceMlDsa": return .device_ML_DSA
-    case "macPersonalized": return .macPersonalized
-    default:
-        throw PluginException(.wrongParameter, message: "Unknown signature key identifier: \(value)")
-    }
 }
 
 private extension TimeInterval {
