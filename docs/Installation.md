@@ -16,51 +16,43 @@ The library is available for the following __Flutter 3.44.0+ and Dart 3.12.0+__ 
 
 ### 2. Add Dependency
 
-For a released version, add the package from pub.dev:
+Add the package from pub.dev:
 
 ```bash
 flutter pub add flutter_powerauth_mobile_sdk_plugin
-```
-
-This documentation describes the upcoming 2.0 API. After version 2.0 is published, the equivalent explicit constraint is:
-
-```yaml
-dependencies:
-  flutter_powerauth_mobile_sdk_plugin: ^2.0.0
-```
-
-While testing the unreleased development version, reference the required Git revision explicitly instead of using the unpublished version constraint:
-
-```yaml
-dependencies:
-  flutter_powerauth_mobile_sdk_plugin:
-    git:
-      url: https://github.com/wultra/flutter-powerauth-mobile-sdk.git
-      ref: develop
-```
-
-Pin a commit or release tag for reproducible application builds. Then run:
-
-```bash
-flutter pub get
 ```
 
 ### 3. Configure Native Platforms
 
 #### Android
 
-In `android/app/build.gradle`, make sure to set the minimum SDK version:
+Set the minimum SDK version to 23 and enable Java 17. New Flutter projects use Kotlin DSL in `android/app/build.gradle.kts`:
 
-```gradle
-minSdkVersion 23
+```kotlin
+android {
+    defaultConfig {
+        minSdk = 23
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
 ```
 
-Also, make sure to enable Java 17:
+For a project that still uses Groovy in `android/app/build.gradle`, use:
 
 ```gradle
-compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+android {
+    defaultConfig {
+        minSdkVersion 23
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 ```
 
@@ -81,6 +73,15 @@ cd ..
 ```
 
 Flutter projects configured to use Swift Package Manager consume the plugin's package integration automatically; do not add the native `PowerAuth2` package separately.
+
+If the application uses Face ID for biometric authentication, add a user-facing usage description to `ios/Runner/Info.plist`:
+
+```xml
+<key>NSFaceIDUsageDescription</key>
+<string>Use Face ID to authenticate.</string>
+```
+
+Replace the example text with a description appropriate for your application. iOS requires this key before an application can access Face ID.
 
 ### 4. Initialize PowerAuth in Dart
 

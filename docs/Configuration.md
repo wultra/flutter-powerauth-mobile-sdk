@@ -33,9 +33,7 @@ Future<void> initPowerauth() async {
                 baseEndpointUrl: "https://<your-domain>/enrollment-server",
             );
             await powerAuth.configure(configuration: configuration);
-            
             // powerAuth object configured
-              
         } on PowerAuthException catch (configError) {
             print("PowerAuth configuration failed (Code: ${configError.code}, msg: ${configError.message}). ");
         } catch (configError) {
@@ -206,7 +204,8 @@ await powerAuth.deconfigure();
 If configuration fails with `PowerAuthErrorCode.invalidActivationData`, the local activation data has an incompatible format. Call `cleanupInstanceData()` with the same main, keychain, and sharing configurations. Then configure the instance again.
 
 ```dart
-await powerAuth.cleanupInstanceData(
+await PowerAuth.cleanupInstanceData(
+    instanceId: powerAuth.instanceId,
     configuration: configuration,
     keychainConfiguration: keychainConfiguration,
     sharingConfiguration: sharingConfiguration,
