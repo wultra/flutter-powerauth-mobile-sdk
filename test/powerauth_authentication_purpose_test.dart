@@ -184,7 +184,7 @@ void main() {
         throwsA(
           isA<PowerAuthException>().having(
             (error) => error.code,
-            'code',   
+            'code',
             PowerAuthErrorCode.invalidNativeObject,
           ),
         ),

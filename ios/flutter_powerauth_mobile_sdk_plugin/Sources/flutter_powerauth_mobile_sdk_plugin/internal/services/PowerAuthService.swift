@@ -278,6 +278,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
 
     private func deconfigure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
+        // Remove the SDK and all child handles sharing its tag.
         register.removeAll(tag: instanceId)
         result(nil)
     }
@@ -473,10 +474,12 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             sdk.persistActivation(with: auth) { error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
                     }
+                    // Success - activation persisted.
                     result(nil)
                 }
             }
@@ -525,10 +528,12 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let newPassword = try self.usePassword(newPasswordMap).copyToImmutable()
             sdk.finishPasswordChange(newPassword: newPassword, changeData: changeData) { error in
                 wrap {
+                    // Keep the immutable password alive until the asynchronous operation ends.
                     _ = newPassword
                     if let error {
                         throw error
                     }
+                    // Consume change data only after a successful change.
                     let _: PowerAuthPasswordChangeData? = self.register.remove(id: changeDataId)
                     result(nil)
                 }
@@ -544,6 +549,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let data = call.optionalDataParameter(Args.body)
             sdk.offlineAuthenticationCode(with: auth, uriId: uriId, body: data, nonce: nonce) { code, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -608,6 +614,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             sdk.calculateDigitalSignature(authentication: auth, forData: data, withKey: key) { signature, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -682,6 +689,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 withKey: key
             ) { signature, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -709,6 +717,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 keyIdentifier: key
             ) { csr, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -740,6 +749,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let password = try self.usePassword(passParam).copyToImmutable()
             sdk.addBiometryFactor(password: password) { error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = password
                     if let error {
                         throw error
@@ -760,9 +770,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         try usePowerAuth(call, result) { sdk, wrap in
             sdk.removeBiometryFactor { error in
                 wrap {
-                    if let error {
-                        throw error
-                    }
+                    if let error { throw error }
                     result(nil)
                 }
             }
@@ -787,6 +795,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     guard let customBiometryKey = authentication.customBiometryKey else {
                         throw PluginException(.unknownError, message: "Missing customBiometryKey in authentication")
                     }
+                    // Own the key beyond the temporary callback authentication.
                     let managedData = PowerAuthSecureData(withData: customBiometryKey.sensitiveData)
                     
                     // If reusable authentication is going to be created, then "keep alive" release policy is applied.
@@ -822,6 +831,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             
             sdk.fetchEncryptionKey(auth, index: UInt64(index)) { key, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -849,6 +859,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             sdk.fetchSecureVaultKey(authentication: auth, keyIdentifier: keyIdentifier) { key, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -893,6 +904,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let auth = try constructAuthentication(call)
             sdk.tokenStore.requestAccessToken(withName: tokenName, authentication: auth) { token, error in
                 wrap {
+                    // Keep copied credentials alive until the async call finishes.
                     _ = auth
                     if let error {
                         throw error
@@ -1096,6 +1108,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 guard let biometryKeyData: PowerAuthSecureData = register.use(id: biometryKeyId) else {
                     throw PluginException(.invalidNativeObject, message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
                 }
+                // The source handle may be consumed, so authentication owns a copy.
                 let ownedBiometryKey = PowerAuthSecureData(withData: biometryKeyData.sensitiveData)
                 return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: ownedBiometryKey)
             } else {
@@ -1170,6 +1183,7 @@ private extension PowerAuthClientConfiguration {
     }
 }
 
+/// Copies secure native bytes into data transferable through Flutter.
 private func copySecureData(_ secureData: PowerAuthSecureData) -> Data {
     return secureData.sensitiveData.withUnsafeBytes { Data($0) }
 }

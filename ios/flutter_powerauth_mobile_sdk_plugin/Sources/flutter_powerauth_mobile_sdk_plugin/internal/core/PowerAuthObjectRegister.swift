@@ -193,8 +193,7 @@ internal class PowerAuthObjectRegister {
         
         switch action {
         case .none: break
-        case .use:
-            managedObject.setUsed()
+        case .use: managedObject.setUsed()
         case .touch: managedObject.touch()
         case .remove: register.removeValue(forKey: id)
         }
