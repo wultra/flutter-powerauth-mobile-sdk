@@ -232,7 +232,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         let configuration: FlutterMap = try call.requireParameter(Args.configuration)
         let paConfig = try buildPowerAuthConfiguration(instanceId: instanceId, arguments: configuration)
         try applySharingConfiguration(call.getParameter(Args.sharingConfiguration), to: paConfig)
-        _ = try PowerAuthSDK.cleanupInstanceData(
+        try PowerAuthSDK.cleanupInstanceData(
             configuration: paConfig,
             keychainConfiguration: nil
         )
@@ -563,7 +563,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let data = try call.requiredDataParameter(Args.data)
             let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
             let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
-            _ = try sdk.verifyDigitalSignature(signature: signature, forData: data, withKey: key)
+            try sdk.verifyDigitalSignature(signature: signature, forData: data, withKey: key)
             result(nil)
         }
     }
@@ -656,7 +656,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let strict: Bool = try call.requireParameter(Args.strict)
             let signatureKeyIdValue: String = try call.requireParameter(Args.signatureKeyId)
             let key = try PowerAuthSignatureUtils.signatureKeyId(from: signatureKeyIdValue)
-            _ = try sdk.verifyJwsSignature(
+            try sdk.verifyJwsSignature(
                 signature: signature,
                 compact: compact,
                 strict: strict,
