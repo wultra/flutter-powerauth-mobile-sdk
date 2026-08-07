@@ -181,22 +181,22 @@ void main() {
       ),
     );
 
-      await expectLater(
-        platform.authenticationHeaderForRequestWithBody(
-          'instance',
-          authentication,
-          'POST',
-          '/operation',
-        ),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (error) => error.code,
-            'code',
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
-      );
-      expect(calls.map((call) => call.method), ['authenticationHeaderForRequestWithBody']);
-    },
-  );
+    final header = await platform.authenticationHeaderForRequestWithBody(
+      'instance',
+      authentication,
+      'POST',
+      '/operation',
+    );
+
+    expect(header.name, 'X-PowerAuth-Authorization');
+    expect(header.value, 'PowerAuth test-signature');
+    expect(calls.map((call) => call.method), [
+      'authenticateUsingBiometry',
+      'authenticationHeaderForRequestWithBody',
+    ]);
+    expect(
+      (calls.last.arguments as Map)['authentication'],
+      containsPair('biometryKeyId', 'biometry-key-id'),
+    );
+  });
 }
