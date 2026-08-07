@@ -43,7 +43,7 @@ class PowerAuthProtocolUpgradeResult {
     return PowerAuthProtocolUpgradeResult(
       activationStatusFetchRequired: map['activationStatusFetchRequired'] as bool,
       activationFingerprint: map['activationFingerprint'] as String?,
-      biometryFactorRemoved: map['biometryFactorRemoved'] as bool? ?? false,
+      biometryFactorRemoved: map['biometryFactorRemoved'] as bool,
     );
   }
 }

@@ -18,7 +18,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
-import '../logging/powerauth_logger.dart';
 import '../model/powerauth_authentication_internal.dart';
 import '../model/powerauth_external_pending_operation.dart';
 import 'powerauth_platform_interface.dart';
@@ -244,15 +243,12 @@ class PowerAuthMethodChannel extends PowerAuthPlatform with MethodChannelHelper 
     PowerAuthPassword password, {
     bool upgradeBiometry = false,
   }) async {
-    if (upgradeBiometry && defaultTargetPlatform == TargetPlatform.iOS) {
-      PowerAuthLogger.warning('upgradeBiometry is ignored on iOS because biometry is preserved automatically.');
-    }
     final result = await invokeMethod<Map<dynamic, dynamic>>(
       'startProtocolUpgrade',
       {
         'instanceId': instanceId,
         'password': await password.toRawPasswordMap(),
-        if (defaultTargetPlatform != TargetPlatform.iOS) 'upgradeBiometry': upgradeBiometry,
+        'upgradeBiometry': upgradeBiometry,
       },
     );
     return PowerAuthProtocolUpgradeResult.fromMap(result);

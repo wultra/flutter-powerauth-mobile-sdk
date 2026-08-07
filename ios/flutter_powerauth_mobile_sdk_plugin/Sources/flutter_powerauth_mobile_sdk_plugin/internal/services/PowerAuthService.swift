@@ -367,7 +367,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             let password = try self.usePassword(passwordMap).copyToImmutable()
 
             // Unlike Android, the Apple SDK preserves the biometric factor automatically and
-            // therefore has no upgradeBiometry input or biometryFactorRemoved result.
+            // therefore ignores the upgradeBiometry input.
             sdk.startProtocolUpgrade(password: password) { upgradeResult, error in
                 wrap {
                     // Keep the immutable password captured until the asynchronous operation ends.
@@ -380,7 +380,8 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     }
                     result([
                         "activationStatusFetchRequired": upgradeResult.activationStatusFetchRequired,
-                        "activationFingerprint": upgradeResult.activationFingerprint as Any
+                        "activationFingerprint": upgradeResult.activationFingerprint as Any,
+                        "biometryFactorRemoved": false
                     ])
                 }
             }
