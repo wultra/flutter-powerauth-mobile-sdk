@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/services.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth/powerauth_method_channel.dart';
@@ -43,6 +42,7 @@ void main() {
             'startProtocolUpgrade' => <String, dynamic>{
               'activationStatusFetchRequired': true,
               'activationFingerprint': null,
+              'biometryFactorRemoved': false,
             },
             'calculateDigitalSignature' => Uint8List.fromList([1, 2, 3]),
             'verifyDigitalSignature' => null,
@@ -70,7 +70,6 @@ void main() {
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
-    debugDefaultTargetPlatformOverride = null;
   });
 
   test('maps every supported algorithm and rejects an unknown value', () async {
@@ -127,8 +126,7 @@ void main() {
     });
   });
 
-  test('protocol upgrade sends Android-only biometry flag and decodes result', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+  test('protocol upgrade sends biometry flag and decodes result', () async {
     final password = PowerAuthPassword();
 
     final result = await platform.startProtocolUpgrade(
@@ -148,18 +146,6 @@ void main() {
       'instanceId': 'instance',
       'password': {'objectId': 'password-id', 'destroyOnUse': true},
       'upgradeBiometry': true,
-    });
-
-    calls.clear();
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    await platform.startProtocolUpgrade(
-      'instance',
-      PowerAuthPassword(),
-      upgradeBiometry: true,
-    );
-    expect(calls.last.arguments, {
-      'instanceId': 'instance',
-      'password': {'objectId': 'password-id', 'destroyOnUse': true},
     });
   });
 
