@@ -183,7 +183,7 @@ final biometryType = status.biometryType;
 
 You can use `isAuthenticationWithBiometricsAvailable()` when you only need the combined availability value.
 
-`PowerAuthBiometryConfiguration.linkItemsToCurrentSet` was renamed to `invalidateBiometricFactorAfterChange`. On Android, new biometric factors use HMAC-KDF protection by default. Existing biometric factors continue to work. Do not enable `useLegacySymmetricKey` in production.
+`PowerAuthBiometryConfiguration.linkItemsToCurrentSet` was renamed to `invalidateBiometricFactorAfterChange`. On Android, new biometric factors use HMAC-KDF protection by default. Existing biometric factors continue to work. Enable `useLegacySymmetricKey` only when newly configured biometric factors must remain compatible with the legacy AES-KDF protection from PowerAuth Mobile SDK 1.x.
 
 `PowerAuthBiometricPrompt` also contains the Android-specific `promptSubtitle` property.
 

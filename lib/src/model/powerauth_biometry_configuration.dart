@@ -77,8 +77,10 @@ class PowerAuthBiometryConfiguration {
   /// ### Android specific
   ///
   /// If `true`, the SDK uses the legacy AES-KDF biometric key protection from
-  /// PowerAuth Mobile SDK 1.x instead of HMAC-KDF. This option is intended only
-  /// for testing. The default value is `false`.
+  /// PowerAuth Mobile SDK 1.x instead of HMAC-KDF for newly configured biometric
+  /// factors. Existing biometric factors are unaffected by this setting. Keep
+  /// the default value of `false` unless compatibility with the legacy key
+  /// protection is required.
   final bool useLegacySymmetricKey;
 
   PowerAuthBiometryConfiguration({

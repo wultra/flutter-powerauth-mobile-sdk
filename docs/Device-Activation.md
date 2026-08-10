@@ -17,7 +17,7 @@ final activation = PowerAuthActivation.fromActivationCode(activationCode: activa
 try {
     final result = await powerAuth.createActivation(activation);
     // No error occurred, proceed to credentials entry (PIN prompt, Enable Biometry, ...) and persist the activation
-    // The 'result' contains 'activationFingerprint' property, representing the device public key - it may be used as visual confirmation
+    // The 'result' contains 'activationFingerprint', representing the combination of device and server public keys - it may be used as visual confirmation
 } on PowerAuthException catch (e) {
     // handle powerauth exception
 } catch (e) {
@@ -70,7 +70,7 @@ final activation = PowerAuthActivation.fromIdentityAttributes(
 try {
     final result = await powerAuth.createActivation(activation);
     // No error occurred, proceed to credentials entry (PIN prompt, Enable Biometry, ...) and persist the activation
-    // The 'result' contains 'activationFingerprint' property, representing the device public key - it may be used as visual confirmation
+    // The 'result' contains 'activationFingerprint', representing the combination of device and server public keys - it may be used as visual confirmation
 } on PowerAuthException catch (e) {
     // handle powerauth exception
 } catch (e) {

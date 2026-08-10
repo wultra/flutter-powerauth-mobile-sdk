@@ -19,7 +19,6 @@ import 'package:flutter/services.dart';
 
 import '../../flutter_powerauth_mobile_sdk_plugin.dart';
 import '../model/powerauth_authentication_internal.dart';
-import '../model/powerauth_external_pending_operation.dart';
 import 'powerauth_platform_interface.dart';
 
 import '../utils/method_channel_helper.dart';

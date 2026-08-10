@@ -14,7 +14,7 @@ await powerAuth.removeActivationLocal();
 
 ## Removal via Signed Request
 
-PowerAuth Standard RESTful API has a default endpoint `/pa/v3/activation/remove` for activation removal. This endpoint uses a signature verification for looking up the activation to be removed. The benefit of this method is that it is already present in both PowerAuth Flutter SDK and PowerAuth Standard RESTful API - nothing has to be programmed. Also, the user does not have to be logged in to use it. However, the user has to authenticate using 2FA with either a password or biometrics.
+PowerAuth Standard RESTful API has a dedicated endpoint for activation removal. This endpoint uses authentication code verification to look up the activation to be removed. The benefit of this method is that it is already present in both PowerAuth Flutter SDK and PowerAuth Standard RESTful API - nothing has to be programmed. Also, the user does not have to be logged in to use it. By default, authenticate using 2FA with either a password or biometrics.
 
 Use the following code for an activation removal using a signed request:
 
@@ -28,6 +28,10 @@ try {
     // failed to remove
 }
 ```
+
+<!-- begin box info -->
+Depending on server support and configuration, it is possible to remove the activation with 1FA authentication, for example by using `PowerAuthAuthentication.possession()`.
+<!-- end -->
 
 <!--## Removal via Authenticated Session
 
@@ -53,4 +57,3 @@ httpClient.post(null, "/custom/activation/remove", async (error) => {
 ## Read Next
 
 - [End-To-End Encryption](End-To-End-Encryption.md)
-

@@ -94,7 +94,7 @@ In case you need an advanced configuration, you can import and use the following
   - `confirmBiometricAuthentication` - Android specific, if set to `true`, then the user's confirmation will be required after the successful biometric authentication. The default value is `false`.
   - `authenticateOnBiometricKeySetup` - Android specific, if set to `true`, then the biometric key setup always requires a biometric authentication. See note<sup>1</sup> below. The default value is `true`.
   - `fallbackToSharedBiometryKey` - Android specific, defines whether the SDK searches for the shared biometric key from SDK 1.x. The default value is `true`. Set this option to `false` if your application uses multiple `PowerAuth` instances.
-  - `useLegacySymmetricKey` - Android specific, uses the legacy AES-KDF protection for new biometric factors. This option is for testing only. Keep the default value of `false` in production.
+  - `useLegacySymmetricKey` - Android specific, uses the legacy AES-KDF protection from PowerAuth Mobile SDK 1.x instead of HMAC-KDF for newly configured biometric factors. Existing biometric factors are unaffected by this setting. Keep the default value of `false` unless compatibility with the legacy key protection is required.
 
 - `PowerAuthKeychainConfiguration` class configures internal secure data storage on Android:
   - `minimalRequiredKeychainProtection` - defines the minimum keychain protection level that the device must support. The default value is `PowerAuthKeychainProtection.none`. See note<sup>2</sup> below.
