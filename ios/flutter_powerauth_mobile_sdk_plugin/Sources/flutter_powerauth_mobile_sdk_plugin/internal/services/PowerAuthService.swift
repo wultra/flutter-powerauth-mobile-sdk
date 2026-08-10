@@ -129,6 +129,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case appGroup
         case appIdentifier
         case keychainAccessGroup
+        case sharedMemoryIdentifier
         case customHttpHeaders
         case basicHttpAuthentication
         case connectionTimeout
@@ -1155,11 +1156,13 @@ private func applySharingConfiguration(
     guard let arguments else {
         return
     }
-    configuration.sharingConfiguration = PowerAuthSharingConfiguration(
+    let sharingConfiguration = PowerAuthSharingConfiguration(
         appGroup: try arguments.require(PowerAuthService.Args.appGroup),
         appIdentifier: try arguments.require(PowerAuthService.Args.appIdentifier),
         keychainAccessGroup: try arguments.require(PowerAuthService.Args.keychainAccessGroup)
     )
+    sharingConfiguration.sharedMemoryIdentifier = arguments.get(PowerAuthService.Args.sharedMemoryIdentifier)
+    configuration.sharingConfiguration = sharingConfiguration
 }
 
 private extension PowerAuthConfiguration {

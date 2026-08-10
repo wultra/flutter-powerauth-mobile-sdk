@@ -38,10 +38,19 @@ class PowerAuthSharingConfiguration {
   /// applications and extensions to access the same PowerAuth activation data.
   final String keychainAccessGroup;
 
+  /// Optional identifier of memory shared between applications in the app
+  /// group. If omitted, the native PowerAuth SDK derives an identifier from
+  /// the `PowerAuth` instance identifier.
+  ///
+  /// The UTF-8 representation of this string cannot exceed 4 bytes due to an
+  /// operating-system limitation.
+  final String? sharedMemoryIdentifier;
+
   PowerAuthSharingConfiguration({
     required this.appGroup,
     required this.appIdentifier,
     required this.keychainAccessGroup,
+    this.sharedMemoryIdentifier,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +58,7 @@ class PowerAuthSharingConfiguration {
       'appGroup': appGroup,
       'appIdentifier': appIdentifier,
       'keychainAccessGroup': keychainAccessGroup,
+      'sharedMemoryIdentifier': sharedMemoryIdentifier,
     };
   }
 
@@ -57,6 +67,7 @@ class PowerAuthSharingConfiguration {
       appGroup: map['appGroup'] as String,
       appIdentifier: map['appIdentifier'] as String,
       keychainAccessGroup: map['keychainAccessGroup'] as String,
+      sharedMemoryIdentifier: map['sharedMemoryIdentifier'] as String?,
     );
   }
 }
