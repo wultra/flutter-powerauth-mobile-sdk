@@ -47,16 +47,14 @@ class PowerAuthServiceRegistry private constructor(appContext: Context) {
 
     companion object {
         @Volatile
-        private var INSTANCE: PowerAuthServiceRegistry? = null
+        private var instance: PowerAuthServiceRegistry? = null
 
         @Volatile
         private var attachmentCount = 0
 
         @JvmStatic
-        fun getInstance(appContext: Context): PowerAuthServiceRegistry {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: PowerAuthServiceRegistry(appContext).also { INSTANCE = it }
-            }
+        fun getInstance(appContext: Context): PowerAuthServiceRegistry = instance ?: synchronized(this) {
+            instance ?: PowerAuthServiceRegistry(appContext).also { instance = it }
         }
 
         @JvmStatic
@@ -74,11 +72,11 @@ class PowerAuthServiceRegistry private constructor(appContext: Context) {
                 // If no more plugins / engines are attached, we can clean up.
                 // TODO: do we want to keep the singleton instance for potential re-init?
                 if (attachmentCount == 0) {
-                    INSTANCE?.let { instance ->
-                        instance.services.forEach {
+                    instance?.let { registry ->
+                        registry.services.forEach {
                             it.value.cleanUp()
                         }
-                        instance.objectRegister.cleanup()
+                        registry.objectRegister.cleanup()
                     }
                 }
             }

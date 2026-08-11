@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 
 internal typealias WrapThrowBlock = (() throws -> Void) -> Void
 
 internal typealias FlutterMap = [String: Any]
 
 internal extension FlutterMap {
-    
+
     func get<T>(_ key: any RawRepresentable<String>) -> T? {
         return get(key.rawValue)
     }
-    
+
     func get<T>(_ key: any RawRepresentable<String>, defaultValue: T) -> T {
         return get(key.rawValue) ?? defaultValue
     }
-    
+
     func require<T>(_ key: any RawRepresentable<String>) throws -> T {
         return try require(key.rawValue)
     }
-    
+
     fileprivate func get<T>(_ key: String) -> T? {
         return self[key] as? T
     }
-    
+
     fileprivate func require<T>(_ key: String) throws -> T {
         guard let parameter: T = get(key) else {
             throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
@@ -48,39 +48,39 @@ internal extension FlutterMap {
 }
 
 internal extension FlutterMethodCall {
-    
+
     func requireParameter<T>(_ key: any RawRepresentable<String>) throws -> T {
         return try requireParameter(key.rawValue)
     }
-    
+
     func getParameter<T>(_ key: any RawRepresentable<String>) -> T? {
         getParameter(key.rawValue)
     }
-    
+
     fileprivate func requireParameter<T>(_ key: String) throws -> T {
         guard let parameter: T = getParameter(key) else {
             throw PluginException(.wrongParameter, message: "Failed to retrieve required parameter \(key)")
         }
         return parameter
     }
-    
+
     fileprivate func getParameter<T>(_ key: String) -> T? {
         guard let arguments = arguments as? FlutterMap else {
             return nil
         }
-        
+
         return arguments.get(key)
     }
 }
 
 internal class Utils {
     static func getRandomString() -> String {
-        let count = Int(3 * (3 + arc4random_uniform(6)))
+        let count = 3 * Int.random(in: 3...8)
         let data = NSMutableData(length: count)!
         arc4random_buf(data.mutableBytes, data.length)
         return data.base64EncodedString()
     }
-    
+
     /// Wraps a throw block. If exception is thrown, it properly calls the `result` with an error.
     static func wrapThrowBlock(result: @escaping FlutterResult, _ block: () throws -> Void) {
         do {
@@ -94,23 +94,23 @@ internal class Utils {
 internal enum PowerAuthDataFormat: String {
     case utf8
     case base64
-    
+
     static func fromString(_ string: String?) throws -> PowerAuthDataFormat {
-        
+
         guard let string else {
             return .utf8
         }
-        
-        guard let format =  PowerAuthDataFormat(rawValue: string) else {
+
+        guard let format = PowerAuthDataFormat(rawValue: string) else {
             throw PluginException(.wrongParameter, message: "Unsupported data format '\(string)'")
         }
-        
+
         return format
     }
 }
 
 internal extension Data {
-    
+
     static func decodeDataValue(_ dataValue: String, format: PowerAuthDataFormat) throws -> Data {
         switch format {
         case .utf8:
@@ -125,7 +125,7 @@ internal extension Data {
             return data
         }
     }
-    
+
     static func encodeDataValue(_ dataValue: Data, format: PowerAuthDataFormat) throws -> String {
         switch format {
         case .utf8:
@@ -140,15 +140,15 @@ internal extension Data {
 }
 
 internal class PowerAuthData {
-    
+
     private(set) var data: Data
     private let cleanup: Bool
-    
+
     init(data: Data, cleanup: Bool) {
         self.data = data
         self.cleanup = cleanup
     }
-    
+
     deinit {
         if cleanup {
             let count = data.count

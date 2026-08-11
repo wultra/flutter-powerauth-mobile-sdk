@@ -25,8 +25,8 @@ import '../model/powerauth_encryptor.dart';
 import 'powerauth_encryptor_platform_interface.dart';
 
 /// An implementation of [PowerAuthEncryptorPlatform] that uses method channels.
-class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform with MethodChannelHelper {
-
+class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform
+    with MethodChannelHelper {
   @visibleForTesting
   @override
   final methodChannel = const MethodChannel('powerauth_plugin');
@@ -66,10 +66,11 @@ class MethodChannelPowerAuthEncryptor extends PowerAuthEncryptorPlatform with Me
     String body,
     PowerAuthDataFormat bodyFormat,
   ) async {
-    final result = await invokeMethod<Map>(
-      'encryptor_encryptRequest',
-      {'objectId': objectId, 'body': body, 'bodyFormat': bodyFormat.name},
-    );
+    final result = await invokeMethod<Map>('encryptor_encryptRequest', {
+      'objectId': objectId,
+      'body': body,
+      'bodyFormat': bodyFormat.name,
+    });
 
     return result;
   }

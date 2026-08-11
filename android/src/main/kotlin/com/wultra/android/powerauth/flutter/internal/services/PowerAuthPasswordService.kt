@@ -16,21 +16,20 @@
 
 package com.wultra.android.powerauth.flutter.internal.services
 
+import com.wultra.android.powerauth.flutter.Constants
+import com.wultra.android.powerauth.flutter.Errors
+import com.wultra.android.powerauth.flutter.ManagedAny
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
+import com.wultra.android.powerauth.flutter.ReleasePolicy
+import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.core.Password
-import com.wultra.android.powerauth.flutter.Constants
-import com.wultra.android.powerauth.flutter.Errors
-import com.wultra.android.powerauth.flutter.ManagedAny
-import com.wultra.android.powerauth.flutter.ReleasePolicy
-import com.wultra.android.powerauth.flutter.WrapperException
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
-internal class PowerAuthPasswordService(
-    private val objectRegister: PowerAuthObjectRegister
-) : BasePowerAuthService(objectRegister) {
+internal class PowerAuthPasswordService(private val objectRegister: PowerAuthObjectRegister) :
+    BasePowerAuthService(objectRegister) {
 
     override val name = "password"
 
@@ -70,11 +69,7 @@ internal class PowerAuthPasswordService(
         )
     }
 
-    private fun <T> withPassword(
-        call: MethodCall,
-        result: Result,
-        block: (password: Password) -> T
-    ) {
+    private fun <T> withPassword(call: MethodCall, result: Result, block: (password: Password) -> T) {
         try {
             val objectId: String = call.getRequiredArgument(OBJECT_ID)
             val password = objectRegister.touchObject(objectId, Password::class.java)

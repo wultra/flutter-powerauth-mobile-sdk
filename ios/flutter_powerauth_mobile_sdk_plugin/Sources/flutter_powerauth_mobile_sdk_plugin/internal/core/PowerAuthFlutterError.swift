@@ -53,10 +53,10 @@ internal enum PowerAuthFlutterError: String {
     case invalidNativeObject
     case timeSynchronization
     case externalPendingOperation
-    
+
     static func from(_ code: PowerAuthErrorCode) -> PowerAuthFlutterError {
-        return switch (code) {
-        case .networkError:   .networkError
+        return switch code {
+        case .networkError: .networkError
         case .signatureError: .signatureError
         case .invalidActivationState: .invalidActivationState
         case .invalidActivationData: .invalidActivationData
@@ -76,7 +76,7 @@ internal enum PowerAuthFlutterError: String {
         case .biometryFallback: .biometryFallback
         case .timeSynchronization: .timeSynchronization
         case .externalPendingOperation: .externalPendingOperation
-        case .NA: .unknownError // should not happened - just a fallback
+        case .NA: .unknownError  // should not happened - just a fallback
         @unknown default: .unknownError
         }
     }

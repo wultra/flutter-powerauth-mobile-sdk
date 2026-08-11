@@ -23,7 +23,6 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 /// If the KeyStore supports hardware backed keys, like StrongBox, then also the higher level of
 /// protection is reported.
 enum PowerAuthKeychainProtection {
-
   /// The content of the keychain is not encrypted and therefore not protected. This level of
   /// the protection is typically reported on devices older than Android Marshmallow, or in
   /// case that the device has faulty KeyStore implementation.
@@ -53,7 +52,6 @@ enum PowerAuthKeychainProtection {
 
 /// Represents the keychain settings.
 class PowerAuthKeychainConfiguration {
-
   /// ### iOS specific
   ///
   /// Access group name used by the `PowerAuth` keychain instances. This property
@@ -97,10 +95,14 @@ class PowerAuthKeychainConfiguration {
     return PowerAuthKeychainConfiguration(
       accessGroupName: map['accessGroupName'] as String?,
       userDefaultsSuiteName: map['userDefaultsSuiteName'] as String?,
-      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values.firstWhere(
-        (e) => e.name == (map['minimalRequiredKeychainProtection'] as String?),
-        orElse: () => throw PowerAuthException(code: PowerAuthErrorCode.invalidNativeObject)
-      ),
+      minimalRequiredKeychainProtection: PowerAuthKeychainProtection.values
+          .firstWhere(
+            (e) =>
+                e.name == (map['minimalRequiredKeychainProtection'] as String?),
+            orElse: () => throw PowerAuthException(
+              code: PowerAuthErrorCode.invalidNativeObject,
+            ),
+          ),
     );
   }
 }

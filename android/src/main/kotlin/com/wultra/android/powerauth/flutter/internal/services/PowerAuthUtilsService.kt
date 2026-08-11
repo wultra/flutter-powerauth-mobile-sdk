@@ -138,7 +138,6 @@ internal class PowerAuthUtilsService(private val context: Context) : BasePowerAu
     }
 
     private fun getEnvironmentInfo(@Suppress("UNUSED_PARAMETER") call: MethodCall, result: Result) {
-
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             PackageManager.GET_SIGNING_CERTIFICATES
         } else {
@@ -152,15 +151,17 @@ internal class PowerAuthUtilsService(private val context: Context) : BasePowerAu
             null
         }
 
-        result.success(mapOf(
-            "systemName" to "android",
-            "systemVersion" to Build.VERSION.RELEASE,
-            
-            "applicationVersion" to appInfo?.versionName,
-            "applicationIdentifier" to appInfo?.packageName,
+        result.success(
+            mapOf(
+                "systemName" to "android",
+                "systemVersion" to Build.VERSION.RELEASE,
 
-            "deviceManufacturer" to Build.BRAND,
-            "deviceId" to Build.MODEL,
-        ))
+                "applicationVersion" to appInfo?.versionName,
+                "applicationIdentifier" to appInfo?.packageName,
+
+                "deviceManufacturer" to Build.BRAND,
+                "deviceId" to Build.MODEL
+            )
+        )
     }
 }

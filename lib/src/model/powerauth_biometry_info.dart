@@ -19,7 +19,6 @@ import '../logging/powerauth_logger.dart';
 /// Defines biometry types supported on the system.
 /// In case a device supports multiple biometry types, then [generic] is returned.
 enum PowerAuthBiometryType {
-
   /// There's no biometry support on the device.
   none,
 
@@ -39,7 +38,6 @@ enum PowerAuthBiometryType {
 /// Defines various states of biometric authentication support on the system.
 /// The status may change during the application lifetime, unless it's [notSupported].
 enum PowerAuthBiometryStatus {
-
   /// The biometric authentication can be used right now.
   ok,
 
@@ -58,7 +56,6 @@ enum PowerAuthBiometryStatus {
 
 /// Contains complex information about the type and state of biometry on the device.
 class PowerAuthBiometryInfo {
-
   /// Whether biometric authentication is supported on the system.
   /// Note: On iOS, this is `false` if biometry is not enrolled or locked down.
   /// Use [biometryType] and [canAuthenticate] for more details.
@@ -78,7 +75,7 @@ class PowerAuthBiometryInfo {
 
   factory PowerAuthBiometryInfo.fromMap(Map<dynamic, dynamic> map) {
     PowerAuthBiometryType parseType(String? typeString) {
-      if (typeString == null) { 
+      if (typeString == null) {
         return PowerAuthBiometryType.none;
       }
 
@@ -87,7 +84,9 @@ class PowerAuthBiometryInfo {
           (e) => e.name == typeString,
         );
       } catch (e) {
-        PowerAuthLogger.warning("Unknown PowerAuthBiometryType received: $typeString");
+        PowerAuthLogger.warning(
+          "Unknown PowerAuthBiometryType received: $typeString",
+        );
 
         return PowerAuthBiometryType.none;
       }
@@ -103,7 +102,9 @@ class PowerAuthBiometryInfo {
           (e) => e.name == statusString,
         );
       } catch (e) {
-        PowerAuthLogger.warning("Unknown PowerAuthBiometryStatus received: $statusString");
+        PowerAuthLogger.warning(
+          "Unknown PowerAuthBiometryStatus received: $statusString",
+        );
 
         return PowerAuthBiometryStatus.notSupported;
       }

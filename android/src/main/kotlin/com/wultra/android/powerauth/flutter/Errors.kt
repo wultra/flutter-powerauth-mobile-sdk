@@ -61,30 +61,28 @@ object Errors {
     const val EC_BIOMETRY_LOCKOUT: String = "biometryLockout"
     const val EC_UNKNOWN_ERROR: String = "unknownError"
 
-    fun getErrorCodeFromError(@PowerAuthErrorCodes error: Int): String {
-        return when (error) {
-            PowerAuthErrorCodes.SUCCEED -> EC_SUCCEED
-            PowerAuthErrorCodes.NETWORK_ERROR -> EC_NETWORK_ERROR
-            PowerAuthErrorCodes.SIGNATURE_ERROR -> EC_SIGNATURE_ERROR
-            PowerAuthErrorCodes.INVALID_ACTIVATION_STATE -> EC_INVALID_ACTIVATION_STATE
-            PowerAuthErrorCodes.INVALID_ACTIVATION_DATA -> EC_INVALID_ACTIVATION_DATA
-            PowerAuthErrorCodes.MISSING_ACTIVATION -> EC_MISSING_ACTIVATION
-            PowerAuthErrorCodes.PENDING_ACTIVATION -> EC_PENDING_ACTIVATION
-            PowerAuthErrorCodes.BIOMETRY_CANCEL -> EC_BIOMETRY_CANCEL
-            PowerAuthErrorCodes.OPERATION_CANCELED -> EC_OPERATION_CANCELED
-            PowerAuthErrorCodes.INVALID_ACTIVATION_CODE -> EC_INVALID_ACTIVATION_CODE
-            PowerAuthErrorCodes.INVALID_TOKEN -> EC_INVALID_TOKEN
-            PowerAuthErrorCodes.ENCRYPTION_ERROR -> EC_ENCRYPTION_ERROR
-            PowerAuthErrorCodes.WRONG_PARAMETER -> EC_WRONG_PARAMETER
-            PowerAuthErrorCodes.PROTOCOL_UPGRADE -> EC_PROTOCOL_UPGRADE
-            PowerAuthErrorCodes.PENDING_PROTOCOL_UPGRADE -> EC_PENDING_PROTOCOL_UPGRADE
-            PowerAuthErrorCodes.BIOMETRY_NOT_SUPPORTED -> EC_BIOMETRY_NOT_SUPPORTED
-            PowerAuthErrorCodes.BIOMETRY_NOT_AVAILABLE -> EC_BIOMETRY_NOT_AVAILABLE
-            PowerAuthErrorCodes.BIOMETRY_NOT_RECOGNIZED -> EC_BIOMETRY_NOT_RECOGNIZED
-            PowerAuthErrorCodes.BIOMETRY_LOCKOUT -> EC_BIOMETRY_LOCKOUT
-            PowerAuthErrorCodes.TIME_SYNCHRONIZATION -> EC_TIME_SYNCHRONIZATION
-            else -> EC_UNKNOWN_ERROR
-        }
+    fun getErrorCodeFromError(@PowerAuthErrorCodes error: Int): String = when (error) {
+        PowerAuthErrorCodes.SUCCEED -> EC_SUCCEED
+        PowerAuthErrorCodes.NETWORK_ERROR -> EC_NETWORK_ERROR
+        PowerAuthErrorCodes.SIGNATURE_ERROR -> EC_SIGNATURE_ERROR
+        PowerAuthErrorCodes.INVALID_ACTIVATION_STATE -> EC_INVALID_ACTIVATION_STATE
+        PowerAuthErrorCodes.INVALID_ACTIVATION_DATA -> EC_INVALID_ACTIVATION_DATA
+        PowerAuthErrorCodes.MISSING_ACTIVATION -> EC_MISSING_ACTIVATION
+        PowerAuthErrorCodes.PENDING_ACTIVATION -> EC_PENDING_ACTIVATION
+        PowerAuthErrorCodes.BIOMETRY_CANCEL -> EC_BIOMETRY_CANCEL
+        PowerAuthErrorCodes.OPERATION_CANCELED -> EC_OPERATION_CANCELED
+        PowerAuthErrorCodes.INVALID_ACTIVATION_CODE -> EC_INVALID_ACTIVATION_CODE
+        PowerAuthErrorCodes.INVALID_TOKEN -> EC_INVALID_TOKEN
+        PowerAuthErrorCodes.ENCRYPTION_ERROR -> EC_ENCRYPTION_ERROR
+        PowerAuthErrorCodes.WRONG_PARAMETER -> EC_WRONG_PARAMETER
+        PowerAuthErrorCodes.PROTOCOL_UPGRADE -> EC_PROTOCOL_UPGRADE
+        PowerAuthErrorCodes.PENDING_PROTOCOL_UPGRADE -> EC_PENDING_PROTOCOL_UPGRADE
+        PowerAuthErrorCodes.BIOMETRY_NOT_SUPPORTED -> EC_BIOMETRY_NOT_SUPPORTED
+        PowerAuthErrorCodes.BIOMETRY_NOT_AVAILABLE -> EC_BIOMETRY_NOT_AVAILABLE
+        PowerAuthErrorCodes.BIOMETRY_NOT_RECOGNIZED -> EC_BIOMETRY_NOT_RECOGNIZED
+        PowerAuthErrorCodes.BIOMETRY_LOCKOUT -> EC_BIOMETRY_LOCKOUT
+        PowerAuthErrorCodes.TIME_SYNCHRONIZATION -> EC_TIME_SYNCHRONIZATION
+        else -> EC_UNKNOWN_ERROR
     }
 
     // TODO: this is mostly copy-pase from RN, we might need some more/better translation to Flutter errors
@@ -141,4 +139,4 @@ object Errors {
 
         result.error(code, message, details)
     }
-} 
+}

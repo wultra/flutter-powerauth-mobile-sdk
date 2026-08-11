@@ -16,7 +16,6 @@
 
 /// HTTP header used for end-to-end encryption.
 class PowerAuthEncryptionHttpHeader {
-
   /// Name of the HTTP header
   final String name;
 

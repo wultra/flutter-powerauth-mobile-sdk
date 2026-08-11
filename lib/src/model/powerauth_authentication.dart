@@ -20,7 +20,6 @@ import '../powerauth_password/powerauth_password.dart';
 
 /// Defines strings used to display the platform-specific biometric authentication dialog.
 class PowerAuthBiometricPrompt {
-
   /// Prompt message displayed to the user.
   /// Example: "Please authorize the payment with the biometric sensor"
   final String promptMessage;
@@ -59,7 +58,6 @@ class PowerAuthBiometricPrompt {
 /// Represents a multi-factor authentication object specifying which factors to use for an operation.
 /// Use the factory constructors to create instances for different factor combinations.
 abstract class PowerAuthAuthentication {
-
   /// Password used for the knowledge factor.
   /// Set only if the knowledge factor is required.
   abstract final PowerAuthPassword? password;
@@ -69,33 +67,29 @@ abstract class PowerAuthAuthentication {
 
   /// Creates an authentication object configured for possession factor only.
   factory PowerAuthAuthentication.possession() {
-    return InternalAuth(
-      forActivationPersist: false
-    );
+    return InternalAuth(forActivationPersist: false);
   }
 
   /// Creates an authentication object configured for possession and biometry factors.
-  factory PowerAuthAuthentication.biometry({required PowerAuthBiometricPrompt biometricPrompt}) {
+  factory PowerAuthAuthentication.biometry({
+    required PowerAuthBiometricPrompt biometricPrompt,
+  }) {
     return InternalAuth(
       biometricPrompt: biometricPrompt,
-      forActivationPersist: false
+      forActivationPersist: false,
     );
   }
 
   /// Creates an authentication object configured for possession and knowledge (password) factors.
   factory PowerAuthAuthentication.password(PowerAuthPassword password) {
-    return InternalAuth(
-      password: password,
-      forActivationPersist: false
-    );
+    return InternalAuth(password: password, forActivationPersist: false);
   }
 
   /// Creates an object configured to persist activation with password.
-  factory PowerAuthAuthentication.persistWithPassword(PowerAuthPassword password) {
-    return InternalAuth(
-      password: password,
-      forActivationPersist: true
-    );
+  factory PowerAuthAuthentication.persistWithPassword(
+    PowerAuthPassword password,
+  ) {
+    return InternalAuth(password: password, forActivationPersist: true);
   }
 
   /// Creates an object configured to persist activation with password and biometry.
@@ -113,5 +107,7 @@ abstract class PowerAuthAuthentication {
   }
 
   /// Helper to prepare authentication arguments.
-  Future<Map<String, dynamic>> prepareAuthArguments(Map<String, dynamic> baseArgs);
+  Future<Map<String, dynamic>> prepareAuthArguments(
+    Map<String, dynamic> baseArgs,
+  );
 }

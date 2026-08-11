@@ -19,7 +19,6 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_oidc_par
 /// Contains activation data required for the activation creation.
 /// Use one of the factory constructors to create an instance based on the activation type.
 class PowerAuthActivation {
-
   /// Activation name to be assigned to new activation. Recommended to set to device name.
   final String activationName;
 

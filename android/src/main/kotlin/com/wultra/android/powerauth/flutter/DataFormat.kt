@@ -39,23 +39,22 @@ enum class DataFormat {
      * @throws WrapperException In case of failure.
      */
     @Throws(WrapperException::class)
-    fun decodeBytes(value: String?): ByteArray {
-        return if (value != null) {
-            when (this) {
-                UTF8 -> value.toByteArray(StandardCharsets.UTF_8)
-                BASE64 -> try {
-                    Base64.decode(value, Base64.NO_WRAP)
-                } catch (e: IllegalArgumentException) {
-                    throw WrapperException(
-                        Errors.EC_WRONG_PARAMETER,
-                        "Failed to decode Base64 encoded data.",
-                        e
-                    )
-                }
+    fun decodeBytes(value: String?): ByteArray = if (value != null) {
+        when (this) {
+            UTF8 -> value.toByteArray(StandardCharsets.UTF_8)
+
+            BASE64 -> try {
+                Base64.decode(value, Base64.NO_WRAP)
+            } catch (e: IllegalArgumentException) {
+                throw WrapperException(
+                    Errors.EC_WRONG_PARAMETER,
+                    "Failed to decode Base64 encoded data.",
+                    e
+                )
             }
-        } else {
-            ByteArray(0)
         }
+    } else {
+        ByteArray(0)
     }
 
     /**
@@ -92,16 +91,17 @@ enum class DataFormat {
          * @throws WrapperException In case of uknown format is specified.
          */
         @Throws(WrapperException::class)
-        fun fromString(format: String?): DataFormat {
-            return when (format?.uppercase()) {
-                null -> UTF8
-                "UTF8" -> UTF8
-                "BASE64" -> BASE64
-                else -> throw WrapperException(
-                    Errors.EC_WRONG_PARAMETER,
-                    "Invalid data format specified"
-                )
-            }
+        fun fromString(format: String?): DataFormat = when (format?.uppercase()) {
+            null -> UTF8
+
+            "UTF8" -> UTF8
+
+            "BASE64" -> BASE64
+
+            else -> throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Invalid data format specified"
+            )
         }
     }
-} 
+}

@@ -16,7 +16,6 @@
 
 /// Contains parsed components from a user-provided activation.
 class PowerAuthActivationCode {
-
   /// If created from an activation code, contains the code without the signature part.
   final String activationCode;
 

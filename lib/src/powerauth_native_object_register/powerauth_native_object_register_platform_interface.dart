@@ -24,7 +24,8 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static NativeObjectRegisterPlatform _instance = NativeObjectRegisterMethodChannel();
+  static NativeObjectRegisterPlatform _instance =
+      NativeObjectRegisterMethodChannel();
 
   static NativeObjectRegisterPlatform get instance => _instance;
 
@@ -34,11 +35,11 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
   }
 
   /// Dumps the contents of the internal native object register.
-  /// 
+  ///
   /// This function is available only in DEBUG builds of the library.
-  /// 
+  ///
   /// - [instanceId]: If provided, returns only objects associated with the specified PowerAuth instance identifier.
-  /// 
+  ///
   /// Returns a list of `NativeObjectInfo` objects.
   Future<List<NativeObjectInfo>> debugDump(String? instanceId) {
     throw UnimplementedError('debugDump() has not been implemented.');
@@ -51,14 +52,17 @@ abstract class NativeObjectRegisterPlatform extends PlatformInterface {
   }
 
   /// Provides methods to manipulate the object register.
-  /// 
+  ///
   /// This function is only available in DEBUG builds of the library.
-  /// 
+  ///
   /// - [command]: The command to execute.
   /// - [data]: The data associated with the command.
-  /// 
+  ///
   /// Returns the result of the executed command.
-  Future<NativeObjectCmdResult> debugCommand(NativeObjectCmd command, NativeObjectCmdData data) {
+  Future<NativeObjectCmdResult> debugCommand(
+    NativeObjectCmd command,
+    NativeObjectCmdData data,
+  ) {
     throw UnimplementedError('debugCommand() has not been implemented.');
   }
 }
@@ -71,7 +75,7 @@ enum NativeObjectCmd {
   use,
   find,
   touch,
-  setPeriod
+  setPeriod,
 }
 
 /// Result returned from debugCommand()
@@ -110,5 +114,4 @@ class NativeObjectInfo {
       usageCount: map['usageCount'] as int?,
     );
   }
-
 }

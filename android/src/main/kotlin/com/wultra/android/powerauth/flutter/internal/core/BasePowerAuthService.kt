@@ -25,19 +25,13 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
-abstract class BasePowerAuthService(
-    private val register: PowerAuthObjectRegister?
-) : PowerAuthFlutterService {
+abstract class BasePowerAuthService(private val register: PowerAuthObjectRegister?) : PowerAuthFlutterService {
 
     companion object ArgKeys {
         const val INSTANCE_ID = "instanceId"
     }
 
-    protected fun usePowerAuth(
-        call: MethodCall,
-        result: Result,
-        block: (PowerAuthSDK) -> Unit
-    ) {
+    protected fun usePowerAuth(call: MethodCall, result: Result, block: (PowerAuthSDK) -> Unit) {
         try {
             val instanceId: String = call.getRequiredArgument(INSTANCE_ID)
             val sdkForBlock = register?.useObject(instanceId, PowerAuthSDK::class.java)
@@ -52,11 +46,7 @@ abstract class BasePowerAuthService(
         }
     }
 
-    protected fun usePowerAuthOnMainThread(
-        call: MethodCall,
-        result: Result,
-        block: (sdk: PowerAuthSDK) -> Unit
-    ) {
+    protected fun usePowerAuthOnMainThread(call: MethodCall, result: Result, block: (sdk: PowerAuthSDK) -> Unit) {
         Handler(Looper.getMainLooper()).post {
             usePowerAuth(call, result) { sdk ->
                 block(sdk)
@@ -65,12 +55,10 @@ abstract class BasePowerAuthService(
     }
 
     @Throws(WrapperException::class)
-    fun <T> MethodCall.getRequiredArgument(key: String): T {
-        return this.argument<T>(key) ?: throw WrapperException(
-            Errors.EC_WRONG_PARAMETER,
-            "Missing required argument: '$key'"
-        )
-    }
+    fun <T> MethodCall.getRequiredArgument(key: String): T = this.argument<T>(key) ?: throw WrapperException(
+        Errors.EC_WRONG_PARAMETER,
+        "Missing required argument: '$key'"
+    )
 
     override fun cleanUp() {
         // Default implementation does nothing, but can be overridden by services that need to clean up.

@@ -18,7 +18,9 @@ package com.wultra.android.powerauth.flutter.internal.services
 
 import android.content.Context
 import com.wultra.android.powerauth.flutter.Constants
+import com.wultra.android.powerauth.flutter.DataFormat
 import com.wultra.android.powerauth.flutter.Errors
+import com.wultra.android.powerauth.flutter.IManagedObject
 import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.ReleasePolicy
 import com.wultra.android.powerauth.flutter.WrapperException
@@ -32,8 +34,6 @@ import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
 import io.getlime.security.powerauth.exception.PowerAuthErrorException
 import io.getlime.security.powerauth.networking.response.IGetEciesEncryptorListener
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
-import com.wultra.android.powerauth.flutter.DataFormat
-import com.wultra.android.powerauth.flutter.IManagedObject
 
 private data class PowerAuthFlutterEncryptor(
     val activationScoped: Boolean,
@@ -45,9 +45,7 @@ private data class PowerAuthFlutterEncryptor(
         coreEncryptor.destroy()
     }
 
-    override fun managedInstance(): IManagedObject<Any> {
-        return this
-    }
+    override fun managedInstance(): IManagedObject<Any> = this
 }
 
 internal class PowerAuthEncryptorService(
@@ -96,7 +94,9 @@ internal class PowerAuthEncryptorService(
 
             val isActivationScope = when (scope) {
                 "application" -> false
+
                 "activation" -> true
+
                 else -> throw WrapperException(
                     Errors.EC_WRONG_PARAMETER,
                     "Unknown scope value: $scope"
@@ -253,7 +253,7 @@ internal class PowerAuthEncryptorService(
                 cryptogramMap["mac"] as String?,
                 cryptogramMap["ephemeralPublicKey"] as String?,
                 cryptogramMap["nonce"] as String?,
-                cryptogramMap["timestamp"] as Long,
+                cryptogramMap["timestamp"] as Long
             )
 
             val decryptedData = encryptor.coreEncryptor.decryptResponse(cryptogram)

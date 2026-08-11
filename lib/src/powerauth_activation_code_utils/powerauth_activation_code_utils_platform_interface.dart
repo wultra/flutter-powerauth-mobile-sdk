@@ -67,8 +67,13 @@ abstract class PowerAuthUtilsPlatform extends PlatformInterface {
   /// their app group names. No-op on platforms other than iOS.
   ///
   /// See [PowerAuthUtils.migrateiOSSharingConfiguration] for details.
-  Future<void> migrateiOSSharingConfiguration(String? fromAppGroup, String? toAppGroup) {
-    throw UnimplementedError('migrateiOSSharingConfiguration() has not been implemented.');
+  Future<void> migrateiOSSharingConfiguration(
+    String? fromAppGroup,
+    String? toAppGroup,
+  ) {
+    throw UnimplementedError(
+      'migrateiOSSharingConfiguration() has not been implemented.',
+    );
   }
 
   // TODO: do we want to move this to a dedicated PassphraseMeter module?

@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-import PowerAuthCore
-import PowerAuth2
 import Flutter
 import Foundation
+import PowerAuth2
+import PowerAuthCore
 
 class PowerAuthEncryptorService: PowerAuthFlutterService {
-    
+
     let name = "PowerAuthEncryptorService"
     private let register: PowerAuthObjectRegister
-    
+
     init(register: PowerAuthObjectRegister) {
         self.register = register
     }
-    
+
     let handlers = [
         "encryptor_initialize": initialize,
         "encryptor_release": release,
         "encryptor_canEncryptRequest": canEncryptRequest,
         "encryptor_encryptRequest": encryptRequest,
         "encryptor_canDecryptResponse": canDecryptResponse,
-        "encryptor_decryptResponse": decryptResponse,
+        "encryptor_decryptResponse": decryptResponse
     ]
-    
+
     fileprivate enum Args: String {
         case scope
         case powerAuthInstanceId
@@ -48,15 +48,15 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
         case cryptogram
         case outputDataFormat
     }
-    
+
     // MARK: - Handlers
-    
+
     private func initialize(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        
+
         let scope: String = try call.requireParameter(Args.scope)
         let powerAuthInstanceId: String = try call.requireParameter(Args.powerAuthInstanceId)
         let autoreleaseTime: Int? = call.getParameter(Args.autoReleaseTimeMillis)
-        
+
         let isActivationScope: Bool
         if scope == "application" {
             isActivationScope = false
@@ -65,11 +65,12 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
         } else {
             throw PluginException(.wrongParameter, message: "Unknown scope value: \(scope)")
         }
-        
+
         try register.usePowerAuthSDK(id: powerAuthInstanceId, result) { sdk, wrap in
-            
-            let encryptorFactory = isActivationScope ? sdk.eciesEncryptorForActivationScope : sdk.eciesEncryptorForApplicationScope
-            
+
+            let encryptorFactory =
+                isActivationScope ? sdk.eciesEncryptorForActivationScope : sdk.eciesEncryptorForApplicationScope
+
             _ = encryptorFactory { coreEncryptor, error in
                 wrap {
                     guard let coreEncryptor else {
@@ -78,66 +79,73 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
                         }
                         throw error ?? PluginException(.unknownError, message: "Failed to create ECIES encryptor")
                     }
-                    
-                    let encryptor = PowerAuthFlutterEncryptor(activationScoped: isActivationScope, coreEncryptor: coreEncryptor, powerAuthInstanceId: powerAuthInstanceId)
+
+                    let encryptor = PowerAuthFlutterEncryptor(
+                        activationScoped: isActivationScope, coreEncryptor: coreEncryptor,
+                        powerAuthInstanceId: powerAuthInstanceId)
                     let encryptorId = self.register.add(
                         object: encryptor,
                         tag: powerAuthInstanceId,
-                        policies: [.keepAlive(ReleasePolicy.getTimeInterval(value: autoreleaseTime, defaultValue: Constants.ENCRYPTOR_KEEP_ALIVE_TIME))]
+                        policies: [
+                            .keepAlive(
+                                ReleasePolicy.getTimeInterval(
+                                    value: autoreleaseTime, defaultValue: Constants.ENCRYPTOR_KEEP_ALIVE_TIME))
+                        ]
                     )
                     result(encryptorId)
                 }
             }
         }
     }
-    
+
     private func release(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         register.removeAny(id: try call.requireParameter(Args.objectId))
         result(nil)
     }
-    
+
     private func canEncryptRequest(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let id: String = try call.requireParameter(Args.objectId)
         let encryptor = try touchEcryptor(id: id)
         result(register.canEncrypt(with: encryptor) == .success)
     }
-    
+
     private func encryptRequest(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        
+
         let encryptorId: String = try call.requireParameter(Args.objectId)
         let body: String = try call.requireParameter(Args.body)
         let bodyFormat: String = try call.requireParameter(Args.bodyFormat)
-        
+
         let encryptor = try useEcryptor(id: encryptorId)
-        
+
         let bodyDataFormat = try PowerAuthDataFormat.fromString(bodyFormat)
         let data = try Data.decodeDataValue(body, format: bodyDataFormat)
-        
+
         let canEncrypt = register.canEncrypt(with: encryptor)
-        
+
         if canEncrypt != .success {
             // Remove object from the register if decryption is no longer available.
             register.removeAny(id: encryptorId)
         }
-        
+
         switch canEncrypt {
-        case .invalidEncryptor: throw PluginException(.invalidEncryptor, message: "Encryptor is not constructed for request encryption")
+        case .invalidEncryptor:
+            throw PluginException(.invalidEncryptor, message: "Encryptor is not constructed for request encryption")
         case .missingActivation: throw PluginException(.missingActivation)
         case .missingSdk: throw PluginException(.instanceNotConfigured)
         case .success: break
         }
-        
+
         encryptor.coreEncryptor.encryptRequest(data) { cryptogram, decryptor in
             Utils.wrapThrowBlock(result: result) {
                 guard let cryptogram, let decryptor else {
                     throw PluginException(.encryptionError, message: "Failed to encrypt request")
                 }
-                
+
                 guard let metadata = decryptor.associatedMetaData else {
                     // PA_SDK behavior has been changed...
                     throw PluginException(.invalidEncryptor, message: "Incompatible native SDK")
                 }
-                
+
                 // Wrap decryptor and register it in the object register
                 let ftDecryptor = PowerAuthFlutterEncryptor(
                     activationScoped: encryptor.activationScoped,
@@ -149,79 +157,81 @@ class PowerAuthEncryptorService: PowerAuthFlutterService {
                     tag: encryptor.powerAuthInstanceId,
                     policies: [.afterUse(1), .expire(Constants.DECRYPTOR_KEEP_ALIVE_TIME)]
                 )
-                result([
-                    "cryptogram": [
-                        "temporaryKeyId": cryptogram.temporaryKeyId,
-                        "ephemeralPublicKey": cryptogram.keyBase64,
-                        "encryptedData": cryptogram.bodyBase64,
-                        "mac": cryptogram.macBase64,
-                        "nonce": cryptogram.nonceBase64,
-                        "timestamp": cryptogram.timestamp
-                    ] as [String: Any?],
-                    "header": [
-                        "name": metadata.httpHeaderKey,
-                        "value": metadata.httpHeaderValue
-                    ],
-                    "decryptorId": decryptorId
-                ] as [String: Any])
+                result(
+                    [
+                        "cryptogram": [
+                            "temporaryKeyId": cryptogram.temporaryKeyId,
+                            "ephemeralPublicKey": cryptogram.keyBase64,
+                            "encryptedData": cryptogram.bodyBase64,
+                            "mac": cryptogram.macBase64,
+                            "nonce": cryptogram.nonceBase64,
+                            "timestamp": cryptogram.timestamp
+                        ] as [String: Any?],
+                        "header": [
+                            "name": metadata.httpHeaderKey,
+                            "value": metadata.httpHeaderValue
+                        ],
+                        "decryptorId": decryptorId
+                    ] as [String: Any])
             }
         }
     }
-    
+
     private func canDecryptResponse(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let id: String = try call.requireParameter(Args.objectId)
         let encryptor = try touchEcryptor(id: id)
         result(register.canDecrypt(with: encryptor) == .success)
     }
-    
+
     private func decryptResponse(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let encryptorId: String = try call.requireParameter(Args.objectId)
         let cryptogramDict: FlutterMap = try call.requireParameter(Args.cryptogram)
         let outputFormat: String = try call.requireParameter(Args.outputDataFormat)
-        
+
         let encryptor = try useEcryptor(id: encryptorId)
-        
+
         let dataFormat = try PowerAuthDataFormat.fromString(outputFormat)
-        
+
         let canEncrypt = register.canDecrypt(with: encryptor)
-        
+
         if canEncrypt != .success {
             // Remove object from the register if decryption is no longer available.
             register.removeAny(id: encryptorId)
         }
-        
+
         switch canEncrypt {
-        case .invalidEncryptor: throw PluginException(.invalidEncryptor, message: "Encryptor is not constructed for request encryption")
+        case .invalidEncryptor:
+            throw PluginException(.invalidEncryptor, message: "Encryptor is not constructed for request encryption")
         case .missingActivation: throw PluginException(.missingActivation)
         case .missingSdk: throw PluginException(.instanceNotConfigured)
         case .success: break
         }
-        
+
         // decrypt
         guard let cryptogram = PowerAuthCoreEciesCryptogram(responsePayload: cryptogramDict) else {
             throw PluginException(.encryptionError, message: "Failed to create cryptogram")
         }
-        
+
         guard let response = encryptor.coreEncryptor.decryptResponse(cryptogram) else {
             throw PluginException(.encryptionError, message: "Failed to decrypt response")
         }
-        
+
         result(try Data.encodeDataValue(response, format: dataFormat))
     }
-    
+
     // MARK: - Helpers
-    
+
     private func getEcryptor(id: String, touch: Bool) throws -> PowerAuthFlutterEncryptor {
         guard let encrytor: PowerAuthFlutterEncryptor = touch ? register.touch(id: id) : register.use(id: id) else {
             throw PluginException(.invalidNativeObject, message: "Encryptor object is no longer valid")
         }
         return encrytor
     }
-    
+
     private func useEcryptor(id: String) throws -> PowerAuthFlutterEncryptor {
         return try getEcryptor(id: id, touch: false)
     }
-    
+
     private func touchEcryptor(id: String) throws -> PowerAuthFlutterEncryptor {
         return try getEcryptor(id: id, touch: true)
     }
@@ -232,7 +242,7 @@ private class PowerAuthFlutterEncryptor {
     let activationScoped: Bool
     let coreEncryptor: PowerAuthCoreEciesEncryptor
     let powerAuthInstanceId: String
-    
+
     init(activationScoped: Bool, coreEncryptor: PowerAuthCoreEciesEncryptor, powerAuthInstanceId: String) {
         self.activationScoped = activationScoped
         self.coreEncryptor = coreEncryptor
@@ -248,7 +258,7 @@ private enum CanCryptResult {
 }
 
 private extension PowerAuthObjectRegister {
-    
+
     /// Determine whether encryptor is able to encrypt the request data. The function also validate state of PowerAuthSDK if
     /// encryptor is configured for an activation scope.
     /// - Parameters:
@@ -262,7 +272,7 @@ private extension PowerAuthObjectRegister {
         }
         return encryptor.coreEncryptor.canEncryptRequest ? .success : .invalidEncryptor
     }
-    
+
     /// Determine whether encryptor is able to decrypt the response cryptogram. The function also validate state of PowerAuthSDK if
     /// encryptor is configured for an activation scope.
     /// - Parameters:

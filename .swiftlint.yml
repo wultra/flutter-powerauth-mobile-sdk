@@ -1,0 +1,26 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  - identifier_name
+  - todo
+  - function_body_length
+  - cyclomatic_complexity
+  - multiple_closures_with_trailing_closure
+  - file_length
+  - type_body_length
+  - nesting
+  - inclusive_language
+
+included:
+  - ios/flutter_powerauth_mobile_sdk_plugin/Package.swift
+  - ios/flutter_powerauth_mobile_sdk_plugin/Sources
+  - example/ios/Runner
+
+type_name:
+  max_length: 40
+  excluded:
+    - T
+    - D
+
+function_parameter_count:
+  warning: 7

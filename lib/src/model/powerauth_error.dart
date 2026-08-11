@@ -18,7 +18,6 @@ import '../logging/powerauth_logger.dart';
 
 /// Error codes that can be reported by the PowerAuth SDK.
 enum PowerAuthErrorCode {
-
   /// Code returned, or reported, when operation succeeds.
   succeed,
 
@@ -133,7 +132,6 @@ enum PowerAuthErrorCode {
 
 /// Exception thrown by the PowerAuth SDK.
 class PowerAuthException implements Exception {
-
   /// Code of the error.
   final PowerAuthErrorCode code;
 
@@ -161,7 +159,6 @@ class PowerAuthException implements Exception {
 
 /// Issues found during the PIN strength test.
 enum PinTestIssue {
-
   /// Not enough unique digits found.
   notUnique,
 
@@ -180,7 +177,6 @@ enum PinTestIssue {
 
 /// Object representing a PIN strength test result.
 class PinTestResult {
-
   /// If `true` then you should warn the user about a weak PIN.
   final bool shouldWarnUserAboutWeakPin;
 
@@ -199,9 +195,13 @@ class PinTestResult {
       return issuesList
           .map((issueString) {
             try {
-              return PinTestIssue.values.firstWhere((e) => e.name == (issueString as String),);
+              return PinTestIssue.values.firstWhere(
+                (e) => e.name == (issueString as String),
+              );
             } catch (e) {
-              PowerAuthLogger.warning("Unknown PinTestIssue received: $issueString");
+              PowerAuthLogger.warning(
+                "Unknown PinTestIssue received: $issueString",
+              );
               // TODO: return null or a default?
               return null;
             }

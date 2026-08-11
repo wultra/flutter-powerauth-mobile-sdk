@@ -23,7 +23,6 @@ import '../model/powerauth_encryption_http_header.dart';
 
 /// Scope of encryptor.
 enum PowerAuthEncryptorScope {
-
   /// Application scope - encryption is available without activation.
   application,
 
@@ -33,7 +32,6 @@ enum PowerAuthEncryptorScope {
 
 /// Class representing encrypted data in request or response.
 class PowerAuthCryptogram {
-
   /// Temporary key identifier.
   final String? temporaryKeyId;
 
@@ -88,7 +86,6 @@ class PowerAuthCryptogram {
 
 /// Object returned from the `encryptRequest()` function.
 class PowerAuthEncryptedRequestData {
-
   /// Cryptogram with encrypted request data.
   final PowerAuthCryptogram cryptogram;
 
@@ -112,7 +109,6 @@ class PowerAuthEncryptedRequestData {
 /// An abstract base class that implements End-To-End encryption. Use [PowerAuth] class to get instance
 /// of encryptor.
 abstract class PowerAuthEncryptor extends BaseNativeObject {
-
   /// Scope of this encryptor.
   PowerAuthEncryptorScope get encryptorScope;
 
@@ -142,7 +138,6 @@ abstract class PowerAuthEncryptor extends BaseNativeObject {
 /// Be aware that the native underlying object has a limited lifetime set to 5 minutes. If you don't decrypt
 /// the response within this time interval, then the information required for the request decryption is lost.
 abstract class PowerAuthDecryptor extends BaseReleasableObject {
-
   /// Scope of this decryptor.
   PowerAuthEncryptorScope get decryptorScope;
 

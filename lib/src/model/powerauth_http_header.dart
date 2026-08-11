@@ -16,7 +16,6 @@
 
 /// Custom HTTP header data.
 class PowerAuthHttpHeader {
-
   /// Name of the HTTP header.
   final String name;
 
@@ -28,5 +27,4 @@ class PowerAuthHttpHeader {
   Map<String, String> toMap() {
     return {'name': name, 'value': value};
   }
-
 }

@@ -16,7 +16,6 @@
 
 /// Object representing an authorization HTTP header with the PowerAuth-Authorization or PowerAuth-Token signature.
 class PowerAuthAuthorizationHttpHeader {
-
   /// Property representing the PowerAuth HTTP Authorization Header key.
   /// The value is typically "X-PowerAuth-Authorization" for standard authorization
   /// and "X-PowerAuth-Token" for token-based authorization.

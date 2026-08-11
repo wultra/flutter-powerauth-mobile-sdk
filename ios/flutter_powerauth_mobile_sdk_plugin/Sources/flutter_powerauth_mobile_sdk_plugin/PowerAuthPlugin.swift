@@ -15,58 +15,60 @@
  */
 
 import Flutter
-import UIKit
 import PowerAuth2
 import PowerAuthCore
+import UIKit
 
 public class PowerAuthPlugin: NSObject, FlutterPlugin {
-    
+
     private let handlers: [String: (service: any PowerAuthFlutterService, handler: Any)]
     private let logger = PowerAuthLogger()
-    
+
     public override init() {
         // Notify the registry that a new plugin instance has been attached.
         PowerAuthServiceRegistry.onPluginAttached()
-        
+
         // Reference the registry handlers map
         self.handlers = PowerAuthServiceRegistry.handlers
-        
+
         super.init()
-        
+
         // Set the delegate for native PowerAuth SDK logs
         PowerAuthLogSetDelegate(logger)
     }
-    
+
     deinit {
         // Remove the delegate when the plugin is deallocated
         PowerAuthLogSetDelegate(nil)
         PowerAuthServiceRegistry.onPluginDetached()
     }
-    
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "powerauth_plugin", binaryMessenger: registrar.messenger())
         let instance = PowerAuthPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
 
-        let loggingChannel = FlutterEventChannel(name: "com.wultra.powerauth.flutter/logging", binaryMessenger: registrar.messenger())
+        let loggingChannel = FlutterEventChannel(
+            name: "com.wultra.powerauth.flutter/logging", binaryMessenger: registrar.messenger())
         loggingChannel.setStreamHandler(instance.logger)
     }
-    
+
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
+
         guard let (service, handler) = handlers[call.method] else {
             defaultHandle(call, result)
             return
         }
-        
+
         do {
             try service.handle(handler, call, result)
         } catch let e {
-            PowerAuthLogger.error("PowerAuth plugin with method \(call.method) threw an error: \(e.localizedDescription)")
+            PowerAuthLogger.error(
+                "PowerAuth plugin with method \(call.method) threw an error: \(e.localizedDescription)")
             result(FlutterError(thrownByPlugin: e))
         }
     }
-    
+
     private func defaultHandle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         PowerAuthLogger.warning("PowerAuth plugin received unexpected method: \(call.method)")
         result(FlutterMethodNotImplemented)
@@ -75,6 +77,9 @@ public class PowerAuthPlugin: NSObject, FlutterPlugin {
 
 private extension PowerAuthFlutterService {
     func handle(_ handler: Any, _ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try (handler as! Handler)(self)(call, result)
+        guard let handler = handler as? Handler else {
+            throw PluginException(.flutterError, message: "Invalid native method handler")
+        }
+        try handler(self)(call, result)
     }
 }

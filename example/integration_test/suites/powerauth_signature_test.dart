@@ -293,10 +293,16 @@ class SignatureHelper {
     final signature = components['pa_signature'];
 
     if (version == null) throw Exception('Missing pa_version in PA signature');
-    if (activationId == null) throw Exception('Missing pa_activation_id in PA signature');
+    if (activationId == null) {
+      throw Exception('Missing pa_activation_id in PA signature');
+    }
     if (nonce == null) throw Exception('Missing pa_nonce in PA signature');
-    if (signatureType == null) throw Exception('Missing pa_signature_type in PA signature');
-    if (signature == null) throw Exception('Missing pa_signature in PA signature');
+    if (signatureType == null) {
+      throw Exception('Missing pa_signature_type in PA signature');
+    }
+    if (signature == null) {
+      throw Exception('Missing pa_signature in PA signature');
+    }
 
     return OnlineSignature(
       signature: signature,

@@ -15,24 +15,24 @@
  */
 
 import Flutter
-import UIKit
 import PowerAuth2
 import PowerAuthCore
+import UIKit
 
 internal class PowerAuthService: PowerAuthFlutterService {
-    
+
     let name = "PowerAuth"
     private let register: PowerAuthObjectRegister
-    
+
     init(register: PowerAuthObjectRegister) {
         self.register = register
     }
-    
+
     let handlers = [
         "configure": configure,
         "isConfigured": isConfigured,
         "getConfiguration": getConfiguration,
-        //TODO: Implements when SDK 2.0.0 is available
+        // TODO: Implements when SDK 2.0.0 is available
         // "getClientConfiguration": getClientConfiguration,
         // "getBiometryConfiguration": getBiometryConfiguration,
         // "getKeychainConfiguration": getKeychainConfiguration,
@@ -78,7 +78,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
         "synchronizeTime": synchronizeTime,
         "resetTimeSynchronization": resetTimeSynchronization
     ]
-    
+
     // Possible Flutter call parameters
     fileprivate enum Args: String {
         case instanceId
@@ -125,23 +125,23 @@ internal class PowerAuthService: PowerAuthFlutterService {
         case tokenName
         case index
     }
-    
+
     private func isConfigured(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let instanceId: String = try call.requireParameter(Args.instanceId)
         let sdk: PowerAuthSDK? = register.find(id: instanceId)
         result(sdk != nil)
     }
-    
+
     private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        
+
         let instanceId: String = try call.requireParameter(Args.instanceId)
-        
+
         let configuration: FlutterMap = try call.requireParameter(Args.configuration)
-        
+
         guard let paConfig = PowerAuthConfiguration(instanceId: instanceId, arguments: configuration) else {
             throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration parameters.")
         }
-        
+
         if let sharingConfiguration: FlutterMap = call.getParameter(Args.sharingConfiguration) {
             let sharingConfig = PowerAuthSharingConfiguration(
                 appGroup: try sharingConfiguration.require(Args.appGroup),
@@ -151,16 +151,16 @@ internal class PowerAuthService: PowerAuthFlutterService {
             sharingConfig.sharedMemoryIdentifier = sharingConfiguration.get(Args.sharedMemoryIdentifier)
             paConfig.sharingConfiguration = sharingConfig
         }
-        
+
         guard paConfig.validate() else {
             throw PluginException(.wrongParameter, message: "Provided configuration is invalid")
         }
-        
+
         let clientConfiguration: FlutterMap? = call.getParameter(Args.clientConfiguration)
         let timeout: TimeInterval? = clientConfiguration?.get(Args.connectionTimeout)
         let enableUnsecureTraffic: Bool? = clientConfiguration?.get(Args.enableUnsecureTraffic)
         var clientConfig: PowerAuthClientConfiguration?
-        
+
         if timeout != nil || enableUnsecureTraffic != nil {
             let cc = PowerAuthClientConfiguration()
             cc.defaultRequestTimeout = timeout ?? cc.defaultRequestTimeout
@@ -169,9 +169,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
             clientConfig = cc
         }
-        
+
         var interceptors = [PowerAuthCustomHeaderRequestInterceptor]()
-        
+
         // http headers
         if let httpHeaders: [FlutterMap] = clientConfiguration?.get(Args.customHttpHeaders) {
             for header in httpHeaders {
@@ -180,48 +180,56 @@ internal class PowerAuthService: PowerAuthFlutterService {
                 }
             }
         }
-        
+
         // Basic Authentication
-        if
-            let basicAuth: FlutterMap = clientConfiguration?.get(Args.basicHttpAuthentication),
-            let username: String = basicAuth.get(Args.username),
-            let password: String = basicAuth.get(Args.password) {
-            interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
+        if let basicAuth: FlutterMap = clientConfiguration?.get(Args.basicHttpAuthentication) {
+            let username: String? = basicAuth.get(Args.username)
+            let password: String? = basicAuth.get(Args.password)
+            if let username, let password {
+                interceptors.append(PowerAuthCustomHeaderRequestInterceptor(headerKey: username, value: password))
+            }
         }
-        
+
         if interceptors.isEmpty == false {
             clientConfig = clientConfig ?? PowerAuthClientConfiguration()
             clientConfig!.requestInterceptors = interceptors
         }
-        
+
         var keychainConfig: PowerAuthKeychainConfiguration?
         let keychainConfiguration: FlutterMap? = call.getParameter(Args.keychainConfiguration)
         let biometryConfiguration: FlutterMap? = call.getParameter(Args.biometryConfiguration)
-        
+
         // only create PowerAuthKeychainConfiguration if one of the config is configured
         if keychainConfiguration != nil || biometryConfiguration != nil {
-            
+
             let kc = PowerAuthKeychainConfiguration()
-            
+
             // Keychain specific
             if let keychainConfiguration {
                 kc.keychainAttribute_AccessGroup = keychainConfiguration.get(Args.accessGroupName)
                 kc.keychainAttribute_UserDefaultsSuiteName = keychainConfiguration.get(Args.userDefaultsSuiteName)
             }
-            
+
             // Biometry
             if let biometryConfiguration {
-                kc.linkBiometricItemsToCurrentSet = biometryConfiguration.get(Args.linkItemsToCurrentSet, defaultValue: kc.linkBiometricItemsToCurrentSet)
-                kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration.get(Args.fallbackToDevicePasscode, defaultValue: kc.allowBiometricAuthenticationFallbackToDevicePasscode)
+                kc.linkBiometricItemsToCurrentSet = biometryConfiguration.get(
+                    Args.linkItemsToCurrentSet, defaultValue: kc.linkBiometricItemsToCurrentSet)
+                kc.allowBiometricAuthenticationFallbackToDevicePasscode = biometryConfiguration.get(
+                    Args.fallbackToDevicePasscode, defaultValue: kc.allowBiometricAuthenticationFallbackToDevicePasscode
+                )
             }
-            
+
             keychainConfig = kc
         }
-        
-        guard let sdk = PowerAuthSDK(configuration: paConfig, keychainConfiguration: keychainConfig, clientConfiguration: clientConfig) else {
-            throw PluginException(.wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
+
+        guard
+            let sdk = PowerAuthSDK(
+                configuration: paConfig, keychainConfiguration: keychainConfig, clientConfiguration: clientConfig)
+        else {
+            throw PluginException(
+                .wrongParameter, message: "Invalid PowerAuthConfiguration - could not create PowerAuthSDK object.")
         }
-        
+
         let registered = register.add(id: instanceId, tag: instanceId, policies: [.manual()]) {
             sdk
         }
@@ -237,7 +245,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             result(sdk.configuration.serializable)
         }
     }
-    //TODO: implement when SDK 2.0.0 is available
+    // TODO: implement when SDK 2.0.0 is available
     //
     // private func getClientConfiguration(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
     //     try usePowerAuth(call, result) { sdk, _ in
@@ -268,30 +276,31 @@ internal class PowerAuthService: PowerAuthFlutterService {
         register.removeAll(tag: instanceId)
         result(true)
     }
-    
+
     private func hasValidActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.hasValidActivation())
         }
     }
-    
+
     private func canStartActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.canStartActivation())
         }
     }
-    
+
     private func hasPendingActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.hasPendingActivation())
         }
     }
-    
+
     private func getExternalPendingOperation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             if let pendingOperation = sdk.externalPendingOperation {
                 result([
-                    "externalOperationType": pendingOperation.externalOperationType == .activation ? "activation" : "protocolUpgrade",
+                    "externalOperationType": pendingOperation.externalOperationType == .activation
+                        ? "activation" : "protocolUpgrade",
                     "externalApplicationId": pendingOperation.externalApplicationId
                 ])
             } else {
@@ -299,24 +308,24 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func getActivationIdentifier(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.activationIdentifier)
         }
     }
-    
+
     private func getActivationFingerprint(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             result(sdk.activationFingerprint)
         }
     }
-    
+
     private func fetchActivationStatus(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             sdk.fetchActivationStatus { status, error in
-                
+
                 wrap {
                     if let error {
                         throw error
@@ -328,23 +337,26 @@ internal class PowerAuthService: PowerAuthFlutterService {
                         "remainingAttempts": status!.remainingAttempts,
                         "customObject": status!.customObject
                     ]
-                    
+
                     result(response)
                 }
             }
         }
     }
-    
+
     private func removeActivationLocal(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
             sdk.removeActivationLocal()
             result(nil)
         }
     }
-    
-    private func removeActivationWithAuthentication(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+
+    private func removeActivationWithAuthentication(
+        _ call: FlutterMethodCall,
+        _ result: @escaping FlutterResult
+    ) throws {
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             sdk.removeActivation(with: try constructAuthentication(call)) { error in
                 wrap {
                     if let error {
@@ -356,66 +368,74 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func createActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             var paActivation: PowerAuthActivation?
             let activation: FlutterMap = try call.requireParameter(Args.activation)
             let name = activation["activationName"] as? String
-            
+
             if let activationCode = activation["activationCode"] as? String {
                 do {
                     paActivation = try PowerAuthActivation(activationCode: activationCode, name: name)
                 } catch let e {
-                    throw PluginException(.invalidActivationObject, message: "Invalid activation code provided", details: e.localizedDescription)
+                    throw PluginException(
+                        .invalidActivationObject, message: "Invalid activation code provided",
+                        details: e.localizedDescription)
                 }
             } else if let identityAttributes = activation["identityAttributes"] as? [String: String] {
                 do {
-                    paActivation = try PowerAuthActivation(identityAttributes: identityAttributes, name:name)
+                    paActivation = try PowerAuthActivation(identityAttributes: identityAttributes, name: name)
                 } catch let e {
-                    throw PluginException(.invalidActivationObject, message: "Invalid identity attributes provided", details: e.localizedDescription)
+                    throw PluginException(
+                        .invalidActivationObject, message: "Invalid identity attributes provided",
+                        details: e.localizedDescription)
                 }
             } else if let oidcParameters = activation["oidcParameters"] as? [String: String] {
-                
+
                 guard let providerId = oidcParameters["providerId"],
-                      let code = oidcParameters["code"],
-                      let nonce = oidcParameters["nonce"] else {
+                    let code = oidcParameters["code"],
+                    let nonce = oidcParameters["nonce"]
+                else {
                     throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided")
                 }
-                
+
                 let codeVerifier = oidcParameters["codeVerifier"]
-                
+
                 do {
-                    paActivation = try PowerAuthActivation(oidcProviderId: providerId, code: code, nonce: nonce, codeVerifier: codeVerifier)
+                    paActivation = try PowerAuthActivation(
+                        oidcProviderId: providerId, code: code, nonce: nonce, codeVerifier: codeVerifier)
                 } catch let e {
-                    throw PluginException(.invalidActivationObject, message: "Invalid OIDC parameters provided", details: e.localizedDescription)
+                    throw PluginException(
+                        .invalidActivationObject, message: "Invalid OIDC parameters provided",
+                        details: e.localizedDescription)
                 }
             }
-            
+
             guard let paActivation else {
                 throw PluginException(.invalidActivationObject, message: "Activation object is invalid.", details: nil)
             }
-            
+
             if let extras = activation["extras"] as? String {
                 paActivation.with(extras: extras)
             }
-            
+
             if let customAttributes = activation["customAttributes"] as? FlutterMap {
                 paActivation.with(customAttributes: customAttributes)
             }
-            
+
             if let otp = activation["additionalActivationOtp"] as? String {
                 paActivation.with(additionalActivationOtp: otp)
             }
-            
+
             sdk.createActivation(paActivation) { activationResult, error in
-                
+
                 wrap {
                     guard let activationResult else {
                         throw error ?? PluginException(.unknownError, message: "Unknown error occurred.")
                     }
-                    
+
                     result([
                         "activationFingerprint": activationResult.activationFingerprint,
                         "customAttributes": activationResult.customAttributes ?? [:],
@@ -425,23 +445,23 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     func persistActivation(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
-            
+
             let auth = try constructAuthentication(call)
             try sdk.persistActivation(with: auth)
             result(nil)
         }
     }
-    
+
     func validatePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        
+
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             let passParam: FlutterMap = try call.requireParameter(Args.password)
             let password = try self.usePassword(passParam)
-            
+
             sdk.validatePassword(password: password) { error in
                 wrap {
                     if let error {
@@ -452,18 +472,18 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     func changePassword(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        
+
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             let oldPassParam: FlutterMap = try call.requireParameter(Args.oldPassword)
             let newPassParam: FlutterMap = try call.requireParameter(Args.newPassword)
 
-            //Making copies of passwords to avoid being deallocated before native sdk finishes
+            // Making copies of passwords to avoid being deallocated before native sdk finishes
             let oldPassword = try self.usePassword(oldPassParam).copyToImmutable()
             let newPassword = try self.usePassword(newPassParam).copyToImmutable()
-            
+
             sdk.changePassword(from: oldPassword, to: newPassword) { error in
                 wrap {
                     if let error {
@@ -474,43 +494,43 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func offlineSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
-            
+
             let auth = try constructAuthentication(call)
             let uriId: String = try call.requireParameter(Args.uriId)
             let nonce: String = try call.requireParameter(Args.nonce)
             let bodyString: String? = call.getParameter(Args.body)
             let data = bodyString?.data(using: .utf8)
-            
+
             result(try sdk.offlineSignature(with: auth, uriId: uriId, body: data, nonce: nonce))
         }
     }
-    
+
     private func verifyServerSignedData(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
-            
+
             let stringData: String = try call.requireParameter(Args.data)
             let signature: String = try call.requireParameter(Args.signature)
             let masterKey: Bool = call.getParameter(Args.useMasterKey) ?? false
-            
+
             guard let data = stringData.data(using: .utf8) else {
                 throw PluginException(.unknownError, message: "Failed to convert string to data")
             }
-            
+
             let verifyResult = sdk.verifyServerSignedData(data, signature: signature, masterKey: masterKey)
             result(verifyResult)
         }
     }
-    
+
     private func requestGetSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, _ in
-            
+
             let auth = try constructAuthentication(call)
             let uriId: String = try call.requireParameter(Args.uriId)
             let queryparams: [String: String]? = call.getParameter(Args.queryParams)
-            
+
             let signature = try sdk.requestGetSignature(with: auth, uriId: uriId, params: queryparams)
             result([
                 "key": signature.key,
@@ -518,17 +538,17 @@ internal class PowerAuthService: PowerAuthFlutterService {
             ])
         }
     }
-    
+
     private func requestSignature(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
-            
+        try usePowerAuth(call, result) { sdk, _ in
+
             let auth = try constructAuthentication(call)
             let uriId: String = try call.requireParameter(Args.uriId)
             let method: String = try call.requireParameter(Args.method)
-            
+
             let bodyString: String? = call.getParameter(Args.body)
             let data = bodyString?.data(using: .utf8)
-            
+
             let signature = try sdk.requestSignature(with: auth, method: method, uriId: uriId, body: data)
             result([
                 "key": signature.key,
@@ -536,29 +556,31 @@ internal class PowerAuthService: PowerAuthFlutterService {
             ])
         }
     }
-    
+
     private func getBiometryInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let biometryType = switch PowerAuthKeychain.biometricAuthenticationInfo.biometryType {
-        case .touchID: "fingerprint"
-        case .faceID: "face"
-        default: "none"
-        }
-        let canAuthenticate = switch PowerAuthKeychain.biometricAuthenticationInfo.currentStatus {
-        case .available: "ok"
-        case .notEnrolled: "notEnrolled"
-        case .notAvailable: "notAvailable"
-        case .notSupported: "notSupported"
-        case .lockout: "lockout"
-        default: "notAvailable" // fallback for Swift 6
-        }
-        
+        let biometryType =
+            switch PowerAuthKeychain.biometricAuthenticationInfo.biometryType {
+            case .touchID: "fingerprint"
+            case .faceID: "face"
+            default: "none"
+            }
+        let canAuthenticate =
+            switch PowerAuthKeychain.biometricAuthenticationInfo.currentStatus {
+            case .available: "ok"
+            case .notEnrolled: "notEnrolled"
+            case .notAvailable: "notAvailable"
+            case .notSupported: "notSupported"
+            case .lockout: "lockout"
+            default: "notAvailable"  // fallback for Swift 6
+            }
+
         result([
             "isAvailable": PowerAuthKeychain.canUseBiometricAuthentication,
             "biometryType": biometryType,
             "canAuthenticate": canAuthenticate
-        ]);
+        ])
     }
-    
+
     private func addBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             // Workaround for native SDK. We're expectint MISSING or PEDNING_ACTIVATION
@@ -581,13 +603,13 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func hasBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             result(sdk.hasBiometryFactor())
         }
     }
-    
+
     private func removeBiometryFactor(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             wrap {
@@ -595,18 +617,20 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     result(nil)
                 } else {
                     if !sdk.hasBiometryFactor() {
-                        throw PluginException(.biometryNotConfigured, message: "Biometry not configured in this PowerAuth instance")
+                        throw PluginException(
+                            .biometryNotConfigured, message: "Biometry not configured in this PowerAuth instance")
                     } else {
-                        throw PluginException(.flutterError, message: "Biometry not configured in this PowerAuth instance")
+                        throw PluginException(
+                            .flutterError, message: "Biometry not configured in this PowerAuth instance")
                     }
                 }
             }
         }
     }
-    
+
     private func authenticateWithBiometry(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
-            
+
             // validate if the biometry is available first
             switch PowerAuthKeychain.biometricAuthenticationInfo.currentStatus {
             case .available:
@@ -624,20 +648,20 @@ internal class PowerAuthService: PowerAuthFlutterService {
             default:
                 break
             }
-            
+
             let prompt: FlutterMap = try call.requireParameter(Args.prompt)
             let isReusable = call.getParameter(Args.isReusable) ?? false
-            
+
             guard let promptMessage = prompt["promptMessage"] as? String else {
                 throw PluginException(.wrongParameter, message: "Missing 'promptMessage' in prompt parameter")
             }
-            
+
             let cancelButton = prompt["cancelButtonTitle"] as? String
             let fallbackButton = prompt["fallbackButtonTitle"] as? String
             let context = LAContext()
             context.localizedReason = promptMessage
             context.localizedCancelTitle = cancelButton
-            context.localizedFallbackTitle = fallbackButton ?? "" // empty string hides the button
+            context.localizedFallbackTitle = fallbackButton ?? ""  // empty string hides the button
             sdk.authenticateUsingBiometry(withContext: context) { authentication, error in
                 wrap {
                     guard let authentication else {
@@ -648,7 +672,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     }
                     // Allocate native object
                     let managedData = PowerAuthData(data: overridenBiometryKey, cleanup: true)
-                    
+
                     // If reusable authentication is going to be created, then "keep alive" release policy is applied.
                     // Basically, the data will be available up to 10 seconds from the last access.
                     // If authentication is not reusable, then dispose biometric key after its 1st use. We still need
@@ -657,19 +681,20 @@ internal class PowerAuthService: PowerAuthFlutterService {
                     if isReusable == false {
                         policy.append(.afterUse(1))
                     }
-                    
-                    let managedId = self.register.add(object: managedData, tag: sdk.configuration.instanceId, policies: policy)
+
+                    let managedId = self.register.add(
+                        object: managedData, tag: sdk.configuration.instanceId, policies: policy)
                     result(managedId)
                 }
             }
         }
     }
-    
+
     private func fetchEncryptionKey(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let index: Int = try call.requireParameter(Args.index)
             let auth = try constructAuthentication(call)
-            
+
             sdk.fetchEncryptionKey(auth, index: UInt64(index)) { key, error in
                 wrap {
                     guard let key else {
@@ -680,14 +705,14 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func signDataWithDevicePrivateKey(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let data: String = try call.requireParameter(Args.data)
             let dataFormat = try PowerAuthDataFormat.fromString(call.getParameter(Args.dataFormat))
             let encodedData = try Data.decodeDataValue(data, format: dataFormat)
             let auth = try constructAuthentication(call)
-            
+
             sdk.signData(withDevicePrivateKey: auth, data: encodedData) { signature, error in
                 wrap {
                     guard let signature else {
@@ -698,7 +723,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func requestAccessToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let tokenName: String = try call.requireParameter(Args.tokenName)
@@ -716,7 +741,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func removeAccessToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let tokenName: String = try call.requireParameter(Args.tokenName)
@@ -730,19 +755,20 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func hasLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             let tokenName: String = try call.requireParameter(Args.tokenName)
             result(sdk.tokenStore.hasLocalToken(withName: tokenName))
         }
     }
-    
+
     private func getLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             let tokenName: String = try call.requireParameter(Args.tokenName)
             guard let token = sdk.tokenStore.localToken(withName: tokenName) else {
-                throw PluginException(.localTokenNotAvailable, message: "Token with the name \(tokenName) is not in the local store.")
+                throw PluginException(
+                    .localTokenNotAvailable, message: "Token with the name \(tokenName) is not in the local store.")
             }
             result([
                 "tokenName": token.tokenName,
@@ -750,29 +776,30 @@ internal class PowerAuthService: PowerAuthFlutterService {
             ])
         }
     }
-    
+
     private func removeLocalToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             let tokenName: String = try call.requireParameter(Args.tokenName)
             sdk.tokenStore.removeLocalToken(withName: tokenName)
             result(nil)
         }
     }
-    
+
     private func removeAllLocalTokens(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             sdk.tokenStore.removeAllLocalTokens()
             result(nil)
         }
     }
-    
+
     private func generateHeaderForToken(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             let tokenName: String = try call.requireParameter(Args.tokenName)
-            sdk.tokenStore.generateAuthorizationHeader(withName: tokenName) { header, error in
+            sdk.tokenStore.generateAuthorizationHeader(withName: tokenName) { header, _ in
                 wrap {
                     guard let header else {
-                        throw PluginException(.cannotGenerateToken, message: "Cannot generate header for the token \(tokenName).")
+                        throw PluginException(
+                            .cannotGenerateToken, message: "Cannot generate header for the token \(tokenName).")
                     }
                     result([
                         "key": header.key,
@@ -782,7 +809,7 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func fetchUserInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
             sdk.fetchUserInfo { userInfo, error in
@@ -795,9 +822,9 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
+
     private func getLastFetchedUserInfo(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             if let userInfo = sdk.lastFetchedUserInfo {
                 result(["allClaims": userInfo.allClaims])
             } else {
@@ -805,71 +832,75 @@ internal class PowerAuthService: PowerAuthFlutterService {
             }
         }
     }
-    
-    private func isTimeSynchronized(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+
+    private func isTimeSynchronized(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             result(sdk.timeSynchronizationService.isTimeSynchronized)
         }
     }
-    
-    private func localTimeAdjustment(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+
+    private func localTimeAdjustment(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             result(sdk.timeSynchronizationService.localTimeAdjustment.milliseconds)
         }
     }
-    
-    private func localTimeAdjustmentPrecision(_ call : FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+
+    private func localTimeAdjustmentPrecision(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
+        try usePowerAuth(call, result) { sdk, _ in
             result(sdk.timeSynchronizationService.localTimeAdjustmentPrecision.milliseconds)
         }
     }
-    
+
     private func currentTime(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             // the native SDK returns time in seconds, but we need milliseconds
             result(sdk.timeSynchronizationService.currentTime().milliseconds)
         }
     }
-    
+
     private func synchronizeTime(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         try usePowerAuth(call, result) { sdk, wrap in
-            sdk.timeSynchronizationService.synchronizeTime( callback: { error in
-                wrap {
-                    if let error {
-                        throw error
-                    } else {
-                        result(nil)
+            sdk.timeSynchronizationService.synchronizeTime(
+                callback: { error in
+                    wrap {
+                        if let error {
+                            throw error
+                        } else {
+                            result(nil)
+                        }
                     }
-                }
-            }, callbackQueue: nil)
+                }, callbackQueue: nil)
         }
     }
-    
+
     private func resetTimeSynchronization(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        try usePowerAuth(call, result) { sdk, wrap in
+        try usePowerAuth(call, result) { sdk, _ in
             sdk.timeSynchronizationService.resetTimeSynchronization()
             result(nil)
         }
     }
-    
+
     // MARK: PowerAuth Helper methods
-    
-    private func usePowerAuth(_ call: FlutterMethodCall, _ result: @escaping FlutterResult, _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void) throws {
+
+    private func usePowerAuth(
+        _ call: FlutterMethodCall, _ result: @escaping FlutterResult,
+        _ block: (PowerAuthSDK, @escaping WrapThrowBlock) throws -> Void
+    ) throws {
         try register.usePowerAuthSDK(id: try call.requireParameter(Args.instanceId), result, block)
     }
-    
+
     private func usePassword(_ dict: FlutterMap?) throws -> PowerAuthCorePassword {
         return try register.usePassword(dict: dict)
     }
-    
+
     private func constructAuthentication(_ call: FlutterMethodCall) throws -> PowerAuthAuthentication {
-        
+
         let dict: FlutterMap = try call.requireParameter(Args.authentication)
         let useBiometry = dict.get(Args.isBiometry, defaultValue: false)
         let persist = dict.get(Args.isPersist, defaultValue: false)
-        
+
         let userPassword: FlutterMap? = dict.get(Args.password)
-        
+
         if persist {
             // Activation persist
             let password = try usePassword(userPassword)
@@ -887,9 +918,12 @@ internal class PowerAuthService: PowerAuthFlutterService {
             } else if useBiometry {
                 if let biometryKeyId = dict["biometryKeyId"] as? String {
                     guard let biometryKeyData: PowerAuthData = register.use(id: biometryKeyId) else {
-                        throw PluginException(.invalidNativeObject, message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
+                        throw PluginException(
+                            .invalidNativeObject,
+                            message: "Biometric key in PowerAuthAuthentication object is no longer valid.")
                     }
-                    return PowerAuthAuthentication.possessionWithBiometry(customBiometryKey: biometryKeyData.data, customPossessionKey: nil)
+                    return PowerAuthAuthentication.possessionWithBiometry(
+                        customBiometryKey: biometryKeyData.data, customPossessionKey: nil)
                 }
                 let prompt = dict["biometricPrompt"] as? [String: String]
                 let message = prompt?["promptMessage"]
@@ -914,10 +948,10 @@ private extension PowerAuthConfiguration {
         guard
             let sdkConfig = arguments["configuration"] as? String,
             let baseEndpointUrl = arguments["baseEndpointUrl"] as? String
-            else {
+        else {
             return nil
         }
-        
+
         self.init(instanceId: instanceId, baseEndpointUrl: baseEndpointUrl, configuration: sdkConfig)
     }
 
@@ -934,7 +968,8 @@ private extension PowerAuthClientConfiguration {
         [
             PowerAuthService.Args.connectionTimeout.rawValue: defaultRequestTimeout,
             PowerAuthService.Args.defaultRequestTimeout.rawValue: defaultRequestTimeout,
-            PowerAuthService.Args.enableUnsecureTraffic.rawValue: sslValidationStrategy is PowerAuthClientSslNoValidationStrategy
+            PowerAuthService.Args.enableUnsecureTraffic.rawValue: sslValidationStrategy
+                is PowerAuthClientSslNoValidationStrategy
         ]
     }
 }
@@ -950,7 +985,8 @@ private extension PowerAuthKeychainConfiguration {
     var biometrySerializable: FlutterMap {
         [
             PowerAuthService.Args.linkItemsToCurrentSet.rawValue: linkBiometricItemsToCurrentSet,
-            PowerAuthService.Args.fallbackToDevicePasscode.rawValue: allowBiometricAuthenticationFallbackToDevicePasscode
+            PowerAuthService.Args.fallbackToDevicePasscode.rawValue:
+                allowBiometricAuthenticationFallbackToDevicePasscode
         ]
     }
 }
@@ -968,7 +1004,7 @@ private extension PowerAuthSharingConfiguration {
 
 private extension PowerAuthActivationState {
     var serializable: String {
-        return switch (self) {
+        return switch self {
         case .created: "created"
         case .pendingCommit: "pendingCommit"
         case .active: "active"

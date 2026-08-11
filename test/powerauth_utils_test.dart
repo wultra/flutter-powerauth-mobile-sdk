@@ -57,9 +57,9 @@ void main() {
       log.clear();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        log.add(call);
-        return null;
-      });
+            log.add(call);
+            return null;
+          });
     });
 
     tearDown(() {
@@ -68,21 +68,24 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    test('on iOS invokes util_migrateSharingConfiguration with both appGroups', () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    test(
+      'on iOS invokes util_migrateSharingConfiguration with both appGroups',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
-      await PowerAuthUtils.migrateiOSSharingConfiguration(
-        from: _sharing('group.from'),
-        to: _sharing('group.to'),
-      );
+        await PowerAuthUtils.migrateiOSSharingConfiguration(
+          from: _sharing('group.from'),
+          to: _sharing('group.to'),
+        );
 
-      expect(log, hasLength(1));
-      expect(log.single.method, 'util_migrateSharingConfiguration');
-      expect(log.single.arguments, {
-        'fromAppGroup': 'group.from',
-        'toAppGroup': 'group.to',
-      });
-    });
+        expect(log, hasLength(1));
+        expect(log.single.method, 'util_migrateSharingConfiguration');
+        expect(log.single.arguments, {
+          'fromAppGroup': 'group.from',
+          'toAppGroup': 'group.to',
+        });
+      },
+    );
 
     test('on iOS passes null for the omitted side', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

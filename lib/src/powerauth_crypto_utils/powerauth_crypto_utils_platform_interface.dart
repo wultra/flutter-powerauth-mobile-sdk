@@ -22,12 +22,12 @@ import 'powerauth_crypto_utils_method_channel.dart';
 
 /// Platform interface for PowerAuth core cryptographic utilities.
 abstract class PowerAuthCryptoUtilsPlatform extends PlatformInterface {
-
   PowerAuthCryptoUtilsPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static PowerAuthCryptoUtilsPlatform _instance = PowerAuthCryptoUtilsMethodChannel();
+  static PowerAuthCryptoUtilsPlatform _instance =
+      PowerAuthCryptoUtilsMethodChannel();
 
   static PowerAuthCryptoUtilsPlatform get instance => _instance;
 

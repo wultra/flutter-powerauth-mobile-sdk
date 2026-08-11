@@ -4,7 +4,9 @@ Flutter plugin (`flutter_powerauth_mobile_sdk_plugin`) that bridges the native P
 
 ## Build, test, and analyze
 
-- **Analyze (lint):** `flutter analyze --fatal-warnings` (CI uses `--fatal-warnings`; baseline must be clean before a PR).
+- **Format:** `scripts/format-code.sh` formats Dart, Swift, and Kotlin sources with the versions pinned by CI.
+- **Check formatting and native lint:** `scripts/check-code-style.sh` checks formatting without changing files, runs SwiftLint, and runs ktlint.
+- **Analyze (lint):** `flutter analyze --fatal-infos --fatal-warnings` (the baseline must be clean before a PR).
 - **Unit tests:** `flutter test` (Dart-only tests in `test/`).
   - Single file: `flutter test test/configuration_objects_test.dart`
   - Single test by name: `flutter test --plain-name "<substring of test name>"`

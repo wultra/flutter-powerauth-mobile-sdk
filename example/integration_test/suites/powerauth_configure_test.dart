@@ -447,29 +447,44 @@ main() {
       expect(await sdk2.isConfigured(), false);
       await expectLater(
         pa1.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         pa2.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         sdk1.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         sdk2.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
-
     });
 
     test('testFullConfiguration', () async {

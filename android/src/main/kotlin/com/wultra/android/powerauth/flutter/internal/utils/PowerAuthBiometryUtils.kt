@@ -117,14 +117,12 @@ object PowerAuthBiometryUtils {
     }
 
     @KeychainProtection
-    fun getKeychainProtectionFromString(stringValue: String?): Int {
-        return when (stringValue) {
-            "none" -> KeychainProtection.NONE
-            "software" -> KeychainProtection.SOFTWARE
-            "hardware" -> KeychainProtection.HARDWARE
-            "strongbox" -> KeychainProtection.STRONGBOX
-            else -> KeychainProtection.NONE
-        }
+    fun getKeychainProtectionFromString(stringValue: String?): Int = when (stringValue) {
+        "none" -> KeychainProtection.NONE
+        "software" -> KeychainProtection.SOFTWARE
+        "hardware" -> KeychainProtection.HARDWARE
+        "strongbox" -> KeychainProtection.STRONGBOX
+        else -> KeychainProtection.NONE
     }
 
     @Throws(WrapperException::class)

@@ -35,10 +35,7 @@ import io.getlime.security.powerauth.sdk.PowerAuthKeychainConfiguration
 
 object PowerAuthConfigurationUtils {
 
-    fun buildPowerAuthConfiguration(
-        instanceId: String,
-        map: Map<String, Any>
-    ): PowerAuthConfiguration {
+    fun buildPowerAuthConfiguration(instanceId: String, map: Map<String, Any>): PowerAuthConfiguration {
         val baseEndpointUrl = map[BASE_ENDPOINT_URL] as? String
             ?: throw WrapperException(
                 Errors.EC_WRONG_PARAMETER,
@@ -141,12 +138,10 @@ object PowerAuthConfigurationUtils {
         return builder.build()
     }
 
-    fun configurationToMap(configuration: PowerAuthConfiguration): Map<String, Any?> {
-        return mapOf(
-            BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
-            CONFIGURATION_STRING to configuration.configuration
-        )
-    }
+    fun configurationToMap(configuration: PowerAuthConfiguration): Map<String, Any?> = mapOf(
+        BASE_ENDPOINT_URL to configuration.baseEndpointUrl,
+        CONFIGURATION_STRING to configuration.configuration
+    )
 
     /*
      * TODO: Enable once the native PowerAuth Mobile SDK (2.0.0+) exposes the configuration getters.
@@ -154,19 +149,19 @@ object PowerAuthConfigurationUtils {
      *
      * fun clientConfigurationToMap(config: PowerAuthClientConfiguration): Map<String, Any?> {
      *     return mapOf(
-     *     
+     *
      *     )
      * }
      *
      * fun biometryConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
      *     return mapOf(
-     * 
+     *
      *     )
      * }
      *
      * fun keychainConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
      *     return mapOf(
-     *      
+     *
      *     )
      * }
      */

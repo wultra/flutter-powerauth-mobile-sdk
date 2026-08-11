@@ -1,4 +1,4 @@
-name: "Analyze Flutter Code"
+name: "Code Style"
 
 on:
   push:
@@ -7,15 +7,66 @@ on:
   pull_request:
 
 jobs:
-  analyze-flutter:
-    name: Analyze
-    runs-on: macos-latest
+  code-style:
+    name: Format, Lint, and Analyze
+    runs-on: macos-26
+    permissions:
+      contents: read
+    env:
+      FLUTTER_VERSION: 3.44.2
+      DART_VERSION: 3.12.2
+      SWIFT_FORMAT_VERSION: 6.3.0
+      SWIFTLINT_VERSION: 0.53.0
+      SWIFTLINT_SHA256: 872b2d2b391179088909ed31e73385518aada22adc8150d9139be58ee9b83b4d
+      KTLINT_VERSION: 1.8.0
+      KTLINT_SHA256: a3fd620207d5c40da6ca789b95e7f823c54e854b7fade7f613e91096a3706d75
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@54feb1e258158303e041b9eaf89314dcfbf6d38a
+        with:
+          channel: stable
+          version: ${{ env.FLUTTER_VERSION }}
+      - name: Install ktlint
+        run: |
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/ktlint/ktlint/releases/download/${KTLINT_VERSION}/ktlint" \
+            --output "${RUNNER_TEMP}/ktlint"
+          echo "${KTLINT_SHA256}  ${RUNNER_TEMP}/ktlint" | shasum -a 256 --check
+          chmod +x "${RUNNER_TEMP}/ktlint"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+      - name: Install SwiftLint
+        run: |
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip" \
+            --output "${RUNNER_TEMP}/portable_swiftlint.zip"
+          echo "${SWIFTLINT_SHA256}  ${RUNNER_TEMP}/portable_swiftlint.zip" | shasum -a 256 --check
+          unzip -q "${RUNNER_TEMP}/portable_swiftlint.zip" -d "${RUNNER_TEMP}/swiftlint"
+          chmod +x "${RUNNER_TEMP}/swiftlint/swiftlint"
+          echo "${RUNNER_TEMP}/swiftlint" >> "${GITHUB_PATH}"
+      - name: Verify tool versions
+        run: |
+          test "$(dart --version 2>&1 | sed -E 's/^Dart SDK version: ([^ ]+).*/\1/')" = "${DART_VERSION}"
+          test "$(swift format --version)" = "${SWIFT_FORMAT_VERSION}"
+          test "$(swiftlint --version)" = "${SWIFTLINT_VERSION}"
+          test "$(ktlint --version)" = "ktlint version ${KTLINT_VERSION}"
+      - name: Format code
+        run: scripts/format-code.sh
+      - name: Verify committed formatting
+        run: git diff --exit-code
+      - name: Check code style
+        run: scripts/check-code-style.sh
       - name: Create .env file
         run: echo -e "${{ secrets.ENV_FILE }}" > example/.env
-      - name: Setup
-        uses: ./.github/actions/setup
-      - name: Analyze Code
-        run: flutter analyze --fatal-warnings
+      - name: Get Flutter dependencies
+        run: |
+          flutter pub get
+          flutter pub get --directory example
+      - name: Analyze code
+        run: flutter analyze --fatal-infos --fatal-warnings

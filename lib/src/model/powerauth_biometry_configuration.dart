@@ -91,8 +91,10 @@ class PowerAuthBiometryConfiguration {
     return PowerAuthBiometryConfiguration(
       linkItemsToCurrentSet: map['linkItemsToCurrentSet'] as bool,
       fallbackToDevicePasscode: map['fallbackToDevicePasscode'] as bool,
-      confirmBiometricAuthentication: map['confirmBiometricAuthentication'] as bool,
-      authenticateOnBiometricKeySetup: map['authenticateOnBiometricKeySetup'] as bool,
+      confirmBiometricAuthentication:
+          map['confirmBiometricAuthentication'] as bool,
+      authenticateOnBiometricKeySetup:
+          map['authenticateOnBiometricKeySetup'] as bool,
       fallbackToSharedBiometryKey: map['fallbackToSharedBiometryKey'] as bool,
     );
   }

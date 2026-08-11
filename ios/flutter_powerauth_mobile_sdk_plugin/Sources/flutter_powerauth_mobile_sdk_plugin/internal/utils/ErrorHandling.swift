@@ -18,17 +18,17 @@ import Flutter
 import PowerAuth2
 
 internal extension FlutterError {
-    
+
     convenience init(thrownByPlugin: Error) {
         if let pe = thrownByPlugin as? PluginException {
             self.init(code: pe.code, message: pe.message, details: pe.details)
             return
         }
-        
+
         var errorCode: PowerAuthFlutterError
         var message: String
         var details: Any? = thrownByPlugin.localizedDescription
-        
+
         // all PowerAuth errors are NSErrors
         let error = thrownByPlugin as NSError
         message = error.localizedDescription
@@ -40,7 +40,7 @@ internal extension FlutterError {
                 // Handle error response received from the server. In this case, we have to re-create the error in a nice-to-serialize manner
                 let responseObject = error.userInfo[PowerAuthErrorDomain] as? PowerAuthRestApiErrorResponse
                 let httpStatusCode = responseObject?.httpStatusCode
-                if (httpStatusCode == 401) {
+                if httpStatusCode == 401 {
                     errorCode = .authenticationError
                     message = "Unauthorized"
                 } else {
@@ -79,7 +79,7 @@ internal extension FlutterError {
                 }
                 //
             }
-        } else if error.domain  == NSURLErrorDomain {
+        } else if error.domain == NSURLErrorDomain {
             // Handle error from NSURLSession
             errorCode = .networkError
             //
@@ -88,23 +88,23 @@ internal extension FlutterError {
             errorCode = .unknownError
             //
         }
-        
+
         // creat the code...
         self.init(code: errorCode, message: message, details: details)
     }
-    
+
     private convenience init(code: PowerAuthFlutterError, message: String?, details: Any?) {
         self.init(code: code.rawValue, message: message, details: details)
     }
-    
+
 }
 
 internal struct PluginException: Error {
-    
+
     let code: PowerAuthFlutterError
     let message: String?
     let details: Any?
-    
+
     init(_ code: PowerAuthFlutterError, message: String? = nil, details: Any? = nil) {
         self.code = code
         self.message = message

@@ -1,0 +1,39 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts,swift}]
+indent_style = space
+indent_size = 4
+
+[*.dart]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+[*.swift]
+max_line_length = 120
+
+[*.{kt,kts}]
+max_line_length = 120
+# Keep ktlint 1.x output close to the native Android project's ktlint 0.49 style.
+ktlint_code_style = android_studio
+
+# Match the ktlint rules used by Wultra's native Android SDKs.
+ktlint_standard_string-template = disabled
+ktlint_standard_no-empty-first-line-in-method-block = disabled
+ktlint_standard_spacing-between-declarations-with-comments = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+ktlint_standard_colon-spacing = disabled
+ktlint_standard_import-ordering = disabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_filename = disabled
+
+# Flutter generates this example package name from the plugin name.
+[example/android/app/src/main/kotlin/com/wultra/flutter_powerauth_mobile_sdk_plugin_example/MainActivity.kt]
+ktlint_standard_package-name = disabled

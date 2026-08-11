@@ -27,12 +27,9 @@ import '../powerauth_utils/powerauth_utils.dart';
 /// Method channel implementation for PowerAuth utility functions.
 class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
     with MethodChannelHelper {
-
   @override
   @visibleForTesting
-  final MethodChannel methodChannel = const MethodChannel(
-    'powerauth_plugin',
-  );
+  final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
 
   static Future<dynamic> _serializePassword(Object password) async {
     if (password is PowerAuthPassword) {
@@ -80,12 +77,18 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
 
   @override
   Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() async {
-    final result = await invokeMethod<Map<dynamic, dynamic>>('util_getEnvironmentInfo', null);
+    final result = await invokeMethod<Map<dynamic, dynamic>>(
+      'util_getEnvironmentInfo',
+      null,
+    );
     return PowerAuthEnvironmentInfo.fromJson(result);
   }
 
   @override
-  Future<void> migrateiOSSharingConfiguration(String? fromAppGroup, String? toAppGroup) async {
+  Future<void> migrateiOSSharingConfiguration(
+    String? fromAppGroup,
+    String? toAppGroup,
+  ) async {
     // The keychain initialization flag is an iOS-only concept stored in UserDefaults.
     // On any other platform this is a no-op, so we avoid invoking the native channel.
     if (defaultTargetPlatform != TargetPlatform.iOS) {
@@ -99,7 +102,6 @@ class PowerAuthUtilsMethodChannel extends PowerAuthUtilsPlatform
 
   @override
   Future<PinTestResult> testPin(Object pin) async {
-
     // Validate pin type before serialization
     if (pin is! String && pin is! PowerAuthPassword) {
       throw ArgumentError(

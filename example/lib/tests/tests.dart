@@ -18,21 +18,29 @@ import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerau
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/tests/suites/powerauth_biometrics_tests.dart';
 
 class Tests {
-
   final _testSuites = [
-      PowerAuthBiometricsTests(),
-      PowerauthBiometricsInteractiveTests(),
-    ];
+    PowerAuthBiometricsTests(),
+    PowerauthBiometricsInteractiveTests(),
+  ];
 
   Future<TestResult> run({bool interactive = false}) async {
-    final testSuites = _testSuites.where((testSuite) => testSuite.isInteractive == interactive).toList();
+    final testSuites =
+        _testSuites
+            .where((testSuite) => testSuite.isInteractive == interactive)
+            .toList();
     //PowerAuthDebug.traceNativeCodeCalls(traceEachCall: false, traceFailure: false);
-    print("\n\n### ${interactive ? "Interactive" : "Non-interactive"} tests starting...");
+    print(
+      "\n\n### ${interactive ? "Interactive" : "Non-interactive"} tests starting...",
+    );
     for (var testSuite in testSuites) {
       await testSuite.runTests();
     }
-    final failedTests = testSuites.where((testSuite) => testSuite.testFailCount > 0);
-    final result = TestResult("${testSuites.length} suites finished with ${failedTests.length} failed tests ${failedTests.isNotEmpty ? "❌❌❌" : "✅✅✅"}");
+    final failedTests = testSuites.where(
+      (testSuite) => testSuite.testFailCount > 0,
+    );
+    final result = TestResult(
+      "${testSuites.length} suites finished with ${failedTests.length} failed tests ${failedTests.isNotEmpty ? "❌❌❌" : "✅✅✅"}",
+    );
     return result;
   }
 }

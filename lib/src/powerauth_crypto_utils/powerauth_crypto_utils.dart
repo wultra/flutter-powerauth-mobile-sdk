@@ -22,11 +22,14 @@ import 'powerauth_crypto_utils_platform_interface.dart';
 class PowerAuthCryptoUtils {
   PowerAuthCryptoUtils._();
 
-  static PowerAuthCryptoUtilsPlatform get _platform => PowerAuthCryptoUtilsPlatform.instance;
+  static PowerAuthCryptoUtilsPlatform get _platform =>
+      PowerAuthCryptoUtilsPlatform.instance;
 
   /// Generate cryptographically secure random bytes of given [length].
-  static Future<Uint8List> randomBytes(int length) => _platform.randomBytes(length);
+  static Future<Uint8List> randomBytes(int length) =>
+      _platform.randomBytes(length);
 
   /// Compute SHA-256 hash for the provided [data].
-  static Future<Uint8List> hashSha256(Uint8List data) => _platform.hashSha256(data);
+  static Future<Uint8List> hashSha256(Uint8List data) =>
+      _platform.hashSha256(data);
 }

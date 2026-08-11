@@ -37,7 +37,7 @@ enum class PowerAuthLogLevel {
 /**
  * A simple logger for internal SDK usage.
  */
-object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
+object PowerAuthLogger : EventChannel.StreamHandler, PowerAuthLogListener {
 
     private val mainThreadHandler = Handler(Looper.getMainLooper())
 
@@ -143,4 +143,4 @@ object PowerAuthLogger: EventChannel.StreamHandler, PowerAuthLogListener {
     override fun onCancel(arguments: Any?) {
         eventSink = null
     }
-} 
+}

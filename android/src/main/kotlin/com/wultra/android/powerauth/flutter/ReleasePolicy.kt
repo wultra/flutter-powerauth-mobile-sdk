@@ -30,9 +30,7 @@ sealed class ReleasePolicy(private val type: Int, internal val param: Int = 0) {
         return type == other.type && param == other.param
     }
 
-    override fun hashCode(): Int {
-        return 31 * type + param
-    }
+    override fun hashCode(): Int = 31 * type + param
 
     object Manual : ReleasePolicy(TYPE_MANUAL)
     class AfterUse(count: Int) : ReleasePolicy(TYPE_AFTER_USE, count) {

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
@@ -64,14 +62,20 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
         final clientConfiguration = PowerAuthClientConfiguration(
           connectionTimeout: 30.0,
         );
-        await _powerAuth.configure(configuration: configuration, clientConfiguration: clientConfiguration);
+        await _powerAuth.configure(
+          configuration: configuration,
+          clientConfiguration: clientConfiguration,
+        );
 
         // powerAuth object configured
-
       } on PowerAuthException catch (configError) {
-        print("PowerAuth configuration failed (Code: ${configError.code}, msg: ${configError.message}). ");
+        print(
+          "PowerAuth configuration failed (Code: ${configError.code}, msg: ${configError.message}). ",
+        );
       } catch (configError) {
-        print("Failed to auto-configure PowerAuth (Unknown Error): $configError");
+        print(
+          "Failed to auto-configure PowerAuth (Unknown Error): $configError",
+        );
       }
     }
   }
@@ -87,7 +91,8 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
     } on PowerAuthException catch (error) {
       setState(() {
         _configuration = null;
-        _status = "Failed to read configuration "
+        _status =
+            "Failed to read configuration "
             "(Code: ${error.code}, msg: ${error.message}).";
       });
     } catch (error) {
@@ -101,9 +106,7 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Simple Configuration'),
-      ),
+      appBar: AppBar(title: const Text('Simple Configuration')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -118,9 +121,13 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                SelectableText('baseEndpointUrl: ${_configuration!.baseEndpointUrl}'),
+                SelectableText(
+                  'baseEndpointUrl: ${_configuration!.baseEndpointUrl}',
+                ),
                 const SizedBox(height: 8),
-                SelectableText('configuration: ${_configuration!.configuration.length > 50 ? _configuration!.configuration.substring(0, 50) : _configuration!.configuration}'),
+                SelectableText(
+                  'configuration: ${_configuration!.configuration.length > 50 ? _configuration!.configuration.substring(0, 50) : _configuration!.configuration}',
+                ),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () async {
@@ -137,7 +144,8 @@ class _SimpleConfigurationScreenState extends State<SimpleConfigurationScreen> {
                 ElevatedButton(
                   onPressed: _loadConfiguration,
                   child: const Text('Initialize Configuration'),
-                )],
+                ),
+              ],
               const SizedBox(height: 24),
             ],
           ),

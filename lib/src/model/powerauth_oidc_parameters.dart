@@ -18,27 +18,26 @@
 class PowerAuthOIDCParameters {
   /// OAuth 2.0 provider identification.
   final String providerId;
+
   /// OAuth 2.0 authorization code.
   final String code;
+
   /// Nonce used in the OAuth 2.0 flow.
   final String nonce;
+
   /// Optional code verifier, in case that PKCE extension is used for an activation.
   final String? codeVerifier;
 
   PowerAuthOIDCParameters({
-    required this.providerId, 
-    required this.code, 
-    required this.nonce, 
-    this.codeVerifier
+    required this.providerId,
+    required this.code,
+    required this.nonce,
+    this.codeVerifier,
   });
 
   /// Converts the parameters to a map representation.
   Map<String, dynamic> toMap() {
-    var data = {
-      'providerId': providerId,
-      'code': code,
-      'nonce': nonce,
-    };
+    var data = {'providerId': providerId, 'code': code, 'nonce': nonce};
     if (codeVerifier != null) {
       data['codeVerifier'] = codeVerifier!;
     }

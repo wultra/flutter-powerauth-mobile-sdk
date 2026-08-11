@@ -20,16 +20,15 @@ package com.wultra.android.powerauth.flutter
  * Exception type used internally in this module to propagate error code and message
  * to Flutter result.
  */
-class WrapperException :
-/**
- * Construct WrapperException with required error code and message.
- * @param errorCode Error code that should be reported to promise as failure.
- * @param message Message that should be reported to promise as failure.
- */
-    Exception {
+class WrapperException : Exception {
 
     val errorCode: String
 
+    /**
+     * Construct WrapperException with required error code and message.
+     * @param errorCode Error code that should be reported to promise as failure.
+     * @param message Message that should be reported to promise as failure.
+     */
     constructor(errorCode: String, message: String) : super(message, null) {
         this.errorCode = errorCode
     }
@@ -43,4 +42,4 @@ class WrapperException :
     constructor(errorCode: String, message: String, cause: Throwable?) : super(message, cause) {
         this.errorCode = errorCode
     }
-} 
+}

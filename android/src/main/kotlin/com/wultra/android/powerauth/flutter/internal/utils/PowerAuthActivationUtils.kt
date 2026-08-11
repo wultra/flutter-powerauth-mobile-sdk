@@ -23,23 +23,19 @@ import io.getlime.security.powerauth.networking.response.CreateActivationResult
 import io.getlime.security.powerauth.sdk.PowerAuthAuthorizationHttpHeader
 
 object PowerAuthActivationUtils {
-    fun activationStatusToMap(status: ActivationStatus): Map<String, Any?> {
-        return mapOf(
-            "state" to activationStateToString(status.state),
-            "failCount" to status.failCount,
-            "maxFailCount" to status.maxFailCount,
-            "remainingAttempts" to status.remainingAttempts,
-            "customObject" to status.customObject
-        )
-    }
+    fun activationStatusToMap(status: ActivationStatus): Map<String, Any?> = mapOf(
+        "state" to activationStateToString(status.state),
+        "failCount" to status.failCount,
+        "maxFailCount" to status.maxFailCount,
+        "remainingAttempts" to status.remainingAttempts,
+        "customObject" to status.customObject
+    )
 
-    fun createActivationResultToMap(activationResult: CreateActivationResult): Map<String, Any?> {
-        return mapOf(
-            "activationFingerprint" to activationResult.activationFingerprint,
-            "customAttributes" to activationResult.customActivationAttributes,
-            "userInfoClaims" to activationResult.userInfo?.allClaims
-        )
-    }
+    fun createActivationResultToMap(activationResult: CreateActivationResult): Map<String, Any?> = mapOf(
+        "activationFingerprint" to activationResult.activationFingerprint,
+        "customAttributes" to activationResult.customActivationAttributes,
+        "userInfoClaims" to activationResult.userInfo?.allClaims
+    )
 
     fun authorizationHeaderToMap(header: PowerAuthAuthorizationHttpHeader): Map<String, String> {
         if (header.powerAuthErrorCode != PowerAuthErrorCodes.SUCCEED) {
@@ -52,15 +48,13 @@ object PowerAuthActivationUtils {
         )
     }
 
-    private fun activationStateToString(state: Int): String {
-        return when (state) {
-            ActivationStatus.State_Created -> "created"
-            ActivationStatus.State_Pending_Commit -> "pendingCommit"
-            ActivationStatus.State_Active -> "active"
-            ActivationStatus.State_Blocked -> "blocked"
-            ActivationStatus.State_Removed -> "removed"
-            ActivationStatus.State_Deadlock -> "deadlock"
-            else -> "unknown"
-        }
+    private fun activationStateToString(state: Int): String = when (state) {
+        ActivationStatus.State_Created -> "created"
+        ActivationStatus.State_Pending_Commit -> "pendingCommit"
+        ActivationStatus.State_Active -> "active"
+        ActivationStatus.State_Blocked -> "blocked"
+        ActivationStatus.State_Removed -> "removed"
+        ActivationStatus.State_Deadlock -> "deadlock"
+        else -> "unknown"
     }
 }

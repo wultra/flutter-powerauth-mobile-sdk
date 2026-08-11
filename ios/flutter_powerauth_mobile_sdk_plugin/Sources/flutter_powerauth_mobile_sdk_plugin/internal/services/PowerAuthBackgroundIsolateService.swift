@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 import UIKit
 
 internal class PowerAuthBackgroundIsolateService: PowerAuthFlutterService {
-    
+
     let name = "isolate"
-    
+
     private var backgroundFlutterEngine: FlutterEngine?
-    
+
     let handlers = [
         "isolate_startBackgroundIsolate": startBackgroundIsolate,
         "isolate_removeBackgroundIsolate": removeBackgroundIsolate
     ]
-    
+
     // MARK: - Handlers
-    
+
     private func startBackgroundIsolate(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         guard backgroundFlutterEngine == nil else {
             PowerAuthLogger.debug("The background isolate is already running")
@@ -41,24 +41,24 @@ internal class PowerAuthBackgroundIsolateService: PowerAuthFlutterService {
 
         // Create a new Flutter engine for background isolate
         backgroundFlutterEngine = FlutterEngine(name: "background_isolate")
-        
+
         // Start the engine
         backgroundFlutterEngine?.run()
-        
+
         PowerAuthLogger.debug("Background isolate started successfully")
         result(nil)
     }
-    
+
     private func removeBackgroundIsolate(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         clearFlutterEngine()
         result(nil)
     }
-    
+
     // MARK: - Private methods
-    
+
     private func clearFlutterEngine() {
         backgroundFlutterEngine?.destroyContext()
         backgroundFlutterEngine = nil
         PowerAuthLogger.debug("Background isolate removed")
     }
-} 
+}

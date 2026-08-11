@@ -71,18 +71,24 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PowerAuthTestingScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PowerAuthTestingScreen(),
+                    ),
+                  ),
               child: const Text('PowerAuth Testing'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SimpleConfigurationScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SimpleConfigurationScreen(),
+                    ),
+                  ),
               child: const Text('Simple Configuration'),
             ),
           ],

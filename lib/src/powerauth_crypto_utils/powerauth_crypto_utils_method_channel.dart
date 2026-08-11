@@ -23,7 +23,6 @@ import 'powerauth_crypto_utils_platform_interface.dart';
 /// Method channel implementation for PowerAuth core cryptographic utilities.
 class PowerAuthCryptoUtilsMethodChannel extends PowerAuthCryptoUtilsPlatform
     with MethodChannelHelper {
-
   @override
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('powerauth_plugin');
@@ -31,7 +30,7 @@ class PowerAuthCryptoUtilsMethodChannel extends PowerAuthCryptoUtilsPlatform
   @override
   Future<Uint8List> randomBytes(int length) async {
     return await invokeMethod<Uint8List>('cryptoUtils_randomBytes', {
-      'length': length
+      'length': length,
     });
   }
 

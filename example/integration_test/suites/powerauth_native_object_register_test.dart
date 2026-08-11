@@ -419,7 +419,7 @@ main() {
 
       print("Using IDs '$dataId1', '$dataId2', '$dataId3', '$dataId4'");
 
-      // All manual objects must be in the register for the whole time 
+      // All manual objects must be in the register for the whole time
       expect(
         await NativeObjectRegister.findObject(dataId1, NativeObjectType.data),
         true,

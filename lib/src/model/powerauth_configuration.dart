@@ -16,7 +16,6 @@
 
 /// Contains configuration data for a single `PowerAuth` instance.
 class PowerAuthConfiguration {
-
   /// String with the cryptographic configuration.
   final String configuration;
 
@@ -24,7 +23,7 @@ class PowerAuthConfiguration {
   final String baseEndpointUrl;
 
   /// Construct configuration with required parameters.
-  /// 
+  ///
   /// [configuration] String with the cryptographic configuration.
   /// [baseEndpointUrl] Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
   PowerAuthConfiguration({

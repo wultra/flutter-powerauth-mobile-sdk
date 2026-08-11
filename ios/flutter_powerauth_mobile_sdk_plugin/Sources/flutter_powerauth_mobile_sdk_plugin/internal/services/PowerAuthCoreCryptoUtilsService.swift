@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 import PowerAuthCore
 
 internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
-    
+
     // MARK: - PowerAuthFlutterService members
-    
+
     let name = "PowerAuthCoreCryptoUtils"
-    
+
     let handlers = [
         "cryptoUtils_randomBytes": randomBytes,
         "cryptoUtils_hashSha256": hashSha256
     ]
-    
+
     fileprivate enum Args: String {
         case length
         case data
     }
-    
+
     // MARK: - Handlers
-    
+
     private func randomBytes(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let length: Int = try call.requireParameter(Args.length)
         guard length > 0 else {
@@ -46,7 +46,7 @@ internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
         let bytes = PowerAuthCoreCryptoUtils.randomBytes(UInt(length))
         result(bytes)
     }
-    
+
     private func hashSha256(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let typedData: FlutterStandardTypedData = try call.requireParameter(Args.data)
         let digest = PowerAuthCoreCryptoUtils.hashSha256(typedData.data)

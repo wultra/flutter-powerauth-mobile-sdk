@@ -16,7 +16,6 @@
 
 /// Basic HTTP Authentication data.
 class PowerAuthBasicHttpAuthentication {
-
   /// Basic HTTP Authentication user name.
   final String username;
 
@@ -31,5 +30,4 @@ class PowerAuthBasicHttpAuthentication {
   Map<String, String> toMap() {
     return {'username': username, 'password': password};
   }
-
 }

@@ -18,7 +18,6 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/src/model/powerauth_user_inf
 
 /// Success object returned by the `createActivation` call.
 class PowerAuthCreateActivationResult {
-
   /// Decimalized fingerprint calculated from device's and server's public keys.
   final String activationFingerprint;
 
@@ -38,14 +37,12 @@ class PowerAuthCreateActivationResult {
   factory PowerAuthCreateActivationResult.fromMap(Map<dynamic, dynamic> map) {
     return PowerAuthCreateActivationResult(
       activationFingerprint: map['activationFingerprint'] as String,
-      customAttributes:
-          map['customAttributes'] != null
-              ? Map<String, dynamic>.from(map['customAttributes'] as Map)
-              : null,
-      userInfo: 
-          map['userInfoClaims'] != null
-              ? PowerAuthUserInfo(map['userInfoClaims'] as Map)
-              : null,
+      customAttributes: map['customAttributes'] != null
+          ? Map<String, dynamic>.from(map['customAttributes'] as Map)
+          : null,
+      userInfo: map['userInfoClaims'] != null
+          ? PowerAuthUserInfo(map['userInfoClaims'] as Map)
+          : null,
     );
   }
 }

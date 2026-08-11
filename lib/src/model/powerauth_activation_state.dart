@@ -17,7 +17,6 @@
 /// Defines all possible states of activation.
 /// The state is part of the information received in [PowerAuthActivationStatus].
 enum PowerAuthActivationState {
-
   /// The activation is just created.
   created,
 

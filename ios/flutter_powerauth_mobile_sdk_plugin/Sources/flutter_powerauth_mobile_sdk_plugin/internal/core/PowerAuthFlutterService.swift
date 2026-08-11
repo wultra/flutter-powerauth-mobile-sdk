@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 
 internal protocol PowerAuthFlutterService {
-    typealias Handler = (Self) -> (FlutterMethodCall, @escaping FlutterResult) throws -> ()
+    typealias Handler = (Self) -> (FlutterMethodCall, @escaping FlutterResult) throws -> Void
     var name: String { get }
     var handlers: [String: Handler] { get }
 }

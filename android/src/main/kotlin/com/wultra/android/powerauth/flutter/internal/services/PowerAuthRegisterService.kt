@@ -77,4 +77,4 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
             Errors.error(result, t)
         }
     }
-} 
+}

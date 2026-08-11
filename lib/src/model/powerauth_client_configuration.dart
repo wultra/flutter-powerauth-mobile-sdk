@@ -21,7 +21,6 @@ import 'powerauth_http_header.dart';
 
 /// Class that contains configuration for RESTful API client used internally by SDK.
 class PowerAuthClientConfiguration {
-
   /// Defines whether unsecured connection is allowed. Defaults to `false`.
   final bool enableUnsecureTraffic;
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 import PowerAuth2
 import PowerAuthCore
 
@@ -46,7 +46,7 @@ internal enum PowerAuthServiceRegistry {
         lock.synchronized {
             attachedPluginCount -= 1
             assert(attachedPluginCount >= 0, "PowerAuthServiceRegistry: Detach called more times than attach.")
-            
+
             if attachedPluginCount == 0 {
                 cleanUp()
             }

@@ -32,7 +32,10 @@ import io.getlime.security.powerauth.system.PowerAuthLog
  * PowerAuthPlugin integrates the PowerAuth SDK with Flutter, enabling secure authentication and authorization
  * features in Flutter apps by bridging native Android functionality to Dart code via method channels.
  */
-class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class PowerAuthPlugin :
+    FlutterPlugin,
+    MethodCallHandler,
+    ActivityAware {
 
     private lateinit var channel: MethodChannel
     private lateinit var loggingChannel: EventChannel
@@ -101,7 +104,9 @@ class PowerAuthPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     ?: result.notImplemented()
             } ?: result.notImplemented()
         } catch (e: Exception) {
-            PowerAuthLogger.error { "PowerAuth plugin with method ${call.method} threw an error: ${e.localizedMessage}" }
+            PowerAuthLogger.error {
+                "PowerAuth plugin with method ${call.method} threw an error: ${e.localizedMessage}"
+            }
             Errors.error(result, e)
         }
     }

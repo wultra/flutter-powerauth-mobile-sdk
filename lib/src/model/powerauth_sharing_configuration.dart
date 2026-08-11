@@ -18,7 +18,6 @@
 ///
 /// Class that represents the activation data sharing settings.
 class PowerAuthSharingConfiguration {
-
   /// Name of app group that allows you sharing data between multiple applications. Be aware that the value
   /// overrides [accessGroupName] property if it's provided in [PowerAuthKeychainConfiguration].
   ///

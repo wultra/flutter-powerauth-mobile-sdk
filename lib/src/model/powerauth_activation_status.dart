@@ -19,7 +19,6 @@ import '../logging/powerauth_logger.dart';
 
 /// Represents the complete status of the activation.
 class PowerAuthActivationStatus {
-
   /// State of the activation.
   final PowerAuthActivationState state;
 
@@ -45,17 +44,19 @@ class PowerAuthActivationStatus {
   });
 
   factory PowerAuthActivationStatus.fromJson(Map<dynamic, dynamic> map) {
-
     PowerAuthActivationState parseState(String? stateString) {
       if (stateString == null) {
         return PowerAuthActivationState.removed;
       }
-        
+
       try {
-        return PowerAuthActivationState.values.firstWhere((e) => e.name == stateString);
+        return PowerAuthActivationState.values.firstWhere(
+          (e) => e.name == stateString,
+        );
       } catch (e) {
-        
-        PowerAuthLogger.warning("Unknown PowerAuthActivationState received: $stateString");
+        PowerAuthLogger.warning(
+          "Unknown PowerAuthActivationState received: $stateString",
+        );
         return PowerAuthActivationState.removed;
       }
     }
@@ -65,10 +66,9 @@ class PowerAuthActivationStatus {
       failCount: map['failCount'] as int,
       maxFailCount: map['maxFailCount'] as int,
       remainingAttempts: map['remainingAttempts'] as int,
-      customObject:
-          map['customObject'] != null
-              ? Map<String, dynamic>.from(map['customObject'] as Map)
-              : null,
+      customObject: map['customObject'] != null
+          ? Map<String, dynamic>.from(map['customObject'] as Map)
+          : null,
     );
   }
 

@@ -16,9 +16,9 @@
 package com.wultra.android.powerauth.flutter.internal.services
 
 import com.wultra.android.powerauth.flutter.Errors
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogLevel
 import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogLevel
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.Result
 
@@ -57,4 +57,4 @@ class PowerAuthLoggingService : BasePowerAuthService(null) {
             result.error(Errors.EC_INVALID_LOG_LEVEL, "Invalid log level: $levelString", null)
         }
     }
-} 
+}

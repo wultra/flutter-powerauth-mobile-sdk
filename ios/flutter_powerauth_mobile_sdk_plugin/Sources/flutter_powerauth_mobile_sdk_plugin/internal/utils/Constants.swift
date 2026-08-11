@@ -15,7 +15,7 @@
  */
 
 internal class Constants {
-    
+
     /// Time interval in milliseconds to keep pre-authorized biometric
     /// key in memory.
     static let BIOMETRY_KEY_KEEP_ALIVE_TIME: Int = 10_000

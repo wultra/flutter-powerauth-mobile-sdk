@@ -358,10 +358,7 @@ main() {
       expect(await sdk.canStartActivation(), true);
       await helper.createActivation();
       expect(helper.createdActivation?.activationCode, isNotNull);
-      expect(
-        helper.createdActivation?.activationCodeSignature,
-        isNotNull,
-      );
+      expect(helper.createdActivation?.activationCodeSignature, isNotNull);
     });
 
     test('testOIDCActivationData', () async {

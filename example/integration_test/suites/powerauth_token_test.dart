@@ -203,7 +203,8 @@ main() {
       expect(token2.tokenIdentifier, isNotNull);
       expect(token2.tokenName, t2);
 
-      await sdk.timeSynchronizationService.resetTimeSynchronization(); // force time sync
+      await sdk.timeSynchronizationService
+          .resetTimeSynchronization(); // force time sync
 
       final header1 = await tokenStore.generateHeaderForToken(t1);
       expect(header1.value, isNotNull);

@@ -22,10 +22,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-
 import io.getlime.security.powerauth.sdk.PowerAuthSDK
 
-class PowerAuthPasswordPlugin : FlutterPlugin, MethodCallHandler {
+class PowerAuthPasswordPlugin :
+    FlutterPlugin,
+    MethodCallHandler {
 
     private lateinit var channel: MethodChannel
 
@@ -39,7 +40,6 @@ class PowerAuthPasswordPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-
         when (call.method) {
             "initialize" -> {
                 result.success(null)
@@ -80,4 +80,4 @@ class PowerAuthPasswordPlugin : FlutterPlugin, MethodCallHandler {
             else -> result.notImplemented()
         }
     }
-} 
+}

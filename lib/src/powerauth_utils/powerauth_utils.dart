@@ -23,14 +23,15 @@ import '../powerauth_activation_code_utils/powerauth_activation_code_utils_platf
 
 /// The `PowerAuthUtils` class provides utility methods for the PowerAuth SDK.
 class PowerAuthUtils {
-
   PowerAuthUtils._();
 
-  static PowerAuthUtilsPlatform get _platform => PowerAuthUtilsPlatform.instance;
+  static PowerAuthUtilsPlatform get _platform =>
+      PowerAuthUtilsPlatform.instance;
 
   /// Returns information about the current environment, such as system name, version, device ID,
   /// and the PowerAuth SDK version.
-  static Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() => _platform.getEnvironmentInfo();
+  static Future<PowerAuthEnvironmentInfo> getEnvironmentInfo() =>
+      _platform.getEnvironmentInfo();
 
   /// Migrates the iOS keychain initialization state between two activation data sharing setups.
   ///
@@ -73,63 +74,69 @@ class PowerAuthUtils {
       );
     }
 
-    return _platform.migrateiOSSharingConfiguration(from?.appGroup, to?.appGroup);
+    return _platform.migrateiOSSharingConfiguration(
+      from?.appGroup,
+      to?.appGroup,
+    );
   }
 }
 
 /// Class representing the environment information for the PowerAuth SDK.
 /// This includes system details, application version or device information.
 class PowerAuthEnvironmentInfo {
+  /// System name, for example "iOS", "Android", "iPadOS", ...
+  String systemName;
 
-    /// System name, for example "iOS", "Android", "iPadOS", ...
-    String systemName;
-    /// Version of the system
-    String systemVersion;
+  /// Version of the system
+  String systemVersion;
 
-    /// Application version, e.g. "1.0.0".
-    String? applicationVersion;
-    /// Host application identifier, for example "com.wultra.demoapp"
-    String? applicationIdentifier;
+  /// Application version, e.g. "1.0.0".
+  String? applicationVersion;
 
-    /// For example "apple" or "Samsung"
-    String deviceManufacturer;
-    /// Device ID, for example "iPhone9,2"
-    String deviceId;
+  /// Host application identifier, for example "com.wultra.demoapp"
+  String? applicationIdentifier;
 
-    /// PowerAuth Flutter SDK version, for example "4.0.0"
-    String sdkVersion;
+  /// For example "apple" or "Samsung"
+  String deviceManufacturer;
 
-    PowerAuthEnvironmentInfo({
-      required this.systemName,
-      required this.systemVersion,
-      this.applicationVersion,
-      this.applicationIdentifier,
-      required this.deviceManufacturer,
-      required this.deviceId,
-      required this.sdkVersion,
-    });
+  /// Device ID, for example "iPhone9,2"
+  String deviceId;
 
-    factory PowerAuthEnvironmentInfo.fromJson(Map<dynamic, dynamic> json) {
-      return PowerAuthEnvironmentInfo(
-        systemName: json['systemName'] as String,
-        systemVersion: json['systemVersion'] as String,
-        applicationVersion: json['applicationVersion'] as String?,
-        applicationIdentifier: json['applicationIdentifier'] as String?,
-        deviceManufacturer: json['deviceManufacturer'] as String,
-        deviceId: json['deviceId'] as String,
-        sdkVersion: powerAuthFlutterVersion, // Use the library version defined in version.dart
-      );
-    }
+  /// PowerAuth Flutter SDK version, for example "4.0.0"
+  String sdkVersion;
 
-    Map<String, dynamic> toJson() {
-      return {
-        'systemName': systemName,
-        'systemVersion': systemVersion,
-        'applicationVersion': applicationVersion,
-        'applicationIdentifier': applicationIdentifier,
-        'deviceManufacturer': deviceManufacturer,
-        'deviceId': deviceId,
-        'sdkVersion': sdkVersion,
-      };
-    }
+  PowerAuthEnvironmentInfo({
+    required this.systemName,
+    required this.systemVersion,
+    this.applicationVersion,
+    this.applicationIdentifier,
+    required this.deviceManufacturer,
+    required this.deviceId,
+    required this.sdkVersion,
+  });
+
+  factory PowerAuthEnvironmentInfo.fromJson(Map<dynamic, dynamic> json) {
+    return PowerAuthEnvironmentInfo(
+      systemName: json['systemName'] as String,
+      systemVersion: json['systemVersion'] as String,
+      applicationVersion: json['applicationVersion'] as String?,
+      applicationIdentifier: json['applicationIdentifier'] as String?,
+      deviceManufacturer: json['deviceManufacturer'] as String,
+      deviceId: json['deviceId'] as String,
+      sdkVersion:
+          powerAuthFlutterVersion, // Use the library version defined in version.dart
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'systemName': systemName,
+      'systemVersion': systemVersion,
+      'applicationVersion': applicationVersion,
+      'applicationIdentifier': applicationIdentifier,
+      'deviceManufacturer': deviceManufacturer,
+      'deviceId': deviceId,
+      'sdkVersion': sdkVersion,
+    };
+  }
 }

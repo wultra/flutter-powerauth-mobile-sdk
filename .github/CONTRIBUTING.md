@@ -6,6 +6,7 @@ In this file, you'll find several topics that will help get up-to-speed with dev
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
 - [Architecture Overview](#architecture-overview)
+- [Code Style](#code-style)
 - [Tests](#tests)
 - [Creating a Pull Request](#creating-a-pull-request)
 - [Preparing a New Release](#preparing-a-new-release)
@@ -149,6 +150,23 @@ They **delegate** all calls to the appropriate platform interface instance.
     }
     ```
 
+# Code Style
+
+Dart, Swift, and Kotlin source files are formatted with their language-native tools. Swift code is additionally checked with the same SwiftLint rules used by Wultra's native iOS SDKs, and ktlint follows the native Android SDK rule choices. Before opening a pull request, install Flutter, Xcode's `swift-format`, SwiftLint, and ktlint using the versions pinned in the [code-style workflow](workflows/flutter-analyze.yml), then run:
+
+```bash
+scripts/format-code.sh
+```
+
+To check formatting without changing files, run:
+
+```bash
+scripts/check-code-style.sh
+flutter analyze --fatal-infos --fatal-warnings
+```
+
+CI verifies the pinned tool versions before formatting. Keep local versions aligned with CI because formatter output can change between tool releases.
+
 # Tests
 
 Before you run the tests, make sure:
@@ -188,7 +206,8 @@ flutter test -r expanded integration_test/integration_test.dart # test with expa
 > 
 > - an issue is created for the change you want to make. If there is no issue, create one first.
 > - all unit tests and integration tests are passing.
-> - `flutter analyze` does not report any issues.
+> - `scripts/check-code-style.sh` does not report any issues.
+> - `flutter analyze --fatal-infos --fatal-warnings` does not report any issues.
 
 0. If you're not a Wultra employee or contractor, fork the repository and make changes in your fork. If you're a Wultra employee or contractor, you can make changes directly in the repository.
 1. Create a new branch for your changes. The branch name should follow the format `issues/issue-number-short-description`, e.g. `issues/123-fix-bug-in-inbox`.

@@ -64,7 +64,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   // Logging related state
   final List<PowerAuthLog> _logs = [];
-  PowerAuthLoggingConfig _loggingConfig = const PowerAuthLoggingConfig(level: PowerAuthLogLevel.debug);
+  PowerAuthLoggingConfig _loggingConfig = const PowerAuthLoggingConfig(
+    level: PowerAuthLogLevel.debug,
+  );
 
   @override
   void initState() {
@@ -103,15 +105,22 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
         final biometryConfig = PowerAuthBiometryConfiguration();
         final keychainConfig = PowerAuthKeychainConfiguration();
-        final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
-        final sharingConfig = PowerAuthSharingConfiguration(appGroup: "group.com.wultra.testGroup", appIdentifier: "SharedInstanceTests", keychainAccessGroup: "fake.accessGroup", sharedMemoryIdentifier: "fapp");
+        final clientConfig = PowerAuthClientConfiguration(
+          enableUnsecureTraffic: false,
+        );
+        final sharingConfig = PowerAuthSharingConfiguration(
+          appGroup: "group.com.wultra.testGroup",
+          appIdentifier: "SharedInstanceTests",
+          keychainAccessGroup: "fake.accessGroup",
+          sharedMemoryIdentifier: "fapp",
+        );
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
           biometryConfiguration: biometryConfig,
           clientConfiguration: clientConfig,
           keychainConfiguration: keychainConfig,
-          sharingConfiguration: sharingConfig
+          sharingConfiguration: sharingConfig,
         );
         print('PowerAuth configured successfully for instance: $_instanceId');
 
@@ -259,9 +268,13 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
-  Future<void> _persistActivationWithPassword(PowerAuthPassword password) async {
+  Future<void> _persistActivationWithPassword(
+    PowerAuthPassword password,
+  ) async {
     if (!_isConfigured) return _setError('Instance not configured');
-    if (_hasPendingActivation != true) return _setError('No pending activation to persist');
+    if (_hasPendingActivation != true) {
+      return _setError('No pending activation to persist');
+    }
 
     _setLoading(true);
     try {
@@ -282,9 +295,13 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     _setLoading(false);
   }
 
-  Future<void> _persistActivationWithPasswordAndBiometry(PowerAuthPassword password) async {
+  Future<void> _persistActivationWithPasswordAndBiometry(
+    PowerAuthPassword password,
+  ) async {
     if (!_isConfigured) return _setError('Instance not configured');
-    if (_hasPendingActivation != true) return _setError('No pending activation to persist');
+    if (_hasPendingActivation != true) {
+      return _setError('No pending activation to persist');
+    }
 
     _setLoading(true);
     try {
@@ -315,7 +332,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   Future<void> _removeActivationWithPassword(PowerAuthPassword password) async {
     if (!_isConfigured) return _setError('Instance not configured');
-    if (_hasValidActivation != true) return _setError('No active activation to remove');
+    if (_hasValidActivation != true) {
+      return _setError('No active activation to remove');
+    }
 
     _setLoading(true);
     try {
@@ -334,7 +353,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   Future<void> _removeActivationWithBiometry() async {
     if (!_isConfigured) return _setError('Instance not configured');
-    if (_hasValidActivation != true) return _setError('No active activation to remove');
+    if (_hasValidActivation != true) {
+      return _setError('No active activation to remove');
+    }
 
     _setLoading(true);
     try {
@@ -422,7 +443,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String signature,
     bool useMasterKey,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
 
     _setLoading(true);
     try {
@@ -704,11 +727,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
       }
       return name;
     }
-        
 
-    String formatBiometryType(PowerAuthBiometryInfo? info) => info?.biometryType.name ?? 'Unknown';
+    String formatBiometryType(PowerAuthBiometryInfo? info) =>
+        info?.biometryType.name ?? 'Unknown';
 
-    String formatBiometryStatus(PowerAuthBiometryInfo? info) => info?.canAuthenticate.name ?? 'Unknown';
+    String formatBiometryStatus(PowerAuthBiometryInfo? info) =>
+        info?.canAuthenticate.name ?? 'Unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -852,10 +876,14 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               _isLoading || !_isConfigured
                   ? null
                   : () async {
-                    final isSynchronized = await _powerAuth.timeSynchronizationService.isTimeSynchronized();
+                    final isSynchronized =
+                        await _powerAuth.timeSynchronizationService
+                            .isTimeSynchronized();
                     await _showSimpleDialog(
                       "Time Synchronization",
-                      isSynchronized ? "The time is synchronized." : "The time is NOT synchronized."
+                      isSynchronized
+                          ? "The time is synchronized."
+                          : "The time is NOT synchronized.",
                     );
                   },
           child: const Text('Is Time Synchronized'),
@@ -866,7 +894,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               _isLoading || !_isConfigured
                   ? null
                   : () async {
-                    final localTimeAdjustment = await _powerAuth.timeSynchronizationService.localTimeAdjustment();
+                    final localTimeAdjustment =
+                        await _powerAuth.timeSynchronizationService
+                            .localTimeAdjustment();
                     await _showSimpleDialog(
                       "Local Time Adjustment",
                       "Local time adjustment is: $localTimeAdjustment ms",
@@ -880,7 +910,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               _isLoading || !_isConfigured
                   ? null
                   : () async {
-                    final localTimeAdjustmentPrecision = await _powerAuth.timeSynchronizationService.localTimeAdjustmentPrecision();
+                    final localTimeAdjustmentPrecision =
+                        await _powerAuth.timeSynchronizationService
+                            .localTimeAdjustmentPrecision();
                     await _showSimpleDialog(
                       "Local Time Adjustment Precision",
                       "Local time adjustment precision is: $localTimeAdjustmentPrecision ms",
@@ -894,8 +926,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
               _isLoading || !_isConfigured
                   ? null
                   : () async {
-                    final currentTime = await _powerAuth.timeSynchronizationService.currentTime();
-                    final date = DateTime.fromMillisecondsSinceEpoch(currentTime);
+                    final currentTime =
+                        await _powerAuth.timeSynchronizationService
+                            .currentTime();
+                    final date = DateTime.fromMillisecondsSinceEpoch(
+                      currentTime,
+                    );
                     await _showSimpleDialog(
                       "Current Time",
                       "Current time is: $currentTime, which is ${date.toIso8601String()}",
@@ -911,7 +947,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   : () async {
                     var isSuccess = false;
                     try {
-                      await _powerAuth.timeSynchronizationService.synchronizeTime();
+                      await _powerAuth.timeSynchronizationService
+                          .synchronizeTime();
                       isSuccess = true;
                     } catch (e) {
                       print(e);
@@ -919,7 +956,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     }
                     await _showSimpleDialog(
                       "Time Synchronization",
-                      isSuccess ? "Time synchronized successfully." : "Failed to synchronize time.",
+                      isSuccess
+                          ? "Time synchronized successfully."
+                          : "Failed to synchronize time.",
                     );
                   },
           child: const Text('Synchronize Time'),
@@ -932,7 +971,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   : () async {
                     var isSuccess = false;
                     try {
-                      await _powerAuth.timeSynchronizationService.resetTimeSynchronization();
+                      await _powerAuth.timeSynchronizationService
+                          .resetTimeSynchronization();
                       isSuccess = true;
                     } catch (e) {
                       print(e);
@@ -940,7 +980,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                     }
                     await _showSimpleDialog(
                       "Reset Time Synchronization",
-                      isSuccess ? "Time reset successfully." : "Failed to reset time.",
+                      isSuccess
+                          ? "Time reset successfully."
+                          : "Failed to reset time.",
                     );
                   },
           child: const Text('Reset Time Synchronization'),
@@ -1004,7 +1046,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
                   : () => _showSignatureInputDialog(
                     context,
                     title: 'Compute Offline Signature (PWD)',
-                    fields: {'Password': true, 'URI ID': false, 'Data': false, 'Nonce': false},
+                    fields: {
+                      'Password': true,
+                      'URI ID': false,
+                      'Data': false,
+                      'Nonce': false,
+                    },
                     initialValues: {
                       'URI ID': defaultUriId,
                       'Data': defaultData,
@@ -1312,17 +1359,18 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
 
   Future<void> _showSimpleDialog(String title, String content) {
     return showDialog(
-      context: context, 
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -1546,8 +1594,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _addBiometryFactor() async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-    if (_hasBiometryFactor == true) return _setError('Biometry factor already added');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+    if (_hasBiometryFactor == true) {
+      return _setError('Biometry factor already added');
+    }
 
     await _showInputDialog(
       context,
@@ -1589,7 +1641,8 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     final confirm = await _showConfirmDialog(
       context,
       title: 'Remove Biometry Factor',
-      content: 'Are you sure you want to remove the biometry factor? This cannot be undone.',
+      content:
+          'Are you sure you want to remove the biometry factor? This cannot be undone.',
     );
 
     if (confirm != true) return;
@@ -1615,7 +1668,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String data,
     String nonce,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
     _setLoading(true);
 
     final fixedData = data.replaceAll("\\n", "\n");
@@ -1646,7 +1701,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String data,
     String nonce,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
     if (_hasBiometryFactor != true) {
       return _setError('Biometry factor not available');
     }
@@ -1683,7 +1740,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String password,
     String uriId,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
     _setLoading(true);
 
     try {
@@ -1706,8 +1765,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
   }
 
   Future<void> _computeGetSignatureWithBiometry(String uriId) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-    if (_hasBiometryFactor != true) return _setError('Biometry factor not available');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+    if (_hasBiometryFactor != true) {
+      return _setError('Biometry factor not available');
+    }
 
     _setLoading(true);
     try {
@@ -1740,7 +1803,9 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String uriId,
     String body,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
     _setLoading(true);
 
     try {
@@ -1769,8 +1834,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
     String uriId,
     String body,
   ) async {
-    if (!_isConfigured || _hasValidActivation != true) return _setError('Instance not configured or no valid activation');
-    if (_hasBiometryFactor != true) return _setError('Biometry factor not available');
+    if (!_isConfigured || _hasValidActivation != true) {
+      return _setError('Instance not configured or no valid activation');
+    }
+    if (_hasBiometryFactor != true) {
+      return _setError('Biometry factor not available');
+    }
 
     _setLoading(true);
 

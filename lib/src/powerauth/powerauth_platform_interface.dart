@@ -57,7 +57,11 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<PowerAuthAuthentication> resolveAuthentication(String instanceId, PowerAuthAuthentication authentication, {bool makeReusable = false}) {
+  Future<PowerAuthAuthentication> resolveAuthentication(
+    String instanceId,
+    PowerAuthAuthentication authentication, {
+    bool makeReusable = false,
+  }) {
     throw UnimplementedError(
       'resolveAuthentication() has not been implemented.',
     );
@@ -81,6 +85,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   Future<PowerAuthConfiguration> getConfiguration(String instanceId) {
     throw UnimplementedError('getConfiguration() has not been implemented.');
   }
+
   // TODO: Implement when SDK 2.0.0 is available
   // Future<PowerAuthClientConfiguration> getClientConfiguration(String instanceId) {
   //   throw UnimplementedError('getClientConfiguration() has not been implemented.');
@@ -116,8 +121,12 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     );
   }
 
-  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation(String instanceId) {
-    throw UnimplementedError('getExternalPendingOperation() has not been implemented.');
+  Future<PowerAuthExternalPendingOperation?> getExternalPendingOperation(
+    String instanceId,
+  ) {
+    throw UnimplementedError(
+      'getExternalPendingOperation() has not been implemented.',
+    );
   }
 
   Future<String?> getActivationIdentifier(String instanceId) {
@@ -236,15 +245,28 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<void> removeBiometryFactor(String instanceId) {
-    throw UnimplementedError('removeBiometryFactor() has not been implemented.');
+    throw UnimplementedError(
+      'removeBiometryFactor() has not been implemented.',
+    );
   }
 
-  Future<String> fetchEncryptionKey(String instanceId, PowerAuthAuthentication authentication, int index) {
+  Future<String> fetchEncryptionKey(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    int index,
+  ) {
     throw UnimplementedError('fetchEncryptionKey() has not been implemented.');
   }
 
-  Future<String> signDataWithDevicePrivateKey(String instanceId, PowerAuthAuthentication authentication, String data, PowerAuthDataFormat dataFormat) {
-    throw UnimplementedError('signDataWithDevicePrivateKey() has not been implemented.');
+  Future<String> signDataWithDevicePrivateKey(
+    String instanceId,
+    PowerAuthAuthentication authentication,
+    String data,
+    PowerAuthDataFormat dataFormat,
+  ) {
+    throw UnimplementedError(
+      'signDataWithDevicePrivateKey() has not been implemented.',
+    );
   }
 
   Future<bool> hasLocalToken(String instanceId, String tokenName) {
@@ -260,10 +282,16 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<void> removeAllLocalTokens(String instanceId) {
-    throw UnimplementedError('removeAllLocalTokens() has not been implemented.');
+    throw UnimplementedError(
+      'removeAllLocalTokens() has not been implemented.',
+    );
   }
 
-  Future<Map> requestAccessToken(String instanceId, String tokenName, PowerAuthAuthentication authentication) {
+  Future<Map> requestAccessToken(
+    String instanceId,
+    String tokenName,
+    PowerAuthAuthentication authentication,
+  ) {
     throw UnimplementedError('requestAccessToken() has not been implemented.');
   }
 
@@ -272,7 +300,9 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<Map> generateHeaderForToken(String instanceId, String tokenName) {
-    throw UnimplementedError('generateHeaderForToken() has not been implemented.');
+    throw UnimplementedError(
+      'generateHeaderForToken() has not been implemented.',
+    );
   }
 
   Future<PowerAuthUserInfo> fetchUserInfo(String instanceId) {
@@ -280,7 +310,9 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<PowerAuthUserInfo?> getLastFetchedUserInfo(String instanceId) {
-    throw UnimplementedError('getLastFetchedUserInfo() has not been implemented.');
+    throw UnimplementedError(
+      'getLastFetchedUserInfo() has not been implemented.',
+    );
   }
 
   Future<bool> isTimeSynchronized(String instanceId) {
@@ -292,7 +324,9 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<int> localTimeAdjustmentPrecision(String instanceId) {
-    throw UnimplementedError('localTimeAdjustmentPrecision() has not been implemented.');
+    throw UnimplementedError(
+      'localTimeAdjustmentPrecision() has not been implemented.',
+    );
   }
 
   Future<int> currentTime(String instanceId) {
@@ -304,6 +338,8 @@ abstract class PowerAuthPlatform extends PlatformInterface {
   }
 
   Future<void> resetTimeSynchronization(String instanceId) {
-    throw UnimplementedError('resetTimeSynchronization() has not been implemented.');
+    throw UnimplementedError(
+      'resetTimeSynchronization() has not been implemented.',
+    );
   }
 }

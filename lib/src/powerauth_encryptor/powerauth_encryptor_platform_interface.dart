@@ -24,7 +24,6 @@ import 'powerauth_encryptor_method_channel.dart';
 
 /// Platform interface for [PowerAuthEncryptor].
 abstract class PowerAuthEncryptorPlatform extends PlatformInterface {
-
   PowerAuthEncryptorPlatform() : super(token: _token);
 
   static final Object _token = Object();

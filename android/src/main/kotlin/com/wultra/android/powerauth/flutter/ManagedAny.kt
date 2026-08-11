@@ -29,9 +29,7 @@ class ManagedAny<T : Any> private constructor(
         cleanupAction?.invoke(instance)
     }
 
-    override fun managedInstance(): T {
-        return instance
-    }
+    override fun managedInstance(): T = instance
 
     companion object {
         /**
@@ -42,8 +40,7 @@ class ManagedAny<T : Any> private constructor(
          * @return An [IManagedObject] wrapping the instance.
          */
         @JvmStatic
-        fun <T : Any> wrap(instance: T, cleanupAction: ((T) -> Unit)? = null): IManagedObject<T> {
-            return ManagedAny(instance, cleanupAction)
-        }
+        fun <T : Any> wrap(instance: T, cleanupAction: ((T) -> Unit)? = null): IManagedObject<T> =
+            ManagedAny(instance, cleanupAction)
     }
 }

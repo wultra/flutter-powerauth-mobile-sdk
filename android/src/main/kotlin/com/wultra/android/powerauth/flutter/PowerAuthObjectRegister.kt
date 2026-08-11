@@ -22,14 +22,14 @@ import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_DEFAULT
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MAX
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_PERIOD_MIN
 import com.wultra.android.powerauth.flutter.Constants.CLEANUP_REMOVE_DELAY
+import io.getlime.security.powerauth.core.Password
+import java.nio.charset.StandardCharsets
 import java.util.Random
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.collections.ArrayList
 import kotlin.concurrent.withLock
-import io.getlime.security.powerauth.core.Password
-import java.nio.charset.StandardCharsets
 
 /**
  * Object register that allows exposing native objects.
@@ -136,7 +136,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                 // On other side, if time is specified then the object was explicitly removed, so
                 // it should be ready for remove after a short delay period.
                 val readyNow =
-                    removeOrderTime == 0L || (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
+                    removeOrderTime == 0L ||
+                        (SystemClock.elapsedRealtime() - removeOrderTime >= CLEANUP_REMOVE_DELAY.toLong())
 
                 if (readyNow) {
                     obj.cleanup()
@@ -145,17 +146,15 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                 return readyNow
             }
 
-        fun debugDump(): Map<String, Any?> {
-            return mapOf(
-                "class" to obj.managedInstance()::class.java.simpleName,
-                "isValid" to isStillValid,
-                "tag" to tag,
-                "createDate" to creationTime,
-                "lastUseDate" to if (lastUseTime != creationTime) lastUseTime else null,
-                "usageCount" to useCount,
-                "policies" to (policies?.map { it.toString() } ?: emptyList())
-            )
-        }
+        fun debugDump(): Map<String, Any?> = mapOf(
+            "class" to obj.managedInstance()::class.java.simpleName,
+            "isValid" to isStillValid,
+            "tag" to tag,
+            "createDate" to creationTime,
+            "lastUseDate" to if (lastUseTime != creationTime) lastUseTime else null,
+            "usageCount" to useCount,
+            "policies" to (policies?.map { it.toString() } ?: emptyList())
+        )
     }
 
     /**
@@ -222,12 +221,8 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
      * @param options Additional operation that should be performed with the object's entry. Use `OPT_*` constants.
      * @param <T> Expected object's type.
      * @return instance of object with given identifier or null if no such object exists in register.
-    </T> */
-    private fun <T : Any> findAndProcessObject(
-        id: String?,
-        expectedClass: Class<T>?,
-        options: Int
-    ): T? {
+     </T> */
+    private fun <T : Any> findAndProcessObject(id: String?, expectedClass: Class<T>?, options: Int): T? {
         val objectId = id ?: return null
         val holder = managedObjects[objectId] ?: return null
 
@@ -235,11 +230,15 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
         if (!holder.isStillValid ||
             (expectedClass != null && !expectedClass.isInstance(instance))
-        ) return null
+        ) {
+            return null
+        }
 
         when (options) {
             OPT_SET_USE -> holder.setUsed()
+
             OPT_TOUCH -> holder.touch()
+
             OPT_REMOVE -> if (holder.setRemoved()) {
                 holder.obj.cleanup()
                 managedObjects.remove(id)
@@ -306,9 +305,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         stopCleanupJob()
     }
 
-    fun isValidObjectId(id: String?): Boolean {
-        return !id.isNullOrEmpty()
-    }
+    fun isValidObjectId(id: String?): Boolean = !id.isNullOrEmpty()
 
     private fun setCleanupPeriod(periodMs: Long) = lock.withLock {
         cleanupPeriodMs = if (periodMs in CLEANUP_PERIOD_MIN..CLEANUP_PERIOD_MAX) {
@@ -353,11 +350,15 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         if (cleanupTimer == null) return
 
         try {
-            cleanupTimer?.schedule(object : TimerTask() {
-                override fun run() {
-                    lock.withLock { performCleanup() }
-                }
-            }, cleanupPeriodMs, cleanupPeriodMs)
+            cleanupTimer?.schedule(
+                object : TimerTask() {
+                    override fun run() {
+                        lock.withLock { performCleanup() }
+                    }
+                },
+                cleanupPeriodMs,
+                cleanupPeriodMs
+            )
         } catch (_: IllegalStateException) {
         }
     }
@@ -431,6 +432,7 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
 
                         when {
                             policy.startsWith("manual") -> policies.add(ReleasePolicy.manual())
+
                             policy.startsWith("afterUse") -> policies.add(
                                 ReleasePolicy.afterUse(
                                     param
@@ -461,9 +463,11 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
                         }
 
                         "number" -> ManagedAny.wrap(42)
+
                         "password" -> ManagedAny.wrap(
                             Password(),
-                            cleanupAction = { password -> password.destroy() })
+                            cleanupAction = { password -> password.destroy() }
+                        )
 
                         else -> null
                     }
@@ -547,12 +551,10 @@ class PowerAuthObjectRegister(private val isDebug: Boolean) {
         }
     }
 
-    private fun getClassForObjectType(objectType: String?): Class<out Any>? {
-        return when (objectType) {
-            "data", "secureData" -> ByteArray::class.java
-            "number" -> Number::class.java
-            "password" -> Password::class.java
-            else -> null
-        }
+    private fun getClassForObjectType(objectType: String?): Class<out Any>? = when (objectType) {
+        "data", "secureData" -> ByteArray::class.java
+        "number" -> Number::class.java
+        "password" -> Password::class.java
+        else -> null
     }
 }

@@ -15,18 +15,18 @@
  */
 
 import Flutter
-import UIKit
 import PowerAuth2
 import PowerAuthCore
+import UIKit
 
 internal class PowerAuthUtilsService: PowerAuthFlutterService {
-    
+
     typealias Service = PowerAuthUtilsService
-    
+
     // MARK: - PowerAuthFlutterService members
-    
+
     var name: String { "PowerAuthUtils" }
-    
+
     let handlers = [
         "util_parseActivationCode": parseActivationCode,
         "util_validateActivationCode": validateActivationCode,
@@ -35,19 +35,19 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         "util_getEnvironmentInfo": getEnvironmentInfo,
         "util_migrateSharingConfiguration": migrateSharingConfiguration
     ]
-    
+
     fileprivate enum Args: String {
         case character
         case activationCode
         case fromAppGroup
         case toAppGroup
     }
-    
+
     private func validateActivationCode(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let code: String = try call.requireParameter(Args.activationCode)
         result(PowerAuthActivationCodeUtil.validateActivationCode(code))
     }
-    
+
     private func parseActivationCode(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let code: String = try call.requireParameter(Args.activationCode)
         if let parsed = PowerAuthActivationCodeUtil.parse(fromActivationCode: code) {
@@ -59,12 +59,12 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
             throw PluginException(.invalidActivationCode, message: "Invalid activation code.")
         }
     }
-    
+
     private func validateTypedCharacter(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let char: Int = try call.requireParameter(Args.character)
         result(PowerAuthActivationCodeUtil.validateTypedCharacter(UInt32(char)))
     }
-    
+
     private func correctTypedCharacter(_ call: FlutterMethodCall, result: @escaping FlutterResult) throws {
         let char: Int = try call.requireParameter(Args.character)
         let validated = PowerAuthActivationCodeUtil.validateAndCorrectTypedCharacter(UInt32(char))
@@ -77,14 +77,14 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         let mainDictionary = mainBundle.infoDictionary
         let appVersion = mainDictionary?["CFBundleShortVersionString"] as? String
         let appId = mainDictionary?["CFBundleIdentifier"] as? String
-        
+
         result([
             "systemName": currentDevice.systemName,
             "systemVersion": currentDevice.systemVersion,
-            
+
             "applicationVersion": appVersion,
             "applicationIdentifier": appId,
-            
+
             "deviceManufacturer": "apple",
             "deviceId": currentDevice.model
         ])
@@ -106,9 +106,14 @@ internal class PowerAuthUtilsService: PowerAuthFlutterService {
         // Resolve the source and destination UserDefaults. A nil app group means the standard,
         // non-shared UserDefaults; a non-nil app group means the shared suite for that group.
         guard let from = userDefaults(forAppGroup: fromAppGroup),
-              let to = userDefaults(forAppGroup: toAppGroup) else {
+            let to = userDefaults(forAppGroup: toAppGroup)
+        else {
             // One of the suites could not be opened - data sharing is probably not configured properly.
-            throw PluginException(.wrongParameter, message: "Failed to open UserDefaults for the provided app group. Data sharing is probably not configured properly.")
+            throw PluginException(
+                .wrongParameter,
+                message:
+                    "Failed to open UserDefaults for the provided app group. Data sharing is probably not configured properly."
+            )
         }
 
         // If the destination is already initialized, the migration is not required.

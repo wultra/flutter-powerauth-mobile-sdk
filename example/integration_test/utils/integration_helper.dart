@@ -217,7 +217,11 @@ class IntegrationHelper {
           "authHeader": "${authHeader.replaceAll("\"", "\\\"")}"
         }
         """;
-    final resp = await _makeCall(payload, "${AppConfig.cloudUrl}/v2/token/verify", method: HtptMethod.post);
+    final resp = await _makeCall(
+      payload,
+      "${AppConfig.cloudUrl}/v2/token/verify",
+      method: HtptMethod.post,
+    );
     return TokenResponse.fromJson(resp);
   }
 
@@ -228,7 +232,9 @@ class IntegrationHelper {
     String body,
     Map<String, String>? headers,
   ) async {
-    final url = Uri.parse("${(await sdk.configuration).baseEndpointUrl}/$endpoint");
+    final url = Uri.parse(
+      "${(await sdk.configuration).baseEndpointUrl}/$endpoint",
+    );
     final response = await http.post(url, headers: headers, body: body);
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
@@ -418,7 +424,7 @@ class TokenResponse {
     required this.userId,
     required this.registrationId,
     required this.registrationStatus,
-    required this.signatureType
+    required this.signatureType,
   });
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
@@ -427,7 +433,7 @@ class TokenResponse {
       userId: json['userId'],
       registrationId: json['registrationId'],
       registrationStatus: json['registrationStatus'],
-      signatureType: json['signatureType']
+      signatureType: json['signatureType'],
     );
   }
 }

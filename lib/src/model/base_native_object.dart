@@ -24,7 +24,6 @@ import '../logging/powerauth_logger.dart';
 /// Abstract base class for Dart objects that wrap a native counterpart
 /// identified by an object ID. Handles semi-lazy initialization and release.
 abstract class BaseNativeObject {
-
   /// The native object identifier. Null until the native object is initialized.
   String? objectId;
 
@@ -50,7 +49,6 @@ abstract class BaseNativeObject {
   /// Handles concurrent initialization attempts.
   @protected
   Future<String> ensureNativeObjectInitialized() async {
-  
     // TODO: not sure whether we want to throw or simply log
     if (_isReleased) {
       throw PowerAuthException(
@@ -77,7 +75,6 @@ abstract class BaseNativeObject {
       _isInitializing = false;
 
       return id;
-
     } catch (e) {
       _isInitializing = false;
 
@@ -88,25 +85,26 @@ abstract class BaseNativeObject {
   /// Releases the native object associated with this wrapper.
   /// The object becomes unusable after calling this method.
   Future<void> release() async {
-
     String? idToRelease = objectId;
 
     if (_isReleased || idToRelease == null) return;
     _isReleased = true;
 
     if (_isInitializing && !_initCompleter.isCompleted) {
-      PowerAuthLogger.warning("${runtimeType.toString()}: Release called while initialization was pending.");
+      PowerAuthLogger.warning(
+        "${runtimeType.toString()}: Release called while initialization was pending.",
+      );
       try {
-  
         // Wait a short time for initialization to potentially finish
         idToRelease = await _initCompleter.future.timeout(
           const Duration(milliseconds: 200),
         );
       } catch (_) {
-  
         // Initialization failed or timed out, likely nothing to release on native side
         idToRelease = null;
-        PowerAuthLogger.warning("${runtimeType.toString()}: Initialization failed or timed out before release.");
+        PowerAuthLogger.warning(
+          "${runtimeType.toString()}: Initialization failed or timed out before release.",
+        );
       }
     }
 
@@ -117,7 +115,9 @@ abstract class BaseNativeObject {
       try {
         await releaseNativeObject(idToRelease);
       } catch (e) {
-        PowerAuthLogger.warning("${runtimeType.toString()}: Error during native release for object $idToRelease: $e");
+        PowerAuthLogger.warning(
+          "${runtimeType.toString()}: Error during native release for object $idToRelease: $e",
+        );
       }
     }
   }
@@ -131,7 +131,9 @@ abstract class BaseNativeObject {
       _isInitializing = false; // Not initializing anymore
       _initCompleter.complete(initialObjectId);
     } else {
-      PowerAuthLogger.warning("${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.");
+      PowerAuthLogger.warning(
+        "${runtimeType.toString()}: Warning - completeInitialization called when already initialized or initializing.",
+      );
     }
   }
 

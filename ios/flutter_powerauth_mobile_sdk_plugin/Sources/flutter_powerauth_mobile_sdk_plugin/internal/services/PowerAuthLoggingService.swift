@@ -14,28 +14,29 @@
  * limitations under the License.
  */
 
-import Foundation
 import Flutter
+import Foundation
 
 internal class PowerAuthLoggingService: PowerAuthFlutterService {
-    
+
     let name = "PowerAuthLogging"
-    
+
     let handlers = [
         "logging_configure": configure
     ]
-    
+
     // MARK: - Handlers
-    
+
     private func configure(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         guard let args = call.arguments as? [String: Any],
-              let enabled = args["enabled"] as? Bool,
-              let levelString = args["level"] as? String,
-              let logToConsole = args["console"] as? Bool,
-              let level = PowerAuthLogLevel(levelString: levelString) else {
+            let enabled = args["enabled"] as? Bool,
+            let levelString = args["level"] as? String,
+            let logToConsole = args["console"] as? Bool,
+            let level = PowerAuthLogLevel(levelString: levelString)
+        else {
             throw PluginException(.wrongParameter, message: "Enabled or level is missing in arguments.")
         }
-        
+
         PowerAuthLogger.enabled = enabled
         PowerAuthLogger.level = level
         PowerAuthLogger.logToConsole = logToConsole

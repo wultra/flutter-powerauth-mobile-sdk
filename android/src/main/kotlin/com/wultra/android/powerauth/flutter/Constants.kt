@@ -62,9 +62,10 @@ internal object Constants {
     const val CODEPOINT_MAX = 0x10FFFF
 
     // Fallback strings
+
     /**
      * Fallback string used in biometric authentication when no title is
      * provided to authentication dialog.
      */
     const val MISSING_REQUIRED_STRING = "< missing >"
-} 
+}

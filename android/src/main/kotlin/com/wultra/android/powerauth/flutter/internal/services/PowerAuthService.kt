@@ -19,29 +19,16 @@ package com.wultra.android.powerauth.flutter.internal.services
 import android.content.Context
 import android.os.Build
 import android.util.Base64
-
-import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
-import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
-import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel.Result
-import io.getlime.security.powerauth.biometry.*
-import io.getlime.security.powerauth.core.*
-import io.getlime.security.powerauth.exception.*
-import io.getlime.security.powerauth.networking.response.*
-import io.getlime.security.powerauth.sdk.*
-import io.getlime.security.powerauth.core.Password
-import io.getlime.security.powerauth.exception.PowerAuthErrorException
-import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
-
 import androidx.core.util.component1
 import androidx.core.util.component2
 import androidx.fragment.app.FragmentActivity
 import com.wultra.android.powerauth.flutter.Constants
 import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.ManagedAny
+import com.wultra.android.powerauth.flutter.PowerAuthObjectRegister
 import com.wultra.android.powerauth.flutter.ReleasePolicy
 import com.wultra.android.powerauth.flutter.WrapperException
+import com.wultra.android.powerauth.flutter.internal.core.BasePowerAuthService
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.activationStatusToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.authorizationHeaderToMap
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthActivationUtils.createActivationResultToMap
@@ -53,8 +40,19 @@ import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfiguratio
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.buildPowerAuthKeychainConfiguration
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthConfigurationUtils.configurationToMap
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthLogger
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel.Result
+import io.getlime.security.powerauth.biometry.*
+import io.getlime.security.powerauth.core.*
+import io.getlime.security.powerauth.core.Password
+import io.getlime.security.powerauth.exception.*
+import io.getlime.security.powerauth.exception.PowerAuthErrorCodes
+import io.getlime.security.powerauth.exception.PowerAuthErrorException
+import io.getlime.security.powerauth.networking.response.*
 import io.getlime.security.powerauth.networking.response.IGetTokenListener
 import io.getlime.security.powerauth.networking.response.IRemoveTokenListener
+import io.getlime.security.powerauth.sdk.*
 import io.getlime.security.powerauth.sdk.PowerAuthToken
 import java.nio.charset.StandardCharsets
 
@@ -114,7 +112,8 @@ internal class PowerAuthService(
         const val CONFIGURE = "configure"
         const val IS_CONFIGURED = "isConfigured"
         const val GET_CONFIGURATION = "getConfiguration"
-        //TODO: implement when SDK 2.0.0 is available
+
+        // TODO: implement when SDK 2.0.0 is available
         // const val GET_CLIENT_CONFIGURATION = "getClientConfiguration"
         // const val GET_BIOMETRY_CONFIGURATION = "getBiometryConfiguration"
         // const val GET_KEYCHAIN_CONFIGURATION = "getKeychainConfiguration"
@@ -166,7 +165,7 @@ internal class PowerAuthService(
             HandlerNames.CONFIGURE to this::configure,
             HandlerNames.IS_CONFIGURED to this::isConfigured,
             HandlerNames.GET_CONFIGURATION to this::getConfiguration,
-            //TODO: implement when SDK 2.0.0 is available
+            // TODO: implement when SDK 2.0.0 is available
             // HandlerNames.GET_CLIENT_CONFIGURATION to this::getClientConfiguration,
             // HandlerNames.GET_BIOMETRY_CONFIGURATION to this::getBiometryConfiguration,
             // HandlerNames.GET_KEYCHAIN_CONFIGURATION to this::getKeychainConfiguration,
@@ -270,7 +269,7 @@ internal class PowerAuthService(
             result.success(configurationToMap(configuration))
         }
     }
-    //TODO: Add other configurations when SDK 2.0.0 is available
+    // TODO: Add other configurations when SDK 2.0.0 is available
     // private fun getClientConfiguration(call: MethodCall, result: Result) {
     //     usePowerAuth(call, result) { sdk ->
     //         val clientConfiguration = sdk.getClientConfiguration()
@@ -343,15 +342,18 @@ internal class PowerAuthService(
 
     private fun fetchActivationStatus(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            sdk.fetchActivationStatusWithCallback(context, object : IActivationStatusListener {
-                override fun onActivationStatusSucceed(status: ActivationStatus) {
-                    result.success(activationStatusToMap(status))
-                }
+            sdk.fetchActivationStatusWithCallback(
+                context,
+                object : IActivationStatusListener {
+                    override fun onActivationStatusSucceed(status: ActivationStatus) {
+                        result.success(activationStatusToMap(status))
+                    }
 
-                override fun onActivationStatusFailed(t: Throwable) {
-                    Errors.error(result, t)
+                    override fun onActivationStatusFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -377,7 +379,8 @@ internal class PowerAuthService(
                     override fun onActivationRemoveFailed(t: Throwable) {
                         Errors.error(result, t)
                     }
-                })
+                }
+            )
         }
     }
 
@@ -386,15 +389,18 @@ internal class PowerAuthService(
             val activationMap: Map<String, Any> = call.getRequiredArgument(ACTIVATION)
             val activation = buildActivationObject(activationMap)
 
-            sdk.createActivation(activation, object : ICreateActivationListener {
-                override fun onActivationCreateSucceed(activationResult: CreateActivationResult) {
-                    result.success(createActivationResultToMap(activationResult))
-                }
+            sdk.createActivation(
+                activation,
+                object : ICreateActivationListener {
+                    override fun onActivationCreateSucceed(activationResult: CreateActivationResult) {
+                        result.success(createActivationResultToMap(activationResult))
+                    }
 
-                override fun onActivationCreateFailed(t: Throwable) {
-                    Errors.error(result, t)
+                    override fun onActivationCreateFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -458,15 +464,19 @@ internal class PowerAuthService(
             val passwordMap: Map<String, Any> = call.getRequiredArgument(PASSWORD)
             val password = buildPasswordObject(passwordMap, use = true)
 
-            sdk.validatePassword(context, password, object : IValidatePasswordListener {
-                override fun onPasswordValid() {
-                    result.success(null)
-                }
+            sdk.validatePassword(
+                context,
+                password,
+                object : IValidatePasswordListener {
+                    override fun onPasswordValid() {
+                        result.success(null)
+                    }
 
-                override fun onPasswordValidationFailed(t: Throwable) {
-                    Errors.error(result, t)
+                    override fun onPasswordValidationFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -484,17 +494,22 @@ internal class PowerAuthService(
                 newPassword.clear()
             }
 
-            sdk.changePassword(context, oldPassword, newPassword, object : IChangePasswordListener {
-                override fun onPasswordChangeSucceed() {
-                    clear()
-                    result.success(null)
-                }
+            sdk.changePassword(
+                context,
+                oldPassword,
+                newPassword,
+                object : IChangePasswordListener {
+                    override fun onPasswordChangeSucceed() {
+                        clear()
+                        result.success(null)
+                    }
 
-                override fun onPasswordChangeFailed(t: Throwable) {
-                    clear()
-                    Errors.error(result, t)
+                    override fun onPasswordChangeFailed(t: Throwable) {
+                        clear()
+                        Errors.error(result, t)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -730,6 +745,7 @@ internal class PowerAuthService(
 
         val activationBuilder = when {
             activationCode != null -> PowerAuthActivation.Builder.activation(activationCode, name)
+
             identityAttributes != null -> PowerAuthActivation.Builder.customActivation(
                 identityAttributes,
                 name
@@ -763,8 +779,6 @@ internal class PowerAuthService(
                         "Invalid OIDC parameters provided"
                     )
                 }
-
-
             }
 
             else -> throw WrapperException(
@@ -788,10 +802,7 @@ internal class PowerAuthService(
         return activationBuilder.build()
     }
 
-    private fun buildAuthenticationObject(
-        call: MethodCall,
-        persist: Boolean
-    ): PowerAuthAuthentication {
+    private fun buildAuthenticationObject(call: MethodCall, persist: Boolean): PowerAuthAuthentication {
         val authMap: Map<String, Any> = call.getRequiredArgument(AUTHENTICATION)
 
         val useBiometry = authMap[IS_BIOMETRY] as? Boolean ?: false
@@ -959,7 +970,8 @@ internal class PowerAuthService(
                     override fun onRemoveTokenFailed(t: Throwable) {
                         Errors.error(result, t)
                     }
-                })
+                }
+            )
         }
     }
 
@@ -1015,19 +1027,23 @@ internal class PowerAuthService(
 
         usePowerAuth(call, result) { sdk ->
 
-            sdk.tokenStore.generateAuthorizationHeader(context, tokenName, object: IGenerateTokenHeaderListener {
-                override fun onGenerateTokenHeaderSucceeded(header: PowerAuthAuthorizationHttpHeader) {
-                    result.success(mapOf("key" to header.key, "value" to header.value))
-                }
+            sdk.tokenStore.generateAuthorizationHeader(
+                context,
+                tokenName,
+                object : IGenerateTokenHeaderListener {
+                    override fun onGenerateTokenHeaderSucceeded(header: PowerAuthAuthorizationHttpHeader) {
+                        result.success(mapOf("key" to header.key, "value" to header.value))
+                    }
 
-                override fun onGenerateTokenHeaderFailed(t: Throwable) {
-                    result.error(
-                        Errors.EC_CANNOT_GENERATE_TOKEN,
-                        "Cannot generate header for this token.",
-                        t
-                    )
+                    override fun onGenerateTokenHeaderFailed(t: Throwable) {
+                        result.error(
+                            Errors.EC_CANNOT_GENERATE_TOKEN,
+                            "Cannot generate header for this token.",
+                            t
+                        )
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -1077,15 +1093,18 @@ internal class PowerAuthService(
 
     private fun fetchUserInfo(call: MethodCall, result: Result) {
         usePowerAuth(call, result) { sdk ->
-            sdk.fetchUserInfo(context, object : IUserInfoListener {
-                override fun onUserInfoSucceed(userInfo: UserInfo) {
-                    result.success(mapOf("allClaims" to userInfo.allClaims))
-                }
+            sdk.fetchUserInfo(
+                context,
+                object : IUserInfoListener {
+                    override fun onUserInfoSucceed(userInfo: UserInfo) {
+                        result.success(mapOf("allClaims" to userInfo.allClaims))
+                    }
 
-                override fun onUserInfoFailed(t: Throwable) {
-                    Errors.error(result, t)
+                    override fun onUserInfoFailed(t: Throwable) {
+                        Errors.error(result, t)
+                    }
                 }
-            })
+            )
         }
     }
 
@@ -1154,7 +1173,9 @@ internal class PowerAuthService(
     }
 
     private fun getExternalPendingOperation(call: MethodCall, result: Result) {
-        PowerAuthLogger.info { "The getExternalPendingOperationMethod is not implemented in the Android layer, as it is a iOS-only feature." }
+        PowerAuthLogger.info {
+            "The getExternalPendingOperationMethod is not implemented in the Android layer, as it is a iOS-only feature."
+        }
         result.success(null)
     }
 }

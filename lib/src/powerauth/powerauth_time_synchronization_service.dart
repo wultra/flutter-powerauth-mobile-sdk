@@ -19,7 +19,6 @@ import 'powerauth_platform_interface.dart';
 /// The `PowerAuthTimeSynchronizationService` allows you to synchronize the
 /// local device time with the PowerAuth Server and then get the synchronized time.
 class PowerAuthTimeSynchronizationService {
-
   static PowerAuthPlatform get _platform => PowerAuthPlatform.instance;
 
   final String _instanceId;
@@ -33,10 +32,10 @@ class PowerAuthTimeSynchronizationService {
   }
 
   /// Return the current local time synchronized with the server. The returned value is in milliseconds since the
-  /// reference date 1.1.1970 (e.g. unix timestamp.) 
-  /// 
-  /// If the local time is not synchronized, then returns the current device local time. 
-  /// 
+  /// reference date 1.1.1970 (e.g. unix timestamp.)
+  ///
+  /// If the local time is not synchronized, then returns the current device local time.
+  ///
   /// You can test `isTimeSynchronized` property if this is not sufficient for your purposes.
   Future<int> currentTime() async {
     return await _platform.currentTime(_instanceId);
