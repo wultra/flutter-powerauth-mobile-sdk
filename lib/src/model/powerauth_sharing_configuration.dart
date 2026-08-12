@@ -22,8 +22,9 @@ class PowerAuthSharingConfiguration {
   /// extensions. The SDK uses it for shared `UserDefaults` and cross-process
   /// activation-state coordination.
   ///
-  /// The UTF-8 representation of this string should not exceed 26 bytes, due to internal limitations applied
-  /// on the operating system level.
+  /// With the default shared-memory identifier, the UTF-8 representation of
+  /// this string must not exceed 26 bytes. A shorter custom
+  /// [sharedMemoryIdentifier] can accommodate a slightly longer app-group name.
   final String appGroup;
 
   /// Unique application identifier. This identifier helps you to determine which application
@@ -42,8 +43,11 @@ class PowerAuthSharingConfiguration {
   /// group. If omitted, the native PowerAuth SDK derives an identifier from
   /// the `PowerAuth` instance identifier.
   ///
-  /// The UTF-8 representation of this string cannot exceed 4 bytes due to an
-  /// operating-system limitation.
+  /// An explicit value must contain 1 to 4 UTF-8 bytes and may contain only
+  /// ASCII letters, digits, `+`, and `-`. A custom value is generally
+  /// unnecessary and should be used only to avoid a shared-memory name
+  /// collision or accommodate a longer app-group name. All participating
+  /// applications and extensions must use the same effective value.
   final String? sharedMemoryIdentifier;
 
   PowerAuthSharingConfiguration({

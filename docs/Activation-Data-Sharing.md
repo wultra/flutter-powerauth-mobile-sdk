@@ -26,9 +26,12 @@ For the detailed Xcode procedure, see [Share Activation Data](https://developers
 All participating applications and extensions must use:
 
 - The same `PowerAuth.instanceId`. Do not derive this value independently from each target's bundle identifier.
-- The same `appGroup`.
-- The same `keychainAccessGroup`.
+- The same `appGroup`, configured in every target's App Groups entitlement.
+- The same `keychainAccessGroup`, configured in every target's Keychain Sharing entitlement.
+- The same effective `sharedMemoryIdentifier`. Omit it in every target to derive it from the shared `PowerAuth.instanceId`; if you override it, use the same explicit value in every target.
 - A different `appIdentifier` for each participating application or extension.
+
+These sharing identifiers do not replace the main SDK configuration. Every participant must use the same PowerAuth application cryptographic configuration and connect to a compatible PowerAuth Server environment.
 
 ```dart
 const sharedPowerAuthInstanceId = "com.example.shared-powerauth";
@@ -48,10 +51,15 @@ await powerAuth.configure(
 
 Use a different `appIdentifier`, such as `com.example.widget-extension`, in another target. Do not use one `appIdentifier` for multiple `PowerAuth` instances running in the same process.
 
+Normally, omit `sharedMemoryIdentifier` and let the SDK derive it. Set a custom value only if the generated shared-memory name conflicts with another object or if you need to accommodate a longer app-group name. When you provide one, every participating target must use the same value.
+
 The native SDK applies the following size limits:
 
-- The UTF-8 representation of `appGroup` must not exceed 26 bytes.
+- With the default derived shared-memory identifier, the UTF-8 representation of `appGroup` must not exceed 26 bytes.
 - The UTF-8 representation of `appIdentifier` must not exceed 127 bytes.
+- An explicit `sharedMemoryIdentifier` must contain 1 to 4 UTF-8 bytes and may contain only ASCII letters, digits, `+`, and `-`.
+
+A shorter custom `sharedMemoryIdentifier` can accommodate a slightly longer app-group name. With a one-byte identifier, the app-group name can contain up to 29 UTF-8 bytes.
 
 ## External Pending Operations
 

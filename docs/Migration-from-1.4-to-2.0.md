@@ -56,11 +56,12 @@ final sharingConfiguration = await powerAuth.sharingConfiguration;
 
 The client configuration does not return `customHttpHeaders` or `basicHttpAuthentication`. Keep the original `PowerAuthClientConfiguration` if you must use these values again.
 
-`PowerAuthKeychainConfiguration` is now Android-specific. Configure iOS activation sharing only with `PowerAuthSharingConfiguration`. The following properties were removed:
+`PowerAuthKeychainConfiguration` is now Android-specific. Configure iOS activation sharing only with `PowerAuthSharingConfiguration`. The following properties were removed from `PowerAuthKeychainConfiguration`:
 
 - `PowerAuthKeychainConfiguration.accessGroupName`
 - `PowerAuthKeychainConfiguration.userDefaultsSuiteName`
-- `PowerAuthSharingConfiguration.sharedMemoryIdentifier`
+
+`PowerAuthSharingConfiguration.sharedMemoryIdentifier` remains available as an optional iOS setting. If omitted everywhere, the native SDK derives the shared-memory identifier from the shared `PowerAuth` instance identifier. When set explicitly, use the same value in all participating applications and extensions. The value must contain 1 to 4 UTF-8 bytes and may contain only ASCII letters, digits, `+`, and `-`.
 
 If configuration fails with `PowerAuthErrorCode.invalidActivationData`, call `cleanupInstanceData()` with the same configuration values. Then configure the instance again. If configuration fails with `PowerAuthErrorCode.upgradeSdk`, update the application to a newer SDK. Do not delete the activation data.
 

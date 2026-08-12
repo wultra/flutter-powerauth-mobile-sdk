@@ -103,6 +103,7 @@ In case you need an advanced configuration, you can import and use the following
   - `appGroup` - defines the name of the app group that allows you to share data between multiple applications.
   - `appIdentifier`- defines a unique application identifier. This identifier helps you to determine which application currently holds the lock on activation data in special operations.
   - `keychainAccessGroup` - defines the keychain access group name used by the PowerAuthSDK keychain instances.
+  - `sharedMemoryIdentifier` - optionally overrides the identifier of the shared memory used for cross-process coordination. All participating applications and extensions must use the same effective value. If omitted everywhere, the native SDK derives it from the shared `PowerAuth` instance identifier. An explicit value must contain 1 to 4 UTF-8 bytes and may contain only ASCII letters, digits, `+`, and `-`. A custom value is generally unnecessary and should be used only to avoid a shared-memory name collision or accommodate a longer app-group name.
   - For Apple entitlements, shared instance identifiers, and external-operation handling, see [Activation Data Sharing](Activation-Data-Sharing.md).
 
 > Note 1: Setting `authenticateOnBiometricKeySetup` to `true` uses HMAC-KDF. Biometric authentication is required to configure and use the key. Setting it to `false` uses RSA. Biometric authentication is required only to use the key.
