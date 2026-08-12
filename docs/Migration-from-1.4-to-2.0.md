@@ -24,7 +24,9 @@ PowerAuth Mobile Flutter SDK version `2.0.0` uses PowerAuth Mobile SDK version `
 
 The default algorithm is `PowerAuthAlgorithm.p384l3`. It requires PowerAuth Server `2.0.0` or later. Set `algorithm` to `PowerAuthAlgorithm.legacy` if the application must stay on protocol 3.3 during migration.
 
-> **Important:** Before using any protocol 4.0 algorithm (`p384`, `p384l3`, or `p384l5`), obtain a new mobile SDK configuration from PowerAuth Server and replace the existing `configuration` string. A configuration generated for protocol 3.3 does not contain the cryptographic keys required by the new algorithms, so attempting to use it causes `PowerAuth` configuration to fail. The new configuration contains additional public keys and is therefore significantly larger than the legacy configuration.
+<!-- begin box warning -->
+Before using any protocol 4.0 algorithm (`p384`, `p384l3`, or `p384l5`), obtain a new mobile SDK configuration from PowerAuth Server and replace the existing `configuration` string. A configuration generated for protocol 3.3 does not contain the cryptographic keys required by the new algorithms, so attempting to use it causes `PowerAuth` configuration to fail. The new configuration contains additional public keys and is therefore significantly larger than the legacy configuration.
+<!-- end -->
 
 ```dart
 final configuration = PowerAuthConfiguration(
