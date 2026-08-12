@@ -51,6 +51,7 @@ void main() {
               'appGroup': 'group.com.example.shared',
               'appIdentifier': 'com.example.app',
               'keychainAccessGroup': 'TEAMID.com.example.shared',
+              'sharedMemoryIdentifier': 'test',
             },
             _ => null,
           };
@@ -88,6 +89,7 @@ void main() {
     expect(sharing?.appGroup, 'group.com.example.shared');
     expect(sharing?.appIdentifier, 'com.example.app');
     expect(sharing?.keychainAccessGroup, 'TEAMID.com.example.shared');
+    expect(sharing?.sharedMemoryIdentifier, 'test');
 
     expect(calls.map((call) => call.method), [
       'getClientConfiguration',
@@ -106,5 +108,19 @@ void main() {
 
     expect(await sdk.keychainConfiguration, isNull);
     expect(await sdk.sharingConfiguration, isNull);
+  });
+
+  test('preserves an absent optional shared memory identifier', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async => <String, dynamic>{
+              'appGroup': 'group.com.example.shared',
+              'appIdentifier': 'com.example.app',
+              'keychainAccessGroup': 'TEAMID.com.example.shared',
+            });
+
+    expect(
+      (await sdk.sharingConfiguration)?.sharedMemoryIdentifier,
+      isNull,
+    );
   });
 }

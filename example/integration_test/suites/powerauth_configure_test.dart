@@ -101,6 +101,7 @@ main() {
           appIdentifier: "SharedInstanceTests",
           keychainAccessGroup:
               "fake.accessGroup", // This will work only in simulator
+          sharedMemoryIdentifier: "test",
         );
       }
       if (currentTestName == 'testConfigurationWithBiometry' ||
@@ -137,6 +138,7 @@ main() {
                   appIdentifier: "SharedInstanceTests",
                   keychainAccessGroup:
                       "fake.accessGroup", // Simulator-only fixture.
+                  sharedMemoryIdentifier: "test",
                 )
                 : null;
       }
@@ -575,9 +577,11 @@ main() {
       final sharingConfiguration = await sdk1.sharingConfiguration;
       if (Platform.isIOS) {
         expect(sharingConfiguration, isNotNull);
-        expect(sharingConfiguration!.appGroup, "group.com.wultra.testGroup");
-        expect(sharingConfiguration.appIdentifier, "SharedInstanceTests");
-        expect(sharingConfiguration.keychainAccessGroup, "fake.accessGroup");
+        final iosSharingConfiguration = sharingConfiguration!;
+        expect(iosSharingConfiguration.appGroup, "group.com.wultra.testGroup");
+        expect(iosSharingConfiguration.appIdentifier, "SharedInstanceTests");
+        expect(iosSharingConfiguration.keychainAccessGroup, "fake.accessGroup");
+        expect(iosSharingConfiguration.sharedMemoryIdentifier, "test");
       } else {
         expect(sharingConfiguration, isNull);
       }
@@ -599,6 +603,7 @@ main() {
         sharingConfiguration?.keychainAccessGroup,
         "fake.accessGroup",
       );
+      expect(sharingConfiguration?.sharedMemoryIdentifier, "test");
     }, skip: !Platform.isIOS);
 
     test('testReconfigureWhileActive', () async {

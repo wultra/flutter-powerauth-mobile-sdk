@@ -1182,11 +1182,15 @@ private extension PowerAuthBiometricConfiguration {
 
 private extension PowerAuthSharingConfiguration {
     var serializable: FlutterMap {
-        [
+        var result: FlutterMap = [
             PowerAuthService.Args.appGroup.rawValue: appGroup,
             PowerAuthService.Args.appIdentifier.rawValue: appIdentifier,
             PowerAuthService.Args.keychainAccessGroup.rawValue: keychainAccessGroup
         ]
+        if let sharedMemoryIdentifier {
+            result[PowerAuthService.Args.sharedMemoryIdentifier.rawValue] = sharedMemoryIdentifier
+        }
+        return result
     }
 }
 
