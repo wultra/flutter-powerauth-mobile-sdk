@@ -54,9 +54,8 @@ class PowerAuthSecureVaultKey {
     if (index < 0 || keySize < 16) {
       throw PowerAuthException(
         code: PowerAuthErrorCode.wrongParameter,
-        message: index < 0
-            ? 'Secure Vault key index must not be negative.'
-            : 'Secure Vault derived key size must be at least 16 bytes.',
+        message:
+            'Make sure that the Secure Vault key index is >= 0 and the derived key size is at least 16 bytes.',
       );
     }
     return await _handle.withObjectId(
