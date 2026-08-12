@@ -17,7 +17,7 @@
 **Additional Topics**
 
 - [PowerAuth Server Compatibility](PowerAuth-Server-Compatibility.md)
-- [Activation Data Sharing](Activation-Data-Sharing.md)
+- [Share Activation Data](Activation-Data-Sharing.md)
 - [Error Handling](Error-Handling.md)
 - [Troubleshooting](Troubleshooting.md)
 - [User Info](User-Info.md)

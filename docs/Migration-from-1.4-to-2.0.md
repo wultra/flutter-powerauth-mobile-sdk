@@ -63,6 +63,8 @@ The client configuration does not return `customHttpHeaders` or `basicHttpAuthen
 
 `PowerAuthSharingConfiguration.sharedMemoryIdentifier` remains available as an optional iOS setting. If omitted everywhere, the native SDK derives the shared-memory identifier from the shared `PowerAuth` instance identifier. When set explicitly, use the same value in all participating applications and extensions. The value must contain 1 to 4 UTF-8 bytes and may contain only ASCII letters, digits, `+`, and `-`.
 
+After configuration, the asynchronous `sharingConfiguration` getter returns the effective native value, including a generated `sharedMemoryIdentifier` when the input omitted it.
+
 If configuration fails with `PowerAuthErrorCode.invalidActivationData`, call `cleanupInstanceData()` with the same configuration values. Then configure the instance again. If configuration fails with `PowerAuthErrorCode.upgradeSdk`, update the application to a newer SDK. Do not delete the activation data.
 
 ## Activation Data Sharing
@@ -76,6 +78,8 @@ Use this procedure for applications that share activation data:
 3. Change the algorithm to the selected protocol 4.0 algorithm.
 
 You do not need this procedure if only one application and its extensions share activation data. The application and its extensions are updated together.
+
+See [Share Activation Data](Activation-Data-Sharing.md) for the complete target, entitlement, and runtime configuration.
 
 ## Authenticated Protocol Upgrade
 

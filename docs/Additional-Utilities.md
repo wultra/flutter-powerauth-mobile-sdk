@@ -31,7 +31,7 @@ The method returns a `PowerAuthEnvironmentInfo` object with the following proper
 
 ### `migrateiOSSharingConfiguration()`
 
-Migrates the iOS keychain initialization state between two [activation data sharing](Configuration.md) setups. **This method is iOS-only and is a no-op on Android.**
+Migrates the iOS keychain initialization state between two [activation data sharing](Activation-Data-Sharing.md) setups. **This method is iOS-only and is a no-op on Android.**
 
 > [!IMPORTANT]
 > Use this method only after consulting Wultra support or engineers. Incorrect usage can lead to scenarios where users lose access to their activation data.
@@ -40,7 +40,7 @@ Migrates the iOS keychain initialization state between two [activation data shar
 
 PowerAuth SDK for iOS keeps track of whether the application has been reinstalled. When you start sharing activation data between your application and its extension (or when you change the app group used for sharing), this state must be moved to the new setup. Otherwise the SDK may evaluate the locally stored activation incorrectly after the configuration change.
 
-This mechanism mirrors the native UserDefaults migration required when the sharing setup changes. See [Activation Data Sharing](Activation-Data-Sharing.md) for the complete Flutter setup and the current native documentation link.
+This mechanism mirrors the native UserDefaults migration required when the sharing setup changes. See [Share Activation Data](Activation-Data-Sharing.md) for the complete Flutter setup and the current native documentation link.
 
 > [!IMPORTANT]
 > Call this method at the application's startup, **before** any `PowerAuth` instance is configured and used.

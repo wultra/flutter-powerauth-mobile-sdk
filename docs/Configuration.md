@@ -100,11 +100,11 @@ In case you need an advanced configuration, you can import and use the following
   - `minimalRequiredKeychainProtection` - defines the minimum keychain protection level that the device must support. The default value is `PowerAuthKeychainProtection.none`. See note<sup>2</sup> below.
 
 - `PowerAuthSharingConfiguration` class to configure activation data sharing on the iOS platform. You can alter the following parameters:
-  - `appGroup` - defines the name of the app group that allows you to share data between multiple applications.
-  - `appIdentifier`- defines a unique application identifier. This identifier helps you to determine which application currently holds the lock on activation data in special operations.
-  - `keychainAccessGroup` - defines the keychain access group name used by the PowerAuthSDK keychain instances.
+  - `appGroup` - defines the App Group shared by all participating applications and extensions. The same value must be present in every target's App Groups entitlement.
+  - `appIdentifier` - defines an identifier unique to each participating application or extension. This identifier identifies the application that currently holds the lock for an exclusive operation.
+  - `keychainAccessGroup` - defines the fully qualified Keychain Sharing access group used by the PowerAuthSDK keychain instances. The same value must be present in every target's signed entitlement.
   - `sharedMemoryIdentifier` - optionally overrides the identifier of the shared memory used for cross-process coordination. All participating applications and extensions must use the same effective value. If omitted everywhere, the native SDK derives it from the shared `PowerAuth` instance identifier. An explicit value must contain 1 to 4 UTF-8 bytes and may contain only ASCII letters, digits, `+`, and `-`. A custom value is generally unnecessary and should be used only to avoid a shared-memory name collision or accommodate a longer app-group name.
-  - For Apple entitlements, shared instance identifiers, and external-operation handling, see [Activation Data Sharing](Activation-Data-Sharing.md).
+  - For Apple entitlements, shared instance identifiers, and external-operation handling, see [Share Activation Data](Activation-Data-Sharing.md).
 
 > Note 1: Setting `authenticateOnBiometricKeySetup` to `true` uses HMAC-KDF. Biometric authentication is required to configure and use the key. Setting it to `false` uses RSA. Biometric authentication is required only to use the key.
 
@@ -174,6 +174,8 @@ final biometryConfiguration = await powerAuth.biometryConfiguration;
 final keychainConfiguration = await powerAuth.keychainConfiguration;
 final sharingConfiguration = await powerAuth.sharingConfiguration;
 ```
+
+On iOS, `sharingConfiguration` returns the effective native configuration. If the input omitted `sharedMemoryIdentifier`, the returned configuration contains the identifier generated from the `PowerAuth` instance identifier. It returns `null` when sharing is not configured and always returns `null` on Android.
 
 The client configuration does not return `customHttpHeaders` or `basicHttpAuthentication`. Keep the original configuration if you must use these values again.
 
