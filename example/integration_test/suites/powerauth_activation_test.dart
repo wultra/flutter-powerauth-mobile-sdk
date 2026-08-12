@@ -172,7 +172,13 @@ main() {
               'MDEyMzQ1Njc=',
             )
             .timeout(const Duration(seconds: 10)),
-        throwsPowerAuthCode(PowerAuthErrorCode.invalidActivationState),
+        throwsPowerAuthCode(
+          //platforms differ in error code for this case
+          platformErrorCode(
+            android: PowerAuthErrorCode.invalidActivationState,
+            ios: PowerAuthErrorCode.missingActivation,
+          ),
+        )
       );
     }
 
@@ -215,6 +221,7 @@ main() {
       expect(result.activationFingerprint, isNotNull);
 
       await runFailingMethodsDuringActivation(
+        //platforms differ in error code for this case
         platformErrorCode(
           android: PowerAuthErrorCode.missingActivation,
           ios: PowerAuthErrorCode.pendingActivation,
@@ -323,8 +330,6 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
-      // Blocked by an offline-signature bug in the native iOS SDK.
-      skip: Platform.isIOS,
     );
 
     test(
@@ -343,8 +348,6 @@ main() {
 
         await expectOfflineSignatureRejectedWithoutValidActivation();
       },
-      // Blocked by an offline-signature bug in the native iOS SDK.
-      skip: Platform.isIOS,
     );
 
     test('testFetchActivationStatus', () async {
@@ -448,6 +451,7 @@ main() {
       await expectLater(
         sdk.createActivation(activation3),
         throwsPowerAuthCode(
+          //platforms differ in error code for this case
           platformErrorCode(
             android: PowerAuthErrorCode.invalidActivationData,
             ios: PowerAuthErrorCode.invalidActivationCode,

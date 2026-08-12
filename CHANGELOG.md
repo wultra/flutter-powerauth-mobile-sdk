@@ -5,6 +5,7 @@
 * The `configuration` property was changed to asynchronous
 * The `clientConfiguration`, `biometryConfiguration`, `keychainConfiguration` and `sharingConfiguration` were removed without replacement
 * PowerAuth configuration now outlives the Dart hot-restart feature [(#70)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/70).
+* Fixed parsing the `address` claim in `PowerAuthUserInfo` when received from the native platform.
 
 ## 1.4.0
 

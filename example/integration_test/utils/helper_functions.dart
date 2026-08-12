@@ -47,7 +47,8 @@ Matcher throwsPowerAuthServerError(PowerAuthErrorCode code) {
         ),
   );
 }
-
+//change the error depending on the platform, since the native SDKs differ in error codes in some cases
+//TODO: unify error codes in dart, so that this function is not needed anymore
 PowerAuthErrorCode platformErrorCode({
   required PowerAuthErrorCode android,
   required PowerAuthErrorCode ios,
