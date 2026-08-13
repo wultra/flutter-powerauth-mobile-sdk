@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/wultra/powerauth-mobile-sdk",
       "state" : {
-        "revision" : "78270c65320fdcd58007592eeeec4ee6c7f11145",
-        "version" : "2.0.0-rc2"
+        "revision" : "a088233c6926d7c0bf246b3fa2d765210d5b3502",
+        "version" : "2.0.0"
       }
     }
   ],

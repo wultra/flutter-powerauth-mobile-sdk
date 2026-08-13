@@ -15,9 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        // Mirrors the CocoaPods `PowerAuth2` dependency (`~> 2.0.0-rc2`).
-        // TODO: Update the dependency once PowerAuth SDK 2.0.0 is released.
-        .package(url: "https://github.com/wultra/powerauth-mobile-sdk", exact: "2.0.0-rc2"),
+        // Mirrors the CocoaPods `PowerAuth2` dependency (`~> 2.0.0`).
+        .package(url: "https://github.com/wultra/powerauth-mobile-sdk", exact: "2.0.0"),
     ],
     targets: [
         .target(
