@@ -101,4 +101,38 @@ void main() {
 
     expect(platform.releasedObjectIds, ['pending-object']);
   });
+
+  test('concurrent access performs one initialization', () async {
+    final initialization = Completer<String>();
+    var initializationCount = 0;
+    final handle = NativeObjectHandle.lazy(() {
+      initializationCount++;
+      return initialization.future;
+    });
+
+    final first = handle.getObjectId();
+    final second = handle.getObjectId();
+    initialization.complete('shared-object');
+
+    expect(await Future.wait([first, second]), ['shared-object', 'shared-object']);
+    expect(initializationCount, 1);
+  });
+
+  test('failed initialization is retried without retaining partial state', () async {
+    var initializationCount = 0;
+    final handle = NativeObjectHandle.lazy(() async {
+      initializationCount++;
+      if (initializationCount == 1) {
+        throw StateError('first initialization failed');
+      }
+      return 'recovered-object';
+    });
+
+    await expectLater(handle.getObjectId(), throwsStateError);
+    expect(await handle.getObjectId(), 'recovered-object');
+    expect(initializationCount, 2);
+
+    await handle.release();
+    expect(platform.releasedObjectIds, ['recovered-object']);
+  });
 }
