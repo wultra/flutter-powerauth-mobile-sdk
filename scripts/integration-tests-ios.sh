@@ -69,5 +69,6 @@ xcrun simctl bootstatus "$SIM_ID" -b
 
   wait_for_flutter_device "$SIM_ID"
 
-  flutter test --no-pub -d "$SIM_ID" -r expanded integration_test/plugin_integration_test.dart --timeout 30m
+  flutter build ios --config-only --no-pub integration_test/plugin_integration_test.dart
+  xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner -destination "platform=iOS Simulator,id=$SIM_ID" -parallel-testing-enabled NO
 )

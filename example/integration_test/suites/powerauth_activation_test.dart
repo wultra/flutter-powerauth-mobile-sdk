@@ -20,7 +20,7 @@ import '../utils/activation_credentials.dart';
 import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 main() {
   group('Activation tests', () {

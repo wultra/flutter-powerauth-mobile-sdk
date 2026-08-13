@@ -18,7 +18,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 String _toHex(Uint8List data) =>
     data.map((b) => b.toRadixString(16).padLeft(2, '0')).join();

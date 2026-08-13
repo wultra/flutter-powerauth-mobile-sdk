@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Wultra s.r.o.
+ * Copyright 2026 Wultra s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-import XCTest
-import integration_test
+import 'dart:async';
 
-final class RunnerTests: XCTestCase {
-    func testIntegrationTest() {
-        var testCount = 0
-        FLTIntegrationTestRunner().testIntegrationTest { test, success, failure in
-            testCount += 1
-            XCTAssertTrue(success, "\(NSStringFromSelector(test)): \(failure ?? "")")
-        }
-        XCTAssertGreaterThan(testCount, 0)
-    }
+import 'package:flutter_test/flutter_test.dart' hide test;
+export 'package:flutter_test/flutter_test.dart' hide test;
+
+int _testIndex = 0;
+
+void test(String description, FutureOr<void> Function() body, {bool? skip}) {
+  testWidgets('$description #${++_testIndex}', (_) async => body(), skip: skip);
 }

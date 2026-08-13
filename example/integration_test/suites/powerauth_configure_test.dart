@@ -20,7 +20,7 @@ import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk
 import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin_example/config.dart';
 

@@ -17,7 +17,7 @@
 import 'dart:convert';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import 'package:flutter_test/flutter_test.dart';
+import '../utils/native_test.dart';
 
 import '../utils/activation_credentials.dart';
 import '../utils/helper_functions.dart';

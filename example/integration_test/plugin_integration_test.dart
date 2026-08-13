@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-import 'dart:async';
-
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import 'suites/utils_test.dart' as utils_suite;
 import 'suites/password_test.dart' as password_suite;
@@ -34,37 +33,26 @@ import 'suites/powerauth_biometrics_automated_test.dart'
     as biometrics_automated_suite;
 import 'suites/powerauth_cryptoutils_tests.dart' as cryptoutils_suite;
 
-// A simple helper to wrap potentially async main functions.
-// Useful for when you need to call top-level async functions in the test's main.
-Future<void> _runSuite(Function suiteMain) async {
-  final Object? result = Function.apply(suiteMain, const []);
-
-  if (result is Future) {
-    await result;
-  }
-}
-
-Future<void> main() async {
+void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Proactively load the env so that tests run correctly from the IDE
-  // AND we don't have to import it from the example app or in each suite
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {}
+  setUpAll(() async {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {}
+  });
 
-  // Register (and run) all suites
-  await _runSuite(utils_suite.main);
-  await _runSuite(password_suite.main);
-  await _runSuite(configure_suite.main);
-  await _runSuite(activation_suite.main);
-  await _runSuite(encryptor_suite.main);
-  await _runSuite(native_obj_suite.main);
-  await _runSuite(powerauth_password_suite.main);
-  await _runSuite(signature_suite.main);
-  await _runSuite(time_suite.main);
-  await _runSuite(token_suite.main);
-  await _runSuite(userinfo_suite.main);
-  await _runSuite(biometrics_automated_suite.main);
-  await _runSuite(cryptoutils_suite.main);
+  utils_suite.main();
+  password_suite.main();
+  configure_suite.main();
+  activation_suite.main();
+  encryptor_suite.main();
+  native_obj_suite.main();
+  powerauth_password_suite.main();
+  signature_suite.main();
+  time_suite.main();
+  token_suite.main();
+  userinfo_suite.main();
+  biometrics_automated_suite.main();
+  cryptoutils_suite.main();
 }
