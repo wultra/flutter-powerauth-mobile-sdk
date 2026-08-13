@@ -48,6 +48,12 @@ class ActivationCredentials {
       PowerAuthAuthentication.password(await validPasswordObject());
   Future<PowerAuthAuthentication> invalidKnowledge() async =>
       PowerAuthAuthentication.password(await invalidPasswordObject());
+  Future<PowerAuthAuthentication> persistence() async =>
+      PowerAuthAuthentication.persistWithPassword(await validPasswordObject());
+  Future<PowerAuthAuthentication> invalidPersistence() async =>
+      PowerAuthAuthentication.persistWithPassword(
+        await invalidPasswordObject(),
+      );
 
   Future<PowerAuthPassword> validPasswordObject({bool destroyOnUse = true}) =>
       PowerAuthPassword.fromString(validPassword, destroyOnUse: destroyOnUse);

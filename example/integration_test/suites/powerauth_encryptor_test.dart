@@ -17,281 +17,136 @@
 import 'dart:convert';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
-import '../utils/activation_credentials.dart';
-import '../utils/integration_helper.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 
-main() {
+import '../utils/activation_credentials.dart';
+import '../utils/helper_functions.dart';
+import '../utils/integration_helper.dart';
+import '../utils/object_cleanup_helper.dart';
+
+void main() {
   group('Encryptor tests', () {
     late IntegrationHelper helper;
+    late ObjectCleanupHelper cleanupHelper;
     late PowerAuth sdk;
     late ActivationCredentials credentials;
 
     setUp(() async {
+      cleanupHelper = ObjectCleanupHelper();
       sdk = PowerAuth(IntegrationHelper.randomString(30));
       helper = IntegrationHelper(sdk);
       await helper.configure();
-
       credentials = ActivationCredentials();
     });
 
     tearDown(() async {
       await helper.cleanup();
+      await cleanupHelper.dispose();
     });
 
-    test('testEncryptorWithoutActivation', () async {
-      expect(await sdk.hasValidActivation(), false);
-      final activationScoped = sdk.getEncryptorForActivationScope();
-      expect(await activationScoped.canEncryptRequest(), false);
-
-      final applicationScoped = sdk.getEncryptorForApplicationScope();
-      expect(await applicationScoped.canEncryptRequest(), true);
-
-      expect(
-        activationScoped.encryptRequest("{}"),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.missingActivation,
-          ),
-        ),
+    test('application scope is available without activation', () async {
+      expect(await sdk.hasValidActivation(), isFalse);
+      await expectLater(
+        sdk.getEncryptorForActivationScope(),
+        throwsPowerAuthCode(PowerAuthErrorCode.missingActivation),
       );
-      expect(await applicationScoped.encryptRequest("{}"), isNotNull);
+
+      final encryptor = await sdk.getEncryptorForApplicationScope();
+      cleanupHelper.cleanup.add(encryptor);
+      expect(encryptor.scope, PowerAuthEncryptorScope.application);
+      expect(await encryptor.canEncryptRequest(), isTrue);
+      expect(await encryptor.canDecryptResponse(), isFalse);
+
+      final encrypted = await encryptor.encryptRequest(utf8Bytes('{}'));
+      expect(encrypted.requestBody, isNotEmpty);
+      expect(encrypted.requestHeaders, isNotEmpty);
+      expect(await encryptor.canEncryptRequest(), isFalse);
+      expect(await encryptor.canDecryptResponse(), isTrue);
     });
 
-    test('testActivationScopedEncryptionDefault', () async {
+    test('activation exchange uses one fresh stateful encryptor', () async {
+      final userId = IntegrationHelper.randomString(20);
+      final expectedUserInfo = helper.userInfo(userId);
+      final storeResult = await helper.fillUserInfo(expectedUserInfo);
+      expect(storeResult['status'], 'OK');
+
       await helper.prepareActiveActivation(
         await credentials.validPasswordObject(),
+        userId: userId,
       );
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
 
-      for (var i = 1; i <= 2; i++) {
-        // Encrypt request
-        expect(await encryptor.canEncryptRequest(), true);
-        final requestData = '{}';
-        final encrypted = await encryptor.encryptRequest(requestData);
-        final decryptor = encrypted.decryptor;
-        expect(encrypted.cryptogram, isNotNull);
-        expect(encrypted.header, isNotNull);
-        expect(decryptor, isNotNull);
-        expect(decryptor.decryptorScope, encryptor.encryptorScope);
-        expect(await decryptor.canDecryptResponse(), true);
+      for (var exchange = 0; exchange < 2; exchange++) {
+        final encryptor = await sdk.getEncryptorForActivationScope();
+        cleanupHelper.cleanup.add(encryptor);
+        try {
+          expect(encryptor.scope, PowerAuthEncryptorScope.activation);
+          expect(await encryptor.canEncryptRequest(), isTrue);
+          expect(await encryptor.canDecryptResponse(), isFalse);
 
-        // Let's use "user info" service for the test.
-        final headers = {encrypted.header.name: encrypted.header.value};
-        final response = await helper.callSDKEndpoint(
-          '/pa/v3/user/info',
-          jsonEncode(encrypted.cryptogram.toMap()),
-          headers,
-        );
-        expect(await decryptor.canDecryptResponse(), true);
+          final encrypted = await encryptor.encryptRequest(utf8Bytes('{}'));
+          expect(encrypted.requestBody, isNotEmpty);
+          expect(encrypted.requestHeaders, isNotEmpty);
+          expect(await encryptor.canEncryptRequest(), isFalse);
+          expect(await encryptor.canDecryptResponse(), isTrue);
 
-        // Decrypt response
-        final decrypted = await decryptor.decryptResponse(
-          PowerAuthCryptogram.fromMap(response),
-        );
-        expect(decrypted, isNotNull);
-        final decryptedObject = jsonDecode(decrypted);
+          final response = await helper.callRawSDKEndpoint(
+            'user/info',
+            body: encrypted.requestBody,
+            headers: encrypted.requestHeaders,
+          );
 
-        // Response contains 'sub' key which should be equal to user-id
-        expect(decryptedObject["sub"], helper.userId);
-        expect(await decryptor.canDecryptResponse(), false);
+          final decrypted = await encryptor.decryptResponse(response.bodyBytes);
+          expect(decrypted, isNotEmpty);
+          final responseObject =
+              jsonDecode(utf8.decode(decrypted)) as Map<String, dynamic>;
+          expect(responseObject['sub'], expectedUserInfo.subject);
+          await expectLater(
+            encryptor.canEncryptRequest(),
+            throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+          );
+          await expectLater(
+            encryptor.canDecryptResponse(),
+            throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+          );
+        } finally {
+          await encryptor.release();
+        }
       }
     });
 
-    test('testActivationScopedEncryptionStringFormat', () async {
+    test('release is idempotent and rejects further use', () async {
       await helper.prepareActiveActivation(
         await credentials.validPasswordObject(),
       );
+      final encryptor = await sdk.getEncryptorForActivationScope();
+      cleanupHelper.cleanup.add(encryptor);
 
-      // Acquire encryptor
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-
-      for (var i = 1; i <= 2; i++) {
-        // Encrypt request
-        expect(await encryptor.canEncryptRequest(), true);
-        final requestData = '{}';
-        final encrypted = await encryptor.encryptRequest(
-          requestData,
-          PowerAuthDataFormat.utf8,
-        );
-        final decryptor = encrypted.decryptor;
-        expect(encrypted.cryptogram, isNotNull);
-        expect(encrypted.header, isNotNull);
-        expect(decryptor, isNotNull);
-        expect(decryptor.decryptorScope, encryptor.encryptorScope);
-        expect(await decryptor.canDecryptResponse(), true);
-
-        // Let's use "user info" service for the test.
-        final headers = {encrypted.header.name: encrypted.header.value};
-        final response = await helper.callSDKEndpoint(
-          '/pa/v3/user/info',
-          jsonEncode(encrypted.cryptogram.toMap()),
-          headers,
-        );
-        expect(await decryptor.canDecryptResponse(), true);
-
-        // Decrypt response
-        final decrypted = await decryptor.decryptResponse(
-          PowerAuthCryptogram.fromMap(response),
-          PowerAuthDataFormat.utf8,
-        );
-        expect(decrypted, isNotNull);
-        final decryptedObject = jsonDecode(decrypted);
-
-        // Response contains 'sub' key which should be equal to user-id
-        expect(decryptedObject['sub'], helper.userId);
-        expect(await decryptor.canDecryptResponse(), false);
-      }
+      await encryptor.release();
+      await encryptor.release();
+      await expectLater(
+        encryptor.canEncryptRequest(),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
+      await expectLater(
+        encryptor.encryptRequest(utf8Bytes('{}')),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
     });
 
-    test('testActivationScopedEncryptionBase64Format', () async {
+    test('owner deconfiguration invalidates an acquired encryptor', () async {
       await helper.prepareActiveActivation(
         await credentials.validPasswordObject(),
       );
-
-      // Acquire encryptor
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-
-      for (var i = 1; i <= 2; i++) {
-        // Encrypt request
-        expect(await encryptor.canEncryptRequest(), true);
-        final data = base64.encode(utf8.encode("{}"));
-        final encrypted = await encryptor.encryptRequest(
-          data,
-          PowerAuthDataFormat.base64,
-        );
-        final decryptor = encrypted.decryptor;
-        expect(encrypted.cryptogram, isNotNull);
-        expect(encrypted.header, isNotNull);
-        expect(decryptor, isNotNull);
-        expect(decryptor.decryptorScope, encryptor.encryptorScope);
-        expect(await decryptor.canDecryptResponse(), true);
-
-        // Let's use "user info" service for the test.
-        final headers = {encrypted.header.name: encrypted.header.value};
-        final response = await helper.callSDKEndpoint(
-          '/pa/v3/user/info',
-          jsonEncode(encrypted.cryptogram.toMap()),
-          headers,
-        );
-        expect(await decryptor.canDecryptResponse(), true);
-
-        // Decrypt response
-        final decrypted = await decryptor.decryptResponse(
-          PowerAuthCryptogram.fromMap(response),
-          PowerAuthDataFormat.base64,
-        );
-        expect(decrypted, isNotNull);
-
-        // Response contains 'sub' key which should be equal to user-id
-        final decryptedObject = jsonDecode(
-          utf8.decode(base64Decode(decrypted)),
-        );
-        expect(decryptedObject['sub'], helper.userId);
-
-        expect(await decryptor.canDecryptResponse(), false);
-      }
-    });
-
-    test('testReleaseEncryptorAndDecryptor', () async {
-      await helper.prepareActiveActivation(
-        await credentials.validPasswordObject(),
-      );
-
-      // Acquire encryptor
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-      expect(await encryptor.canEncryptRequest(), true);
-
-      final data = base64.encode(utf8.encode("{}"));
-      final encrypted = await encryptor.encryptRequest(
-        data,
-        PowerAuthDataFormat.base64,
-      );
-      final decryptor = encrypted.decryptor;
-      expect(encrypted.cryptogram, isNotNull);
-      expect(encrypted.header, isNotNull);
-      expect(decryptor, isNotNull);
-      expect(await decryptor.canDecryptResponse(), true);
-
-      await decryptor.release();
-      expect(await decryptor.canDecryptResponse(), false);
-
-      expect(await encryptor.canEncryptRequest(), true);
-
-      // Remove activation also deactivate the encryptor
-      await sdk.removeActivationWithAuthentication(
-        await credentials.knowledge(),
-      );
-      expect(await encryptor.canEncryptRequest(), false);
-    });
-
-    test('testEncryptorAfterActivationRemove', () async {
-      await helper.prepareActiveActivation(
-        await credentials.validPasswordObject(),
-      );
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-      expect(await encryptor.canEncryptRequest(), true);
-
-      final data = base64.encode(utf8.encode("{}"));
-      final encrypted = await encryptor.encryptRequest(
-        data,
-        PowerAuthDataFormat.base64,
-      );
-      final decryptor = encrypted.decryptor;
-      expect(encrypted.cryptogram, isNotNull);
-      expect(encrypted.header, isNotNull);
-      expect(decryptor, isNotNull);
-      expect(await decryptor.canDecryptResponse(), true);
-
-      await sdk.removeActivationLocal();
-      expect(await encryptor.canEncryptRequest(), false);
-      expect(await decryptor.canDecryptResponse(), false);
-    });
-
-    test('testEncryptorAfterDeconfigure', () async {
-      await helper.prepareActiveActivation(
-        await credentials.validPasswordObject(),
-      );
-
-      // Acquire encryptor
-      final encryptor = sdk.getEncryptorForActivationScope();
-      expect(encryptor.encryptorScope, PowerAuthEncryptorScope.activation);
-      expect(await encryptor.canEncryptRequest(), true);
-
-      // Encrypt request
-      final data = base64.encode(utf8.encode("{}"));
-      final encrypted = await encryptor.encryptRequest(
-        data,
-        PowerAuthDataFormat.base64,
-      );
-
-      // Decrypt response
-      final decryptor = encrypted.decryptor;
-      expect(encrypted.cryptogram, isNotNull);
-      expect(encrypted.header, isNotNull);
-      expect(decryptor, isNotNull);
-      expect(await decryptor.canDecryptResponse(), true);
-
-      // Deconfigure
-      final configuration = await sdk.configuration;
-      expect(configuration, isNotNull);
+      final encryptor = await sdk.getEncryptorForActivationScope();
+      cleanupHelper.cleanup.add(encryptor);
+      expect(await encryptor.canEncryptRequest(), isTrue);
 
       await sdk.deconfigure();
-      expect(await encryptor.canEncryptRequest(), false);
-      expect(await decryptor.canDecryptResponse(), false);
-
-      // Reconfigure
-      await sdk.configure(configuration: configuration);
-      expect(await encryptor.canEncryptRequest(), false);
-      expect(await decryptor.canDecryptResponse(), false);
+      await helper.removeRegistration();
+      await expectLater(
+        encryptor.canEncryptRequest(),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
     });
   });
 }

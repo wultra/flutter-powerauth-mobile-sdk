@@ -117,6 +117,19 @@ void main() {
       expect(changed3.readTimeout, defaultCfg.readTimeout);
       expect(changed3.enableUnsecureTraffic, isTrue);
     });
+
+    test('serialization', () {
+      final cfg = PowerAuthClientConfiguration(
+        connectionTimeout: 5,
+        readTimeout: 7,
+        enableUnsecureTraffic: true,
+      );
+      final restored = PowerAuthClientConfiguration.fromMap(cfg.toMap());
+
+      expect(restored.connectionTimeout, cfg.connectionTimeout);
+      expect(restored.readTimeout, cfg.readTimeout);
+      expect(restored.enableUnsecureTraffic, cfg.enableUnsecureTraffic);
+    });
   });
 
   group('PowerAuthBiometryConfiguration', () {
@@ -125,9 +138,13 @@ void main() {
       final cfg = PowerAuthBiometryConfiguration();
 
       expect(cfg.authenticateOnBiometricKeySetup, isTrue);
-      expect(cfg.invalidateBiometricFactorAfterChange, defaultInvalidateAfterChange);
+      expect(
+        cfg.invalidateBiometricFactorAfterChange,
+        defaultInvalidateAfterChange,
+      );
       expect(cfg.confirmBiometricAuthentication, isFalse);
       expect(cfg.fallbackToDevicePasscode, isFalse);
+      expect(cfg.fallbackToSharedBiometryKey, isTrue);
       expect(cfg.useLegacySymmetricKey, isFalse);
     });
 
@@ -139,7 +156,10 @@ void main() {
         authenticateOnBiometricKeySetup: false,
       );
       expect(c1.authenticateOnBiometricKeySetup, isFalse);
-      expect(c1.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
+      expect(
+        c1.invalidateBiometricFactorAfterChange,
+        base.invalidateBiometricFactorAfterChange,
+      );
       expect(
         c1.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
@@ -153,7 +173,10 @@ void main() {
         c2.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c2.invalidateBiometricFactorAfterChange, !defaultInvalidateAfterChange);
+      expect(
+        c2.invalidateBiometricFactorAfterChange,
+        !defaultInvalidateAfterChange,
+      );
       expect(
         c2.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
@@ -167,7 +190,10 @@ void main() {
         c3.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c3.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
+      expect(
+        c3.invalidateBiometricFactorAfterChange,
+        base.invalidateBiometricFactorAfterChange,
+      );
       expect(c3.confirmBiometricAuthentication, isTrue);
       expect(c3.fallbackToDevicePasscode, base.fallbackToDevicePasscode);
 
@@ -176,7 +202,10 @@ void main() {
         c4.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
-      expect(c4.invalidateBiometricFactorAfterChange, base.invalidateBiometricFactorAfterChange);
+      expect(
+        c4.invalidateBiometricFactorAfterChange,
+        base.invalidateBiometricFactorAfterChange,
+      );
       expect(
         c4.confirmBiometricAuthentication,
         base.confirmBiometricAuthentication,
@@ -189,6 +218,42 @@ void main() {
         c5.authenticateOnBiometricKeySetup,
         base.authenticateOnBiometricKeySetup,
       );
+
+      final c6 = PowerAuthBiometryConfiguration(
+        fallbackToSharedBiometryKey: false,
+      );
+      expect(c6.fallbackToSharedBiometryKey, isFalse);
+    });
+
+    test('serialization', () {
+      final cfg = PowerAuthBiometryConfiguration(
+        invalidateBiometricFactorAfterChange: false,
+        fallbackToDevicePasscode: true,
+        confirmBiometricAuthentication: true,
+        authenticateOnBiometricKeySetup: false,
+        fallbackToSharedBiometryKey: false,
+        useLegacySymmetricKey: true,
+      );
+      final restored = PowerAuthBiometryConfiguration.fromMap(cfg.toMap());
+
+      expect(
+        restored.invalidateBiometricFactorAfterChange,
+        cfg.invalidateBiometricFactorAfterChange,
+      );
+      expect(restored.fallbackToDevicePasscode, cfg.fallbackToDevicePasscode);
+      expect(
+        restored.confirmBiometricAuthentication,
+        cfg.confirmBiometricAuthentication,
+      );
+      expect(
+        restored.authenticateOnBiometricKeySetup,
+        cfg.authenticateOnBiometricKeySetup,
+      );
+      expect(
+        restored.fallbackToSharedBiometryKey,
+        cfg.fallbackToSharedBiometryKey,
+      );
+      expect(restored.useLegacySymmetricKey, cfg.useLegacySymmetricKey);
     });
   });
 
@@ -199,40 +264,35 @@ void main() {
         cfg.minimalRequiredKeychainProtection,
         PowerAuthKeychainProtection.none,
       );
-      expect(cfg.accessGroupName, isNull);
-      expect(cfg.userDefaultsSuiteName, isNull);
     });
 
-    test('partial construction', () {
-      final base = PowerAuthKeychainConfiguration();
-
-      final c1 = PowerAuthKeychainConfiguration(
+    test('explicit value and serialization', () {
+      final cfg = PowerAuthKeychainConfiguration(
         minimalRequiredKeychainProtection:
             PowerAuthKeychainProtection.strongbox,
       );
+      final restored = PowerAuthKeychainConfiguration.fromMap(cfg.toMap());
+
       expect(
-        c1.minimalRequiredKeychainProtection,
+        restored.minimalRequiredKeychainProtection,
         PowerAuthKeychainProtection.strongbox,
       );
+    });
+  });
 
-      final c2 = PowerAuthKeychainConfiguration(
-        accessGroupName: 'test.accessGroup',
+  group('PowerAuthSharingConfiguration', () {
+    test('explicit values and serialization', () {
+      final cfg = PowerAuthSharingConfiguration(
+        appGroup: 'group.com.example.app',
+        appIdentifier: 'com.example.app',
+        keychainAccessGroup: 'TEAMID.com.example.shared',
       );
-      expect(c2.accessGroupName, 'test.accessGroup');
-      expect(
-        c2.minimalRequiredKeychainProtection,
-        base.minimalRequiredKeychainProtection,
-      );
-      expect(c2.userDefaultsSuiteName, isNull);
+      final restored = PowerAuthSharingConfiguration.fromMap(cfg.toMap());
 
-      final c3 = PowerAuthKeychainConfiguration(
-        userDefaultsSuiteName: 'SuperDefaults',
-      );
-      expect(c3.userDefaultsSuiteName, 'SuperDefaults');
-      expect(
-        c3.minimalRequiredKeychainProtection,
-        base.minimalRequiredKeychainProtection,
-      );
+      expect(restored.appGroup, cfg.appGroup);
+      expect(restored.appIdentifier, cfg.appIdentifier);
+      expect(restored.keychainAccessGroup, cfg.keychainAccessGroup);
+      expect(restored.toMap(), cfg.toMap());
     });
   });
 }

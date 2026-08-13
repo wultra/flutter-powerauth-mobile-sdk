@@ -55,8 +55,25 @@ class AppConfig {
   /// PowerAuth Cloud application ID.
   static String get cloudApplicationId => _get('CLOUD_APPLICATION_ID');
 
+  /// User Data Store URL.
+  static String get udsServerUrl => _get('UDS_SERVER_URL');
+
+  /// User Data Store username.
+  static String get udsServerUsername => _get('UDS_SERVER_USERNAME');
+
+  /// User Data Store password.
+  static String get udsServerPassword => _get('UDS_SERVER_PASSWORD');
+
   /// Helper for confing requirement.
   static bool isConfigMissing() {
     return sdkConfig.isEmpty;
+  }
+
+  /// Returns whether configuration required by User Data Store tests is
+  /// incomplete.
+  static bool isUdsConfigMissing() {
+    return udsServerUrl.isEmpty ||
+        udsServerUsername.isEmpty ||
+        udsServerPassword.isEmpty;
   }
 }

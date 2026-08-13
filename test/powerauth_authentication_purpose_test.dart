@@ -38,13 +38,22 @@ void main() {
           final arguments = call.arguments as Map<dynamic, dynamic>?;
           final authentication =
               arguments?['authentication'] as Map<dynamic, dynamic>?;
-          if (call.method == 'requestSignature' &&
+          if (call.method == 'authenticationHeaderForRequestWithBody' &&
               authentication?['isPersist'] == true) {
             throw PlatformException(code: 'wrongParameter');
           }
           if (call.method == 'persistActivation' &&
               authentication?['isPersist'] == false) {
             throw PlatformException(code: 'wrongParameter');
+          }
+          if (call.method == 'authenticateUsingBiometry') {
+            return 'biometry-key-id';
+          }
+          if (call.method == 'authenticationHeaderForRequestWithBody') {
+            return <String, dynamic>{
+              'name': 'X-PowerAuth-Authorization',
+              'value': 'PowerAuth test-signature',
+            };
           }
           return null;
         });
@@ -159,37 +168,35 @@ void main() {
       ]);
       expect(
         calls.map((call) => call.method),
-        isNot(contains('authenticateWithBiometry')),
+        isNot(contains('authenticateUsingBiometry')),
       );
     },
   );
 
-  test(
-    'does not forward biometric authentication without a native key',
-    () async {
-      final authentication = PowerAuthAuthentication.biometry(
-        biometricPrompt: PowerAuthBiometricPrompt(
-          promptMessage: 'Authenticate',
-          promptTitle: 'Signing',
-        ),
-      );
+  test('resolves normal biometry before forwarding signing', () async {
+    final authentication = PowerAuthAuthentication.biometry(
+      biometricPrompt: PowerAuthBiometricPrompt(
+        promptMessage: 'Authenticate',
+        promptTitle: 'Signing',
+      ),
+    );
 
-      await expectLater(
-        platform.authenticationHeaderForRequestWithBody(
-          'instance',
-          authentication,
-          'POST',
-          '/operation',
-        ),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (error) => error.code,
-            'code',
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
-        ),
-      );
-      expect(calls.map((call) => call.method), ['authenticationHeaderForRequestWithBody']);
-    },
-  );
+    final header = await platform.authenticationHeaderForRequestWithBody(
+      'instance',
+      authentication,
+      'POST',
+      '/operation',
+    );
+
+    expect(header.name, 'X-PowerAuth-Authorization');
+    expect(header.value, 'PowerAuth test-signature');
+    expect(calls.map((call) => call.method), [
+      'authenticateUsingBiometry',
+      'authenticationHeaderForRequestWithBody',
+    ]);
+    expect(
+      (calls.last.arguments as Map)['authentication'],
+      containsPair('biometryKeyId', 'biometry-key-id'),
+    );
+  });
 }

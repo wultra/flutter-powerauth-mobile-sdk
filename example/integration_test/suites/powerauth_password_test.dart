@@ -16,6 +16,7 @@
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import '../utils/activation_credentials.dart';
+import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 import '../utils/object_cleanup_helper.dart';
 
@@ -46,65 +47,47 @@ main() {
       await cleanupHelper.dispose();
     });
 
-    test('testValidatePassword', () async {
+    Future<void> validatePassword(PowerAuthPassword password) async {
+      final changeData = await sdk.beginPasswordChange(password);
+      cleanupHelper.cleanup.add(changeData);
+      await changeData.release();
+    }
+
+    Future<void> changePassword(
+      PowerAuthPassword oldPassword,
+      PowerAuthPassword newPassword,
+    ) async {
+      final changeData = await sdk.beginPasswordChange(oldPassword);
+      cleanupHelper.cleanup.add(changeData);
+      await sdk.finishPasswordChange(newPassword, changeData);
+    }
+
+    test('testBeginPasswordChangeValidatesPassword', () async {
+      await validatePassword(await credentials.validPasswordObject());
       await expectLater(
-        sdk.validatePassword(await credentials.validPasswordObject()),
-        completes,
-      );
-      await expectLater(
-        sdk.validatePassword(await credentials.invalidPasswordObject()),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.authenticationError,
-          ),
-        ),
+        sdk.beginPasswordChange(await credentials.invalidPasswordObject()),
+        throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
       );
     });
 
-    test('testChangePassword', () async {
-      await expectLater(
-        sdk.changePassword(
-          await credentials.validPasswordObject(),
-          await credentials.invalidPasswordObject(),
-        ),
-        completes,
+    test('testTwoStepPasswordChange', () async {
+      await changePassword(
+        await credentials.validPasswordObject(),
+        await credentials.invalidPasswordObject(),
       );
+      await validatePassword(await credentials.invalidPasswordObject());
       await expectLater(
-        sdk.validatePassword(await credentials.invalidPasswordObject()),
-        completes,
+        sdk.beginPasswordChange(await credentials.validPasswordObject()),
+        throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
       );
-      await expectLater(
-        sdk.validatePassword(await credentials.validPasswordObject()),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.authenticationError,
-          ),
-        ),
+      await changePassword(
+        await credentials.invalidPasswordObject(),
+        await credentials.validPasswordObject(),
       );
+      await validatePassword(await credentials.validPasswordObject());
       await expectLater(
-        sdk.changePassword(
-          await credentials.invalidPasswordObject(),
-          await credentials.validPasswordObject(),
-        ),
-        completes,
-      );
-      await expectLater(
-        sdk.validatePassword(await credentials.validPasswordObject()),
-        completes,
-      );
-      await expectLater(
-        sdk.validatePassword(await credentials.invalidPasswordObject()),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.authenticationError,
-          ),
-        ),
+        sdk.beginPasswordChange(await credentials.invalidPasswordObject()),
+        throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
       );
     });
 
@@ -114,14 +97,8 @@ main() {
       for (var i = 1; i <= maxFailCount; i++) {
         expect(status.state, PowerAuthActivationState.active);
         await expectLater(
-          sdk.validatePassword(await credentials.invalidPasswordObject()),
-          throwsA(
-            isA<PowerAuthException>().having(
-              (e) => e.code,
-              "code",
-              PowerAuthErrorCode.authenticationError,
-            ),
-          ),
+          validatePassword(await credentials.invalidPasswordObject()),
+          throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
         );
 
         status = await sdk.fetchActivationStatus();
@@ -136,17 +113,25 @@ main() {
     test('testReuseUsedPasswordObject', () async {
       final pValid = await credentials.validPasswordObject();
       final pInvalid = await credentials.invalidPasswordObject();
+      cleanupHelper.cleanup.addAll([pValid, pInvalid]);
 
-      await expectLater(sdk.changePassword(pValid, pInvalid), completes);
+      final changeData = await sdk.beginPasswordChange(pValid);
+      cleanupHelper.cleanup.add(changeData);
+      await sdk.finishPasswordChange(pInvalid, changeData);
       await expectLater(
-        sdk.validatePassword(pInvalid),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
+        sdk.finishPasswordChange(
+          await credentials.validPasswordObject(),
+          changeData,
         ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
+      await expectLater(
+        pValid.isEmpty(),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
+      await expectLater(
+        pInvalid.isEmpty(),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
     });
 
@@ -155,15 +140,17 @@ main() {
       final pInvalid = await credentials.invalidPasswordObject(
         destroyOnUse: false,
       );
+      cleanupHelper.cleanup.addAll([pValid, pInvalid]);
 
       final validAuth = PowerAuthAuthentication.password(pValid);
       final invalidAuth = PowerAuthAuthentication.password(pInvalid);
+      final body = utf8Bytes('{}');
 
-      var header = await sdk.requestSignature(
+      var header = await sdk.authenticationHeaderForRequestWithBody(
         validAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -174,11 +161,11 @@ main() {
         )).signatureValid,
         true,
       );
-      header = await sdk.requestSignature(
+      header = await sdk.authenticationHeaderForRequestWithBody(
         validAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -190,11 +177,11 @@ main() {
         true,
       );
 
-      header = await sdk.requestSignature(
+      header = await sdk.authenticationHeaderForRequestWithBody(
         invalidAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -205,11 +192,11 @@ main() {
         )).signatureValid,
         false,
       );
-      header = await sdk.requestSignature(
+      header = await sdk.authenticationHeaderForRequestWithBody(
         invalidAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -225,15 +212,17 @@ main() {
     test('testReuseUsedPasswordObjectInAuth', () async {
       final pValid = await credentials.validPasswordObject();
       final pInvalid = await credentials.invalidPasswordObject();
+      cleanupHelper.cleanup.addAll([pValid, pInvalid]);
 
       final validAuth = PowerAuthAuthentication.password(pValid);
       final invalidAuth = PowerAuthAuthentication.password(pInvalid);
+      final body = utf8Bytes('{}');
 
-      var header = await sdk.requestSignature(
+      var header = await sdk.authenticationHeaderForRequestWithBody(
         validAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -244,22 +233,21 @@ main() {
         )).signatureValid,
         true,
       );
-      expect(
-        sdk.requestSignature(validAuth, 'POST', '/some/uriId', '{}'),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
+      await expectLater(
+        sdk.authenticationHeaderForRequestWithBody(
+          validAuth,
+          'POST',
+          '/some/uriId',
+          body,
         ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
 
-      header = await sdk.requestSignature(
+      header = await sdk.authenticationHeaderForRequestWithBody(
         invalidAuth,
         'POST',
         '/some/uriId',
-        '{}',
+        body,
       );
       expect(
         (await helper.verifySignature(
@@ -270,15 +258,14 @@ main() {
         )).signatureValid,
         false,
       );
-      expect(
-        sdk.requestSignature(invalidAuth, 'POST', '/some/uriId', '{}'),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.invalidNativeObject,
-          ),
+      await expectLater(
+        sdk.authenticationHeaderForRequestWithBody(
+          invalidAuth,
+          'POST',
+          '/some/uriId',
+          body,
         ),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
     });
   });

@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
+import 'dart:typed_data';
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import '../utils/activation_credentials.dart';
+import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
+import '../utils/object_cleanup_helper.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 
 main() {
   group('Signature tests', () {
     late IntegrationHelper helper;
+    late ObjectCleanupHelper cleanupHelper;
     late PowerAuth sdk;
     late ActivationCredentials credentials;
 
     setUp(() async {
+      cleanupHelper = ObjectCleanupHelper();
       sdk = PowerAuth(IntegrationHelper.randomString(30));
       helper = IntegrationHelper(sdk);
       await helper.configure();
@@ -39,6 +45,7 @@ main() {
 
     tearDown(() async {
       await helper.cleanup();
+      await cleanupHelper.dispose();
     });
 
     test('testSignatureCalculation', () async {
@@ -56,17 +63,18 @@ main() {
         } else {
           auth = credentials.biometry();
         }
-        PowerAuthAuthorizationHttpHeader header;
+        PowerAuthHttpHeader header;
         if (td.method == 'POST') {
-          header = await sdk.requestSignature(
+          header = await sdk.authenticationHeaderForRequestWithBody(
             auth,
             td.method,
             td.uriId,
-            td.body,
+            td.body == null ? null : utf8Bytes(td.body!),
           );
         } else if (td.method == 'GET') {
-          header = await sdk.requestGetSignature(
+          header = await sdk.authenticationHeaderForRequestWithParams(
             auth,
+            td.method,
             td.uriId,
             td.queryParams,
           );
@@ -76,6 +84,7 @@ main() {
 
         // Let's validate signature on the server
         final parsed = SignatureHelper.parseHeader(header.value);
+        expect(header.name, 'X-PowerAuth-Authorization');
         expect(parsed.activationId, activationId);
         expect(
           SignatureType.fromString(parsed.signatureType.toUpperCase()),
@@ -86,56 +95,65 @@ main() {
           td.method,
           td.uriId,
           header.value,
-          td.body ?? "",
+          td.body ?? '',
+          queryParams: td.queryParams,
         );
         expect(
-          !td.shouldFail,
           result.signatureValid,
+          !td.shouldFail,
           reason:
               "Signature verification failed for ${td.method} ${td.uriId} with body ${td.body}",
         );
       }
     });
 
-    test('testWrongPassword', () async {
-      var status = await sdk.fetchActivationStatus();
-      final maxFailCount = status.maxFailCount;
-      for (var i = 1; i <= maxFailCount; i++) {
-        expect(status.state, PowerAuthActivationState.active);
-        await expectLater(
-          sdk.validatePassword(await credentials.invalidPasswordObject()),
-          throwsA(
-            isA<PowerAuthException>().having(
-              (e) => e.code,
-              "code",
-              PowerAuthErrorCode.authenticationError,
-            ),
-          ),
-        );
-        status = await sdk.fetchActivationStatus();
-        expect(status.failCount, i);
-        expect(status.remainingAttempts, maxFailCount - i);
-      }
-      expect(status.state, PowerAuthActivationState.blocked);
-      expect(status.remainingAttempts, 0);
-    });
-
-    test('testDeviceSignedData', () async {
-      final dataToSign =
-          'This is a very sensitive information and must be signed.';
+    test('testDeviceDigitalSignatureRoundTripAndTampering', () async {
+      final password = await credentials.validPasswordObject(
+        destroyOnUse: false,
+      );
+      cleanupHelper.cleanup.add(password);
+      final authentication = PowerAuthAuthentication.password(password);
+      final data = utf8Bytes(
+        'This is sensitive information and must be signed.',
+      );
+      final signature = await sdk.calculateDigitalSignature(
+        authentication,
+        data,
+        PowerAuthSignatureKeyId.deviceEc,
+      );
+      expect(signature, isNotEmpty);
       await expectLater(
-        sdk.signDataWithDevicePrivateKey(
-          await credentials.knowledge(),
-          dataToSign,
+        sdk.verifyDigitalSignature(
+          signature,
+          data,
+          PowerAuthSignatureKeyId.deviceEc,
         ),
         completes,
       );
-      // Now verify signature on the server.
-      // TODO: missing verification API
-      //const result = await this.serverApi.verifyDeviceSignedData(activationId!, dataToSign, signature)
-      //expect(result).toBe(true)
-    });
 
+      final tamperedData = utf8Bytes(
+        'This is sensitive information and must be signed!',
+      );
+      await expectLater(
+        sdk.verifyDigitalSignature(
+          signature,
+          tamperedData,
+          PowerAuthSignatureKeyId.deviceEc,
+        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongSignature),
+      );
+
+      final tamperedSignature = signature.toList(growable: false);
+      tamperedSignature[0] ^= 0x01;
+      await expectLater(
+        sdk.verifyDigitalSignature(
+          Uint8List.fromList(tamperedSignature),
+          data,
+          PowerAuthSignatureKeyId.deviceEc,
+        ),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongSignature),
+      );
+    });
   });
 }
 
@@ -178,6 +196,17 @@ final List<SignatureTestData> _testData = [
     method: 'POST',
     uriId: '/some/uriId',
     body: 'Hello world',
+    factors: SignatureType.possession,
+  ),
+  SignatureTestData(
+    method: 'GET',
+    uriId: '/some/uriId',
+    factors: SignatureType.possession,
+  ),
+  SignatureTestData(
+    method: 'GET',
+    uriId: '/some/uriId/params',
+    queryParams: {'message': 'Hello world', 'page': '1'},
     factors: SignatureType.possession,
   ),
   SignatureTestData(
@@ -259,14 +288,27 @@ class SignatureHelper {
     final version = components['pa_version'];
     final activationId = components['pa_activation_id'];
     final nonce = components['pa_nonce'];
-    final signatureType = components['pa_signature_type'];
-    final signature = components['pa_signature'];
+    final signatureType =
+        components['pa_auth_code_type'] ??
+        components['pa_signature_factors'] ??
+        components['pa_signature_type'];
+    final signature = components['pa_auth_code'] ?? components['pa_signature'];
 
-    if (version == null) throw Exception('Missing pa_version in PA signature');
-    if (activationId == null) throw Exception('Missing pa_activation_id in PA signature');
-    if (nonce == null) throw Exception('Missing pa_nonce in PA signature');
-    if (signatureType == null) throw Exception('Missing pa_signature_type in PA signature');
-    if (signature == null) throw Exception('Missing pa_signature in PA signature');
+    if (version == null) {
+      throw Exception('Missing pa_version in PA signature');
+    }
+    if (activationId == null) {
+      throw Exception('Missing pa_activation_id in PA signature');
+    }
+    if (nonce == null) {
+      throw Exception('Missing pa_nonce in PA signature');
+    }
+    if (signatureType == null) {
+      throw Exception('Missing signature factors in PA signature: $components');
+    }
+    if (signature == null) {
+      throw Exception('Missing authentication code in PA signature');
+    }
 
     return OnlineSignature(
       signature: signature,

@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import '../utils/helper_functions.dart';
 import '../utils/integration_helper.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,14 @@ main() {
 
     Future<PowerAuthPassword> getPassword2() async {
       return await PowerAuthPassword.fromString("password2");
+    }
+
+    Future<void> validatePassword(
+      PowerAuth sdk,
+      PowerAuthPassword password,
+    ) async {
+      final changeData = await sdk.beginPasswordChange(password);
+      await changeData.release();
     }
 
     Future<void> cleanupInstance(IntegrationHelper? helper) async {
@@ -80,6 +89,7 @@ main() {
       PowerAuthConfiguration configuration = PowerAuthConfiguration(
         configuration: AppConfig.sdkConfig,
         baseEndpointUrl: AppConfig.enrollmentUrl,
+        offlineAuthenticationCodeComponentLength: 6,
       );
       PowerAuthSharingConfiguration? sharingConfig;
       PowerAuthBiometryConfiguration? biometryConfig;
@@ -91,7 +101,6 @@ main() {
           appIdentifier: "SharedInstanceTests",
           keychainAccessGroup:
               "fake.accessGroup", // This will work only in simulator
-          sharedMemoryIdentifier: "tst3",
         );
       }
       if (currentTestName == 'testConfigurationWithBiometry' ||
@@ -102,14 +111,17 @@ main() {
       }
       if (currentTestName == 'testFullConfiguration') {
         clientConfig = PowerAuthClientConfiguration();
-        keychainConfig = PowerAuthKeychainConfiguration();
-        sharingConfig = PowerAuthSharingConfiguration(
-          appGroup: "group.com.wultra.testGroup",
-          appIdentifier: "SharedInstanceTests",
-          keychainAccessGroup:
-              "fake.accessGroup", // This will work only in simulator
-          sharedMemoryIdentifier: "tst4",
-        );
+        keychainConfig =
+            Platform.isAndroid ? PowerAuthKeychainConfiguration() : null;
+        sharingConfig =
+            Platform.isIOS
+                ? PowerAuthSharingConfiguration(
+                  appGroup: "group.com.wultra.testGroup",
+                  appIdentifier: "SharedInstanceTests",
+                  keychainAccessGroup:
+                      "fake.accessGroup", // Simulator-only fixture.
+                )
+                : null;
       }
       await helper.sdk.configure(
         configuration: configuration,
@@ -140,238 +152,186 @@ main() {
     }
 
     Future<void> runMethodsThatMustFail(PowerAuth sdk) async {
+      final expected = throwsPowerAuthCode(
+        PowerAuthErrorCode.instanceNotConfigured,
+      );
       final commitAuth = PowerAuthAuthentication.persistWithPassword(
         await PowerAuthPassword.fromString('1234'),
       );
       final signAuth = PowerAuthAuthentication.possession();
       final emptyPassword = await PowerAuthPassword.fromString('');
-
-      await expectLater(
-        sdk.hasValidActivation(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.canStartActivation(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.hasPendingActivation(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.fetchActivationStatus(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.createActivation(
-          PowerAuthActivation.fromActivationCode(activationCode: '', name: ''),
-        ),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.persistActivation(commitAuth),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.getActivationFingerprint(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.getActivationIdentifier(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.removeActivationWithAuthentication(signAuth),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.removeActivationLocal(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.requestGetSignature(signAuth, '', null),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.requestSignature(signAuth, '', ''),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.offlineSignature(signAuth, '', '', null),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.verifyDigitalSignature('', '', PowerAuthSignatureKeyId.serverEc),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.changePassword(emptyPassword, emptyPassword),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.addBiometryFactor(emptyPassword, null),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.removeBiometryFactor(),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.fetchEncryptionKey(signAuth, 1000),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.signDataWithDevicePrivateKey(signAuth, ''),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.validatePassword(emptyPassword),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
-      );
-      await expectLater(
-        sdk.groupedBiometricAuthentication(signAuth, (auth) async {}),
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
-          ),
-        ),
+      // Test-only wrapper used to prove finish checks configuration first.
+      // ignore: invalid_use_of_internal_member
+      final changeData = PowerAuthPasswordChangeData.fromNative(
+        objectId: 'not-configured-change-data',
       );
 
-      await expectLater(
-        sdk.configuration,
-        throwsA(
-          isA<PowerAuthException>().having(
-            (e) => e.code,
-            "code",
-            PowerAuthErrorCode.instanceNotConfigured,
+      try {
+        await expectLater(sdk.configuration, expected);
+        await expectLater(sdk.currentAlgorithm, expected);
+        await expectLater(sdk.hasValidActivation(), expected);
+        await expectLater(sdk.canStartActivation(), expected);
+        await expectLater(sdk.hasPendingActivation(), expected);
+        await expectLater(sdk.fetchActivationStatus(), expected);
+        await expectLater(sdk.hasProtocolUpgradeAvailable(), expected);
+        await expectLater(sdk.hasPendingProtocolUpgrade(), expected);
+        await expectLater(sdk.startProtocolUpgrade(emptyPassword), expected);
+        await expectLater(
+          sdk.createActivation(
+            PowerAuthActivation.fromActivationCode(
+              activationCode: '',
+              name: '',
+            ),
           ),
-        ),
-      );
-
-      // TODO: getBiometryInfo() doesn't depend on configuration. We should move this to separate class
-      await expectLater(PowerAuth.getBiometryInfo(), completes);
+          expected,
+        );
+        await expectLater(sdk.persistActivation(commitAuth), expected);
+        await expectLater(sdk.getActivationFingerprint(), expected);
+        await expectLater(sdk.getActivationIdentifier(), expected);
+        await expectLater(
+          sdk.removeActivationWithAuthentication(signAuth),
+          expected,
+        );
+        await expectLater(sdk.removeActivationLocal(), expected);
+        await expectLater(
+          sdk.authenticationHeaderForRequestWithParams(
+            signAuth,
+            'GET',
+            '/test',
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.authenticationHeaderForRequestWithBody(
+            signAuth,
+            'POST',
+            '/test',
+            utf8Bytes('{}'),
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.offlineSignature(signAuth, '/test', 'MDEyMzQ1Njc='),
+          expected,
+        );
+        await expectLater(sdk.beginPasswordChange(emptyPassword), expected);
+        await expectLater(
+          sdk.finishPasswordChange(emptyPassword, changeData),
+          expected,
+        );
+        await expectLater(
+          sdk.verifyDigitalSignature(
+            utf8Bytes('signature'),
+            utf8Bytes('data'),
+            PowerAuthSignatureKeyId.serverEc,
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.calculateDigitalSignature(
+            signAuth,
+            utf8Bytes('data'),
+            PowerAuthSignatureKeyId.deviceEc,
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.exportDevicePublicKeys(PowerAuthDevicePublicKeyFormat.der),
+          expected,
+        );
+        await expectLater(
+          sdk.verifyJwsSignature(
+            'invalid',
+            true,
+            true,
+            PowerAuthSignatureKeyId.serverEc,
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.calculateJwsSignature(
+            signAuth,
+            utf8Bytes('data'),
+            null,
+            true,
+            PowerAuthSignatureKeyId.deviceEc,
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.createCertificateSigningRequest(
+            signAuth,
+            {'CN': 'test'},
+            null,
+            PowerAuthSignatureKeyId.deviceEc,
+          ),
+          expected,
+        );
+        await expectLater(sdk.addBiometryFactor(emptyPassword), expected);
+        await expectLater(sdk.hasBiometryFactor(), expected);
+        await expectLater(sdk.getBiometricStatus(), expected);
+        await expectLater(
+          sdk.isAuthenticationWithBiometricsAvailable(),
+          expected,
+        );
+        await expectLater(sdk.removeBiometryFactor(), expected);
+        await expectLater(
+          sdk.fetchSecureVaultKey(
+            signAuth,
+            PowerAuthSecureVaultKeyId.knowledge,
+          ),
+          expected,
+        );
+        await expectLater(
+          sdk.groupedBiometricAuthentication(signAuth, (auth) async {}),
+          expected,
+        );
+        await expectLater(sdk.getEncryptorForApplicationScope(), expected);
+        await expectLater(sdk.getEncryptorForActivationScope(), expected);
+        await expectLater(sdk.fetchUserInfo(), expected);
+        await expectLater(sdk.getLastFetchedUserInfo(), expected);
+        await expectLater(sdk.tokenStore.hasLocalToken('test'), expected);
+        await expectLater(sdk.tokenStore.getLocalToken('test'), expected);
+        await expectLater(sdk.tokenStore.removeLocalToken('test'), expected);
+        await expectLater(sdk.tokenStore.removeAllLocalTokens(), expected);
+        await expectLater(
+          sdk.tokenStore.requestAccessToken('test', signAuth),
+          expected,
+        );
+        await expectLater(sdk.tokenStore.removeAccessToken('test'), expected);
+        await expectLater(
+          sdk.tokenStore.generateHeaderForToken('test'),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.isTimeSynchronized(),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.currentTime(),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.synchronizeTime(),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.resetTimeSynchronization(),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.localTimeAdjustment(),
+          expected,
+        );
+        await expectLater(
+          sdk.timeSynchronizationService.localTimeAdjustmentPrecision(),
+          expected,
+        );
+      } finally {
+        await emptyPassword.release();
+        await commitAuth.password?.release();
+        await changeData.release();
+      }
     }
 
     test('testConfigureAndDeconfigure', () async {
@@ -403,6 +363,10 @@ main() {
       );
       expect(sdk1Config.configuration, AppConfig.sdkConfig);
       expect(sdk2Config.configuration, AppConfig.sdkConfig);
+      expect(sdk1Config.offlineAuthenticationCodeComponentLength, 6);
+      expect(sdk2Config.offlineAuthenticationCodeComponentLength, 6);
+      expect(sdk1Config.algorithm, await sdk1.currentAlgorithm);
+      expect(sdk2Config.algorithm, await sdk2.currentAlgorithm);
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(await sdk1.keychainConfiguration, expectedValueOptionalFields);
@@ -447,29 +411,44 @@ main() {
       expect(await sdk2.isConfigured(), false);
       await expectLater(
         pa1.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         pa2.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         sdk1.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
       await expectLater(
         sdk2.configuration,
-        throwsA(isA<PowerAuthException>().having(
-          (e) => e.code, "code", PowerAuthErrorCode.instanceNotConfigured,
-        )),
+        throwsA(
+          isA<PowerAuthException>().having(
+            (e) => e.code,
+            "code",
+            PowerAuthErrorCode.instanceNotConfigured,
+          ),
+        ),
       );
-
     });
 
     test('testFullConfiguration', () async {
@@ -478,7 +457,9 @@ main() {
 
       expect(await sdk1.isConfigured(), true);
 
-      expect(await sdk1.configuration, isNotNull);
+      final configuration = await sdk1.configuration;
+      expect(configuration.offlineAuthenticationCodeComponentLength, 6);
+      expect(configuration.algorithm, await sdk1.currentAlgorithm);
 
       // TEMP: will be fixed in version 2.0.0 SDK
       // expect(sdk1.clientConfiguration, isNotNull);
@@ -503,7 +484,6 @@ main() {
       //   (await sdk1.sharingConfiguration)?.keychainAccessGroup,
       //   "fake.accessGroup",
       // );
-      // expect((await sdk1.sharingConfiguration)?.sharedMemoryIdentifier, "tst3");
     }, skip: !Platform.isIOS);
 
     test('testReconfigureWhileActive', () async {
@@ -547,14 +527,8 @@ main() {
       expect(await sdk1.hasValidActivation(), true);
       expect(await sdk2.hasValidActivation(), true);
 
-      await expectLater(
-        helper1.sdk.validatePassword(await getPassword1()),
-        completes,
-      );
-      await expectLater(
-        helper2.sdk.validatePassword(await getPassword2()),
-        completes,
-      );
+      await validatePassword(helper1.sdk, await getPassword1());
+      await validatePassword(helper2.sdk, await getPassword2());
 
       await helper1.sdk.deconfigure();
       await helper2.sdk.deconfigure();
@@ -585,14 +559,8 @@ main() {
       expect(await helper1.sdk.hasValidActivation(), true);
       expect(await helper2.sdk.hasValidActivation(), true);
 
-      await expectLater(
-        helper1.sdk.validatePassword(await getPassword1()),
-        completes,
-      );
-      await expectLater(
-        helper2.sdk.validatePassword(await getPassword2()),
-        completes,
-      );
+      await validatePassword(helper1.sdk, await getPassword1());
+      await validatePassword(helper2.sdk, await getPassword2());
 
       await expectLater(
         helper1.sdk.removeActivationWithAuthentication(
