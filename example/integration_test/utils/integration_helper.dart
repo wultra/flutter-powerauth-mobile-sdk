@@ -114,7 +114,7 @@ class IntegrationHelper {
                 authenticateOnBiometricKeySetup: false,
                 confirmBiometricAuthentication: false,
                 fallbackToDevicePasscode: false,
-                linkItemsToCurrentSet: true,
+                invalidateBiometricFactorAfterChange: true,
               )
               : null),
       keychainConfiguration: keychainConfiguration,

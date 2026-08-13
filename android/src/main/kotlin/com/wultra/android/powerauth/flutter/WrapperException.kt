@@ -43,4 +43,4 @@ class WrapperException :
     constructor(errorCode: String, message: String, cause: Throwable?) : super(message, cause) {
         this.errorCode = errorCode
     }
-} 
+}

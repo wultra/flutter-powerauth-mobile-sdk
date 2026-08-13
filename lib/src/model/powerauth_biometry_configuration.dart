@@ -22,12 +22,12 @@ class PowerAuthBiometryConfiguration {
   /// removed, or if the user re-enrolls for face. The default value depends on platform:
   /// - On Android is set to `true`
   /// - On iOS is set to `false`
-  final bool linkItemsToCurrentSet;
+  final bool invalidateBiometricFactorAfterChange;
 
   /// ### iOS specific
   ///
   /// If set to `true`, then the key protected with the biometry can be accessed also with a device passcode.
-  /// If set, then `linkItemsToCurrentSet` option has no effect. The default is `false`, so fallback
+  /// If set, then `invalidateBiometricFactorAfterChange` option has no effect. The default is `false`, so fallback
   /// to device's passcode is not enabled.
   final bool fallbackToDevicePasscode;
 
@@ -43,12 +43,12 @@ class PowerAuthBiometryConfiguration {
   ///
   /// ### Discussion
   ///
-  /// Setting parameter to `true` leads to use symmetric AES cipher on the background,
+  /// Setting parameter to `true` leads to use symmetric HMAC-KDF on the background,
   /// so both configuration and usage of biometric key require the biometric authentication.
   ///
   /// If set to `false`, then RSA cipher is used and only the usage of biometric key
   /// require the biometric authentication. This is due to fact, that RSA cipher can encrypt
-  /// data with using it's public key available immediate after the key-pair is created in
+  /// data using its public key available immediately after the key-pair is created in
   /// Android KeyStore.
   ///
   /// The default value is `true`.
@@ -69,31 +69,41 @@ class PowerAuthBiometryConfiguration {
   /// The default value is `true`, so the fallback is enabled.
   final bool fallbackToSharedBiometryKey;
 
+  /// ### Android specific
+  ///
+  /// If `true`, the SDK uses the legacy AES-KDF biometric key protection from
+  /// PowerAuth Mobile SDK 1.x instead of HMAC-KDF. This option is intended only
+  /// for testing. The default value is `false`.
+  final bool useLegacySymmetricKey;
+
   PowerAuthBiometryConfiguration({
-    bool? linkItemsToCurrentSet,
+    bool? invalidateBiometricFactorAfterChange,
     this.fallbackToDevicePasscode = false,
     this.confirmBiometricAuthentication = false,
     this.authenticateOnBiometricKeySetup = true,
     this.fallbackToSharedBiometryKey = true,
-  }) : linkItemsToCurrentSet = linkItemsToCurrentSet ?? Platform.isAndroid;
+    this.useLegacySymmetricKey = false,
+  }) : invalidateBiometricFactorAfterChange = invalidateBiometricFactorAfterChange ?? Platform.isAndroid;
 
   Map<String, dynamic> toMap() {
     return {
-      'linkItemsToCurrentSet': linkItemsToCurrentSet,
+      'invalidateBiometricFactorAfterChange': invalidateBiometricFactorAfterChange,
       'fallbackToDevicePasscode': fallbackToDevicePasscode,
       'confirmBiometricAuthentication': confirmBiometricAuthentication,
       'authenticateOnBiometricKeySetup': authenticateOnBiometricKeySetup,
       'fallbackToSharedBiometryKey': fallbackToSharedBiometryKey,
+      'useLegacySymmetricKey': useLegacySymmetricKey,
     };
   }
 
   factory PowerAuthBiometryConfiguration.fromMap(Map<String, dynamic> map) {
     return PowerAuthBiometryConfiguration(
-      linkItemsToCurrentSet: map['linkItemsToCurrentSet'] as bool,
+      invalidateBiometricFactorAfterChange: map['invalidateBiometricFactorAfterChange'] as bool,
       fallbackToDevicePasscode: map['fallbackToDevicePasscode'] as bool,
       confirmBiometricAuthentication: map['confirmBiometricAuthentication'] as bool,
       authenticateOnBiometricKeySetup: map['authenticateOnBiometricKeySetup'] as bool,
       fallbackToSharedBiometryKey: map['fallbackToSharedBiometryKey'] as bool,
+      useLegacySymmetricKey: map['useLegacySymmetricKey'] as bool? ?? false,
     );
   }
 }

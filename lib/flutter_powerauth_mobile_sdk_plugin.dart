@@ -26,30 +26,31 @@ export 'src/powerauth_crypto_utils/powerauth_crypto_utils.dart';
 
 // Models
 export 'src/model/powerauth_activation.dart';
+export 'src/model/powerauth_algorithm.dart';
 export 'src/model/powerauth_activation_state.dart';
 export 'src/model/powerauth_activation_status.dart';
 export 'src/model/powerauth_authentication.dart';
-export 'src/model/powerauth_authorization_http_header.dart';
 export 'src/model/powerauth_configuration.dart';
 export 'src/model/powerauth_create_activation_result.dart';
 export 'src/model/powerauth_error.dart';
 export 'src/model/powerauth_activation_code.dart';
+export 'src/model/powerauth_biometric_status.dart';
 export 'src/model/powerauth_biometry_configuration.dart';
 export 'src/model/powerauth_client_configuration.dart';
 export 'src/model/powerauth_keychain_configuration.dart';
 export 'src/model/powerauth_sharing_configuration.dart';
-export 'src/model/powerauth_biometry_info.dart';
 export 'src/model/powerauth_basic_http_authentication.dart';
 export 'src/model/powerauth_http_header.dart';
 export 'src/powerauth_password/powerauth_password.dart';
 export 'src/powerauth/powerauth_token_store.dart';
-export 'src/model/powerauth_data_format.dart';
 export 'src/model/powerauth_encryptor.dart';
-export 'src/model/powerauth_encryption_http_header.dart';
 export 'src/model/powerauth_user_info.dart';
 export 'src/model/powerauth_oidc_parameters.dart';
-export 'src/powerauth_encryptor/powerauth_encryptor.dart';
-
+export 'src/model/powerauth_signature_key_id.dart';
+export 'src/model/powerauth_device_public_key.dart';
+export 'src/model/powerauth_secure_vault_key.dart';
+export 'src/model/powerauth_protocol_upgrade_result.dart';
+export 'src/model/powerauth_password_change_data.dart';
 // Debug
 export 'src/debug/powerauth_debug.dart';
 export 'src/powerauth_native_object_register/powerauth_native_object_register.dart';

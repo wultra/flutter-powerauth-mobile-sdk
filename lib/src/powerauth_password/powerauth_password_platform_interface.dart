@@ -41,10 +41,6 @@ abstract class PowerAuthPasswordPlatform extends PlatformInterface {
     throw UnimplementedError('initialize() has not been implemented.');
   }
 
-  Future<void> release(String objectId) {
-    throw UnimplementedError('release() has not been implemented.');
-  }
-
   Future<int> length(String objectId) {
     throw UnimplementedError('length() has not been implemented.');
   }

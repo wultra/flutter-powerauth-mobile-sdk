@@ -46,13 +46,6 @@ class PowerAuthPasswordMethodChannel extends PowerAuthPasswordPlatform
   }
 
   @override
-  Future<void> release(String objectId) async {
-    await invokeNullableMethod<void>('password_release', {
-      'objectId': objectId,
-    });
-  }
-
-  @override
   Future<int> length(String objectId) async {
     final result = await invokeMethod<int>('password_length', {
       'objectId': objectId,

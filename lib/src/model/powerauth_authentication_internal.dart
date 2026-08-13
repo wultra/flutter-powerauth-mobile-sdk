@@ -17,7 +17,6 @@
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 
 class InternalAuth implements PowerAuthAuthentication {
-  
   /// Password used for the knowledge factor.
   /// Set only if the knowledge factor is required.
   @override
@@ -42,12 +41,14 @@ class InternalAuth implements PowerAuthAuthentication {
   InternalAuth({
     this.password,
     this.biometricPrompt,
+    this.useBiometry = false,
     required this.forActivationPersist,
-  }) : useBiometry = biometricPrompt != null;
+  });
 
   @override
-  Future<Map<String, dynamic>> prepareAuthArguments(Map<String, dynamic> baseArgs) async {
-    
+  Future<Map<String, dynamic>> prepareAuthArguments(
+    Map<String, dynamic> baseArgs,
+  ) async {
     final args = Map<String, dynamic>.from(baseArgs);
     final rawPassword = await password?.toRawPasswordMap();
 

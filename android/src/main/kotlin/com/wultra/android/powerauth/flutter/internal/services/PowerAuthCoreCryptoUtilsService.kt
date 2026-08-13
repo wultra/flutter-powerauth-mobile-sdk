@@ -25,7 +25,7 @@ import io.getlime.security.powerauth.core.CryptoUtils
 /**
  * Service exposing basic cryptographic utilities backed by platform primitives.
  * Methods:
- *  - randomBytes: Generate random bytes of given length, returned as Base64 by default.
+ *  - randomBytes: Generate random bytes of given length.
  *  - hashSha256: Compute SHA-256 hash of input data.
  */
 internal class PowerAuthCoreCryptoUtilsService : BasePowerAuthService(null) {

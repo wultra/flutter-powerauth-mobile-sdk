@@ -46,7 +46,6 @@ internal class PowerAuthPasswordService(
 
     private object HandlerNames {
         const val PASSWORD_INITIALIZE = "initialize"
-        const val PASSWORD_RELEASE = "release"
         const val PASSWORD_CLEAR = "clear"
         const val PASSWORD_LENGTH = "length"
         const val PASSWORD_IS_EQUAL = "isEqualTo"
@@ -59,7 +58,6 @@ internal class PowerAuthPasswordService(
     override val handlers by lazy {
         mapOf(
             HandlerNames.PASSWORD_INITIALIZE to this::initialize,
-            HandlerNames.PASSWORD_RELEASE to this::release,
             HandlerNames.PASSWORD_CLEAR to this::clear,
             HandlerNames.PASSWORD_LENGTH to this::length,
             HandlerNames.PASSWORD_ADD_CHARACTER to this::addCharacter,
@@ -226,17 +224,6 @@ internal class PowerAuthPasswordService(
                     )
                 }
             }
-        } catch (t: Throwable) {
-            Errors.error(result, t)
-        }
-    }
-
-    private fun release(call: MethodCall, result: Result) {
-        try {
-            val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            objectRegister.removeObject(objectId, Password::class.java)
-
-            result.success(null)
         } catch (t: Throwable) {
             Errors.error(result, t)
         }

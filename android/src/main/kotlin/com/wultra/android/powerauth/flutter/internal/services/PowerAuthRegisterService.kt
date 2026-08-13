@@ -29,6 +29,8 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
     private companion object ArgKeys {
         const val INSTANCE_ID = "instanceId"
         const val OBJECT_ID = "objectId"
+        const val OBJECT_TYPE = "objectType"
+        const val CLEANUP_PERIOD = "cleanupPeriod"
         const val COMMAND = "command"
         const val DATA = "data"
     }
@@ -37,13 +39,19 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
         const val DEBUG_DUMP = "debugDump"
         const val DEBUG_COMMAND = "debugCommand"
         const val IS_VALID_NATIVE_OBJECT = "isValidNativeObject"
+        const val RELEASE_NATIVE_OBJECT = "releaseNativeObject"
+        const val REMOVE_OBJECT = "removeObject"
+        const val SET_CLEANUP_PERIOD = "setCleanupPeriod"
     }
 
     override val handlers by lazy {
         mapOf(
             HandlerNames.DEBUG_DUMP to this::debugDump,
             HandlerNames.DEBUG_COMMAND to this::debugCommand,
-            HandlerNames.IS_VALID_NATIVE_OBJECT to this::isValidNativeObject
+            HandlerNames.IS_VALID_NATIVE_OBJECT to this::isValidNativeObject,
+            HandlerNames.RELEASE_NATIVE_OBJECT to this::releaseNativeObject,
+            HandlerNames.REMOVE_OBJECT to this::removeObject,
+            HandlerNames.SET_CLEANUP_PERIOD to this::setCleanupPeriod
         )
     }
 
@@ -77,4 +85,34 @@ internal class PowerAuthRegisterService(private val objectRegister: PowerAuthObj
             Errors.error(result, t)
         }
     }
-} 
+
+    private fun releaseNativeObject(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            objectRegister.releaseObject(objectId)
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun removeObject(call: MethodCall, result: Result) {
+        try {
+            val objectId: String = call.getRequiredArgument(OBJECT_ID)
+            val objectType: String = call.getRequiredArgument(OBJECT_TYPE)
+            result.success(objectRegister.removeObject(objectId, objectType))
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+
+    private fun setCleanupPeriod(call: MethodCall, result: Result) {
+        try {
+            val cleanupPeriod: Int = call.getRequiredArgument(CLEANUP_PERIOD)
+            objectRegister.setCleanupPeriod(cleanupPeriod.toLong())
+            result.success(null)
+        } catch (t: Throwable) {
+            Errors.error(result, t)
+        }
+    }
+}
