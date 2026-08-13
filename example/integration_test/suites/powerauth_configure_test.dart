@@ -101,6 +101,7 @@ main() {
           appIdentifier: "SharedInstanceTests",
           keychainAccessGroup:
               "fake.accessGroup", // This will work only in simulator
+          sharedMemoryIdentifier: "test",
         );
       }
       if (currentTestName == 'testConfigurationWithBiometry' ||
@@ -110,9 +111,26 @@ main() {
         );
       }
       if (currentTestName == 'testFullConfiguration') {
-        clientConfig = PowerAuthClientConfiguration();
+        clientConfig = PowerAuthClientConfiguration(
+          enableUnsecureTraffic: true,
+          connectionTimeout: 12,
+          readTimeout: 34,
+        );
+        biometryConfig = PowerAuthBiometryConfiguration(
+          invalidateBiometricFactorAfterChange: false,
+          fallbackToDevicePasscode: true,
+          confirmBiometricAuthentication: true,
+          authenticateOnBiometricKeySetup: false,
+          fallbackToSharedBiometryKey: false,
+          useLegacySymmetricKey: true,
+        );
         keychainConfig =
-            Platform.isAndroid ? PowerAuthKeychainConfiguration() : null;
+            Platform.isAndroid
+                ? PowerAuthKeychainConfiguration(
+                  minimalRequiredKeychainProtection:
+                      PowerAuthKeychainProtection.software,
+                )
+                : null;
         sharingConfig =
             Platform.isIOS
                 ? PowerAuthSharingConfiguration(
@@ -120,6 +138,7 @@ main() {
                   appIdentifier: "SharedInstanceTests",
                   keychainAccessGroup:
                       "fake.accessGroup", // Simulator-only fixture.
+                  sharedMemoryIdentifier: "test",
                 )
                 : null;
       }
@@ -169,6 +188,10 @@ main() {
       try {
         await expectLater(sdk.configuration, expected);
         await expectLater(sdk.currentAlgorithm, expected);
+        await expectLater(sdk.clientConfiguration, expected);
+        await expectLater(sdk.biometryConfiguration, expected);
+        await expectLater(sdk.keychainConfiguration, expected);
+        await expectLater(sdk.sharingConfiguration, expected);
         await expectLater(sdk.hasValidActivation(), expected);
         await expectLater(sdk.canStartActivation(), expected);
         await expectLater(sdk.hasPendingActivation(), expected);
@@ -368,15 +391,20 @@ main() {
       expect(sdk1Config.algorithm, await sdk1.currentAlgorithm);
       expect(sdk2Config.algorithm, await sdk2.currentAlgorithm);
 
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // expect(await sdk1.keychainConfiguration, expectedValueOptionalFields);
-      // expect(await sdk2.keychainConfiguration, expectedValueOptionalFields);
-      // expect(await sdk1.clientConfiguration, expectedValueOptionalFields);
-      // expect(await sdk2.clientConfiguration, expectedValueOptionalFields);
-      // expect(await sdk1.biometryConfiguration, expectedValueOptionalFields);
-      // expect(await sdk2.biometryConfiguration, expectedValueOptionalFields);
-      // expect(await sdk1.sharingConfiguration, isNull);
-      // expect(await sdk2.sharingConfiguration, isNull);
+      expect(await sdk1.clientConfiguration, isNotNull);
+      expect(await sdk2.clientConfiguration, isNotNull);
+      expect(await sdk1.biometryConfiguration, isNotNull);
+      expect(await sdk2.biometryConfiguration, isNotNull);
+      expect(
+        await sdk1.keychainConfiguration,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(
+        await sdk2.keychainConfiguration,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(await sdk1.sharingConfiguration, isNull);
+      expect(await sdk2.sharingConfiguration, isNull);
       expect(await pa1.isConfigured(), true);
       expect(await pa2.isConfigured(), true);
       final pa1Config = await pa1.configuration;
@@ -392,15 +420,20 @@ main() {
         _normalizeEndpointUrl(AppConfig.enrollmentUrl),
       );
 
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // expect(await pa1.keychainConfiguration, expectedValueOptionalFields);
-      // expect(await pa2.keychainConfiguration, expectedValueOptionalFields);
-      // expect(await pa1.clientConfiguration, expectedValueOptionalFields);
-      // expect(await pa2.clientConfiguration, expectedValueOptionalFields);
-      // expect(await pa1.biometryConfiguration, expectedValueOptionalFields);
-      // expect(await pa2.biometryConfiguration, expectedValueOptionalFields);
-      // expect(await pa1.sharingConfiguration, isNull);
-      // expect(await pa2.sharingConfiguration, isNull);
+      expect(await pa1.clientConfiguration, isNotNull);
+      expect(await pa2.clientConfiguration, isNotNull);
+      expect(await pa1.biometryConfiguration, isNotNull);
+      expect(await pa2.biometryConfiguration, isNotNull);
+      expect(
+        await pa1.keychainConfiguration,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(
+        await pa2.keychainConfiguration,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(await pa1.sharingConfiguration, isNull);
+      expect(await pa2.sharingConfiguration, isNull);
 
       await pa1.deconfigure();
       await pa2.deconfigure();
@@ -451,6 +484,39 @@ main() {
       );
     });
 
+    test('testDefaultConfigurationGetters', () async {
+      final helper1 = await getHelper1('');
+      final sdk1 = helper1.sdk;
+
+      final clientConfiguration = await sdk1.clientConfiguration;
+      expect(clientConfiguration.enableUnsecureTraffic, isFalse);
+      expect(clientConfiguration.connectionTimeout, 20);
+      expect(clientConfiguration.readTimeout, 20);
+
+      final biometryConfiguration = await sdk1.biometryConfiguration;
+      expect(
+        biometryConfiguration.invalidateBiometricFactorAfterChange,
+        Platform.isAndroid,
+      );
+      expect(biometryConfiguration.fallbackToDevicePasscode, isFalse);
+      expect(biometryConfiguration.confirmBiometricAuthentication, isFalse);
+      expect(biometryConfiguration.authenticateOnBiometricKeySetup, isTrue);
+      expect(biometryConfiguration.fallbackToSharedBiometryKey, isTrue);
+      expect(biometryConfiguration.useLegacySymmetricKey, isFalse);
+
+      final keychainConfiguration = await sdk1.keychainConfiguration;
+      if (Platform.isAndroid) {
+        expect(keychainConfiguration, isNotNull);
+        expect(
+          keychainConfiguration!.minimalRequiredKeychainProtection,
+          PowerAuthKeychainProtection.none,
+        );
+      } else {
+        expect(keychainConfiguration, isNull);
+      }
+      expect(await sdk1.sharingConfiguration, isNull);
+    });
+
     test('testFullConfiguration', () async {
       final helper1 = await getHelper1('testFullConfiguration');
       final sdk1 = helper1.sdk;
@@ -458,14 +524,67 @@ main() {
       expect(await sdk1.isConfigured(), true);
 
       final configuration = await sdk1.configuration;
+      expect(
+        _normalizeEndpointUrl(configuration.baseEndpointUrl),
+        _normalizeEndpointUrl(AppConfig.enrollmentUrl),
+      );
+      expect(configuration.configuration, AppConfig.sdkConfig);
       expect(configuration.offlineAuthenticationCodeComponentLength, 6);
       expect(configuration.algorithm, await sdk1.currentAlgorithm);
 
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // expect(sdk1.clientConfiguration, isNotNull);
-      // expect(sdk1.keychainConfiguration, isNotNull);
-      // expect(sdk1.biometryConfiguration, isNotNull);
-      // expect(sdk1.sharingConfiguration, isNotNull);
+      final clientConfiguration = await sdk1.clientConfiguration;
+      expect(clientConfiguration.connectionTimeout, 12);
+      expect(clientConfiguration.readTimeout, Platform.isAndroid ? 34 : 12);
+      expect(clientConfiguration.enableUnsecureTraffic, isTrue);
+
+      final biometryConfiguration = await sdk1.biometryConfiguration;
+      expect(
+        biometryConfiguration.invalidateBiometricFactorAfterChange,
+        isFalse,
+      );
+      expect(
+        biometryConfiguration.fallbackToDevicePasscode,
+        Platform.isIOS ? isTrue : isFalse,
+      );
+      expect(
+        biometryConfiguration.confirmBiometricAuthentication,
+        Platform.isAndroid ? isTrue : isFalse,
+      );
+      expect(
+        biometryConfiguration.authenticateOnBiometricKeySetup,
+        Platform.isAndroid ? isFalse : isTrue,
+      );
+      expect(
+        biometryConfiguration.fallbackToSharedBiometryKey,
+        Platform.isAndroid ? isFalse : isTrue,
+      );
+      expect(
+        biometryConfiguration.useLegacySymmetricKey,
+        Platform.isAndroid ? isTrue : isFalse,
+      );
+
+      final keychainConfiguration = await sdk1.keychainConfiguration;
+      if (Platform.isAndroid) {
+        expect(keychainConfiguration, isNotNull);
+        expect(
+          keychainConfiguration!.minimalRequiredKeychainProtection,
+          PowerAuthKeychainProtection.software,
+        );
+      } else {
+        expect(keychainConfiguration, isNull);
+      }
+
+      final sharingConfiguration = await sdk1.sharingConfiguration;
+      if (Platform.isIOS) {
+        expect(sharingConfiguration, isNotNull);
+        final iosSharingConfiguration = sharingConfiguration!;
+        expect(iosSharingConfiguration.appGroup, "group.com.wultra.testGroup");
+        expect(iosSharingConfiguration.appIdentifier, "SharedInstanceTests");
+        expect(iosSharingConfiguration.keychainAccessGroup, "fake.accessGroup");
+        expect(iosSharingConfiguration.sharedMemoryIdentifier, "test");
+      } else {
+        expect(sharingConfiguration, isNull);
+      }
     });
 
     test('iosTestActivationSharing', () async {
@@ -477,13 +596,14 @@ main() {
       final sdk1 = helper1.sdk;
       expect(await sdk1.isConfigured(), true);
 
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // expect((await sdk1.sharingConfiguration)?.appGroup, "group.com.wultra.testGroup");
-      // expect((await sdk1.sharingConfiguration)?.appIdentifier, "SharedInstanceTests");
-      // expect(
-      //   (await sdk1.sharingConfiguration)?.keychainAccessGroup,
-      //   "fake.accessGroup",
-      // );
+      final sharingConfiguration = await sdk1.sharingConfiguration;
+      expect(sharingConfiguration?.appGroup, "group.com.wultra.testGroup");
+      expect(sharingConfiguration?.appIdentifier, "SharedInstanceTests");
+      expect(
+        sharingConfiguration?.keychainAccessGroup,
+        "fake.accessGroup",
+      );
+      expect(sharingConfiguration?.sharedMemoryIdentifier, "test");
     }, skip: !Platform.isIOS);
 
     test('testReconfigureWhileActive', () async {
@@ -497,29 +617,35 @@ main() {
 
       final config1 = await sdk1.configuration;
       final config2 = await sdk2.configuration;
-
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // final clientConfig1 = await sdk1.clientConfiguration;
-      // final clientConfig2 = await sdk2.clientConfiguration;
-      // final keychainConfig1 = await sdk1.keychainConfiguration;
-      // final keychainConfig2 = await sdk2.keychainConfiguration;
-      // final biometryConfig1 = await sdk1.biometryConfiguration;
-      // final biometryConfig2 = await sdk2.biometryConfiguration;
-      // final sharingConfig1 = await sdk1.sharingConfiguration;
-      // final sharingConfig2 = await sdk2.sharingConfiguration;
+      // These fixtures do not use custom headers or Basic HTTP
+      // Authentication. Such settings become native request interceptors and
+      // are intentionally not included in the returned client configuration.
+      final clientConfig1 = await sdk1.clientConfiguration;
+      final clientConfig2 = await sdk2.clientConfiguration;
+      final keychainConfig1 = await sdk1.keychainConfiguration;
+      final keychainConfig2 = await sdk2.keychainConfiguration;
+      final biometryConfig1 = await sdk1.biometryConfiguration;
+      final biometryConfig2 = await sdk2.biometryConfiguration;
+      final sharingConfig1 = await sdk1.sharingConfiguration;
+      final sharingConfig2 = await sdk2.sharingConfiguration;
 
       expect(config1, isNotNull);
       expect(config2, isNotNull);
 
-      // TEMP: will be fixed in version 2.0.0 SDK
-      // expect(clientConfig1, expectedValueOptionalFields);
-      // expect(clientConfig2, expectedValueOptionalFields);
-      // expect(keychainConfig1, expectedValueOptionalFields);
-      // expect(keychainConfig2, expectedValueOptionalFields);
-      // expect(biometryConfig1, expectedValueOptionalFields);
-      // expect(biometryConfig2, expectedValueOptionalFields);
-      // expect(sharingConfig1, isNull);
-      // expect(sharingConfig2, isNull);
+      expect(clientConfig1, isNotNull);
+      expect(clientConfig2, isNotNull);
+      expect(biometryConfig1, isNotNull);
+      expect(biometryConfig2, isNotNull);
+      expect(
+        keychainConfig1,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(
+        keychainConfig2,
+        Platform.isAndroid ? isNotNull : isNull,
+      );
+      expect(sharingConfig1, isNull);
+      expect(sharingConfig2, isNull);
 
       await helper1.prepareActiveActivation(await getPassword1());
       await helper2.prepareActiveActivation(await getPassword2());
@@ -537,20 +663,21 @@ main() {
       await runMethodsThatMustFail(helper1.sdk);
       await runMethodsThatMustFail(helper2.sdk);
 
-      // Reconfigure. This technically re-create native SDK objects on behalf
+      // Reconfigure from the native-readable configuration fields. This
+      // recreates the native SDK objects.
       await helper1.sdk.configure(
         configuration: config1,
-        // TEMP: will be fixed in version 2.0.0 SDK
-        // clientConfiguration: clientConfig1,
-        // biometryConfiguration: biometryConfig1,
-        // keychainConfiguration: keychainConfig1,
+        clientConfiguration: clientConfig1,
+        biometryConfiguration: biometryConfig1,
+        keychainConfiguration: keychainConfig1,
+        sharingConfiguration: sharingConfig1,
       );
       await helper2.sdk.configure(
         configuration: config2,
-        // TEMP: will be fixed in version 2.0.0 SDK
-        // clientConfiguration: clientConfig2,
-        // biometryConfiguration: biometryConfig2,
-        // keychainConfiguration: keychainConfig2,
+        clientConfiguration: clientConfig2,
+        biometryConfiguration: biometryConfig2,
+        keychainConfiguration: keychainConfig2,
+        sharingConfiguration: sharingConfig2,
       );
 
       expect(await helper1.sdk.isConfigured(), true);

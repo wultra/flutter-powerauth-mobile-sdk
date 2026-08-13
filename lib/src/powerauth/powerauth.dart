@@ -83,19 +83,33 @@ class PowerAuth {
   /// Returns the algorithm currently used for communication with the PowerAuth Server.
   Future<PowerAuthAlgorithm> get currentAlgorithm async => (await _platform.getCurrentAlgorithm(instanceId));
 
-  // TODO: Uncomment when the SDK provides access to these configurations in SDK version 2.0.0 or later.
+  /// Returns the native-readable client configuration used for this instance.
+  ///
+  /// The returned configuration does not include
+  /// [PowerAuthClientConfiguration.customHttpHeaders] or
+  /// [PowerAuthClientConfiguration.basicHttpAuthentication]. Native SDKs
+  /// transform those settings into request interceptors and cannot reliably
+  /// reconstruct the original values. Keep the original client configuration
+  /// if it will be needed to configure a new instance later.
+  Future<PowerAuthClientConfiguration> get clientConfiguration async =>
+      await _platform.getClientConfiguration(instanceId);
 
-  // /// Returns the client configuration used for this instance, if configured.
-  // Future<PowerAuthClientConfiguration?> get clientConfiguration async => (await _platform.getClientConfiguration(instanceId));
+  /// Returns the effective biometry configuration used for this instance.
+  Future<PowerAuthBiometryConfiguration> get biometryConfiguration async =>
+      await _platform.getBiometryConfiguration(instanceId);
 
-  // /// Returns the biometry configuration used for this instance, if configured.
-  // Future<PowerAuthBiometryConfiguration?> get biometryConfiguration async => (await _platform.getBiometryConfiguration(instanceId));
+  /// Returns the keychain configuration used for this instance on Android.
+  ///
+  /// Returns `null` on Apple platforms.
+  Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async =>
+      await _platform.getKeychainConfiguration(instanceId);
 
-  // /// Returns the keychain configuration used for this instance, if configured.
-  // Future<PowerAuthKeychainConfiguration?> get keychainConfiguration async => (await _platform.getKeychainConfiguration(instanceId));
-
-  // /// Returns the sharing configuration used for this instance (iOS only), if configured.
-  // Future<PowerAuthSharingConfiguration?> get sharingConfiguration async => (await _platform.getSharingConfiguration(instanceId));
+  /// Returns the sharing configuration used for this instance on Apple
+  /// platforms, or `null` if activation sharing is not configured.
+  ///
+  /// Returns `null` on Android.
+  Future<PowerAuthSharingConfiguration?> get sharingConfiguration async =>
+      await _platform.getSharingConfiguration(instanceId);
 
   /// Prepares the PowerAuth instance with an advanced configuration.
   ///

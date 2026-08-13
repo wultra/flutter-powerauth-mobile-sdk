@@ -20,17 +20,28 @@ import com.wultra.android.powerauth.flutter.Errors
 import com.wultra.android.powerauth.flutter.WrapperException
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.ALGORITHM
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.BASIC_HTTP_AUTHENTICATION
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.BASE_ENDPOINT_URL
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONNECTION_TIMEOUT
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIGURATION_STRING
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CONFIRM_BIOMETRIC_AUTHENTICATION
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.CUSTOM_HTTP_HEADERS
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.ENABLE_UNSECURE_TRAFFIC
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.FALLBACK_TO_DEVICE_PASSCODE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.FALLBACK_TO_SHARED_BIOMETRY_KEY
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.MINIMAL_REQUIRED_KEYCHAIN_PROTECTION
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.NAME
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.OFFLINE_AUTHENTICATION_CODE_COMPONENT_LENGTH
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.PASSWORD
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.READ_TIMEOUT
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.USERNAME
 import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.USE_LEGACY_SYMMETRIC_KEY
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmFromString
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthAlgorithmUtils.algorithmToString
+import com.wultra.android.powerauth.flutter.internal.services.PowerAuthService.ArgKeys.VALUE
 import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.getKeychainProtectionFromString
+import com.wultra.android.powerauth.flutter.internal.utils.PowerAuthBiometryUtils.keychainProtectionToString
 import io.getlime.security.powerauth.networking.interceptors.BasicHttpAuthenticationRequestInterceptor
 import io.getlime.security.powerauth.networking.interceptors.CustomHeaderRequestInterceptor
 import io.getlime.security.powerauth.networking.ssl.HttpClientSslNoValidationStrategy
@@ -70,7 +81,7 @@ object PowerAuthConfigurationUtils {
         val builder = PowerAuthClientConfiguration.Builder()
 
         clientConfigMap?.let { map ->
-            val enableUnsecure = (map["enableUnsecureTraffic"] as? Boolean)
+            val enableUnsecure = (map[ENABLE_UNSECURE_TRAFFIC] as? Boolean)
                 ?: PowerAuthClientConfiguration.DEFAULT_ALLOW_UNSECURED_CONNECTION
 
             if (enableUnsecure) {
@@ -79,17 +90,17 @@ object PowerAuthConfigurationUtils {
             }
 
             val connectionTimeoutMs =
-                (map["connectionTimeout"] as? Double)?.let { (it * 1000).toInt() }
+                (map[CONNECTION_TIMEOUT] as? Double)?.let { (it * 1000).toInt() }
                     ?: PowerAuthClientConfiguration.DEFAULT_CONNECTION_TIMEOUT
-            val readTimeoutMs = (map["readTimeout"] as? Double)?.let { (it * 1000).toInt() }
+            val readTimeoutMs = (map[READ_TIMEOUT] as? Double)?.let { (it * 1000).toInt() }
                 ?: PowerAuthClientConfiguration.DEFAULT_READ_TIMEOUT
 
             builder.timeouts(connectionTimeoutMs, readTimeoutMs)
 
             @Suppress("UNCHECKED_CAST")
-            (map["customHttpHeaders"] as? List<Map<String, String>>)?.forEach { headerMap ->
-                val name = headerMap["name"]
-                val value = headerMap["value"]
+            (map[CUSTOM_HTTP_HEADERS] as? List<Map<String, String>>)?.forEach { headerMap ->
+                val name = headerMap[NAME]
+                val value = headerMap[VALUE]
 
                 if (name != null && value != null) {
                     builder.requestInterceptor(CustomHeaderRequestInterceptor(name, value))
@@ -97,9 +108,9 @@ object PowerAuthConfigurationUtils {
             }
 
             @Suppress("UNCHECKED_CAST")
-            (map["basicHttpAuthentication"] as? Map<String, String>)?.let { authMap ->
-                val username = authMap["username"]
-                val password = authMap["password"]
+            (map[BASIC_HTTP_AUTHENTICATION] as? Map<String, String>)?.let { authMap ->
+                val username = authMap[USERNAME]
+                val password = authMap[PASSWORD]
 
                 if (username != null && password != null) {
                     builder.requestInterceptor(
@@ -173,26 +184,30 @@ object PowerAuthConfigurationUtils {
         )
     }
 
-    /*
-     * TODO: Enable once the native PowerAuth Mobile SDK (2.0.0+) exposes the configuration getters.
-     *
-     *
-     * fun clientConfigurationToMap(config: PowerAuthClientConfiguration): Map<String, Any?> {
-     *     return mapOf(
-     *     
-     *     )
-     * }
-     *
-     * fun biometryConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
-     *     return mapOf(
-     * 
-     *     )
-     * }
-     *
-     * fun keychainConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any?> {
-     *     return mapOf(
-     *      
-     *     )
-     * }
-     */
+    fun clientConfigurationToMap(config: PowerAuthClientConfiguration): Map<String, Any> {
+        return mapOf(
+            ENABLE_UNSECURE_TRAFFIC to config.isUnsecuredConnectionAllowed,
+            CONNECTION_TIMEOUT to config.connectionTimeout / 1000.0,
+            READ_TIMEOUT to config.readTimeout / 1000.0
+        )
+    }
+
+    fun biometryConfigurationToMap(config: PowerAuthBiometricConfiguration): Map<String, Any> {
+        return mapOf(
+            INVALIDATE_BIOMETRIC_FACTOR_AFTER_CHANGE to config.isInvalidateBiometricFactorAfterChange,
+            // Device passcode fallback is supported only on Apple platforms.
+            FALLBACK_TO_DEVICE_PASSCODE to false,
+            CONFIRM_BIOMETRIC_AUTHENTICATION to config.isConfirmBiometricAuthentication,
+            AUTHENTICATE_ON_BIOMETRIC_KEY_SETUP to config.isAuthenticateOnBiometricKeySetup,
+            FALLBACK_TO_SHARED_BIOMETRY_KEY to config.isFallbackToSharedBiometryKeyEnabled,
+            USE_LEGACY_SYMMETRIC_KEY to config.isUseLegacySymmetricKeyType
+        )
+    }
+
+    fun keychainConfigurationToMap(config: PowerAuthKeychainConfiguration): Map<String, Any> {
+        return mapOf(
+            MINIMAL_REQUIRED_KEYCHAIN_PROTECTION to
+                keychainProtectionToString(config.minimalRequiredKeychainProtection)
+        )
+    }
 }
