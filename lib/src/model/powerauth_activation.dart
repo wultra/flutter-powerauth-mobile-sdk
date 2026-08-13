@@ -28,7 +28,7 @@ class PowerAuthActivation {
   final String? activationCode;
 
   /// Custom activation parameters that are used to prove identity of a user.
-  final Map<String, dynamic>? identityAttributes;
+  final Map<String, String>? identityAttributes;
 
   /// Extra attributes of the activation, used for application specific purposes
   /// (e.g., info about the client device or system).
@@ -75,7 +75,7 @@ class PowerAuthActivation {
 
   /// Creates an instance configured with identity attributes for custom activation purposes.
   factory PowerAuthActivation.fromIdentityAttributes({
-    required Map<String, dynamic> identityAttributes,
+    required Map<String, String> identityAttributes,
     required String name,
     String? extras,
     Map<String, dynamic>? customAttributes,

@@ -72,6 +72,33 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  test(
+    'barrel exports public service types and string identity attributes',
+    () {
+      final sdk = PowerAuth('instance');
+      final PowerAuthTimeSynchronizationService timeService =
+          sdk.timeSynchronizationService;
+      final PowerAuthExternalPendingOperation externalOperation =
+          PowerAuthExternalPendingOperation.fromMap({
+            'externalOperationType': 'protocolUpgrade',
+            'externalApplicationId': 'other-app',
+          });
+      final activation = PowerAuthActivation.fromIdentityAttributes(
+        identityAttributes: {'username': 'john.doe@example.com'},
+        name: 'Test device',
+      );
+
+      expect(timeService, isA<PowerAuthTimeSynchronizationService>());
+      expect(
+        externalOperation.externalOperationType,
+        PowerAuthExternalPendingOperationType.protocolUpgrade,
+      );
+      expect(activation.toMap()['identityAttributes'], {
+        'username': 'john.doe@example.com',
+      });
+    },
+  );
+
   test('maps every supported algorithm and rejects an unknown value', () async {
     for (final expected in PowerAuthAlgorithm.values) {
       algorithm = expected.name;

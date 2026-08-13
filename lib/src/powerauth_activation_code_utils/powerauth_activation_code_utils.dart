@@ -41,7 +41,10 @@ class PowerAuthActivationCodeUtil {
   static PowerAuthUtilsPlatform get _platform => PowerAuthUtilsPlatform.instance;
 
   /// Parses an activation code string (e.g., "ABCDE-FGHIJ-KLMNO-PQRST#signature").
-  /// Returns a [PowerAuthActivationCode] object containing the code and optional signature.
+  ///
+  /// The returned [PowerAuthActivationCode.activationCode] has the legacy
+  /// signature suffix stripped. SDK 2.0 does not verify the suffix and the
+  /// activation process ignores it.
   /// Throws an exception if the format is invalid.
   static Future<PowerAuthActivationCode> parseActivationCode(String activationCode,) => _platform.parseActivationCode(activationCode);
 

@@ -12,37 +12,38 @@ You have to check for biometry on three levels:
 
 PowerAuth SDK provides code for the first two of these checks.
 
-To check if you can use biometrics on the system, use the following code:
+To get the system and activation status, use the following code on a configured `PowerAuth` instance:
 
 ```dart
-final biometryStatus = await PowerAuth.getBiometryInfo();
+final biometricStatus = await powerAuth.getBiometricStatus();
 
-// Is biometric authentication supported on the system?
-// Note that the property contains "false" on iOS if biometry is not enrolled or if it has been locked down. 
-// To distinguish between availability and lockdown, you can use `biometryType` and `canAuthenticate`.
-final isAvailable = biometryStatus.isAvailable;
+// Is biometric authentication available for the current activation?
+final isAvailable = biometricStatus.isAuthenticationWithBiometricsAvailable;
 
-// Type of biometry supported on the system.
-// For example, "FINGERPRINT" if a Fingerprint scanner/TouchID is present on the device
-final biometryType = biometryStatus.biometryType;
+// Is a biometric factor configured for the current activation?
+final isConfigured = biometricStatus.isBiometricFactorConfigured;
 
-// Status of biometric authentication availability.
-// For example "NOT_ENROLLED". 
-final authenticateStatus = biometryStatus.canAuthenticate;
+// System status and available biometry type.
+final systemStatus = biometricStatus.systemStatus;
+final biometryType = biometricStatus.biometryType;
+
+// Use this method if you need only the combined availability value.
+final canAuthenticate =
+    await powerAuth.isAuthenticationWithBiometricsAvailable();
+
+// Use this when only the locally configured factor is relevant.
+final hasFactor = await powerAuth.hasBiometryFactor();
 ```
 
-To check if a given activation has biometry factor-related data available, use the following code:
+On Android, the overall availability value does not reflect a temporarily or permanently locked biometric sensor. That state is available only after an authentication attempt. On iOS, `systemStatus` can report `PowerAuthBiometryStatus.lockout`.
 
-```dart
-// Does activation have biometric factor-related data in place?
-final hasBiometryFactor = await powerAuth.hasBiometryFactor();
-```
+On Android, secure facial authentication is available only on devices whose face sensor meets the operating system's strong-biometry requirements. A device can have face recognition for unlocking or convenience features without making it available to PowerAuth.
 
-The last check (Application Availability) is fully under your control. By keeping the biometry settings flag, for example, a `boolean` in `NSUserDefaults`/`SharedPreferences`, you are able to show expected user biometry status (in a disabled state, though) even in the case biometry is not enabled or when no finger or face is enrolled on the device.
+Your application controls the last check. Store the user's biometry preference in `NSUserDefaults` or `SharedPreferences`. This preference lets the application show that biometry is disabled when the system or activation does not support it.
 
 ## Enable Biometry
 
-In case an activation does not yet have biometry-related factor data, and you would like to enable it, the device must first retrieve the original private key from the secure vault for the purpose of key derivation. As a result, you have to use a successful 2FA with a password to enable biometric support.
+The device must get the original private key from the Secure Vault before it can create the biometric factor key. Use two-factor authentication with a password to enable biometric authentication.
 
 Use the following code to enable biometric authentication:
 
@@ -50,17 +51,19 @@ Use the following code to enable biometric authentication:
 final password = await PowerAuthPassword.fromString("1234");
 try {
     // Establish biometric data using provided password
-    await powerAuth.addBiometryFactor(password, {
-        promptTitle: "Add biometry", 
-        promptMessage: "Allow biometry factor"
-    });
-    // You can also use simplified variant on iOS, or if `authenticateOnBiometricKeySetup` 
-    // is `false` on Android.
-    await powerAuth.addBiometryFactor(password);
+    await powerAuth.addBiometryFactor(
+        password,
+        PowerAuthBiometricPrompt(
+            promptTitle: "Add biometry",
+            promptMessage: "Allow biometry factor",
+        ),
+    );
 } catch (e) {
     //failed
 }
 ```
+
+You can omit the prompt on iOS. You can also omit it on Android when `authenticateOnBiometricKeySetup` is `false`.
 
 ## Disable Biometry
 
@@ -68,14 +71,16 @@ You can remove biometric-related factor data by simply removing the related key 
 
 ```dart
 // Remove biometric data
-final result =  await powerAuth.removeBiometryFactor();
+await powerAuth.removeBiometryFactor();
 ```
+
+After an add or remove operation fails, fetch the activation status to synchronize the local biometric-factor configuration with the server.
 
 ## Fetch Biometry Credentials In Advance
 
-You can acquire biometry credentials in advance in case business processes require computing two or more different PowerAuth biometry signatures in one interaction with the user. To achieve this, the application must acquire the custom-created `PowerAuthAuthentication` object first and then use it for the required signature calculations. It's recommended to keep this instance referenced only for a limited time, required for all future signature calculations. If you don't reuse the instance within the 10-second expiration period, then the biometry key is released from memory, and the biometric authentication is displayed again.
+You can get reusable biometry credentials when one user interaction must authorize two or more signatures. First, create a `PowerAuthAuthentication` object. Then use it for all required signature calculations. Keep the reusable object only for the required operations. The SDK releases the biometry key after 10 seconds of inactivity. The next use shows the biometric dialog again.
 
-Be aware that you must not execute the next HTTP request signed with the same credentials when the previous one fails with the 401 HTTP status code. If you do, then you risk blocking the user's activation on the server.
+Do not send another request with the same credentials after an HTTP 401 response. Another failed request can block the activation on the server.
 
 In order to obtain biometric credentials for future signature calculations, call the following code:
 
@@ -90,9 +95,19 @@ final auth = PowerAuthAuthentication.biometry(
 try {
     await powerAuth.groupedBiometricAuthentication(auth, (reusableAuth) async {
         try {
-            final r1 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test", "{jsonbody: \"test1\"}");
+            final r1 = await powerAuth.authenticationHeaderForRequestWithBody(
+                reusableAuth,
+                "POST",
+                "/operation/test",
+                Uint8List.fromList(utf8.encode('{"jsonbody":"test1"}')),
+            );
             print('r1 success');
-            final r2 = await powerAuth.requestSignature(reusableAuth, "POST", "/operation/test2", "{jsonbody: \"test2\"}");
+            final r2 = await powerAuth.authenticationHeaderForRequestWithBody(
+                reusableAuth,
+                "POST",
+                "/operation/test2",
+                Uint8List.fromList(utf8.encode('{"jsonbody":"test2"}')),
+            );
             print('r2 success');
             // success
         } catch (e) {
@@ -104,9 +119,21 @@ try {
 }
 ```
 
+<!-- begin box warning -->
+On Android and iOS, a biometric lockout can deliberately produce an invalid biometry factor-related key while reporting successful local key retrieval. The following authenticated request then fails on the server and increases the failed-attempt counter. This limits repeated attempts to deceive the biometric sensor.
+<!-- end -->
+
+## Interaction and Concurrency
+
+Allow only one biometric authentication at a time. Do not start parallel biometric prompts or authenticated operations that compete for the same reusable credentials.
+
+On Android, the application can regain focus after the system prompt closes but before the SDK finishes its background cryptographic work. Keep buttons and other interactive controls disabled until the awaited PowerAuth operation completes or throws. Update the UI from that final result, not merely from application focus changes.
+
+The Flutter wrapper does not expose Android `Activity` or `Fragment` prompt objects or iOS `LAContext`.
+
 ## Biometry Factor-Related Key Lifetime
 
-By default, the biometry factor-related key is **NOT invalidated on Android** and **invalidated on iOS** after the biometry enrolled in the system is changed. For example, if the user adds or removes the finger or enrolls with a new face, then the biometry factor-related key is still available for the signing operation on Android but not on iOS. To change this behavior, see `linkItemsToCurrentSet` [in the advanced configuration](Configuration.md#advanced-configuration). 
+By default, the biometry factor-related key is invalidated on Android and is not invalidated on iOS after the user changes the enrolled biometric data. To change this behavior, set `invalidateBiometricFactorAfterChange` [in the advanced configuration](Configuration.md#advanced-configuration).
 
 Be aware that the change in the configuration is effective only for the new keys. So, if your application is already using the biometry factor-related key with a different configuration, then the configuration change doesn't change the existing key. You have to [disable](#disable-biometry) and [enable](#enable-biometry) biometry to apply the change.
 

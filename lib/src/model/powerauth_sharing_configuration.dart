@@ -16,34 +16,54 @@
 
 /// ### iOS specific
 ///
-/// Class that represents the activation data sharing settings.
+/// Configuration for sharing activation data between iOS applications and
+/// extensions.
+///
+/// All participants must use the same `PowerAuth` instance identifier,
+/// [appGroup], [keychainAccessGroup], and effective [sharedMemoryIdentifier].
+/// Each participant must use a different [appIdentifier].
 class PowerAuthSharingConfiguration {
   /// Name of the Apple App Group shared by the participating applications and
   /// extensions. The SDK uses it for shared `UserDefaults` and cross-process
   /// activation-state coordination.
   ///
-  /// The UTF-8 representation of this string should not exceed 26 bytes, due to internal limitations applied
-  /// on the operating system level.
+  /// Use the same value in every participating target and include it in each
+  /// target's App Groups entitlement.
+  ///
+  /// The value must not be empty.
+  ///
+  /// The app group, a period, and the effective shared-memory identifier must
+  /// fit in 31 UTF-8 bytes. With the default four-byte identifier, this value
+  /// therefore must not exceed 26 bytes. A shorter custom
+  /// [sharedMemoryIdentifier] can accommodate a slightly longer app-group name.
   final String appGroup;
 
-  /// Unique application identifier. This identifier helps you to determine which application
-  /// currently holds the lock on activation data in a special operations.
+  /// Identifier unique to this participating application or extension. This
+  /// identifies the application that currently holds the lock for an exclusive
+  /// operation.
   ///
-  /// The length of identifier cannot exceed 127 bytes if represented as UTF-8 string. It's recommended
-  /// to use application's main bundle identifier, but in general, it's up to you how you identify your
-  /// own applications.
+  /// The value must not be empty or exceed 127 UTF-8 bytes. Using the
+  /// application's main bundle identifier is recommended.
   final String appIdentifier;
 
   /// Apple Keychain Sharing access group used by the participating
   /// applications and extensions to access the same PowerAuth activation data.
+  /// Use the same fully qualified value in every target and include it in each
+  /// target's Keychain Sharing entitlement.
   final String keychainAccessGroup;
 
   /// Optional identifier of memory shared between applications in the app
   /// group. If omitted, the native PowerAuth SDK derives an identifier from
   /// the `PowerAuth` instance identifier.
   ///
-  /// The UTF-8 representation of this string cannot exceed 4 bytes due to an
-  /// operating-system limitation.
+  /// An explicit value must contain 1 to 4 UTF-8 bytes and may contain only
+  /// ASCII letters, digits, `+`, and `-`. A custom value is generally
+  /// unnecessary and should be used only to avoid a shared-memory name
+  /// collision or accommodate a longer app-group name. All participating
+  /// applications and extensions must use the same effective value.
+  /// After configuration, the asynchronous `PowerAuth.sharingConfiguration`
+  /// getter contains the effective generated value even if the input omitted
+  /// this property.
   final String? sharedMemoryIdentifier;
 
   PowerAuthSharingConfiguration({

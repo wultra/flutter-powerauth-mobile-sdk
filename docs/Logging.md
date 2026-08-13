@@ -4,10 +4,11 @@ The PowerAuth Mobile SDK provides a comprehensive logging system that captures i
 
 ## 1. Listening to Logs
 
-The primary way to interact with the logging system is by listening to the log stream. All log entries, regardless of their origin and level, are broadcast through this stream. The stream is exposed via the `PowerAuthDebug` class.
-Accessing the stream is only possible in **debug** builds.
+The primary way to interact with the logging system is by listening to the log stream exposed by the `PowerAuthDebug` class. Native wrapper and native SDK entries are sent to the stream regardless of the configured level. Entries produced by the Dart plugin are filtered by the configured level before they reach the stream.
 
-Listening to the `PowerAuthDebug.logStream` for the first time will automatically initialize the native log listeners with default configuration, ensuring that no logs are lost.
+Listening to `PowerAuthDebug.logStream` for the first time initializes the native log listener. Log events produced before the first listener is attached are not buffered.
+
+Logging may contain operational or sensitive diagnostic data. Keep it disabled in production applications.
 
 **Example:**
 ```dart
@@ -35,14 +36,14 @@ The `PowerAuthLog` object received by the stream contains the following properti
 
 You can control the behavior of the logger through the `PowerAuthDebug.configureLogging()` method. This is typically done once when your application starts. Calling this method will also automatically initialize the native log listeners.
 
-By default, logging is **enabled** in debug builds and **disabled** in release builds. You can override this at any time.
+The default Dart configuration enables logging in debug builds and disables it in release builds by using `kDebugMode`. This Dart default is not applied automatically to the native wrappers. Native wrapper logging and console output remain enabled until `configureLogging()` is called. Call this method once during application startup to apply the same effective configuration to Dart, Android, and iOS, especially when disabling logging in a release build.
 
 **Parameters:**
 - `config`: A `PowerAuthLoggingConfig` object that contains all logging settings.
 
 The `PowerAuthLoggingConfig` class has the following properties:
-- `enabled`: A `bool` to turn logging on or off (defaults to `kDebugMode`).
-- `level`: A `PowerAuthLogLevel` enum value that sets the minimum level of logs to be processed (defaults to `.info`). Note that changes to this setting do not affect the logs being broadcast to the log stream, as all logs are broadcast regardless of their level. Only the logs printed to the platform console are affected by this setting.
+- `enabled`: A `bool` to turn logging on or off (defaults to `kDebugMode`). The value is applied to the native wrappers only after `configureLogging()` is called.
+- `level`: A `PowerAuthLogLevel` enum value that sets the minimum processed level (defaults to `.info`). It filters Dart-originated stream entries and console output. Native wrapper and native SDK entries below this level are still sent to the stream.
 - `logToConsole`: A `bool` that controls whether logs are also printed to the platform console (defaults to `true`).
 
 **Example:**
@@ -60,10 +61,10 @@ Future<void> setupMyApplication() async {
       ),
     );
   } else {
-    // In production, you might want to only log critical errors.
+    // Do not collect PowerAuth diagnostics in production.
     await PowerAuthDebug.configureLogging(
       const PowerAuthLoggingConfig(
-        enabled: true,
+        enabled: false,
         level: PowerAuthLogLevel.error,
         logToConsole: false,
       ),
@@ -74,7 +75,8 @@ Future<void> setupMyApplication() async {
 
 **Using the default configuration:**
 ```dart
-// Use all defaults (enabled in debug mode, info level, console logging on)
+// Apply the Dart defaults to all layers: enabled in debug mode,
+// disabled in release mode, info level, console logging on when enabled.
 await PowerAuthDebug.configureLogging(const PowerAuthLoggingConfig());
 ```
 

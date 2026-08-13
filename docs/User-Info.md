@@ -10,7 +10,7 @@ try {
     if (activationResult.userInfo != null) {
         // User information received.
         // At this moment, the object is also available at
-        // powerAuth.lastFetchedUserInfo
+        // await powerAuth.getLastFetchedUserInfo()
     }
 } catch (e) {
     // Error handling

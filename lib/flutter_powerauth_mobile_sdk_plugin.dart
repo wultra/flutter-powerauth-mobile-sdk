@@ -48,9 +48,11 @@ export 'src/model/powerauth_user_info.dart';
 export 'src/model/powerauth_oidc_parameters.dart';
 export 'src/model/powerauth_signature_key_id.dart';
 export 'src/model/powerauth_device_public_key.dart';
+export 'src/model/powerauth_external_pending_operation.dart';
 export 'src/model/powerauth_secure_vault_key.dart';
 export 'src/model/powerauth_protocol_upgrade_result.dart';
 export 'src/model/powerauth_password_change_data.dart';
+export 'src/powerauth/powerauth_time_synchronization_service.dart';
 // Debug
 export 'src/debug/powerauth_debug.dart';
 export 'src/powerauth_native_object_register/powerauth_native_object_register.dart';

@@ -3,10 +3,10 @@
 This page contains PowerAuth Mobile Flutter SDK migration instructions.
 
 <!-- begin box warning -->
-When updating across multiple versions, you need to perform all migration steps additively.
+When you update across multiple versions, do all migration steps in sequence.
 <!-- end -->
 
-- [Migration from version `X.X.X` to `X.X.X`](Version-X.X.md)
+- [Migration from version `1.4.x` to `2.0.x`](Migration-from-1.4-to-2.0.md)
 
 ## Read Next
 

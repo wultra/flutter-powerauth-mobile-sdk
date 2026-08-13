@@ -32,4 +32,5 @@ await PowerAuthDebug.dumpNativeObjects(instanceId: powerAuth.instanceId);
 
 ## Read Next
 
+- [Error Handling](Error-Handling.md)
 - [User Info](User-Info.md)

@@ -1,153 +1,333 @@
 # Data Signing
 
-The main feature of the PowerAuth protocol is data signing. PowerAuth has three types of signatures:
+The main feature of the PowerAuth protocol is data signing. PowerAuth supports the following types of signatures:
 
-- **Symmetric Multi-Factor Signature**: Suitable for most operations, such as login, new payment, or confirming changes in settings.
-- **Asymmetric Private Key Signature**: Suitable for documents where a strong one-sided signature is desired.
-- **Symmetric Offline Multi-Factor Signature**: Suitable for very secure operations, where the signature is validated over the out-of-band channel.
-- **Verify server signed data**: Suitable for receiving arbitrary data from the server.
+- [Symmetric Multi-Factor Authentication Code](#symmetric-multi-factor-authentication-code): Suitable for most operations, such as login, payment approval, or confirming changes in settings.
+- [Symmetric Offline Multi-Factor Authentication Code](#symmetric-offline-multi-factor-authentication-code): Suitable for operations where the authentication code is validated over an out-of-band channel.
+- [Asymmetric Private Key Signature](#sign-data-with-device-private-key): Suitable for documents where a strong one-sided signature is required.
+- [Verify Server-Signed Data](#verify-server-signed-data): Suitable for receiving arbitrary data from the server.
 
-## Symmetric Multi-Factor Signature
+## Authentication Codes
 
-To sign request data, you need to first obtain user credentials (password, PIN code, Touch ID scan) from the user. The task of obtaining the user credentials is used in more use cases covered by the SDK. The core class is `PowerAuthAuthentication` that holds information about the used authentication factors:
+### Symmetric Multi-Factor Authentication Code
+
+Create a `PowerAuthAuthentication` object that contains the required authentication factors:
 
 ```dart
-// 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
+// 2FA authentication code with the possession factor and a PIN.
+final password = await PowerAuthPassword.fromString(
+    "1234",
+    destroyOnUse: false,
+);
+final authentication = PowerAuthAuthentication.password(
+    password,
+);
 ```
 
-When signing `POST`, `PUT`, or `DELETE` requests, use request body bytes (UTF-8) as request data and the following code:
+This password is reusable so request-body and query-parameter operations can share the same authentication object. Always release a reusable password in a `finally` block.
+
+For a request with a body, pass the raw body bytes to `authenticationHeaderForRequestWithBody()`. For a request with query parameters, use `authenticationHeaderForRequestWithParams()`:
 
 ```dart
-// 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
-
-// Sign POST call with provided data made to URI with custom identifier "/payment/create"
-try {
-    final signature = await powerAuth.requestSignature(auth, "POST", "/payment/create", "{jsonbody: \"yes\"}");
-    final httpHeaderKey = signature.key;
-    final httpHeaderValue = signature.value;
-} catch (e) {
-    // In case of invalid configuration, invalid activation state, or corrupted state data
-}
-```
-
-When signing `GET` requests, use the same code as above with normalized request data as described in the specification, or (preferably) use the following helper method:
-
-```dart
-// 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
-
-// Sign GET call with provided query parameters made to URI with custom identifier "/payment/create"
+final body = Uint8List.fromList(
+    utf8.encode(jsonEncode({"payment": "yes"})),
+);
 const params = {
     "param1": "value1",
-    "param2": "value2"
+    "param2": "value2",
 };
 
 try {
-    final signature = await powerAuth.requestGetSignature(auth, "/payment/create", params);
-    final httpHeaderKey = signature.key;
-    final httpHeaderValue = signature.value;
-} catch(e) {
-    // In case of invalid configuration, invalid activation state, or corrupted state data
+    final bodyHeader = await powerAuth.authenticationHeaderForRequestWithBody(
+        authentication,
+        "POST",
+        "/payment/create",
+        body,
+    );
+    final bodyHeaderName = bodyHeader.name;
+    final bodyHeaderValue = bodyHeader.value;
+
+    final paramsHeader = await powerAuth.authenticationHeaderForRequestWithParams(
+        authentication,
+        "GET",
+        "/payment/create",
+        params,
+    );
+    final paramsHeaderName = paramsHeader.name;
+    final paramsHeaderValue = paramsHeader.value;
+} catch (e) {
+    // Handle an error.
+} finally {
+    await password.release();
 }
 ```
 
-To sign data with biomtry, simply create a different authentication object:
+Each result is an HTTP header. Add its `name` and `value` to the corresponding request.
+
+To use biometry, create a biometric authentication object:
 
 ```dart
-// 2FA signature, uses device-related key and biometry
-final auth = PowerAuthAuthentication.biometry(
-  biometricPrompt: PowerAuthBiometricPrompt(
-    promptMessage: 'Authenticate to process payment',   // Required on both platforms
-    promptTitle: 'Authenticate',    // Android specific, not used on iOS
-    fallbackButtonTitle: 'Enter PIN'     // iOS specific, if provided, then the fallback button is displayed
-  )
+final authentication = PowerAuthAuthentication.biometry(
+    biometricPrompt: PowerAuthBiometricPrompt(
+        promptMessage: "Authenticate to process the payment",
+        promptTitle: "Authenticate",       // Android only
+        fallbackButtonTitle: "Enter PIN", // iOS only
+    ),
 );
 
-// Sign POST call with provided data made to URI with custom identifier "/payment/create"
 try {
-    final signature = await powerAuth.requestSignature(auth, "POST", "/payment/create", "{jsonbody: \"yes\"}");
-    final httpHeaderKey = signature.key;
-    final httpHeaderValue = signature.value;
+    final header = await powerAuth.authenticationHeaderForRequestWithBody(
+        authentication,
+        "POST",
+        "/payment/create",
+        body,
+    );
 } on PowerAuthException catch (e) {
     if (e.code == PowerAuthErrorCode.biometryCancel) {
-        // User did cancel the dialog
+        // The user canceled the biometric dialog.
     } else if (e.code == PowerAuthErrorCode.biometryFallback) {
-        // iOS specific, can occur only if you provide the fallback button
+        // The user selected the fallback button on iOS.
     } else {
-        // other errors
+        // Handle a different error.
     }
-} catch (e) {
-  // Handle unexpected errors
 }
 ```
 
-### Request Synchronization
+#### Request Synchronization
 
-It is recommended that your application execute only one signed request at a time. The reason for that is that our signature scheme uses a counter as a representation of logical time. In other words, the order of request validation on the server is very important. If you issue more than one signed request at the same time, then the order is not guaranteed, and therefore, one of the requests may fail.
+It is recommended that your application executes only one authenticated request at a time. Authentication codes use a counter as logical time, so the server must validate requests in the same order in which the SDK creates them.
 
-## Asymmetric Private Key Signature
+### Symmetric Offline Multi-Factor Authentication Code
 
-Asymmetric Private Key Signature uses a private key stored in the PowerAuth secure vault. In order to unlock the secure vault and retrieve the private key, the user has to first authenticate using the symmetric multi-factor signature with at least two factors. This mechanism protects the private key on the device - the server plays the role of a "doorkeeper" and holds the vault unlock key.
-
-You could either sign a UTF-8 string or a Base64-encoded data. Fill a proper `dataFormat` parameter to specify the data format.
-
-This process is completely transparent on the SDK level. To compute an asymmetric private key signature, request user credentials (password, PIN) and use the following code:
+An offline authentication code is a short string that a user can transfer through a separate channel. Pass the nonce as a Base64-encoded string and the body as raw bytes:
 
 ```dart
-// 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
+final authentication = PowerAuthAuthentication.password(
+    await PowerAuthPassword.fromString("1234"),
+);
+final body = Uint8List.fromList(utf8.encode(jsonEncode(operation)));
 
-// Unlock the secure vault, fetch the private key, and perform data signing
 try {
-    final dataToSign = "N9yHkF5zSks="; // base64 encoded data to sign
-    final dataFormat = PowerAuthDataFormat.utf8; // data format, UTF8 in case of plain string
-    final signature = await powerAuth.signDataWithDevicePrivateKey(auth, dataToSign, dataFormat);
-    // Send data and signature to the server
-} catch(e) {
-    // Authentication or network error
+    final authenticationCode = await powerAuth.offlineSignature(
+        authentication,
+        "/confirm/offline/operation",
+        nonce,
+        body,
+    );
+    print("Offline authentication code: $authenticationCode");
+} catch (e) {
+    // Handle an error.
 }
 ```
 
-## Symmetric Offline Multi-Factor Signature
+Show the calculated code to the user. The user can enter it in the other application that validates the operation.
 
-This type of signature is very similar to [Symmetric Multi-Factor Signature](#symmetric-multi-factor-signature), but the result is provided in the form of a simple, human-readable string (unlike the online version, where the result is an HTTP header). To calculate the signature, you need a typical `PowerAuthAuthentication` object to define all required factors, nonce, and data to sign. The `nonce` and `data` should also be transmitted to the application over the OOB channel (for example, by scanning a QR code). Then the signature calculation is straightforward:
+## Digital Signatures
+
+Digital signatures are another form of data authentication supported by the PowerAuth protocol. The SDK provides one interface for computing and verifying digital signatures and MAC tokens.
+
+### Signature Key Identifiers
+
+The following key categories are available:
+
+- **Master** public keys verify data signed by the server and do not require an activation.
+- **Server** public keys are personalized for an activation and verify data signed by the server.
+- **Device** private and public keys belong to an activation and sign or verify data on the device.
+- **MAC** keys are personalized symmetric keys that verify MACs calculated by the server.
+
+| Key identifier | Key type | Signature | Activation | Sign | Verify |
+|---|---|---|---|---|---|
+| `master` | Any | Any or hybrid | No | No | Yes |
+| `masterEc` | EC | ECDSA | No | No | Yes |
+| `masterMlDsa` | ML-DSA | ML-DSA | No | No | Yes |
+| `server` | Any | Any or hybrid | Yes | No | Yes |
+| `serverEc` | EC | ECDSA | Yes | No | Yes |
+| `serverMlDsa` | ML-DSA | ML-DSA | Yes | No | Yes |
+| `device` | Any | Any or hybrid | Yes | Yes | Yes |
+| `deviceEc` | EC | ECDSA | Yes | Yes | Yes |
+| `deviceMlDsa` | ML-DSA | ML-DSA | Yes | Yes | Yes |
+| `macPersonalized` | MAC | KMAC | Yes | No | Yes |
+
+EC keys are always available. ML-DSA keys are available only with `PowerAuthAlgorithm.p384l3` and `PowerAuthAlgorithm.p384l5`. MAC keys are available with every algorithm except `PowerAuthAlgorithm.legacy`.
+
+<!-- begin box warning -->
+Selecting a key without its exact type, such as `master`, can select both EC and ML-DSA keys. Because a hybrid raw-signature format is not standardized, generic key identifiers are supported only by the JWS functions. Use an exact key type for raw digital signatures.
+<!-- end -->
+
+### Sign Data With Device Private Key
+
+An asymmetric private key signature uses a device private key from the Secure Vault. The user must authenticate with at least two factors before the SDK can use the key. Select an exact device key type:
 
 ```dart
-// 2FA signature, uses device-related key and user PIN code
-final auth = PowerAuthAuthentication.password(await PowerAuthPassword.fromString("1234"));
+final authentication = PowerAuthAuthentication.password(
+    await PowerAuthPassword.fromString("1234"),
+);
+final data = Uint8List.fromList(utf8.encode("hello"));
+
 try {
-    final signature = await _powerAuth.offlineSignature(auth, "/confirm/offline/operation", data, nonce);
-    print("Signature is " + signature);
+    final signature = await powerAuth.calculateDigitalSignature(
+        authentication,
+        data,
+        PowerAuthSignatureKeyId.deviceMlDsa,
+    );
+    // Use data and signature.
 } catch (e) {
-    // In case of invalid configuration, invalid activation state, or other error
+    // Handle an authentication or network error.
 }
 ```
 
-The application has to show the calculated signature to the user now, and the user has to retype that code into the web application for verification.
+Biometric authentication can also access the device private key when the SDK is not configured with `PowerAuthAlgorithm.legacy`.
 
-## Verify Server-Signed Data
+### Create JSON Web Signature With Device Private Key
 
-This task is useful whenever you need to receive arbitrary data from the server and you need to be able to verify that the server has issued the data. The PowerAuthSDK provides a high-level method for validating data and the associated signature:  
+The device private key can also create a [JSON Web Signature (JWS)](https://www.rfc-editor.org/rfc/rfc7515). The following example creates both a non-compact JWS from generic data and a compact signed JWT. It uses a reusable password so both operations can share the same authentication object:
 
 ```dart
-// Validate data signed with the master server key
+final password = await PowerAuthPassword.fromString(
+    "1234",
+    destroyOnUse: false,
+);
+final authentication = PowerAuthAuthentication.password(
+    password,
+);
 try {
-    final isVerified = await _powerAuth.verifyServerSignedData(data, signature, true);
-    print('Verified: $isVerified');
-} catch (e) {
-    // API error
-}
+    final data = Uint8List.fromList(utf8.encode("hello"));
+    final jws = await powerAuth.calculateJwsSignature(
+        authentication,
+        data,
+        null,  // Do not add "typ" to the JWS protected header.
+        false, // Return a full JWS object.
+        PowerAuthSignatureKeyId.deviceMlDsa,
+    );
 
-// Validate data signed with the personalized server key
-try {
-    final isVerified = await _powerAuth.verifyServerSignedData(data, signature, false);
-    print('Verified: $isVerified');
-} catch (e) {
-    // API error
+    final claimsData = Uint8List.fromList(utf8.encode(jsonEncode({
+        "sub": "user-id",
+        "first_name": "John",
+        "last_name": "Appleseed",
+    })));
+    final jwt = await powerAuth.calculateJwsSignature(
+        authentication,
+        claimsData,
+        "JWT",
+        true, // Return the compact JWT form.
+        PowerAuthSignatureKeyId.deviceMlDsa,
+    );
+} finally {
+    await password.release();
 }
 ```
+
+### Verify Server-Signed Data
+
+Use `verifyDigitalSignature()` to verify raw data. Select the exact server key that signed the data:
+
+```dart
+try {
+    await powerAuth.verifyDigitalSignature(
+        signature,
+        data,
+        PowerAuthSignatureKeyId.serverMlDsa,
+    );
+    // The signature is valid.
+} on PowerAuthException catch (e) {
+    if (e.code == PowerAuthErrorCode.wrongSignature) {
+        // The signature is not valid.
+    } else {
+        // Handle another failure, such as a missing activation.
+    }
+}
+```
+
+The method completes without a result when the signature is valid and reports `PowerAuthErrorCode.wrongSignature` when verification fails.
+
+#### Verify Data Encoded in a QR Code
+
+To verify data authenticated by the server with an activation-personalized MAC, use `macPersonalized`:
+
+```dart
+try {
+    await powerAuth.verifyDigitalSignature(
+        signature,
+        data,
+        PowerAuthSignatureKeyId.macPersonalized,
+    );
+    // The MAC is valid.
+} on PowerAuthException catch (e) {
+    if (e.code == PowerAuthErrorCode.wrongSignature) {
+        // The MAC is not valid.
+    }
+}
+```
+
+### Verify JSON Web Signature
+
+To verify a non-compact JWS created by the server, use:
+
+```dart
+await powerAuth.verifyJwsSignature(
+    serverJws,
+    false, // Expect a full JWS object.
+    true,  // Require all selected signatures to be valid.
+    PowerAuthSignatureKeyId.server,
+);
+```
+
+The `verifyJwsSignature()` parameters have the following meaning:
+
+- `signature` contains the JWS- or JWT-signed data.
+- `compact` indicates whether `signature` contains a compact JWT (`true`) or a full JWS object (`false`).
+- `strict` requires all selected keys to verify their corresponding signatures when `true`. This is the recommended setting. When `false`, verification succeeds if at least one selected key matches a valid signature, but invalid or mismatched signatures still cause an error.
+- `signatureKeyId` selects the keys used for verification. JWS verification does not support `PowerAuthSignatureKeyId.macPersonalized`.
+
+<!-- begin box warning -->
+A compact JWT contains only one signature. Use an exact key type, such as `deviceEc`, `deviceMlDsa`, `serverEc`, or `serverMlDsa`, for compact signatures. Generic identifiers such as `device` or `server` can select both EC and ML-DSA keys with `PowerAuthAlgorithm.p384l3` and `PowerAuthAlgorithm.p384l5`; use those identifiers with non-compact JWS.
+
+Setting `strict` to `false` is generally not recommended. An attacker could remove or replace a stronger post-quantum signature with a weaker signature without detection.
+<!-- end -->
+
+### Creating Certificate Signing Request
+
+Use `createCertificateSigningRequest()` to create an X.509 certificate signing request in PEM format. Prefix every subject alternative name with its type:
+
+```dart
+final authentication = PowerAuthAuthentication.password(
+    await PowerAuthPassword.fromString("1234"),
+);
+
+final csr = await powerAuth.createCertificateSigningRequest(
+    authentication,
+    {
+        "CN": "wultra.com",
+        "O": "Wultra",
+        "C": "CZ",
+    },
+    [
+        "IP: 192.168.1.10",
+        "email: admin@example.com",
+    ],
+    PowerAuthSignatureKeyId.deviceMlDsa,
+);
+```
+
+Biometric authentication can also create a CSR when the SDK is not configured with `PowerAuthAlgorithm.legacy`.
+
+### Getting Device Public Keys
+
+Use `exportDevicePublicKeys()` to export public keys for the current activation:
+
+```dart
+final keys = await powerAuth.exportDevicePublicKeys(
+    PowerAuthDevicePublicKeyFormat.der,
+);
+for (final key in keys) {
+    print("${key.keyAlgorithm}: ${base64Encode(key.keyData)}");
+}
+```
+
+Available formats:
+
+- `PowerAuthDevicePublicKeyFormat.der` exports a binary X.509 SubjectPublicKeyInfo structure.
+- `PowerAuthDevicePublicKeyFormat.raw` exports EC keys in ANSI X9.63 format and ML-DSA keys as raw public-key bytes.
 
 ## Read Next
 

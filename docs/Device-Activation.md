@@ -17,7 +17,7 @@ final activation = PowerAuthActivation.fromActivationCode(activationCode: activa
 try {
     final result = await powerAuth.createActivation(activation);
     // No error occurred, proceed to credentials entry (PIN prompt, Enable Biometry, ...) and persist the activation
-    // The 'result' contains 'activationFingerprint' property, representing the device public key - it may be used as visual confirmation
+    // The 'result' contains 'activationFingerprint', representing the combination of device and server public keys - it may be used as visual confirmation
 } on PowerAuthException catch (e) {
     // handle powerauth exception
 } catch (e) {
@@ -61,13 +61,16 @@ final credentials = {
 };
 
 // Create activation object with given credentials.
-final activation = PowerAuthActivation.fromIdentityAttributes(identityAttributes: creds, name: name);
+final activation = PowerAuthActivation.fromIdentityAttributes(
+    identityAttributes: credentials,
+    name: name,
+);
 
 // Create a new activation with the just-created activation object
 try {
     final result = await powerAuth.createActivation(activation);
     // No error occurred, proceed to credentials entry (PIN prompt, Enable Biometry, ...) and persist the activation
-    // The 'result' contains 'activationFingerprint' property, representing the device public key - it may be used as visual confirmation
+    // The 'result' contains 'activationFingerprint', representing the combination of device and server public keys - it may be used as visual confirmation
 } on PowerAuthException catch (e) {
     // handle powerauth exception
 } catch (e) {
@@ -93,7 +96,10 @@ final oidcParameters = PowerAuthOIDCParameters(
 );
 
 // Create activation object with OIDC parameters.
-final activation = PowerAuthActivation.fromOIDCParameters(oidcParameters: oidcParameters, name: name);
+final activation = PowerAuthActivation.fromOIDC(
+    oidcParameters: oidcParameters,
+    name: name,
+);
 
 // Create a new activation with the just-created activation object
 try {
@@ -142,23 +148,35 @@ try {
 After you create an activation using one of the methods mentioned above, you need to persist the activation to use the provided user credentials to store the activation data on the device. 
 
 ```dart
-final auth = PowerAuthAuthentication.persistWithPasswordAndBiometry(
-    password: await PowerAuthPassword.fromString("1234"), 
-    biometricPrompt: {
-        // The `PowerAuthBiometricPrompt` object is required on the Android platform in case that
-        // `biometryConfiguration.authenticateOnBiometricKeySetup` is true.
-        // You can provide an undefined prompt object in case that flag is false.
-        promptTitle: 'Please authenticate with biometry',
-        promptMessage: 'Please authenticate to create an activation supporting biometry'
-    }
+final authentication = PowerAuthAuthentication.persistWithPassword(
+    await PowerAuthPassword.fromString("1234"),
 );
 try {
-  await powerAuth.persistActivation(auth);
+    await powerAuth.persistActivation(authentication);
 } catch (e) {
-    // happens only in case the SDK was not configured or activation is not in a state to be persisted
+    // Process failure.
 }
 ```
 
+This creates an activation with possession and knowledge factors. To enable biometry while persisting the activation, use:
+
+```dart
+final authentication = PowerAuthAuthentication.persistWithPasswordAndBiometry(
+    password: await PowerAuthPassword.fromString("1234"),
+    biometricPrompt: PowerAuthBiometricPrompt(
+        // Required on Android when authenticateOnBiometricKeySetup is true.
+        promptTitle: "Please authenticate with biometry",
+        promptMessage: "Please authenticate to create an activation supporting biometry",
+    ),
+);
+try {
+    await powerAuth.persistActivation(authentication);
+} catch (e) {
+    // Process failure, including biometric cancellation or a server error.
+}
+```
+
+You can omit `biometricPrompt` on iOS. You can also omit it on Android when `authenticateOnBiometricKeySetup` is `false`.
 
 ## Validating User Inputs
 
@@ -170,35 +188,22 @@ The mobile SDK provides a couple of functions in the `PowerAuthActivationCodeUti
 
 ### Validating Scanned QR Code
 
-To validate an activation code scanned from a QR code, you can use `PowerAuthActivationCodeUtil.parseActivationCode(code)` function. You have to provide the code with or without the signature part. For example:
+To parse an activation code scanned from a QR code, use `PowerAuthActivationCodeUtil.parseActivationCode(code)`. You can provide the code with or without a legacy signature suffix. The function validates the activation-code format and returns the activation code without the suffix:
 
 ```dart
 final scannedCode = "VVVVV-VVVVV-VVVVV-VTFVA#aGVsbG8......gd29ybGQ=";
 try {
-  final code = await PowerAuthActivationCodeUtil.parseActivationCode(scannedCode);
-  if (code.activationSignature == null) {
-     // QR code should contain a signature
-     return
-  }
-} catch(e) {
-  // not valid
+    final parsed = await PowerAuthActivationCodeUtil.parseActivationCode(
+        scannedCode,
+    );
+    final activationCode = parsed.activationCode;
+    // Use activationCode to create the activation.
+} catch (e) {
+    // The activation code is not valid.
 }
 ```
 
-Note that the signature is only formally validated in the function above. The actual signature verification is performed in the activation process, or you can do it on your own:
-
-```dart
-final scannedCode = "VVVVV-VVVVV-VVVVV-VTFVA#aGVsbG8......gd29ybGQ=";
-try {
-  final code = await PowerAuthActivationCodeUtil.parseActivationCode(scannedCode);
-  if (code.activationSignature != null) {
-     await powerAuth.verifyServerSignedData(code.activationCode, code.activationSignature, true);
-     // valid
-  }
-} catch(e) {
-  // not valid
-}
-```
+PowerAuth Mobile SDK versions older than 2.0 allowed applications to verify the signature suffix. This is no longer possible because post-quantum signatures are too large to embed in a QR code. If an activation code with a signature is used in the activation process, the signature suffix is ignored. Use `PowerAuthActivationCodeUtil.parseActivationCode()` only to validate the scanned code and strip the suffix.
 
 ### Validating Entered Activation Code
 
@@ -234,6 +239,16 @@ Future<String> validateAndCorrectCharacters(String code) async {
   return result;
 }
 ```
+
+If the UI needs validation without correction, call `validateTypedCharacter()` with the character's Unicode code point:
+
+```dart
+final isAllowed = await PowerAuthActivationCodeUtil.validateTypedCharacter(
+    typedCharacter.runes.single,
+);
+```
+
+`validateTypedCharacter()` only checks whether the character is already valid. Use `correctTypedCharacter()` when lowercase and visually ambiguous characters should be normalized.
 
 ## Read Next
 
