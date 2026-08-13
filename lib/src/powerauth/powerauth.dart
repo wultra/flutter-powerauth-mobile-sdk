@@ -101,21 +101,22 @@ class PowerAuth {
   ///
   /// Must be called before any other method.
   /// [configuration] - Configuration object with basic parameters for `PowerAuth` class.
+  /// [keychainConfiguration] - Android-only secure-storage configuration.
+  /// [sharingConfiguration] - iOS-only activation-sharing configuration.
   Future<void> configure({
     required PowerAuthConfiguration configuration,
     PowerAuthClientConfiguration? clientConfiguration,
     PowerAuthBiometryConfiguration? biometryConfiguration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
-    PowerAuthSharingConfiguration? sharingConfiguration
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) async {
-
     await _platform.configure(
       instanceId: instanceId,
       configuration: configuration,
       clientConfiguration: clientConfiguration,
       biometryConfiguration: biometryConfiguration,
       keychainConfiguration: keychainConfiguration,
-      sharingConfiguration: sharingConfiguration
+      sharingConfiguration: sharingConfiguration,
     );
   }
 
@@ -127,10 +128,12 @@ class PowerAuth {
     required String instanceId,
     required PowerAuthConfiguration configuration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) => _platform.cleanupInstanceData(
     instanceId: instanceId,
     configuration: configuration,
     keychainConfiguration: keychainConfiguration,
+    sharingConfiguration: sharingConfiguration,
   );
 
   /// Checks if this instance is configured.
@@ -177,8 +180,9 @@ class PowerAuth {
 
   /// Starts a protocol upgrade for the current activation.
   ///
-  /// The [password] is required to authorize the upgrade. Set
+  /// The [password] is required to authorize the upgrade. On Android, set
   /// [upgradeBiometry] to `true` to migrate an existing local biometry factor.
+  /// On iOS, the native SDK preserves an existing biometry factor automatically.
   /// Biometry migration is supported only when `authenticateOnBiometricKeySetup`
   /// is disabled. Otherwise, use the default value and add the biometry factor
   /// again after the upgrade if it was removed.

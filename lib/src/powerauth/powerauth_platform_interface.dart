@@ -83,6 +83,7 @@ abstract class PowerAuthPlatform extends PlatformInterface {
     required String instanceId,
     required PowerAuthConfiguration configuration,
     PowerAuthKeychainConfiguration? keychainConfiguration,
+    PowerAuthSharingConfiguration? sharingConfiguration,
   }) {
     throw UnimplementedError(
       'cleanupInstanceData() has not been implemented.',

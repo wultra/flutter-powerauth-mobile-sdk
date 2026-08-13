@@ -26,7 +26,6 @@ internal enum PowerAuthFlutterError: String {
     case pendingActivation
     case operationCanceled
     case invalidToken
-    case invalidEncryptor
     case encryptionError
     case wrongParameter
     case protocolUpgrade
@@ -40,8 +39,6 @@ internal enum PowerAuthFlutterError: String {
     case biometryNotSupported
     case biometryNotConfigured
     case biometryNotEnrolled
-    case authenticationError
-    case responseError
     case unknownError
     case flutterError
     case invalidActivationObject
@@ -53,6 +50,9 @@ internal enum PowerAuthFlutterError: String {
     case invalidNativeObject
     case timeSynchronization
     case externalPendingOperation
+    case wrongSignature
+    case upgradeSdk
+    case other
     
     static func from(_ code: PowerAuthErrorCode) -> PowerAuthFlutterError {
         return switch (code) {
@@ -76,6 +76,9 @@ internal enum PowerAuthFlutterError: String {
         case .biometryFallback: .biometryFallback
         case .timeSynchronization: .timeSynchronization
         case .externalPendingOperation: .externalPendingOperation
+        case .wrongSignature: .wrongSignature
+        case .upgradeSDK: .upgradeSdk
+        case .other: .other
         case .NA: .unknownError // should not happened - just a fallback
         @unknown default: .unknownError
         }

@@ -15,9 +15,12 @@
  */
 
 import PowerAuth2
-import PowerAuthCore
 import Flutter
 
+/// Thread-safe storage for SDK instances and short-lived native objects referenced by Dart handles.
+///
+/// Child objects use their SDK instance identifier as a tag so deconfiguration can release the
+/// instance and all associated sensitive objects in one operation.
 internal class PowerAuthObjectRegister {
     
     private let lock = Lock()
@@ -59,6 +62,35 @@ internal class PowerAuthObjectRegister {
             register[id] = managedObject
             self.scheduleClenaup()
             return true
+        }
+    }
+
+    /// Registers a child object only if the expected SDK is still registered
+    /// under the same identifier. The owner check and insertion are atomic.
+    func add(
+        object: Any,
+        ifOwnerMatches owner: PowerAuthSDK,
+        ownerId: String,
+        policies: [ReleasePolicy]
+    ) -> String? {
+        return lock.synchronized {
+            guard
+                let managedOwner = register[ownerId],
+                managedOwner.isStillValid(),
+                let registeredOwner = managedOwner.object as? PowerAuthSDK,
+                registeredOwner === owner
+            else {
+                return nil
+            }
+            let identifier = generateIdentifier()
+            register[identifier] = PowerAuthManagedObject(
+                object: object,
+                key: identifier,
+                tag: ownerId,
+                policies: policies
+            )
+            scheduleClenaup()
+            return identifier
         }
     }
     
@@ -120,7 +152,9 @@ internal class PowerAuthObjectRegister {
     @discardableResult
     func removeAny(id: String) -> Any? {
         return lock.synchronized {
-            return self.findManagedObject(id: id, action: .remove, validateType: false)
+            // Explicit release must also remove an object whose automatic release policy has
+            // already expired, so this intentionally bypasses validity and type checks.
+            return register.removeValue(forKey: id)?.object
         }
     }
     
@@ -319,7 +353,7 @@ internal class PowerAuthManagedObject {
     
     private lazy var managedByOwner = policies.contains(.manual())
     private let policies: [ReleasePolicy]
-    
+
     init(object: Any, key: String, tag: String?, policies: [ReleasePolicy]) {
         let now = Date()
         self.object = object
@@ -419,11 +453,11 @@ internal class PowerAuthManagedObject {
 // Shortcut methods
 extension PowerAuthObjectRegister {
 
-    func usePassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+    func usePassword(dict: FlutterMap?) throws -> PowerAuthPassword {
         return try getPasswordImpl(dict: dict, use: true)
     }
     
-    func touchPassword(dict: FlutterMap?) throws -> PowerAuthCorePassword {
+    func touchPassword(dict: FlutterMap?) throws -> PowerAuthPassword {
         return try getPasswordImpl(dict: dict, use: false)
     }
     
@@ -447,7 +481,7 @@ extension PowerAuthObjectRegister {
     
     // - Helpers
     
-    private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthCorePassword {
+    private func getPasswordImpl(dict: FlutterMap?, use: Bool) throws -> PowerAuthPassword {
         
         guard let objectId = dict?["objectId"] as? String else {
             // Object identifier is not present in the object. This means that wrong object is passed to call,
@@ -455,7 +489,7 @@ extension PowerAuthObjectRegister {
             throw PluginException(.wrongParameter, message: "PowerAuthPassword is not initialized")
         }
         
-        let password: PowerAuthCorePassword? = use ? self.use(id: objectId) : touch(id: objectId)
+        let password: PowerAuthPassword? = use ? self.use(id: objectId) : touch(id: objectId)
         guard let password else {
             throw PluginException(.invalidNativeObject, message: "PowerAuthPassword object is no longer valid")
         }

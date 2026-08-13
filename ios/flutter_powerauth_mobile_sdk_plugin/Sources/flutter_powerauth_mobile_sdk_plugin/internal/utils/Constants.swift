@@ -24,6 +24,9 @@ internal class Constants {
     /// in memory.
     static let PASSWORD_KEY_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
 
+    /// Time interval in milliseconds to keep a Secure Vault key alive in memory.
+    static let SECURE_VAULT_KEY_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
+
     /// Time interval in milliseconds to keep encryptor object alive in memory
     static let ENCRYPTOR_KEEP_ALIVE_TIME: Int = 5 * 60 * 1_000
     /// Time interval in milliseconds to keep decryptor object alive in memory

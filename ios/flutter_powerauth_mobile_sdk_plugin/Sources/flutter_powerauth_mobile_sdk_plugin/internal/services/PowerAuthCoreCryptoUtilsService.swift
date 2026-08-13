@@ -16,7 +16,7 @@
 
 import Foundation
 import Flutter
-import PowerAuthCore
+import PowerAuth2
 
 internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
     
@@ -48,8 +48,8 @@ internal class PowerAuthCoreCryptoUtilsService: PowerAuthFlutterService {
     }
     
     private func hashSha256(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
-        let typedData: FlutterStandardTypedData = try call.requireParameter(Args.data)
-        let digest = PowerAuthCoreCryptoUtils.hashSha256(typedData.data)
+        let data = try call.requiredDataParameter(Args.data)
+        let digest = PowerAuthCoreCryptoUtils.hashSha256(data)
         result(digest)
     }
 }

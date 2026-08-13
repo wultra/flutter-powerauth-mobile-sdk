@@ -51,6 +51,40 @@ void main() {
     });
   });
 
+  group('PowerAuthSharingConfiguration', () {
+    test('serialization', () {
+      final cfg = PowerAuthSharingConfiguration(
+        appGroup: 'group.com.wultra.test',
+        appIdentifier: 'com.wultra.test',
+        keychainAccessGroup: 'com.wultra.test.keychain',
+        sharedMemoryIdentifier: 'test',
+      );
+
+      final restored = PowerAuthSharingConfiguration.fromMap(cfg.toMap());
+
+      expect(restored.appGroup, cfg.appGroup);
+      expect(restored.appIdentifier, cfg.appIdentifier);
+      expect(restored.keychainAccessGroup, cfg.keychainAccessGroup);
+      expect(restored.sharedMemoryIdentifier, cfg.sharedMemoryIdentifier);
+    });
+
+    test('shared memory identifier is optional', () {
+      final cfg = PowerAuthSharingConfiguration(
+        appGroup: 'group.com.wultra.test',
+        appIdentifier: 'com.wultra.test',
+        keychainAccessGroup: 'com.wultra.test.keychain',
+      );
+
+      expect(cfg.sharedMemoryIdentifier, isNull);
+      expect(
+        PowerAuthSharingConfiguration.fromMap(
+          cfg.toMap(),
+        ).sharedMemoryIdentifier,
+        isNull,
+      );
+    });
+  });
+
   group('PowerAuthClientConfiguration', () {
     test('default values', () {
       const defaultTimeout = 20;

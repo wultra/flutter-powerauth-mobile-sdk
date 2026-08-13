@@ -15,16 +15,16 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        // Mirrors the CocoaPods `PowerAuth2` dependency (`~> 1.9.5`).
-        .package(url: "https://github.com/wultra/powerauth-mobile-sdk-spm.git", .upToNextMinor(from: "1.9.5")),
+        // Mirrors the CocoaPods `PowerAuth2` dependency (`~> 2.0.0-rc2`).
+        // TODO: Update the dependency once PowerAuth SDK 2.0.0 is released.
+        .package(url: "https://github.com/wultra/powerauth-mobile-sdk", exact: "2.0.0-rc2"),
     ],
     targets: [
         .target(
             name: "flutter_powerauth_mobile_sdk_plugin",
             dependencies: [
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
-                .product(name: "PowerAuth2", package: "powerauth-mobile-sdk-spm"),
-                .product(name: "PowerAuthCore", package: "powerauth-mobile-sdk-spm"),
+                .product(name: "PowerAuth2", package: "powerauth-mobile-sdk"),
             ]
         )
     ]

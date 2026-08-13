@@ -17,7 +17,6 @@
 import Foundation
 import Flutter
 import PowerAuth2
-import PowerAuthCore
 
 /// Singleton registry for PowerAuth services.
 ///

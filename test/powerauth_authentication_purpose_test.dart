@@ -77,7 +77,7 @@ void main() {
     );
 
     await expectLater(
-      platform.requestSignature(
+      platform.authenticationHeaderForRequestWithBody(
         'instance',
         authentication,
         'POST',
@@ -93,7 +93,7 @@ void main() {
     );
     expect(calls.map((call) => call.method), [
       'password_initialize',
-      'requestSignature',
+      'authenticationHeaderForRequestWithBody',
     ]);
     expect(
       (calls.last.arguments as Map)['authentication'],
@@ -139,7 +139,7 @@ void main() {
           );
 
       await expectLater(
-        platform.requestSignature(
+        platform.authenticationHeaderForRequestWithBody(
           'instance',
           authentication,
           'POST',
@@ -155,7 +155,7 @@ void main() {
       );
       expect(calls.map((call) => call.method), [
         'password_initialize',
-        'requestSignature',
+        'authenticationHeaderForRequestWithBody',
       ]);
       expect(
         calls.map((call) => call.method),
@@ -175,7 +175,7 @@ void main() {
       );
 
       await expectLater(
-        platform.requestSignature(
+        platform.authenticationHeaderForRequestWithBody(
           'instance',
           authentication,
           'POST',
@@ -189,7 +189,7 @@ void main() {
           ),
         ),
       );
-      expect(calls.map((call) => call.method), ['authenticateWithBiometry']);
+      expect(calls.map((call) => call.method), ['authenticationHeaderForRequestWithBody']);
     },
   );
 }

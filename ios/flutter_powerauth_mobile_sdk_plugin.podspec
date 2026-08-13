@@ -12,7 +12,8 @@ Pod::Spec.new do |s|
   s.platform = :ios, '13.4'
 
   s.dependency 'Flutter'
-  s.dependency "PowerAuth2", "~> 1.9.5"
+  # TODO: Update the dependency once PowerAuth SDK 2.0.0 is released.
+  s.dependency "PowerAuth2", "~> 2.0.0-rc2"
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
