@@ -19,12 +19,6 @@
             "match": "const powerAuthFlutterVersion = '%VERSION%';"
         },
         {
-            "description": "Example installation tutorial in the documentation.",
-            "path": "docs/Installation.md",
-            "type": "version_replace",
-            "match": "%VERSION%  # Check pub.dev for latest version"
-        },
-        {
             "description": "Example app pubspec file in the documentation.",
             "path": "docs/PowerAuth-Server-Compatibility.md",
             "type": "version_verify",
