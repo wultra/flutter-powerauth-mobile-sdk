@@ -1,4 +1,4 @@
-## TBA
+## 2.0.0-beta.1
 
 * Updated the native PowerAuth Mobile SDK dependencies to version 2.0.
 * Added PowerAuth protocol 4.0 algorithms and authenticated protocol upgrade support.
