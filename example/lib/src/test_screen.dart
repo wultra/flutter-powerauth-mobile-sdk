@@ -114,18 +114,12 @@ class _TestScreenState extends State<PowerAuthTestingScreen> {
         );
         final keychainConfig = PowerAuthKeychainConfiguration();
         final clientConfig = PowerAuthClientConfiguration(enableUnsecureTraffic: false);
-        final sharingConfig = PowerAuthSharingConfiguration(
-          appGroup: "group.com.wultra.testGroup",
-          appIdentifier: "SharedInstanceTests",
-          keychainAccessGroup: "fake.accessGroup",
-        );
 
         await _powerAuth.configure(
           configuration: powerAuthConfig,
           biometryConfiguration: biometryConfig,
           clientConfiguration: clientConfig,
           keychainConfiguration: keychainConfig,
-          sharingConfiguration: sharingConfig
         );
         print('PowerAuth configured successfully for instance: $_instanceId');
 
