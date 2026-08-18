@@ -19,28 +19,16 @@
             "match": "const powerAuthFlutterVersion = '%VERSION%';"
         },
         {
-            "description": "Example installation tutorial in the documentation.",
-            "path": "docs/Installation.md",
-            "type": "version_replace",
-            "match": "%VERSION%  # Check pub.dev for latest version"
-        },
-        {
-            "description": "Example app pubspec file in the documentation.",
-            "path": "docs/PowerAuth-Server-Compatibility.md",
-            "type": "version_verify",
-            "match": "`%VERSION_STREAM%`"
-        },
-        {
             "description": "Changelog for the pub.dev.",
-            "path": "CHANGELOG.md",
-            "type": "version_verify",
-            "match": "## %VERSION%"
+            "paths": ["docs/Changelog.md", "CHANGELOG.md"],
+            "type": "tba_replace",
+            "match": "## TBA"
         },
         {
-            "description": "Changelog for the wultra documentation.",
-            "path": "docs/Changelog.md",
-            "type": "version_verify",
-            "match": "## %VERSION%"
+            "description": "Verify that the changelog does not contain \"-TBA\" placeholder.",
+            "paths": ["docs/Changelog.md", "CHANGELOG.md"],
+            "type": "verify_not_containing",
+            "match": "- TBA"
         }
     ],
     "scripts": [

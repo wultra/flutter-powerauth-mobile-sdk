@@ -46,4 +46,5 @@ So a new native method must be registered in **both** the Kotlin service `handle
 ## Releases & branching
 
 - Branch from and PR into **`develop`**; release streams are `release/a.b.x` with linear history. Branch naming: `issues/<number>-short-description`.
+- On non-release branches, keep the development version as `0.0.1-dev` (including in `pubspec.yaml`).
 - A version bump must update **all** of: `pubspec.yaml`, `lib/src/version.dart`, `CHANGELOG.md`, `docs/Changelog.md`, `docs/Installation.md` (and `docs/PowerAuth-Server-Compatibility.md` if relevant). Use `scripts/prepare-release.sh` (pass `--verify` to check consistency). See CONTRIBUTING "Preparing a New Release".
