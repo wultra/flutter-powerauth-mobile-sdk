@@ -178,7 +178,7 @@ To run the integration tests, use the following command:
 
 ```bash
 cd example # make sure you are in the example directory
-flutter test -r expanded integration_test/integration_test.dart # test with expanded report
+flutter test -r expanded integration_test/plugin_integration_test.dart # test with expanded report
 ```
 
 # Creating a Pull Request
@@ -224,7 +224,7 @@ The version number is composed of three parts: `major.minor.patch`, e.g. `1.0.0`
 ## Each release should contain following changes
 
 > [!TIP]
-> You can use the `scripts/prepare-release.sh` script to prepare all the necessary files for a new release.
+> Use the `scripts/prepare-release.sh` script to automate the coordinated version, changelog, and documentation updates required for a new release.
 > 
 > If you pass a `--verify` flag to the script, it will check if all the files are updated correctly and will not allow you to proceed with the release if any of the files are not updated.
 
@@ -233,7 +233,6 @@ The version number is composed of three parts: `major.minor.patch`, e.g. `1.0.0`
 - updated `CHANGELOG.md` file with the new version number and a summary of the changes for pub.dev
 - updated `docs/changelog.md` file with the new version number and a summary of the changes for Wultra developers documentation
 - updated `docs/Installation.md` file with the new version in example of how to add the dependency
-- _(if needed)_ updated `docs/PowerAuth-Server-Compatibility.md` file with the new version and compatibility information
 
 ## Creating a Release (example scenario)
 

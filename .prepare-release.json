@@ -5,42 +5,35 @@
         "name": "flutter-powerauth-mobile-sdk",
         "type": "flutter"
     },
+    "scriptVersion": 2,
+    "devVersion": "0.0.1-dev",
     "files": [
         {
             "description": "Main package definition file.",
             "path": "pubspec.yaml",
             "type": "version_replace",
-            "match": "\nversion: %VERSION%\n"
+            "match": "\nversion: %VERSION%\n",
+            "devChange": true
         },
         {
             "description": "Version file used in the SDK code.",
             "path": "lib/src/version.dart",
             "type": "version_replace",
-            "match": "const powerAuthFlutterVersion = '%VERSION%';"
-        },
-        {
-            "description": "Example installation tutorial in the documentation.",
-            "path": "docs/Installation.md",
-            "type": "version_replace",
-            "match": "%VERSION%  # Check pub.dev for latest version"
-        },
-        {
-            "description": "Example app pubspec file in the documentation.",
-            "path": "docs/PowerAuth-Server-Compatibility.md",
-            "type": "version_verify",
-            "match": "`%VERSION_STREAM%`"
+            "match": "const powerAuthFlutterVersion = '%VERSION%';",
+            "devChange": true
         },
         {
             "description": "Changelog for the pub.dev.",
-            "path": "CHANGELOG.md",
-            "type": "version_verify",
-            "match": "## %VERSION%"
+            "paths": ["docs/Changelog.md", "CHANGELOG.md"],
+            "type": "tba_replace",
+            "match": "## TBA",
+            "devChangelog": true
         },
         {
-            "description": "Changelog for the wultra documentation.",
-            "path": "docs/Changelog.md",
-            "type": "version_verify",
-            "match": "## %VERSION%"
+            "description": "Verify that the changelog does not contain \"-TBA\" placeholder.",
+            "paths": ["docs/Changelog.md", "CHANGELOG.md"],
+            "type": "verify_not_containing",
+            "match": "- TBA"
         }
     ],
     "scripts": [
