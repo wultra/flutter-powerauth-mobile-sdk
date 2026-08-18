@@ -35,9 +35,16 @@ set -u # stop when undefined variable is used
 
 # path to the script folder
 SCRIPT_FOLDER=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+PROJECT_ROOT="${SCRIPT_FOLDER}/.."
+
+# TEMPORARY: run the local v2 release script while it is under development.
+# Restore the remote URL and curl command below once v2 is published.
+LOCAL_SCRIPT="${PROJECT_ROOT}/../wultra-infrastructure/mobile/release/prepare/v2/prepare-release.js"
+node "${LOCAL_SCRIPT}" -p "${PROJECT_ROOT}" "${@}"
 
 # URL of the JavaScript prepare-release script in Wultra infrastructure repository
-URL="https://raw.githubusercontent.com/wultra/wultra-infrastructure/refs/heads/feature/tba/mobile/release/prepare/v1/prepare-release.js"
+# URL="https://raw.githubusercontent.com/wultra/wultra-infrastructure/refs/heads/mobile/mobile/release/prepare/v2/prepare-release.js"
+# URL="https://raw.githubusercontent.com/wultra/wultra-infrastructure/refs/heads/feature/tba/mobile/release/prepare/v2/prepare-release.js"
 
-# execute the remote node and pass all parameters to it + add path parameter to the root of the repository
-curl -fsSL "${URL}" | node - -p "${SCRIPT_FOLDER}/.." "${@}"
+# Execute the remote node and pass all parameters to it + add path parameter to the root of the repository.
+# curl -fsSL "${URL}" | node - -p "${PROJECT_ROOT}" "${@}"
