@@ -5,6 +5,7 @@
         "name": "flutter-powerauth-mobile-sdk",
         "type": "flutter"
     },
+    "scriptVersion": 2,
     "files": [
         {
             "description": "Main package definition file.",
