@@ -6,24 +6,28 @@
         "type": "flutter"
     },
     "scriptVersion": 2,
+    "devVersion": "0.0.1-dev",
     "files": [
         {
             "description": "Main package definition file.",
             "path": "pubspec.yaml",
             "type": "version_replace",
-            "match": "\nversion: %VERSION%\n"
+            "match": "\nversion: %VERSION%\n",
+            "devChange": true
         },
         {
             "description": "Version file used in the SDK code.",
             "path": "lib/src/version.dart",
             "type": "version_replace",
-            "match": "const powerAuthFlutterVersion = '%VERSION%';"
+            "match": "const powerAuthFlutterVersion = '%VERSION%';",
+            "devChange": true
         },
         {
             "description": "Changelog for the pub.dev.",
             "paths": ["docs/Changelog.md", "CHANGELOG.md"],
             "type": "tba_replace",
-            "match": "## TBA"
+            "match": "## TBA",
+            "devChangelog": true
         },
         {
             "description": "Verify that the changelog does not contain \"-TBA\" placeholder.",
