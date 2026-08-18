@@ -11,6 +11,7 @@
   - Single test by name: `flutter test --plain-name "<substring of test name>"`
 - **Integration tests** (real device/simulator, in `example/`): `cd example && flutter test -r expanded integration_test/plugin_integration_test.dart`
   - Requires `example/.env` (copy `example/.env-example`) and `flutter pub get` in `example/`. The entry file aggregates the suites in `example/integration_test/suites/`; select a device with `-d <device-id>`.
+  - Run a focused integration test through that entry point with `flutter test -r expanded integration_test/plugin_integration_test.dart --plain-name "<substring of test name>"`.
   - iOS simulator: from the repository root, run `bash scripts/integration-tests-ios.sh`. The script uses Swift Package Manager and runs `xcodebuild test`.
 
 ## Architecture: how a call flows
@@ -47,4 +48,4 @@ So a new native method must be registered in **both** the Kotlin service `handle
 
 - Branch from and PR into **`develop`**; release streams are `release/a.b.x` with linear history. Branch naming: `issues/<number>-short-description`.
 - On non-release branches, keep the development version as `0.0.1-dev` (including in `pubspec.yaml`).
-- A version bump must update **all** of: `pubspec.yaml`, `lib/src/version.dart`, `CHANGELOG.md`, `docs/Changelog.md`, `docs/Installation.md` (and `docs/PowerAuth-Server-Compatibility.md` if relevant). Use `scripts/prepare-release.sh` (pass `--verify` to check consistency). See CONTRIBUTING "Preparing a New Release".
+- A version bump must update **all** of: `pubspec.yaml`, `lib/src/version.dart`, `CHANGELOG.md`, `docs/Changelog.md`, and `docs/Installation.md`. For release preparation, use `scripts/prepare-release.sh`: it automates the coordinated version, changelog, and documentation updates. Pass `--verify` to check consistency. See CONTRIBUTING "Preparing a New Release".
