@@ -21,7 +21,6 @@ In order to connect to the [PowerAuth](https://www.wultra.com/mobile-security-su
 
 ## Additional Topics
 
-- [PowerAuth Server Compatibility](PowerAuth-Server-Compatibility.md)
 - [Share Activation Data](Activation-Data-Sharing.md)
 - [Error Handling](Error-Handling.md)
 - [Troubleshooting](Troubleshooting.md)

@@ -9,11 +9,6 @@ PowerAuth Mobile Flutter SDK version `2.0.0` uses PowerAuth Mobile SDK version `
 - Request signing, digital signatures, end-to-end encryption, biometry, password changes, and Secure Vault operations use new APIs.
 - The minimum supported Android version is now Android 6.0 (API 23).
 
-### Compatibility with PowerAuth Server
-
-- Protocol 4.0 requires PowerAuth Server version `2.0.0` or later.
-- Legacy protocol 3.3 requires PowerAuth Server version `1.9.0` or later.
-
 ### Platform Requirements
 
 - Flutter `3.44.0` or later and Dart `3.12.0` or later.
