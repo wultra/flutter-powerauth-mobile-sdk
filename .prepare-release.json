@@ -23,6 +23,13 @@
             "devChange": true
         },
         {
+            "description": "iOS podspec file.",
+            "path": "ios/flutter_powerauth_mobile_sdk_plugin.podspec",
+            "type": "version_replace",
+            "match": "s.version          = '%VERSION%'",
+            "devChange": true
+        },
+        {
             "description": "Changelog for the pub.dev.",
             "paths": ["docs/Changelog.md", "CHANGELOG.md"],
             "type": "tba_replace",

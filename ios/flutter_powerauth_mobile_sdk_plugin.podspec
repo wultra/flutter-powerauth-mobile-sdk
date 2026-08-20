@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'flutter_powerauth_mobile_sdk_plugin'
-  s.version          = '0.0.1'
+  s.version          = '0.0.1-dev'
   s.summary          = 'Flutter Mobile SDK for PowerAuth Protocol (iOS).'
   s.homepage         = 'https://www.wultra.com/products/mobile-first-authentication'
   s.license          = { :file => '../LICENSE' }
