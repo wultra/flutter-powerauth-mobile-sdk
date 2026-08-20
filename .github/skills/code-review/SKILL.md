@@ -1,3 +1,8 @@
+---
+name: code-review
+description: Review pull requests in the Flutter PowerAuth Mobile SDK repository. Use when reviewing Dart APIs, native bridges, security behavior, interoperability, or release changes.
+---
+
 # Flutter PowerAuth SDK review
 
 ## Review contract
