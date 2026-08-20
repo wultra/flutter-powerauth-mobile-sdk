@@ -5,9 +5,13 @@ description: Review pull requests in the Flutter PowerAuth Mobile SDK repository
 
 # Flutter PowerAuth SDK review
 
+Review only PR and repository content already available. Do not run or suggest
+commands, scripts, builds, tests, linters, formatters, validation tasks, or Git
+operations.
+
 ## Review contract
 
-First verify PR base/head/current checkout. The ordinary base is `develop`;
+Use available PR metadata for the base and head. The ordinary base is `develop`;
 release work targets `release/a.b.x`. Approve by default. Comment only on a
 proven PR-introduced defect, naming file and line, concrete impact, and a
 correction. No style, formatting, CI/workflow, hypothetical, or test-request
@@ -40,7 +44,7 @@ Unit contracts are in `test/`; real-platform coverage is in
 `example/integration_test/`. Public installation and release documentation is
 in `README.md`, `docs/Installation.md`, `docs/Changelog.md`, and
 `CHANGELOG.md`. Release changes must also coordinate `lib/src/version.dart`;
-use `scripts/prepare-release.sh --verify` to verify a prepared release.
+`scripts/prepare-release.sh` may be read as tracked release logic.
 
 ## Bridge and API invariants
 
@@ -81,9 +85,7 @@ or cryptographic material. Android stateful calls must retain
 `BasePowerAuthService.usePowerAuth` lifecycle behavior.
 
 Review futures and log streams for exactly-once completion, disposal-safe event
-delivery, no use-after-release, and platform-equivalent exceptions. Require
-focused Dart tests for model/contract changes and the relevant Android/iOS
-integration scenario for a changed native method when the existing test seam
-can demonstrate it. Useful validation is `flutter analyze --fatal-warnings`,
-`flutter test`, and the matching `scripts/integration-tests-ios.sh` or example
-integration entry point; do not comment merely because CI configuration differs.
+delivery, no use-after-release, and platform-equivalent exceptions. Existing
+Dart tests and Android/iOS integration scenarios may be inspected as evidence
+for model, contract, and native-method changes, but never suggest running them.
+Do not comment merely because CI configuration differs.
