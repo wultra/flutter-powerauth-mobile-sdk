@@ -1,1 +1,8 @@
+build
+scripts
+test
+.vscode
+.dart_tool
+.github
 .env
+.prepare-release.json
