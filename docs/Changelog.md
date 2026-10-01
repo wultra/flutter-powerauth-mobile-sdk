@@ -2,7 +2,7 @@
 
 ## TBA
 
-- TBA
+- Android now resolves the latest PowerAuth Mobile SDK 2.0.x patch version (`2.0.+`), matching the iOS `~> 2.0.0` dependency.
 
 ## 2.0.0
 
