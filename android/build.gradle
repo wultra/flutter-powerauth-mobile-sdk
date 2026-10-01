@@ -22,7 +22,8 @@ allprojects {
 }
 
 dependencies {
-    api "com.wultra.android.powerauth:powerauth-sdk:2.0.0"
+    // Mirrors the iOS `PowerAuth2` dependency (`~> 2.0.0`).
+    api "com.wultra.android.powerauth:powerauth-sdk:2.0.+"
 }
 
 kotlin {
