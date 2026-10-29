@@ -299,34 +299,18 @@ class IntegrationHelper {
     String nonce, {
     String? registrationId,
   }) async {
-    final resp = await verifyOfflineOtpRaw(
-      operationId,
-      otp,
-      nonce,
-      registrationId: registrationId,
-    );
-    return OfflineOtpResponse.fromJson(
-      _requireSuccess(resp, "verifyOfflineOtp"),
-    );
-  }
-
-  /// Verifies the offline OTP and returns the raw PowerAuth Cloud response,
-  /// including error responses.
-  Future<Map<String, dynamic>> verifyOfflineOtpRaw(
-    String operationId,
-    String otp,
-    String nonce, {
-    String? registrationId,
-  }) async {
     final payload = jsonEncode({
       'otp': otp,
       'nonce': nonce,
       'registrationId': registrationId ?? createdActivation!.registrationId,
     });
-    return _makeCall(
+    final resp = await _makeCall(
       payload,
       "${AppConfig.cloudUrl}/v2/operations/$operationId/offline/otp",
       backend: _IntegrationBackend.cloud,
+    );
+    return OfflineOtpResponse.fromJson(
+      _requireSuccess(resp, "verifyOfflineOtp"),
     );
   }
 
