@@ -239,6 +239,81 @@ class IntegrationHelper {
     return TokenResponse.fromJson(resp);
   }
 
+  /// Creates a new operation for the user of the current activation.
+  Future<OperationDetail> createOperation({
+    String template = "login",
+    Map<String, String> parameters = const {
+      "party.id": "666",
+      "party.name": "Datová schránka",
+      "session.id": "123",
+      "session.ip-address": "192.168.0.1",
+    },
+  }) async {
+    final payload = jsonEncode({
+      'userId': userId,
+      'template': template,
+      'parameters': parameters,
+    });
+    final resp = await _makeCall(
+      payload,
+      "${AppConfig.cloudUrl}/v2/operations",
+      backend: _IntegrationBackend.cloud,
+    );
+    return OperationDetail.fromJson(_requireSuccess(resp, "createOperation"));
+  }
+
+  /// Gets the operation detail.
+  Future<OperationDetail> getOperation(String operationId) async {
+    final resp = await _makeCall(
+      null,
+      "${AppConfig.cloudUrl}/v2/operations/$operationId",
+      backend: _IntegrationBackend.cloud,
+      method: HtptMethod.get,
+    );
+    return OperationDetail.fromJson(_requireSuccess(resp, "getOperation"));
+  }
+
+  /// Gets the QR code data for an offline approval of the operation.
+  Future<OperationQrCode> getOperationQrCode(
+    String operationId, {
+    String? registrationId,
+  }) async {
+    final regId = Uri.encodeQueryComponent(
+      registrationId ?? createdActivation!.registrationId,
+    );
+    final resp = await _makeCall(
+      null,
+      "${AppConfig.cloudUrl}/v2/operations/$operationId/offline/qr?registrationId=$regId",
+      backend: _IntegrationBackend.cloud,
+      method: HtptMethod.get,
+    );
+    return OperationQrCode.fromJson(
+      _requireSuccess(resp, "getOperationQrCode"),
+    );
+  }
+
+  /// Verifies the offline OTP (offline authentication code) of the operation.
+  Future<OfflineOtpResponse> verifyOfflineOtp(
+    String operationId,
+    String otp,
+    String nonce, {
+    String? registrationId,
+  }) async {
+    final payload = jsonEncode({
+      'otp': otp,
+      'nonce': nonce,
+      'registrationId': registrationId ?? createdActivation!.registrationId,
+    });
+    final resp = await _makeCall(
+      payload,
+      "${AppConfig.cloudUrl}/v2/operations/$operationId/offline/otp",
+      backend: _IntegrationBackend.cloud,
+    );
+    return OfflineOtpResponse.fromJson(
+      _requireSuccess(resp, "verifyOfflineOtp"),
+    );
+  }
+
   /// Creates deterministic user claims for user-info integration tests.
   PowerAuthUserInfo userInfo(String userId) {
     return PowerAuthUserInfo({
@@ -384,6 +459,17 @@ class IntegrationHelper {
         break;
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// PowerAuth Cloud wraps errors in `{"status": "ERROR", "responseObject": {...}}`.
+  Map<String, dynamic> _requireSuccess(
+    Map<String, dynamic> response,
+    String call,
+  ) {
+    if (response['status'] == 'ERROR') {
+      throw StateError('PowerAuth Cloud call $call failed: $response');
+    }
+    return response;
   }
 
   Future<http.Response> _sendHttpRequest(
@@ -577,6 +663,69 @@ class SignatureResponse {
       registrationId: json['registrationId'],
       registrationStatus: json['registrationStatus'],
       signatureType: json['signatureType'],
+      remainingAttempts: json['remainingAttempts'],
+    );
+  }
+}
+
+class OperationDetail {
+  final String operationId;
+  final String? userId;
+  final String status;
+
+  OperationDetail({
+    required this.operationId,
+    required this.userId,
+    required this.status,
+  });
+
+  factory OperationDetail.fromJson(Map<String, dynamic> json) {
+    return OperationDetail(
+      operationId: json['operationId'],
+      userId: json['userId'],
+      status: json['status'],
+    );
+  }
+}
+
+class OperationQrCode {
+  final String operationQrCodeData;
+  final String nonce;
+
+  OperationQrCode({required this.operationQrCodeData, required this.nonce});
+
+  factory OperationQrCode.fromJson(Map<String, dynamic> json) {
+    return OperationQrCode(
+      operationQrCodeData: json['operationQrCodeData'],
+      nonce: json['nonce'],
+    );
+  }
+}
+
+class OfflineOtpResponse {
+  final bool otpValid;
+  final String? userId;
+  final String? registrationId;
+  final String? registrationStatus;
+  final String? authenticationCodeType;
+  final int? remainingAttempts;
+
+  OfflineOtpResponse({
+    required this.otpValid,
+    required this.userId,
+    required this.registrationId,
+    required this.registrationStatus,
+    required this.authenticationCodeType,
+    required this.remainingAttempts,
+  });
+
+  factory OfflineOtpResponse.fromJson(Map<String, dynamic> json) {
+    return OfflineOtpResponse(
+      otpValid: json['otpValid'],
+      userId: json['userId'],
+      registrationId: json['registrationId'],
+      registrationStatus: json['registrationStatus'],
+      authenticationCodeType: json['authenticationCodeType'],
       remainingAttempts: json['remainingAttempts'],
     );
   }
