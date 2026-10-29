@@ -223,6 +223,11 @@ class PowerAuth {
 
   /// Removes the activation from both the local device and the PowerAuth server.
   /// Requires [authentication] to authorize the removal on the server.
+  ///
+  /// The server requires 2FA authentication by default. 1FA authentication
+  /// (for example, [PowerAuthAuthentication.possession]) is accepted only
+  /// when it is enabled on the server (PowerAuth RESTful Integration 2.1.0
+  /// or newer).
   Future<void> removeActivationWithAuthentication(
     PowerAuthAuthentication authentication,
   ) => _platform.removeActivationWithAuthentication(instanceId, authentication);
