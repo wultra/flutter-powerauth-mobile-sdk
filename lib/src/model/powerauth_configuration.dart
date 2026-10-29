@@ -24,7 +24,10 @@ class PowerAuthConfiguration {
   /// String with the cryptographic configuration.
   final String configuration;
 
-  /// Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
+  /// Base URL to the PowerAuth Standard REST API, usually ending with
+  /// `/enrollment-server` (for example `https://example.com/enrollment-server`).
+  ///
+  /// This is the URL part before `"/pa/..."` endpoints.
   final String baseEndpointUrl;
 
   /// Algorithm used for communication with the PowerAuth Server.
@@ -40,7 +43,8 @@ class PowerAuthConfiguration {
   /// Construct configuration with required parameters.
   /// 
   /// [configuration] String with the cryptographic configuration.
-  /// [baseEndpointUrl] Base URL to the PowerAuth Standard REST API (the URL part before `"/pa/..."`).
+  /// [baseEndpointUrl] Base URL to the PowerAuth Standard REST API, usually ending with
+  /// `/enrollment-server` (for example `https://example.com/enrollment-server`).
   /// [algorithm] Algorithm used for communication with the PowerAuth Server.
   /// [offlineAuthenticationCodeComponentLength] Length of one component in an offline authentication code.
   PowerAuthConfiguration({
