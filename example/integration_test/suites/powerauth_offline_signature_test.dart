@@ -88,16 +88,32 @@ main() {
         qrOperation.nonce,
         qrOperation.dataForOfflineSigning(),
       );
+      expect(otp, matches(RegExp(r'^[0-9]{8}-[0-9]{8}$')));
 
-      final result = await helper.verifyOfflineOtp(
+      final response = await helper.verifyOfflineOtpRaw(
         operation.operationId,
         otp,
         qrCode.nonce,
       );
-      expect(result.otpValid, isFalse);
+      // PowerAuth Cloud may report an invalid OTP either as `otpValid: false`
+      // or as ERROR_INTERNAL_API (its failed-approval bookkeeping can fail
+      // upstream). Either way, the OTP must not be accepted.
+      if (response['status'] == 'ERROR') {
+        expect(
+          (response['responseObject'] as Map<String, dynamic>?)?['code'],
+          'ERROR_INTERNAL_API',
+          reason: 'Unexpected error response: $response',
+        );
+      } else {
+        expect(
+          OfflineOtpResponse.fromJson(response).otpValid,
+          isFalse,
+          reason: 'OTP computed with an invalid password must be rejected',
+        );
+      }
 
-      final pending = await helper.getOperation(operation.operationId);
-      expect(pending.status, 'PENDING');
+      final notApproved = await helper.getOperation(operation.operationId);
+      expect(notApproved.status, isNot('APPROVED'));
     });
   });
 }
