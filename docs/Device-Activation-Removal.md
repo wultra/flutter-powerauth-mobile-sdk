@@ -29,8 +29,23 @@ try {
 }
 ```
 
-<!-- begin box info -->
-Depending on server support and configuration, it is possible to remove the activation with 1FA authentication, for example by using `PowerAuthAuthentication.possession()`.
+### Removal with 1FA Authentication
+
+PowerAuth RESTful Integration 2.1.0 and newer can be configured to allow activation removal with 1FA authentication. If this option is enabled on your server, you can remove the activation with possession-only authentication:
+
+```dart
+// 1FA signature, uses device-related key only
+final auth = PowerAuthAuthentication.possession();
+try {
+    await powerAuth.removeActivationWithAuthentication(auth);
+    // activation removed
+} catch (e) {
+    // failed to remove
+}
+```
+
+<!-- begin box warning -->
+If 1FA activation removal is not enabled on the server, or the server uses an older version of PowerAuth RESTful Integration, the removal requires 2FA authentication and a request authenticated with 1FA fails.
 <!-- end -->
 
 <!--## Removal via Authenticated Session
