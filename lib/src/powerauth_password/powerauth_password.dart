@@ -98,17 +98,20 @@ class PowerAuthPassword {
   /// This method works the same as [addCodePoints], except that an empty [character]
   /// is reported as `PowerAuthErrorCode.wrongParameter`.
   @Deprecated('Use addCodePoint() or addCodePoints() instead. This method will be removed in a future major version.')
-  Future<int> addCharacter(String character) async => addCodePoints(_requireNotEmpty(character));
+  Future<int> addCharacter(String character) async {
+    await _handle.getObjectId();
+    return addCodePoints(_requireNotEmpty(character));
+  }
 
   /// Appends a Unicode code point to the end of the password and returns
   /// the number of code points stored in the password.
   ///
   /// The code point must be in range 0 up to 0x10FFFF, otherwise
   /// `PowerAuthErrorCode.wrongParameter` is reported.
-  Future<int> addCodePoint(int codePoint) async {
+  Future<int> addCodePoint(int codePoint) => _handle.withObjectId((id) {
     _validateCodePoint(codePoint);
-    return _handle.withObjectId((id) => _platform.addCharacter(id, codePoint));
-  }
+    return _platform.addCharacter(id, codePoint);
+  });
 
   /// Appends every Unicode code point of [text] to the end of the password and returns
   /// the number of code points stored in the password.
@@ -136,6 +139,7 @@ class PowerAuthPassword {
   /// so the operation is not atomic, the same as [addCodePoints].
   @Deprecated('Use insertCodePoint() instead. This method will be removed in a future major version.')
   Future<int> insertCharacter(String character, int at) async {
+    await _handle.getObjectId();
     var length = 0;
     var position = at;
     for (final codePoint in _requireNotEmpty(character).runes) {
@@ -149,11 +153,11 @@ class PowerAuthPassword {
   ///
   /// The code point must be in range 0 up to 0x10FFFF and the position [at] must be
   /// in range 0 up to length, otherwise `PowerAuthErrorCode.wrongParameter` is reported.
-  Future<int> insertCodePoint(int codePoint, int at) async {
+  Future<int> insertCodePoint(int codePoint, int at) => _handle.withObjectId((id) {
     _validateCodePoint(codePoint);
     _validatePosition(at);
-    return _handle.withObjectId((id) => _platform.insertCharacter(id, codePoint, at));
-  }
+    return _platform.insertCharacter(id, codePoint, at);
+  });
 
   /// Removes the code point at the specified position and returns
   /// the remaining number of code points stored in the password.
@@ -169,10 +173,10 @@ class PowerAuthPassword {
   /// can remove only a part of it. For example, only the skin tone modifier of `'👍🏽'`.
   /// The position must be in range 0 up to length - 1, otherwise
   /// `PowerAuthErrorCode.wrongParameter` is reported.
-  Future<int> removeCodePointAt(int position) async {
+  Future<int> removeCodePointAt(int position) => _handle.withObjectId((id) {
     _validatePosition(position);
-    return _handle.withObjectId((id) => _platform.removeCharacterAt(id, position));
-  }
+    return _platform.removeCharacterAt(id, position);
+  });
 
   /// Removes the last code point and returns the remaining number of code points
   /// stored in the password.
@@ -207,6 +211,8 @@ class PowerAuthPassword {
     return character;
   }
 
+  // Arguments are validated after the native object ID is obtained, so that a released
+  // password reports invalidNativeObject, the same as in the React Native SDK.
   void _validateCodePoint(int codePoint) {
     if (codePoint < 0 || codePoint > 0x10FFFF) {
       throw PowerAuthException(

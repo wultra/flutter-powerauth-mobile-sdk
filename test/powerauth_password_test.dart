@@ -19,6 +19,7 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -75,20 +76,29 @@ class _PasswordPlatform extends PowerAuthPasswordPlatform {
   }
 }
 
+class _NativeObjectRegisterPlatform extends NativeObjectRegisterPlatform {
+  @override
+  Future<void> releaseNativeObject(String objectId) async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late PowerAuthPasswordPlatform originalPlatform;
+  late NativeObjectRegisterPlatform originalRegisterPlatform;
   late _PasswordPlatform platform;
 
   setUp(() {
     originalPlatform = PowerAuthPasswordPlatform.instance;
+    originalRegisterPlatform = NativeObjectRegisterPlatform.instance;
     platform = _PasswordPlatform();
     PowerAuthPasswordPlatform.instance = platform;
+    NativeObjectRegisterPlatform.instance = _NativeObjectRegisterPlatform();
   });
 
   tearDown(() {
     PowerAuthPasswordPlatform.instance = originalPlatform;
+    NativeObjectRegisterPlatform.instance = originalRegisterPlatform;
   });
 
   Matcher throwsWrongParameter() => throwsA(
@@ -176,12 +186,19 @@ void main() {
     expect(platform.codePoints, [0, 0x10FFFF]);
   });
 
-  test('invalid input does not allocate the native password', () async {
+  test('released password reports invalidNativeObject before invalid input', () async {
     final password = PowerAuthPassword();
+    await password.addCodePoint(0x61);
+    await password.release();
 
-    await expectLater(password.addCodePoint(0x110000), throwsWrongParameter());
-    await expectLater(password.addCharacter(''), throwsWrongParameter());
-    expect(platform.initializeCount, 0);
+    final throwsInvalidNativeObject = throwsA(
+      isA<PowerAuthException>().having((e) => e.code, 'code', PowerAuthErrorCode.invalidNativeObject),
+    );
+    await expectLater(password.addCodePoint(0x110000), throwsInvalidNativeObject);
+    await expectLater(password.insertCodePoint(-1, 0), throwsInvalidNativeObject);
+    await expectLater(password.removeCodePointAt(-1), throwsInvalidNativeObject);
+    await expectLater(password.addCharacter(''), throwsInvalidNativeObject);
+    await expectLater(password.insertCharacter('', 0), throwsInvalidNativeObject);
   });
 
   test('position out of 32-bit range is rejected', () async {
@@ -190,7 +207,7 @@ void main() {
     await expectLater(password.insertCodePoint(0x41, 0x80000000), throwsWrongParameter());
     await expectLater(password.insertCharacter('A', 0x80000000), throwsWrongParameter());
     await expectLater(password.removeCodePointAt(0x80000000), throwsWrongParameter());
-    expect(platform.initializeCount, 0);
+    expect(platform.codePoints, isEmpty);
   });
 
   test('deprecated removal methods remove one code point', () async {

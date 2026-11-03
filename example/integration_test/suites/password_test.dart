@@ -20,6 +20,7 @@
 
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
+import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
 import '../utils/integration_helper.dart';
 import '../utils/object_cleanup_helper.dart';
 
@@ -287,6 +288,53 @@ main() {
         throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
       );
       expect(await p4.length(), 2);
+    });
+
+    test('testNativeArgumentValidation', () async {
+      // Call the native bridge directly, without the validation in PowerAuthPassword.
+      final platform = PowerAuthPasswordPlatform.instance;
+      final id = await platform.initialize(destroyOnUse: false);
+
+      for (final codePoint in [-1, 0x110000]) {
+        await expectLater(
+          platform.addCharacter(id, codePoint),
+          throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+        );
+        await expectLater(
+          platform.insertCharacter(id, codePoint, 0),
+          throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+        );
+      }
+      // Values that don't fit into 32 bits must not crash the app or wrap into a valid value.
+      await expectLater(
+        platform.addCharacter(id, 0x100000000),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      expect(await platform.addCharacter(id, 0x41), 1);
+      await expectLater(
+        platform.insertCharacter(id, 0x42, 0x100000000),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      await expectLater(
+        platform.removeCharacterAt(id, 0x100000000),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      expect(await platform.length(id), 1);
+
+      // A released password is reported before invalid arguments.
+      await NativeObjectRegisterPlatform.instance.releaseNativeObject(id);
+      await expectLater(
+        platform.addCharacter(id, 0x110000),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
+      await expectLater(
+        platform.insertCharacter(id, 0x41, -1),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
+      await expectLater(
+        platform.removeCharacterAt(id, -1),
+        throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
+      );
     });
 
     test('testAutomaticCleanup', () async {

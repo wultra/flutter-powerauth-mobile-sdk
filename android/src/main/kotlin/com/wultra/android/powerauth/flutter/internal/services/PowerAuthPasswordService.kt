@@ -93,37 +93,26 @@ internal class PowerAuthPasswordService(
         }
     }
 
+    // Flutter sends integers that don't fit into 32 bits as Long. Reading them as Int would truncate them.
+    private fun MethodCall.getRequiredLongArgument(key: String): Long =
+        getRequiredArgument<Number>(key).toLong()
+
     private fun <T> withPasswordAndCharacter(
         call: MethodCall,
         result: Result,
         block: (password: Password, codePoint: Int) -> T
     ) {
-        try {
-            val objectId: String = call.getRequiredArgument(OBJECT_ID)
-            val characterInt: Int = call.getRequiredArgument(CHARACTER)
-
-            if (characterInt < 0 || characterInt > Constants.CODEPOINT_MAX) {
+        // withPassword looks up the password before the code point is read, so that a released
+        // password reports EC_INVALID_NATIVE_OBJECT.
+        withPassword(call, result) { password ->
+            val codePoint = call.getRequiredLongArgument(CHARACTER)
+            if (codePoint < 0 || codePoint > Constants.CODEPOINT_MAX) {
                 throw WrapperException(
                     Errors.EC_WRONG_PARAMETER,
-                    "Invalid CodePoint: $characterInt"
+                    "Invalid CodePoint: $codePoint"
                 )
             }
-
-            val password = objectRegister.touchObject(objectId, Password::class.java)
-                ?: throw WrapperException(
-                    Errors.EC_INVALID_NATIVE_OBJECT,
-                    "Password object '$objectId' is no longer valid or not found."
-                )
-
-            val blockResult = block(password, characterInt)
-
-            if (blockResult is Unit) {
-                result.success(null)
-            } else {
-                result.success(blockResult)
-            }
-        } catch (t: Throwable) {
-            Errors.error(result, t)
+            block(password, codePoint.toInt())
         }
     }
 
@@ -209,43 +198,33 @@ internal class PowerAuthPasswordService(
     }
 
     private fun insertCharacter(call: MethodCall, result: Result) {
-        try {
-            val position: Int = call.getRequiredArgument(POSITION)
+        withPasswordAndCharacter(call, result) { password, codePoint ->
+            val position = call.getRequiredLongArgument(POSITION)
+            if (position >= 0 && position <= password.length()) {
+                password.insertCharacter(codePoint, position.toInt())
 
-            withPasswordAndCharacter(call, result) { password, codePoint ->
-                if (position >= 0 && position <= password.length()) {
-                    password.insertCharacter(codePoint, position)
-
-                    return@withPasswordAndCharacter password.length()
-                } else {
-                    throw WrapperException(
-                        Errors.EC_WRONG_PARAMETER,
-                        "Position $position is out of range for password length ${password.length()}."
-                    )
-                }
-            }
-        } catch (t: Throwable) {
-            Errors.error(result, t)
-        }
-    }
-
-    private fun removeCharacterAt(call: MethodCall, result: Result) {
-        try {
-            val position: Int = call.getRequiredArgument(POSITION)
-
-            withPassword(call, result) { password ->
-                if (position >= 0 && position < password.length()) {
-                    password.removeCharacter(position)
-
-                    return@withPassword password.length()
-                }
+                return@withPasswordAndCharacter password.length()
+            } else {
                 throw WrapperException(
                     Errors.EC_WRONG_PARAMETER,
                     "Position $position is out of range for password length ${password.length()}."
                 )
             }
-        } catch (t: Throwable) {
-            Errors.error(result, t)
+        }
+    }
+
+    private fun removeCharacterAt(call: MethodCall, result: Result) {
+        withPassword(call, result) { password ->
+            val position = call.getRequiredLongArgument(POSITION)
+            if (position >= 0 && position < password.length()) {
+                password.removeCharacter(position.toInt())
+
+                return@withPassword password.length()
+            }
+            throw WrapperException(
+                Errors.EC_WRONG_PARAMETER,
+                "Position $position is out of range for password length ${password.length()}."
+            )
         }
     }
 
