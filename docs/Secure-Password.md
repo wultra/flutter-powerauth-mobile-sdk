@@ -91,8 +91,10 @@ final empty = await password.isEmpty();
 print('empty = $empty');            // empty = true
 ```
 
-<!-- begin box warning -->
-`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated. Use `addCodePoint()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead. `removeCharacterAt()` and `removeLastCharacter()` work the same as their replacements. `addCharacter()` and `insertCharacter()` now add every code point of the string, the same as `fromString()`. Version 2.0.1 and earlier stored only the first code point. If your app passed characters that consist of more than one code point, such as emoji with a skin tone modifier, to these methods, then such a password is now different and doesn't match the password of an existing activation. To keep such passwords valid, add only the first code point of each character, for example `addCodePoint(character.runes.first)` or `insertCodePoint(character.runes.first, at)`.
+To append all code points of a string, use `addCodePoints()`. It adds the code points one by one, so it's not atomic. If it fails, the password may contain only some of them.
+
+<!-- begin box info -->
+`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated. Use `addCodePoint()`, `addCodePoints()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead. Version 2.0.1 and earlier stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`.
 <!-- end -->
 
 ## Compare two passwords

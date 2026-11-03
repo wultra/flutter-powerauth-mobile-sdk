@@ -245,9 +245,10 @@ main() {
       final p2 = PowerAuthPassword();
       final p3 = PowerAuthPassword();
       final p4 = PowerAuthPassword();
+      final p5 = PowerAuthPassword();
       final thumb = await importPassword('👍');
       final precomposed = await importPassword('\u00E9');
-      cleanupHelper.cleanup.addAll([expected, p1, p2, p3, p4, thumb, precomposed]);
+      cleanupHelper.cleanup.addAll([expected, p1, p2, p3, p4, p5, thumb, precomposed]);
 
       expect(await expected.length(), 5);
 
@@ -260,6 +261,9 @@ main() {
       expect(await p2.insertCharacter('a', 0), 3);
       expect(await p2.insertCharacter('👍🏿', 1), 5);
       expect(await p2.isEqualTo(expected), true);
+
+      expect(await p5.addCodePoints('a👍🏿e\u0301'), 5);
+      expect(await p5.isEqualTo(expected), true);
 
       // removeLastCodePoint() removes only the skin tone modifier
       expect(await p3.addCharacter('👍🏿'), 2);

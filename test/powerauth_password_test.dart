@@ -41,8 +41,6 @@ class _PasswordPlatform extends PowerAuthPasswordPlatform {
 
   @override
   Future<int> addCharacter(String objectId, int character) async {
-    // Yield, so that operations which are not serialized would interleave.
-    await Future<void>.delayed(Duration.zero);
     codePoints.add(character);
     return codePoints.length;
   }
@@ -108,6 +106,21 @@ void main() {
     expect(await password.addCharacter('👍🏿'), 3);
     expect(await password.addCharacter('e\u0301'), 5);
     expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x65, 0x301]);
+  });
+
+  test('addCodePoints adds every code point', () async {
+    final password = PowerAuthPassword();
+
+    expect(await password.addCodePoints('a👍🏿'), 3);
+    expect(await password.addCodePoints(''), 3);
+    expect(await password.addCodePoints('e\u0301'), 5);
+    expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x65, 0x301]);
+  });
+
+  test('fromString with empty string does not allocate the native password', () async {
+    await PowerAuthPassword.fromString('');
+
+    expect(platform.initializeCount, 0);
   });
 
   test('insertCharacter inserts every code point in order', () async {
@@ -178,57 +191,6 @@ void main() {
     await expectLater(password.insertCharacter('A', 0x80000000), throwsWrongParameter());
     await expectLater(password.removeCodePointAt(0x80000000), throwsWrongParameter());
     expect(platform.initializeCount, 0);
-  });
-
-  test('operations are not interleaved', () async {
-    final password = PowerAuthPassword();
-
-    final results = await Future.wait([
-      password.addCharacter('👍🏿'),
-      password.addCharacter('ab'),
-      password.removeLastCodePoint(),
-      password.addCodePoint(0x63),
-    ]);
-
-    expect(results, [2, 4, 3, 4]);
-    expect(platform.codePoints, [0x1F44D, 0x1F3FF, 0x61, 0x63]);
-  });
-
-  test('operation starts immediately when no operation is pending', () async {
-    final password = PowerAuthPassword();
-
-    final added = password.addCodePoint(0x61);
-    // The native password is requested synchronously, before any other code runs.
-    expect(platform.initializeCount, 1);
-    expect(await added, 1);
-
-    // A queued operation sees the result of the previous one.
-    final length = password.length();
-    final removed = password.removeLastCodePoint();
-    expect(await length, 1);
-    expect(await removed, 0);
-  });
-
-  test('failed operation does not block the following ones', () async {
-    final password = PowerAuthPassword();
-
-    final failed = password.addCodePoint(-1);
-    final added = password.addCodePoint(0x61);
-
-    await expectLater(failed, throwsWrongParameter());
-    expect(await added, 1);
-  });
-
-  test('passwords compared with each other at the same time do not deadlock', () async {
-    final p1 = PowerAuthPassword();
-    final p2 = PowerAuthPassword();
-
-    final results = await Future.wait([
-      p1.isEqualTo(p2),
-      p2.isEqualTo(p1),
-    ]).timeout(const Duration(seconds: 5));
-
-    expect(results, [true, true]);
   });
 
   test('deprecated removal methods remove one code point', () async {
