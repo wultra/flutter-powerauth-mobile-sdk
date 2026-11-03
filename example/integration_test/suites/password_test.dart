@@ -337,6 +337,14 @@ main() {
       );
     });
 
+    test('testAutoReleaseTimeOutOf32BitRange', () async {
+      // A time that doesn't fit into 32 bits must not crash the native initialization.
+      final password = PowerAuthPassword(autoReleaseTimeMillis: 0x100000000);
+
+      expect(await password.addCodePoint(0x41), 1);
+      await password.release();
+    });
+
     test('testAutomaticCleanup', () async {
       final p1 = PowerAuthPassword(
         destroyOnUse: false,

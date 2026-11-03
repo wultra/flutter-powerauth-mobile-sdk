@@ -94,7 +94,7 @@ print('empty = $empty');            // empty = true
 To append all code points of a string, use `addCodePoints()`. It adds the code points one by one, so it's not atomic. If it fails, the password may contain only some of them.
 
 <!-- begin box info -->
-`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated. Use `addCodePoint()`, `addCodePoints()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead. Version 2.0.1 and earlier stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`.
+`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated. Use `addCodePoint()`, `addCodePoints()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead. Version 2.0.1 and earlier stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`. Now they store every code point of the string, so a password set with an earlier version that contains such a string no longer matches. To keep the old behavior, add only the first code point with `addCodePoint(text.runes.first)`.
 <!-- end -->
 
 ## Compare two passwords

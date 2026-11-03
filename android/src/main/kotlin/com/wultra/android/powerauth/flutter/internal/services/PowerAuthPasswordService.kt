@@ -120,8 +120,9 @@ internal class PowerAuthPasswordService(
         try {
             val destroyOnUse: Boolean = call.argument<Boolean>(DESTROY_ON_USE) ?: false
             val ownerId: String? = call.argument<String>(OWNER_ID)
-            val autoreleaseTimeMs: Int =
-                call.argument<Int>(AUTORELEASE_TIME) ?: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
+            // Flutter sends integers that don't fit into 32 bits as Long, so read the time as Number.
+            val autoreleaseTimeMs: Long = call.argument<Number>(AUTORELEASE_TIME)?.toLong()
+                ?: Constants.PASSWORD_KEY_KEEP_ALIVE_TIME.toLong()
 
             if (ownerId != null && objectRegister.findObject(
                     ownerId,
@@ -137,7 +138,8 @@ internal class PowerAuthPasswordService(
             var actualReleaseTime = Constants.PASSWORD_KEY_KEEP_ALIVE_TIME
 
             if (autoreleaseTimeMs > 0) {
-                actualReleaseTime = autoreleaseTimeMs
+                // Release policies accept only 32-bit times, so a longer time is clamped.
+                actualReleaseTime = autoreleaseTimeMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
             }
 
             val passwordInstance = ManagedAny.wrap(Password()) { obj: Password -> obj.destroy() }

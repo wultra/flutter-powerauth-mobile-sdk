@@ -26,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 class _PasswordPlatform extends PowerAuthPasswordPlatform {
   final List<int> codePoints = [];
   int initializeCount = 0;
+  int? failAtLength;
 
   @override
   Future<String> initialize({
@@ -42,6 +43,9 @@ class _PasswordPlatform extends PowerAuthPasswordPlatform {
 
   @override
   Future<int> addCharacter(String objectId, int character) async {
+    if (codePoints.length == failAtLength) {
+      throw PowerAuthException(code: PowerAuthErrorCode.invalidNativeObject);
+    }
     codePoints.add(character);
     return codePoints.length;
   }
@@ -77,8 +81,12 @@ class _PasswordPlatform extends PowerAuthPasswordPlatform {
 }
 
 class _NativeObjectRegisterPlatform extends NativeObjectRegisterPlatform {
+  final releasedObjectIds = <String>[];
+
   @override
-  Future<void> releaseNativeObject(String objectId) async {}
+  Future<void> releaseNativeObject(String objectId) async {
+    releasedObjectIds.add(objectId);
+  }
 }
 
 void main() {
@@ -87,13 +95,15 @@ void main() {
   late PowerAuthPasswordPlatform originalPlatform;
   late NativeObjectRegisterPlatform originalRegisterPlatform;
   late _PasswordPlatform platform;
+  late _NativeObjectRegisterPlatform registerPlatform;
 
   setUp(() {
     originalPlatform = PowerAuthPasswordPlatform.instance;
     originalRegisterPlatform = NativeObjectRegisterPlatform.instance;
     platform = _PasswordPlatform();
     PowerAuthPasswordPlatform.instance = platform;
-    NativeObjectRegisterPlatform.instance = _NativeObjectRegisterPlatform();
+    registerPlatform = _NativeObjectRegisterPlatform();
+    NativeObjectRegisterPlatform.instance = registerPlatform;
   });
 
   tearDown(() {
@@ -130,6 +140,27 @@ void main() {
   test('fromString with empty string does not allocate the native password', () async {
     await PowerAuthPassword.fromString('');
 
+    expect(platform.initializeCount, 0);
+  });
+
+  test('fromString releases the native password if adding fails', () async {
+    platform.failAtLength = 2;
+
+    await expectLater(PowerAuthPassword.fromString('abcd'), throwsA(isA<PowerAuthException>()));
+    expect(registerPlatform.releasedObjectIds, ['password']);
+  });
+
+  test('invalid input does not allocate the native password', () async {
+    final password = PowerAuthPassword();
+
+    await expectLater(password.addCharacter(''), throwsWrongParameter());
+    await expectLater(password.insertCharacter('', 0), throwsWrongParameter());
+    await expectLater(password.insertCharacter('A', -1), throwsWrongParameter());
+    await expectLater(password.addCodePoint(0x110000), throwsWrongParameter());
+    await expectLater(password.insertCodePoint(-1, 0), throwsWrongParameter());
+    await expectLater(password.insertCodePoint(0x41, -1), throwsWrongParameter());
+    await expectLater(password.removeCodePointAt(-1), throwsWrongParameter());
+    expect(await password.addCodePoints(''), 0);
     expect(platform.initializeCount, 0);
   });
 
@@ -199,6 +230,7 @@ void main() {
     await expectLater(password.removeCodePointAt(-1), throwsInvalidNativeObject);
     await expectLater(password.addCharacter(''), throwsInvalidNativeObject);
     await expectLater(password.insertCharacter('', 0), throwsInvalidNativeObject);
+    await expectLater(password.addCodePoints(''), throwsInvalidNativeObject);
   });
 
   test('position out of 32-bit range is rejected', () async {

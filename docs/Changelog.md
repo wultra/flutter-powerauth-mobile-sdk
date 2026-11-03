@@ -3,6 +3,7 @@
 ## TBA
 
 * `PowerAuthPassword` now works with Unicode code points. `addCharacter()` and `insertCharacter()` add every code point of a string instead of only the first one. [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
+  * **Breaking:** If your app passes a string with more than one code point to `addCharacter()` or `insertCharacter()`, for example an emoji with a skin tone modifier or a letter with a combining accent, the stored password is now different. A password that the user set with version 2.0.1 or earlier then doesn't match, so authentication fails and every attempt counts toward the activation's maximum failure count, which can block the activation. Passwords that use only single code point characters, such as numeric PINs, are not affected. To keep the old behavior, add only the first code point of such a string with `addCodePoint(text.runes.first)`.
 * Added `PowerAuthPassword.addCodePoints()`, `removeCodePointAt()`, and `removeLastCodePoint()`, and deprecated `addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`. [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
 
 ## 2.0.1
