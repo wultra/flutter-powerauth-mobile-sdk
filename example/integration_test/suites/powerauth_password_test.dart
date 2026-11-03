@@ -91,6 +91,43 @@ main() {
       );
     });
 
+    test('testMultiCodePointPassword', () async {
+      // 👍🏽 is U+1F44D U+1F3FD, e\u0301 is U+0065 U+0301
+      const password = 'Sk💀ll👍🏽e\u0301';
+      await changePassword(
+        await credentials.validPasswordObject(),
+        await PowerAuthPassword.fromString(password),
+      );
+
+      // The same code points are accepted, no matter how the password was built.
+      await validatePassword(await PowerAuthPassword.fromString(password));
+
+      final fromCharacters = PowerAuthPassword();
+      for (final character in ['S', 'k', '💀', 'l', 'l', '👍🏽', 'e\u0301']) {
+        // ignore: deprecated_member_use
+        await fromCharacters.addCharacter(character);
+      }
+      expect(await fromCharacters.length(), 9);
+      await validatePassword(fromCharacters);
+
+      final fromCodePoints = PowerAuthPassword();
+      for (final codePoint in [0x53, 0x6B, 0x1F480, 0x6C, 0x6C, 0x1F44D, 0x1F3FD, 0x65, 0x301]) {
+        await fromCodePoints.addCodePoint(codePoint);
+      }
+      await validatePassword(fromCodePoints);
+
+      // Only the first code point of each character, as stored by version 2.0.1 and earlier.
+      await expectLater(
+        validatePassword(await PowerAuthPassword.fromString('Sk💀ll👍e')),
+        throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
+      );
+      // Canonically equivalent, but not normalized.
+      await expectLater(
+        validatePassword(await PowerAuthPassword.fromString('Sk💀ll👍🏽\u00E9')),
+        throwsPowerAuthServerError(PowerAuthErrorCode.networkError),
+      );
+    });
+
     test('testWrongPassword', () async {
       var status = await sdk.fetchActivationStatus();
       final maxFailCount = status.maxFailCount;

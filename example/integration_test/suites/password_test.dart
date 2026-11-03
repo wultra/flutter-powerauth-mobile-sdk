@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// The deprecated addCharacter(), insertCharacter(), removeCharacterAt() and removeLastCharacter()
+// are still covered by tests.
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import '../utils/integration_helper.dart';
@@ -114,7 +118,7 @@ main() {
       cleanupHelper.cleanup.addAll([p1, t1, t2, t3, t4]);
 
       expect(
-        p1.removeCharacterAt(-1),
+        p1.removeCodePointAt(-1),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -124,7 +128,7 @@ main() {
         ),
       );
       expect(
-        p1.removeCharacterAt(5),
+        p1.removeCodePointAt(5),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -134,21 +138,22 @@ main() {
         ),
       );
 
-      expect(await p1.removeCharacterAt(0), 4);
+      expect(await p1.removeCodePointAt(0), 4);
       expect(await p1.isEqualTo(t1), true);
-      expect(await p1.removeLastCharacter(), 3);
+      expect(await p1.removeLastCodePoint(), 3);
       expect(await p1.isEqualTo(t2), true);
-      expect(await p1.removeCharacterAt(1), 2);
+      expect(await p1.removeCodePointAt(1), 2);
       expect(await p1.isEqualTo(t3), true);
-      expect(await p1.removeCharacterAt(1), 1);
+      expect(await p1.removeCodePointAt(1), 1);
       expect(await p1.isEqualTo(t4), true);
-      expect(await p1.removeCharacterAt(0), 0);
+      expect(await p1.removeCodePointAt(0), 0);
       expect(await p1.length(), 0);
       // Pop last should not fail
+      expect(await p1.removeLastCodePoint(), 0);
       expect(await p1.removeLastCharacter(), 0);
 
       expect(
-        p1.removeCharacterAt(0),
+        p1.removeCodePointAt(0),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -215,9 +220,9 @@ main() {
       expect(await p2.length(), 5);
 
       await p3.addCharacter('★');
-      await p3.addCharacter('🤣🤫');
+      await p3.addCharacter('🤣');
       await p3.addCharacter('🤫');
-      await p3.addCharacter('🪘x');
+      await p3.addCharacter('🪘');
 
       expect(await p3.length(), 4);
 
@@ -231,6 +236,53 @@ main() {
       expect(await p3.isEqualTo(p4), true);
       expect(await p3.isEqualTo(p1), true);
       expect(await p4.isEqualTo(p1), true);
+    });
+
+    test('testMultiCodePointCharacters', () async {
+      // 👍🏿 is U+1F44D U+1F3FF, e\u0301 is U+0065 U+0301
+      final expected = await importPassword('a👍🏿e\u0301');
+      final p1 = PowerAuthPassword();
+      final p2 = PowerAuthPassword();
+      final p3 = PowerAuthPassword();
+      final p4 = PowerAuthPassword();
+      final thumb = await importPassword('👍');
+      final precomposed = await importPassword('\u00E9');
+      cleanupHelper.cleanup.addAll([expected, p1, p2, p3, p4, thumb, precomposed]);
+
+      expect(await expected.length(), 5);
+
+      expect(await p1.addCharacter('a'), 1);
+      expect(await p1.addCharacter('👍🏿'), 3);
+      expect(await p1.addCharacter('e\u0301'), 5);
+      expect(await p1.isEqualTo(expected), true);
+
+      expect(await p2.insertCharacter('e\u0301', 0), 2);
+      expect(await p2.insertCharacter('a', 0), 3);
+      expect(await p2.insertCharacter('👍🏿', 1), 5);
+      expect(await p2.isEqualTo(expected), true);
+
+      // removeLastCodePoint() removes only the skin tone modifier
+      expect(await p3.addCharacter('👍🏿'), 2);
+      expect(await p3.removeLastCodePoint(), 1);
+      expect(await p3.isEqualTo(thumb), true);
+
+      // Canonically equivalent strings are not normalized
+      expect(await p4.addCharacter('e\u0301'), 2);
+      expect(await p4.isEqualTo(precomposed), false);
+
+      await expectLater(
+        p4.addCharacter(''),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      await expectLater(
+        p4.insertCharacter('', 0),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      await expectLater(
+        p4.insertCharacter('👍🏿', 3),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      expect(await p4.length(), 2);
     });
 
     test('testAutomaticCleanup', () async {
@@ -416,11 +468,11 @@ main() {
 
       // Both passwords should be released and throw on access
       await expectLater(
-        p1.addCharacter('1'),
+        p1.addCodePoint(49),
         throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
       await expectLater(
-        p2.addCharacter('1'),
+        p2.addCodePoint(49),
         throwsPowerAuthCode(PowerAuthErrorCode.invalidNativeObject),
       );
 
@@ -493,7 +545,7 @@ main() {
         ),
       );
       expect(
-        p2.removeLastCharacter(),
+        p2.removeLastCodePoint(),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
