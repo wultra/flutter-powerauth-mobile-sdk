@@ -11,7 +11,7 @@ The `PowerAuthPassword` class stores a user's password in a native object. This 
 
 After the SDK destroys or releases the native password, another use reports `PowerAuthErrorCode.invalidNativeObject`. Create a new `PowerAuthPassword` object when you need the password again.
  
-This class gives the best protection for a numeric PIN. You can implement a custom PIN keyboard without a complete Dart string. The API also accepts Unicode code points. An alphanumeric password usually requires the system keyboard, which can leave password data in memory.
+This class gives the best protection for a numeric PIN. You can implement a custom PIN keyboard without a complete Dart string. The API accepts Unicode code points. An alphanumeric password usually requires the system keyboard, which can leave password data in memory.
 
 The password is stored as a sequence of Unicode code points, the same way as in the native PowerAuth mobile SDK. The length and all positions are counted in code points, not in visible characters. For example, `'👍🏽'` is one visible character, but it consists of two code points. The SDK doesn't normalize the input, so canonically equivalent strings such as `'\u00E9'` and `'e\u0301'` produce different passwords. If you build the password from your own input, then make sure that you add the same code points each time the user enters the same password.
 
@@ -94,7 +94,7 @@ print('empty = $empty');            // empty = true
 To append all code points of a string, use `addCodePoints()`. It adds the code points one by one, so it's not atomic. If it fails, the password may contain only some of them.
 
 <!-- begin box info -->
-`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated. Use `addCodePoint()`, `addCodePoints()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead. Version 2.0.1 and earlier stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`. Now they store every code point of the string, so a password set with an earlier version that contains such a string no longer matches. To keep the old behavior, add only the first code point with `addCodePoint(text.runes.first)`.
+Version 3.0.0 removed `addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`. Version 2.x stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`. For more information, see [Migration from 2.0.x to 3.0.x](Migration-from-2.0-to-3.0.md).
 <!-- end -->
 
 ## Compare two passwords

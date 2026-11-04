@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-// The deprecated addCharacter(), insertCharacter(), removeCharacterAt() and removeLastCharacter()
-// are still covered by tests.
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
@@ -119,15 +115,6 @@ void main() {
     ),
   );
 
-  test('addCharacter adds every code point', () async {
-    final password = PowerAuthPassword();
-
-    expect(await password.addCharacter('a'), 1);
-    expect(await password.addCharacter('👍🏿'), 3);
-    expect(await password.addCharacter('e\u0301'), 5);
-    expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x65, 0x301]);
-  });
-
   test('addCodePoints adds every code point', () async {
     final password = PowerAuthPassword();
 
@@ -153,9 +140,6 @@ void main() {
   test('invalid input does not allocate the native password', () async {
     final password = PowerAuthPassword();
 
-    await expectLater(password.addCharacter(''), throwsWrongParameter());
-    await expectLater(password.insertCharacter('', 0), throwsWrongParameter());
-    await expectLater(password.insertCharacter('A', -1), throwsWrongParameter());
     await expectLater(password.addCodePoint(0x110000), throwsWrongParameter());
     await expectLater(password.insertCodePoint(-1, 0), throwsWrongParameter());
     await expectLater(password.insertCodePoint(0x41, -1), throwsWrongParameter());
@@ -164,45 +148,26 @@ void main() {
     expect(platform.initializeCount, 0);
   });
 
-  test('insertCharacter inserts every code point in order', () async {
-    final password = PowerAuthPassword();
+  test('fromString adds every code point', () async {
+    await PowerAuthPassword.fromString('a👍🏿e\u0301');
 
-    expect(await password.insertCharacter('ab', 0), 2);
-    expect(await password.insertCharacter('👍🏿', 1), 4);
-    expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x62]);
-  });
-
-  test('addCharacter and fromString store the same code points', () async {
-    const value = 'a👍🏿e\u0301';
-    await PowerAuthPassword.fromString(value);
-    final fromString = List.of(platform.codePoints);
-    platform.codePoints.clear();
-
-    await PowerAuthPassword().addCharacter(value);
-
-    expect(platform.codePoints, fromString);
+    expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x65, 0x301]);
   });
 
   test('code points are not normalized', () async {
-    await PowerAuthPassword().addCharacter('e\u0301');
-    await PowerAuthPassword().addCharacter('\u00E9');
+    await PowerAuthPassword().addCodePoints('e\u0301');
+    await PowerAuthPassword().addCodePoints('\u00E9');
 
     expect(platform.codePoints, [0x65, 0x301, 0xE9]);
   });
 
-  test('empty string is rejected', () async {
+  test('insertCodePoint inserts at the position', () async {
     final password = PowerAuthPassword();
+    await password.addCodePoints('ab');
 
-    await expectLater(password.addCharacter(''), throwsWrongParameter());
-    await expectLater(password.insertCharacter('', 0), throwsWrongParameter());
-    expect(platform.codePoints, isEmpty);
-  });
-
-  test('insertCharacter rejects position out of range', () async {
-    final password = PowerAuthPassword();
-
-    await expectLater(password.insertCharacter('👍🏿', 1), throwsWrongParameter());
-    expect(platform.codePoints, isEmpty);
+    expect(await password.insertCodePoint(0x1F44D, 1), 3);
+    expect(await password.insertCodePoint(0x1F3FF, 2), 4);
+    expect(platform.codePoints, [0x61, 0x1F44D, 0x1F3FF, 0x62]);
   });
 
   test('code point out of range is rejected', () async {
@@ -228,8 +193,6 @@ void main() {
     await expectLater(password.addCodePoint(0x110000), throwsInvalidNativeObject);
     await expectLater(password.insertCodePoint(-1, 0), throwsInvalidNativeObject);
     await expectLater(password.removeCodePointAt(-1), throwsInvalidNativeObject);
-    await expectLater(password.addCharacter(''), throwsInvalidNativeObject);
-    await expectLater(password.insertCharacter('', 0), throwsInvalidNativeObject);
     await expectLater(password.addCodePoints(''), throwsInvalidNativeObject);
   });
 
@@ -237,18 +200,17 @@ void main() {
     final password = PowerAuthPassword();
 
     await expectLater(password.insertCodePoint(0x41, 0x80000000), throwsWrongParameter());
-    await expectLater(password.insertCharacter('A', 0x80000000), throwsWrongParameter());
     await expectLater(password.removeCodePointAt(0x80000000), throwsWrongParameter());
     expect(platform.codePoints, isEmpty);
   });
 
-  test('deprecated removal methods remove one code point', () async {
+  test('removal methods remove one code point', () async {
     final password = PowerAuthPassword();
-    await password.addCharacter('a👍🏿b');
+    await password.addCodePoints('a👍🏿b');
 
-    expect(await password.removeCharacterAt(0), 3);
-    expect(await password.removeLastCharacter(), 2);
-    expect(platform.codePoints, [0x1F44D, 0x1F3FF]);
-    await expectLater(password.removeCharacterAt(0x80000000), throwsWrongParameter());
+    expect(await password.removeCodePointAt(0), 3);
+    expect(await password.removeLastCodePoint(), 2);
+    expect(await password.removeLastCodePoint(), 1);
+    expect(platform.codePoints, [0x1F44D]);
   });
 }

@@ -104,8 +104,7 @@ main() {
 
       final fromCharacters = PowerAuthPassword();
       for (final character in ['S', 'k', '💀', 'l', 'l', '👍🏽', 'e\u0301']) {
-        // ignore: deprecated_member_use
-        await fromCharacters.addCharacter(character);
+        await fromCharacters.addCodePoints(character);
       }
       expect(await fromCharacters.length(), 9);
       await validatePassword(fromCharacters);
@@ -116,7 +115,7 @@ main() {
       }
       await validatePassword(fromCodePoints);
 
-      // Only the first code point of each character, as stored by version 2.0.1 and earlier.
+      // Only the first code point of each character, as stored by version 2.x.
       await expectLater(
         validatePassword(await PowerAuthPassword.fromString('Sk💀ll👍e')),
         throwsPowerAuthServerError(PowerAuthErrorCode.networkError),

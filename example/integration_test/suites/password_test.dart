@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-// The deprecated addCharacter(), insertCharacter(), removeCharacterAt() and removeLastCharacter()
-// are still covered by tests.
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
@@ -75,18 +71,18 @@ main() {
       expect(await p2.isEqualTo(pEmpty), true);
       expect(await p3.isEqualTo(pEmpty), false);
 
-      expect(await p1.addCharacter('0'), 1);
+      expect(await p1.addCodePoints('0'), 1);
       expect(await p2.addCodePoint(48), 1);
       expect(await p1.isEqualTo(pEmpty), false);
       expect(await p2.isEqualTo(pEmpty), false);
       expect(await p1.isEmpty(), false);
       expect(await p2.isEmpty(), false);
 
-      expect(await p1.addCharacter('1'), 2);
+      expect(await p1.addCodePoints('1'), 2);
       expect(await p2.addCodePoint(49), 2);
-      expect(await p1.addCharacter('2'), 3);
+      expect(await p1.addCodePoints('2'), 3);
       expect(await p2.addCodePoint(50), 3);
-      expect(await p1.addCharacter('3'), 4);
+      expect(await p1.addCodePoints('3'), 4);
       expect(await p2.addCodePoint(51), 4);
 
       expect(
@@ -151,7 +147,6 @@ main() {
       expect(await p1.length(), 0);
       // Pop last should not fail
       expect(await p1.removeLastCodePoint(), 0);
-      expect(await p1.removeLastCharacter(), 0);
 
       expect(
         p1.removeCodePointAt(0),
@@ -170,14 +165,14 @@ main() {
       var p2 = await importPassword('Sk💀ll');
       cleanupHelper.cleanup.addAll([p1, p2]);
 
-      expect(await p1.insertCharacter('l', 0), 1);
-      expect(await p1.insertCharacter('l', 1), 2);
-      expect(await p1.insertCharacter('S', 0), 3);
-      expect(await p1.insertCharacter('k', 1), 4);
+      expect(await p1.insertCodePoint(0x6C, 0), 1);     // 'l'
+      expect(await p1.insertCodePoint(0x6C, 1), 2);     // 'l'
+      expect(await p1.insertCodePoint(0x53, 0), 3);     // 'S'
+      expect(await p1.insertCodePoint(0x6B, 1), 4);     // 'k'
       expect(await p1.insertCodePoint(0x1F480, 2), 5);
 
       expect(
-        p1.insertCharacter('X', -1),
+        p1.insertCodePoint(0x58, -1),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -187,7 +182,7 @@ main() {
         ),
       );
       expect(
-        p1.insertCharacter('X', 6),
+        p1.insertCodePoint(0x58, 6),
         throwsA(
           isA<PowerAuthException>().having(
             (e) => e.code,
@@ -220,10 +215,10 @@ main() {
       expect(await p1.length(), 4);
       expect(await p2.length(), 5);
 
-      await p3.addCharacter('★');
-      await p3.addCharacter('🤣');
-      await p3.addCharacter('🤫');
-      await p3.addCharacter('🪘');
+      await p3.addCodePoints('★');
+      await p3.addCodePoints('🤣');
+      await p3.addCodePoints('🤫');
+      await p3.addCodePoints('🪘');
 
       expect(await p3.length(), 4);
 
@@ -253,38 +248,33 @@ main() {
 
       expect(await expected.length(), 5);
 
-      expect(await p1.addCharacter('a'), 1);
-      expect(await p1.addCharacter('👍🏿'), 3);
-      expect(await p1.addCharacter('e\u0301'), 5);
+      expect(await p1.addCodePoints('a'), 1);
+      expect(await p1.addCodePoints('👍🏿'), 3);
+      expect(await p1.addCodePoints('e\u0301'), 5);
       expect(await p1.isEqualTo(expected), true);
 
-      expect(await p2.insertCharacter('e\u0301', 0), 2);
-      expect(await p2.insertCharacter('a', 0), 3);
-      expect(await p2.insertCharacter('👍🏿', 1), 5);
+      expect(await p2.insertCodePoint(0x65, 0), 1);
+      expect(await p2.insertCodePoint(0x301, 1), 2);
+      expect(await p2.insertCodePoint(0x61, 0), 3);
+      expect(await p2.insertCodePoint(0x1F44D, 1), 4);
+      expect(await p2.insertCodePoint(0x1F3FF, 2), 5);
       expect(await p2.isEqualTo(expected), true);
 
       expect(await p5.addCodePoints('a👍🏿e\u0301'), 5);
       expect(await p5.isEqualTo(expected), true);
 
       // removeLastCodePoint() removes only the skin tone modifier
-      expect(await p3.addCharacter('👍🏿'), 2);
+      expect(await p3.addCodePoints('👍🏿'), 2);
       expect(await p3.removeLastCodePoint(), 1);
       expect(await p3.isEqualTo(thumb), true);
 
       // Canonically equivalent strings are not normalized
-      expect(await p4.addCharacter('e\u0301'), 2);
+      expect(await p4.addCodePoints('e\u0301'), 2);
       expect(await p4.isEqualTo(precomposed), false);
 
+      expect(await p4.addCodePoints(''), 2);
       await expectLater(
-        p4.addCharacter(''),
-        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
-      );
-      await expectLater(
-        p4.insertCharacter('', 0),
-        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
-      );
-      await expectLater(
-        p4.insertCharacter('👍🏿', 3),
+        p4.insertCodePoint(0x1F44D, 3),
         throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
       );
       expect(await p4.length(), 2);
