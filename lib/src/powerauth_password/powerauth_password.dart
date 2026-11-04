@@ -37,7 +37,7 @@ class PowerAuthPassword {
   /// Creates a container for a secure password.
   ///
   /// The underlying native resources are allocated lazily when the password is first
-  /// used in an operation (e.g., added characters, used for authentication).
+  /// used in an operation (e.g., added code points, used for authentication).
   ///
   /// - [destroyOnUse]: If `true`, the native password object is marked to be destroyed
   ///                   after its first use in a cryptographic operation (e.g., signing,
@@ -71,14 +71,17 @@ class PowerAuthPassword {
       powerAuthInstanceId: powerAuthInstanceId,
       autoReleaseTimeMillis: autoReleaseTimeMillis,
     );
-    // TODO: consider using a more efficient way
-    for (final character in password.runes) {
-      await pass.addCodePoint(character);
+    try {
+      await pass.addCodePoints(password);
+    } catch (_) {
+      // The caller never gets the password, so release the partially filled one.
+      await pass.release();
+      rethrow;
     }
     return pass;
   }
 
-  /// Returns the number of characters stored in the password.
+  /// Returns the number of Unicode code points stored in the password.
   Future<int> length() => _handle.withObjectId((id) => _platform.length(id));
 
   /// Clears the content of the password.
@@ -92,24 +95,70 @@ class PowerAuthPassword {
     return await length() == 0;
   }
 
-  /// Appends a character to the end of the password.
-  /// If more than one character is provided, only the first one is used.
-  Future<int> addCharacter(String character) => addCodePoint(_getCodePoint(character));
+  /// Appends a Unicode code point to the end of the password and returns
+  /// the number of code points stored in the password.
+  ///
+  /// The code point must be in range 0 up to 0x10FFFF, otherwise
+  /// `PowerAuthErrorCode.wrongParameter` is reported.
+  Future<int> addCodePoint(int codePoint) async {
+    _handle.throwIfReleased();
+    _validateCodePoint(codePoint);
+    return _handle.withObjectId((id) => _platform.addCharacter(id, codePoint));
+  }
 
-  /// Appends a character to the end of the password.
-  /// If more than one character is provided, only the first one is used.
-  Future<int> addCodePoint(int codePoint) => _handle.withObjectId((id) => _platform.addCharacter(id, codePoint));
+  /// Appends every Unicode code point of [text] to the end of the password and returns
+  /// the number of code points stored in the password.
+  ///
+  /// A visible character can consist of more than one code point. For example,
+  /// `'👍🏽'` adds two code points, so the length grows by 2.
+  ///
+  /// Code points are added one by one, so the operation is not atomic. If it fails, the password
+  /// may contain only some of the code points. If you modify the password before the returned
+  /// future completes, then your changes may land between the added code points.
+  Future<int> addCodePoints(String text) async {
+    if (text.isEmpty) {
+      _handle.throwIfReleased();
+      // Nothing is added, so keep the native password uncreated.
+      return _handle.isCreated ? await length() : 0;
+    }
+    var newLength = 0;
+    for (final codePoint in text.runes) {
+      newLength = await addCodePoint(codePoint);
+    }
+    return newLength;
+  }
 
-  /// Inserts a character at the specified position.
-  Future<int> insertCharacter(String character, int at) => insertCodePoint(_getCodePoint(character), at);
+  /// Inserts a Unicode code point at the specified position and returns
+  /// the number of code points stored in the password.
+  ///
+  /// The code point must be in range 0 up to 0x10FFFF and the position [at] must be
+  /// in range 0 up to length, otherwise `PowerAuthErrorCode.wrongParameter` is reported.
+  Future<int> insertCodePoint(int codePoint, int at) async {
+    _handle.throwIfReleased();
+    _validateCodePoint(codePoint);
+    _validatePosition(at);
+    return _handle.withObjectId((id) => _platform.insertCharacter(id, codePoint, at));
+  }
 
-  Future<int> insertCodePoint(int codePoint, int at) => _handle.withObjectId((id) => _platform.insertCharacter(id, codePoint, at));
+  /// Removes the code point at the specified position and returns
+  /// the remaining number of code points stored in the password.
+  ///
+  /// A visible character can consist of more than one code point, so this method
+  /// can remove only a part of it. For example, only the skin tone modifier of `'👍🏽'`.
+  /// The position must be in range 0 up to length - 1, otherwise
+  /// `PowerAuthErrorCode.wrongParameter` is reported.
+  Future<int> removeCodePointAt(int position) async {
+    _handle.throwIfReleased();
+    _validatePosition(position);
+    return _handle.withObjectId((id) => _platform.removeCharacterAt(id, position));
+  }
 
-  /// Removes the character at the specified position.
-  Future<int> removeCharacterAt(int position) => _handle.withObjectId((id) => _platform.removeCharacterAt(id, position));
-
-  /// Removes the last character.
-  Future<int> removeLastCharacter() => _handle.withObjectId((id) => _platform.removeLastCharacter(id));
+  /// Removes the last code point and returns the remaining number of code points
+  /// stored in the password. If the password is empty, nothing is removed.
+  ///
+  /// A visible character can consist of more than one code point, so this method
+  /// can remove only a part of it. For example, only the skin tone modifier of `'👍🏽'`.
+  Future<int> removeLastCodePoint() => _handle.withObjectId((id) => _platform.removeLastCharacter(id));
 
   /// Compares this password with another [PowerAuthPassword].
   Future<bool> isEqualTo(PowerAuthPassword other) async {
@@ -119,15 +168,26 @@ class PowerAuthPassword {
     return _platform.isEqualTo(id1, id2);
   }
 
-  int _getCodePoint(String character) {
-    if (character.isEmpty) {
+  // Arguments are validated before the native password is created, so that invalid input
+  // doesn't create it. A released password is checked first and reports invalidNativeObject,
+  // the same as in the React Native SDK.
+  void _validateCodePoint(int codePoint) {
+    if (codePoint < 0 || codePoint > 0x10FFFF) {
       throw PowerAuthException(
         code: PowerAuthErrorCode.wrongParameter,
-        message: 'String must not be empty',
+        message: 'Code point must be in range 0 up to 0x10FFFF',
       );
     }
+  }
 
-    return character.runes.first;
+  void _validatePosition(int position) {
+    // Native code accepts only 32-bit positions.
+    if (position < 0 || position > 0x7FFFFFFF) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.wrongParameter,
+        message: 'Position is out of range',
+      );
+    }
   }
 
   /// Internal method for serialization.

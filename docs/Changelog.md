@@ -2,7 +2,12 @@
 
 ## TBA
 
-- Android now resolves the latest PowerAuth Mobile SDK 2.0.x patch version (`2.0.+`), matching the iOS `~> 2.0.0` dependency.
+* **Breaking:** Removed `PowerAuthPassword.addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`, which stored only the first code point of a string. Use the code point methods instead, see [Migration from 2.0.x to 3.0.x](Migration-from-2.0-to-3.0.md). [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
+
+## 2.0.1
+
+* Android now resolves the latest PowerAuth Mobile SDK 2.0.x patch version (`2.0.+`), matching the iOS `~> 2.0.0` dependency.
+* Added Swift Package Manager installation guidance for iOS.
 
 ## 2.0.0
 
