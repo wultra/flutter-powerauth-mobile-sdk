@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// The deprecated addCharacter(), insertCharacter(), removeCharacterAt() and removeLastCharacter()
+// are still covered by tests.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
@@ -144,6 +148,9 @@ void main() {
     await expectLater(password.insertCodePoint(-1, 0), throwsWrongParameter());
     await expectLater(password.insertCodePoint(0x41, -1), throwsWrongParameter());
     await expectLater(password.removeCodePointAt(-1), throwsWrongParameter());
+    await expectLater(password.addCharacter(''), throwsWrongParameter());
+    await expectLater(password.insertCharacter('', 0), throwsWrongParameter());
+    await expectLater(password.insertCharacter('A', -1), throwsWrongParameter());
     expect(await password.addCodePoints(''), 0);
     expect(platform.initializeCount, 0);
   });
@@ -194,6 +201,8 @@ void main() {
     await expectLater(password.insertCodePoint(-1, 0), throwsInvalidNativeObject);
     await expectLater(password.removeCodePointAt(-1), throwsInvalidNativeObject);
     await expectLater(password.addCodePoints(''), throwsInvalidNativeObject);
+    await expectLater(password.addCharacter(''), throwsInvalidNativeObject);
+    await expectLater(password.insertCharacter('', 0), throwsInvalidNativeObject);
   });
 
   test('position out of 32-bit range is rejected', () async {
@@ -212,5 +221,26 @@ void main() {
     expect(await password.removeLastCodePoint(), 2);
     expect(await password.removeLastCodePoint(), 1);
     expect(platform.codePoints, [0x1F44D]);
+  });
+
+  test('deprecated addCharacter and insertCharacter store only the first code point', () async {
+    final password = PowerAuthPassword();
+
+    expect(await password.addCharacter('a'), 1);
+    expect(await password.addCharacter('👍🏿'), 2);
+    expect(await password.addCharacter('e\u0301'), 3);
+    expect(await password.insertCharacter('ab', 0), 4);
+    expect(await password.insertCharacter('👍🏿', 2), 5);
+    expect(platform.codePoints, [0x61, 0x61, 0x1F44D, 0x1F44D, 0x65]);
+  });
+
+  test('deprecated removal methods remove one code point', () async {
+    final password = PowerAuthPassword();
+    await password.addCodePoints('a👍🏿b');
+
+    expect(await password.removeCharacterAt(0), 3);
+    expect(await password.removeLastCharacter(), 2);
+    expect(platform.codePoints, [0x1F44D, 0x1F3FF]);
+    await expectLater(password.removeCharacterAt(0x80000000), throwsWrongParameter());
   });
 }

@@ -94,7 +94,9 @@ print('empty = $empty');            // empty = true
 To append all code points of a string, use `addCodePoints()`. It adds the code points one by one, so it's not atomic. If it fails, the password may contain only some of them.
 
 <!-- begin box info -->
-Version 3.0.0 removed `addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`. Version 2.x stored only the first code point of a string passed to `addCharacter()` or `insertCharacter()`. For more information, see [Migration from 2.0.x to 3.0.x](Migration-from-2.0-to-3.0.md).
+`addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()` are deprecated and will be removed in the next major version. Use `addCodePoint()`, `addCodePoints()`, `insertCodePoint()`, `removeCodePointAt()`, and `removeLastCodePoint()` instead.
+
+`addCharacter()` and `insertCharacter()` store only the first code point of a string, so a character such as `'👍🏽'` or `'e\u0301'` is not stored completely. If your app passed such characters to them, then a password that the user already set contains only the first code point of each one, and it doesn't match when you add every code point. Every failed attempt counts toward the activation's maximum failure count. To keep accepting such passwords, add only the first code point with `addCodePoint(character.runes.first)`, or let the user change the password: pass the old password with only the first code points to `beginPasswordChange()` and the new password with all code points to `finishPasswordChange()`.
 <!-- end -->
 
 ## Compare two passwords

@@ -95,6 +95,19 @@ class PowerAuthPassword {
     return await length() == 0;
   }
 
+  /// Appends the first Unicode code point of [character] to the end of the password
+  /// and returns the number of code points stored in the password.
+  ///
+  /// Only the first code point is stored, the same as in version 2.0.1 and earlier.
+  /// A character that consists of more than one code point, such as `'👍🏽'`, is not
+  /// stored completely. If [character] is empty, `PowerAuthErrorCode.wrongParameter`
+  /// is reported.
+  @Deprecated('Stores only the first code point of the string. Use addCodePoint() or addCodePoints() instead. This method will be removed in the next major version.')
+  Future<int> addCharacter(String character) async {
+    _handle.throwIfReleased();
+    return addCodePoint(_firstCodePoint(character));
+  }
+
   /// Appends a Unicode code point to the end of the password and returns
   /// the number of code points stored in the password.
   ///
@@ -128,6 +141,17 @@ class PowerAuthPassword {
     return newLength;
   }
 
+  /// Inserts the first Unicode code point of [character] at the specified position
+  /// and returns the number of code points stored in the password.
+  ///
+  /// Only the first code point is stored, the same as [addCharacter]. If [character]
+  /// is empty, `PowerAuthErrorCode.wrongParameter` is reported.
+  @Deprecated('Stores only the first code point of the string. Use insertCodePoint() instead. This method will be removed in the next major version.')
+  Future<int> insertCharacter(String character, int at) async {
+    _handle.throwIfReleased();
+    return insertCodePoint(_firstCodePoint(character), at);
+  }
+
   /// Inserts a Unicode code point at the specified position and returns
   /// the number of code points stored in the password.
   ///
@@ -143,6 +167,13 @@ class PowerAuthPassword {
   /// Removes the code point at the specified position and returns
   /// the remaining number of code points stored in the password.
   ///
+  /// This method works the same as [removeCodePointAt].
+  @Deprecated('Use removeCodePointAt() instead. This method will be removed in the next major version.')
+  Future<int> removeCharacterAt(int position) => removeCodePointAt(position);
+
+  /// Removes the code point at the specified position and returns
+  /// the remaining number of code points stored in the password.
+  ///
   /// A visible character can consist of more than one code point, so this method
   /// can remove only a part of it. For example, only the skin tone modifier of `'👍🏽'`.
   /// The position must be in range 0 up to length - 1, otherwise
@@ -152,6 +183,13 @@ class PowerAuthPassword {
     _validatePosition(position);
     return _handle.withObjectId((id) => _platform.removeCharacterAt(id, position));
   }
+
+  /// Removes the last code point and returns the remaining number of code points
+  /// stored in the password.
+  ///
+  /// This method works the same as [removeLastCodePoint].
+  @Deprecated('Use removeLastCodePoint() instead. This method will be removed in the next major version.')
+  Future<int> removeLastCharacter() => removeLastCodePoint();
 
   /// Removes the last code point and returns the remaining number of code points
   /// stored in the password. If the password is empty, nothing is removed.
@@ -166,6 +204,17 @@ class PowerAuthPassword {
     final id2 = await other._handle.getObjectId();
 
     return _platform.isEqualTo(id1, id2);
+  }
+
+  int _firstCodePoint(String character) {
+    if (character.isEmpty) {
+      throw PowerAuthException(
+        code: PowerAuthErrorCode.wrongParameter,
+        message: 'String must not be empty',
+      );
+    }
+
+    return character.runes.first;
   }
 
   // Arguments are validated before the native password is created, so that invalid input

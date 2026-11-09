@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// The deprecated addCharacter(), insertCharacter(), removeCharacterAt() and removeLastCharacter()
+// are still covered by tests.
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter_powerauth_mobile_sdk_plugin/flutter_powerauth_mobile_sdk_plugin.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_native_object_register/powerauth_native_object_register_platform_interface.dart';
 import 'package:flutter_powerauth_mobile_sdk_plugin/src/powerauth_password/powerauth_password_platform_interface.dart';
@@ -147,6 +151,7 @@ main() {
       expect(await p1.length(), 0);
       // Pop last should not fail
       expect(await p1.removeLastCodePoint(), 0);
+      expect(await p1.removeLastCharacter(), 0);
 
       expect(
         p1.removeCodePointAt(0),
@@ -278,6 +283,41 @@ main() {
         throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
       );
       expect(await p4.length(), 2);
+    });
+
+    test('testDeprecatedCharacterMethods', () async {
+      // The deprecated methods store only the first code point, the same as version 2.0.1.
+      final truncated = await importPassword('a👍e');
+      final p1 = PowerAuthPassword();
+      final p2 = PowerAuthPassword();
+      cleanupHelper.cleanup.addAll([truncated, p1, p2]);
+
+      expect(await p1.addCharacter('a'), 1);
+      expect(await p1.addCharacter('👍🏿'), 2);
+      expect(await p1.addCharacter('e\u0301'), 3);
+      expect(await p1.isEqualTo(truncated), true);
+
+      expect(await p2.insertCharacter('e\u0301', 0), 1);
+      expect(await p2.insertCharacter('a', 0), 2);
+      expect(await p2.insertCharacter('👍🏿', 1), 3);
+      expect(await p2.isEqualTo(truncated), true);
+
+      expect(await p2.removeCharacterAt(1), 2);
+      expect(await p2.removeLastCharacter(), 1);
+
+      await expectLater(
+        p2.addCharacter(''),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      await expectLater(
+        p2.insertCharacter('', 0),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      await expectLater(
+        p2.insertCharacter('X', 2),
+        throwsPowerAuthCode(PowerAuthErrorCode.wrongParameter),
+      );
+      expect(await p2.length(), 1);
     });
 
     test('testNativeArgumentValidation', () async {

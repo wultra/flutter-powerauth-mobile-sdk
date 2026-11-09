@@ -115,7 +115,18 @@ main() {
       }
       await validatePassword(fromCodePoints);
 
-      // Only the first code point of each character, as stored by version 2.x.
+      // The deprecated addCharacter() stores only the first code point of each character.
+      final truncated = await PowerAuthPassword.fromString('Sk💀ll👍e', destroyOnUse: false);
+      final fromDeprecated = PowerAuthPassword(destroyOnUse: false);
+      for (final character in ['S', 'k', '💀', 'l', 'l', '👍🏽', 'e\u0301']) {
+        // ignore: deprecated_member_use
+        await fromDeprecated.addCharacter(character);
+      }
+      expect(await fromDeprecated.isEqualTo(truncated), true);
+      await truncated.release();
+      await fromDeprecated.release();
+
+      // Only the first code point of each character, as stored by the deprecated methods.
       await expectLater(
         validatePassword(await PowerAuthPassword.fromString('Sk💀ll👍e')),
         throwsPowerAuthServerError(PowerAuthErrorCode.networkError),

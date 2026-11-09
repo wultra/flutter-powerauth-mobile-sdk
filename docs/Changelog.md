@@ -2,7 +2,7 @@
 
 ## TBA
 
-* **Breaking:** Removed `PowerAuthPassword.addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`, which stored only the first code point of a string. Use the code point methods instead, see [Migration from 2.0.x to 3.0.x](Migration-from-2.0-to-3.0.md). [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
+* Added `PowerAuthPassword.addCodePoints()`, `removeCodePointAt()`, and `removeLastCodePoint()`. Deprecated `addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`. `addCharacter()` and `insertCharacter()` still store only the first code point of a string. [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
 
 ## 2.0.1
 
