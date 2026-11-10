@@ -36,13 +36,22 @@ class NativeObjectHandle {
   Future<void>? _releaseFuture;
   bool _releaseRequested = false;
 
-  Future<String> getObjectId() async {
+  /// Whether the native object is created or its creation has started.
+  bool get isCreated => _objectId != null || _initialization != null;
+
+  /// Reports `invalidNativeObject` if the release was requested. Unlike [getObjectId],
+  /// this method doesn't create the native object.
+  void throwIfReleased() {
     if (_releaseRequested) {
       throw PowerAuthException(
         code: PowerAuthErrorCode.invalidNativeObject,
         message: 'Object has already been released.',
       );
     }
+  }
+
+  Future<String> getObjectId() async {
+    throwIfReleased();
 
     final objectId = _objectId;
     if (objectId != null) {
@@ -60,12 +69,7 @@ class NativeObjectHandle {
     final initialization = _initialization ??= initializer();
     try {
       final initializedObjectId = await initialization;
-      if (_releaseRequested) {
-        throw PowerAuthException(
-          code: PowerAuthErrorCode.invalidNativeObject,
-          message: 'Object has already been released.',
-        );
-      }
+      throwIfReleased();
       _objectId = initializedObjectId;
       return initializedObjectId;
     } catch (_) {

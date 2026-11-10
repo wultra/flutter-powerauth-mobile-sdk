@@ -1,4 +1,9 @@
 # https://dart.dev/guides/language/analysis-options
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
 include: package:flutter_lints/flutter.yaml
 
 linter:
