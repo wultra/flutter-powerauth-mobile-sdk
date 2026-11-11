@@ -93,8 +93,7 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func addCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let character: Int = try call.requireParameter(Args.character)
-        try withPassword(id: objectId, character: character) { password, char in
+        try withPassword(id: objectId, call: call) { password, char in
             password.addCharacter(char)
             result(password.length())
         }
@@ -102,10 +101,8 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func insertCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let character: Int = try call.requireParameter(Args.character)
-        let at: Int = try call.requireParameter(Args.position)
-        
-        try withPassword(id: objectId, character: character) { password, char in
+        try withPassword(id: objectId, call: call) { password, char in
+            let at: Int = try call.requireParameter(Args.position)
             if at >= 0 && at <= password.length() {
                 let position = UInt(at)
                 password.insertCharacter(char, at: position)
@@ -118,9 +115,8 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
     
     private func removeCharacter(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) throws {
         let objectId = try call.getObjectId()
-        let at: Int = try call.requireParameter(Args.position)
-        
         try withPassword(id: objectId) { password in
+            let at: Int = try call.requireParameter(Args.position)
             if at >= 0 && at < password.length() {
                 let position = UInt(at)
                 password.removeCharacter(at: position)
@@ -146,22 +142,15 @@ internal class PowerAuthPasswordService: PowerAuthFlutterService  {
         try action(password)
     }
     
-    private func withPassword(id: String, character: Int, action: (PowerAuthMutablePassword, UInt32) throws -> Void) throws {
-        
-        guard character >= 0 else {
-            throw PluginException(.wrongParameter, message: "CodePoint cannot be negative")
+    private func withPassword(id: String, call: FlutterMethodCall, action: (PowerAuthMutablePassword, UInt32) throws -> Void) throws {
+        // Look up the password before reading other arguments, so that a released password reports invalidNativeObject.
+        try withPassword(id: id) { password in
+            let character: Int = try call.requireParameter(Args.character)
+            guard let codePoint = UInt32(exactly: character), codePoint <= Constants.CODEPOINT_MAX else {
+                throw PluginException(.wrongParameter, message: "CodePoint must be in range 0 up to 0x10FFFF")
+            }
+            try action(password, codePoint)
         }
-        
-        let codePoint = UInt32(character)
-        
-        guard codePoint <= Constants.CODEPOINT_MAX else {
-            throw PluginException(.wrongParameter, message: "CodePoint is too big")
-        }
-        
-        guard let password: PowerAuthMutablePassword = register.touch(id: id) else {
-            throw PluginException(.invalidNativeObject, message: "Password object is no longer valid")
-        }
-        try action(password, codePoint)
     }
 }
 
