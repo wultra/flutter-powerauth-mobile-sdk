@@ -26,6 +26,8 @@ import 'suites/powerauth_encryptor_test.dart' as encryptor_suite;
 import 'suites/powerauth_native_object_register_test.dart' as native_obj_suite;
 import 'suites/powerauth_password_test.dart' as powerauth_password_suite;
 import 'suites/powerauth_signature_test.dart' as signature_suite;
+import 'suites/powerauth_offline_signature_test.dart'
+    as offline_signature_suite;
 import 'suites/powerauth_advanced_signature_test.dart'
     as advanced_signature_suite;
 import 'suites/powerauth_secure_vault_test.dart' as secure_vault_suite;
@@ -54,6 +56,7 @@ void main() {
   native_obj_suite.main();
   powerauth_password_suite.main();
   signature_suite.main();
+  offline_signature_suite.main();
   advanced_signature_suite.main();
   secure_vault_suite.main();
   protocol_upgrade_suite.main();
