@@ -28,6 +28,7 @@ object PowerAuthActivationUtils {
             "failCount" to status.failCount,
             "maxFailCount" to status.maxFailCount,
             "remainingAttempts" to status.remainingAttempts,
+            "blockExpirationTime" to status.blockExpirationTime,
             "customObject" to status.customObject
         )
     }

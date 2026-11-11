@@ -5,7 +5,7 @@
 The library is available for the following __Flutter 3.44.0+ and Dart 3.12.0+__ platforms:
 
 - __Android 6.0 (API 23)__ and newer
-- __iOS 13.4__ and newer
+- __iOS 15.0__ and newer
 
 ## How To Install
 
@@ -64,7 +64,7 @@ The plugin supports both Swift Package Manager (SwiftPM) and CocoaPods. The Dart
 
 Flutter 3.44 and newer enable SwiftPM by default. To install the plugin in an iOS app:
 
-1. Open `ios/Runner.xcworkspace` in Xcode. Select the `Runner` target and set **Minimum Deployments** to iOS 13.4 or newer.
+1. Open `ios/Runner.xcworkspace` in Xcode. Select the `Runner` target and set **Minimum Deployments** to iOS 15.0 or newer.
 2. If you changed the deployment target, regenerate the iOS configuration with `flutter build ios --config-only`.
 3. Run the app with `flutter run` on an iOS simulator or device. Flutter adds `FlutterGeneratedPluginSwiftPackage` to the Xcode project and resolves the plugin's native `PowerAuth2` dependency through SwiftPM.
 
@@ -74,10 +74,10 @@ If SwiftPM was previously disabled, run `flutter config --enable-swift-package-m
 
 ##### CocoaPods
 
-If your project uses CocoaPods, ensure the platform version in `ios/Podfile` is at least 13.4:
+If your project uses CocoaPods, ensure the platform version in `ios/Podfile` is at least 15.0:
 
 ```ruby
-platform :ios, '13.4'
+platform :ios, '15.0'
 ```
 
 Then install pods:

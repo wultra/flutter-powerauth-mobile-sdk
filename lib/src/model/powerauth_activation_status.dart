@@ -32,6 +32,15 @@ class PowerAuthActivationStatus {
   /// Contains `(maxFailCount - failCount)` if state is `ACTIVE`, otherwise 0.
   final int remainingAttempts;
 
+  /// If the activation is temporarily blocked, contains the time when it will
+  /// be unblocked, in milliseconds since the Unix epoch. Otherwise `null`.
+  ///
+  /// To compare the value with the current time, use
+  /// `PowerAuthTimeSynchronizationService.currentTime()`. The value requires
+  /// PowerAuth Server 2.2.0 or later and is always `null` for the legacy
+  /// protocol 3.3.
+  final int? blockExpirationTime;
+
   /// Contains custom object returned from the server. The value is optional
   /// and PowerAuth Application Server must support this custom object.
   final Map<String, dynamic>? customObject;
@@ -41,6 +50,7 @@ class PowerAuthActivationStatus {
     required this.failCount,
     required this.maxFailCount,
     required this.remainingAttempts,
+    this.blockExpirationTime,
     this.customObject,
   });
 
@@ -65,6 +75,7 @@ class PowerAuthActivationStatus {
       failCount: map['failCount'] as int,
       maxFailCount: map['maxFailCount'] as int,
       remainingAttempts: map['remainingAttempts'] as int,
+      blockExpirationTime: map['blockExpirationTime'] as int?,
       customObject:
           map['customObject'] != null
               ? Map<String, dynamic>.from(map['customObject'] as Map)
@@ -78,6 +89,7 @@ class PowerAuthActivationStatus {
       'failCount': failCount,
       'maxFailCount': maxFailCount,
       'remainingAttempts': remainingAttempts,
+      'blockExpirationTime': blockExpirationTime,
       'customObject': customObject,
     };
     json.removeWhere((key, value) => value == null);

@@ -155,6 +155,15 @@ main() {
 
       expect(status.state, PowerAuthActivationState.blocked);
       expect(status.remainingAttempts, 0);
+      // The block expires only when the server has temporary activation
+      // blocking enabled (PowerAuth Server 2.2.0 or later).
+      final blockExpirationTime = status.blockExpirationTime;
+      if (blockExpirationTime != null) {
+        expect(
+          blockExpirationTime,
+          greaterThan(await sdk.timeSynchronizationService.currentTime()),
+        );
+      }
     });
 
     test('testReuseUsedPasswordObject', () async {
