@@ -10,17 +10,8 @@ on:
 
 jobs:
   tests:
-    # Explicit names keep the required `Tests` check name unchanged.
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Tests
-            runner: macos-latest
-          - name: Tests (Xcode 27)
-            runner: xcode-27
+    name: Tests
+    runs-on: xcode-27
     timeout-minutes: 60
     steps:
       - name: Checkout the repo

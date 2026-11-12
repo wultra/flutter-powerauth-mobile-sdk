@@ -9,17 +9,8 @@ on:
 
 jobs:
   build-ios:
-    # Explicit names keep the required `Build iOS App` check name unchanged.
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Build iOS App
-            runner: macos-latest
-          - name: Build iOS App (Xcode 27)
-            runner: xcode-27
+    name: Build iOS App
+    runs-on: xcode-27
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
