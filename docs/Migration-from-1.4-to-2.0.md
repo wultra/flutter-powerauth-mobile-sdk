@@ -22,6 +22,10 @@ PowerAuth Mobile Flutter SDK version `2.0.0` uses PowerAuth Mobile SDK version `
 
 ## Configuration
 
+<!-- begin box info -->
+Before you start the migration, decide how your existing users should transition to the new protocol. The native SDK's [Upgrading to Post-Quantum Cryptography](https://github.com/wultra/powerauth-mobile-sdk/blob/develop/docs/Upgrading-to-Post-Quantum-Cryptography.md) tutorial describes the available strategies and helps you choose the right one. Its examples use the native APIs; in Flutter, use the `algorithm` configuration option, `hasProtocolUpgradeAvailable()`, `startProtocolUpgrade()`, and `hasPendingProtocolUpgrade()` described in this guide and [Requesting Device Activation Status](Requesting-Device-Activation-Status.md#authenticated-protocol-upgrade).
+<!-- end -->
+
 The default algorithm is `PowerAuthAlgorithm.p384l3`. It requires PowerAuth Server `2.0.0` or later. Set `algorithm` to `PowerAuthAlgorithm.legacy` if the application must stay on protocol 3.3 during migration.
 
 <!-- begin box warning -->
@@ -260,5 +264,6 @@ Native object identifiers are no longer public. Call `release()` on `PowerAuthPa
 
 ## Read Next
 
+- [Upgrading to Post-Quantum Cryptography](https://github.com/wultra/powerauth-mobile-sdk/blob/develop/docs/Upgrading-to-Post-Quantum-Cryptography.md) in the native SDK documentation describes protocol migration strategies for existing users.
 - [Configuration](Configuration.md)
 - [Troubleshooting](Troubleshooting.md)
