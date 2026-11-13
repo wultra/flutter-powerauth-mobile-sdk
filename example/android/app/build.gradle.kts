@@ -21,6 +21,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    androidResources {
+        // TEMPORARY workaround for a Flutter 3.50 regression (https://github.com/flutter/flutter/issues/196444):
+        // The default pattern without `.*`, which would drop the `.env` asset from the APK.
+        // Remove once CI runs a Flutter release with the fix. Tracked in wultra/flutter-powerauth-mobile-sdk#132.
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+
     defaultConfig {
         applicationId = "com.wultra.flutter_powerauth_mobile_sdk_plugin_example"
 
