@@ -9,10 +9,10 @@ Pod::Spec.new do |s|
   s.source           = { :git => "https://github.com/wultra/flutter-powerauth-mobile-sdk" }
 
   s.source_files = 'flutter_powerauth_mobile_sdk_plugin/Sources/flutter_powerauth_mobile_sdk_plugin/**/*.swift'
-  s.platform = :ios, '13.4'
+  s.platform = :ios, '15.0'
 
   s.dependency 'Flutter'
-  s.dependency "PowerAuth2", "~> 2.0.0"
+  s.dependency "PowerAuth2", "~> 2.1.0"
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

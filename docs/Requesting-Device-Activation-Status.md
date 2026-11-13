@@ -47,6 +47,8 @@ if (await powerAuth.hasValidActivation()) {
         final currentFailCount = status.failCount;
         final maxAllowedFailCount = status.maxFailCount;
         final remainingFailCount = status.remainingAttempts;
+        // Time when a temporarily blocked activation will be unblocked, otherwise null
+        final blockExpirationTime = status.blockExpirationTime;
         // Custom object contains any proprietary server-specific data
         final customObject = status.customObject;
     } catch (e) {
@@ -58,6 +60,23 @@ if (await powerAuth.hasValidActivation()) {
 ```
 
 The status fetch can fail with the unrecoverable `PowerAuthErrorCode.protocolUpgrade` error. This error means that the SDK cannot upgrade the PowerAuth protocol. In this case, [remove the activation locally](Device-Activation-Removal.md).
+
+## Temporarily Blocked Activation
+
+If the activation is temporarily blocked, `status.blockExpirationTime` contains the time when it will be unblocked, in milliseconds since the Unix epoch. Otherwise, the value is `null`. To compare it with the current time, use the [synchronized time](Time-Synchronization.md) instead of the device's local time:
+
+```dart
+final status = await powerAuth.fetchActivationStatus();
+final blockExpirationTime = status.blockExpirationTime;
+
+if (status.state == PowerAuthActivationState.blocked && blockExpirationTime != null) {
+    final now = await powerAuth.timeSynchronizationService.currentTime();
+    final remaining = Duration(milliseconds: blockExpirationTime - now);
+    print("Activation will be unblocked in ${remaining.inSeconds} seconds");
+}
+```
+
+The block expiration time requires PowerAuth Server version `2.2.0` or later. With older servers, or with the legacy protocol 3.3, the value is always `null`.
 
 ## Authenticated Protocol Upgrade
 

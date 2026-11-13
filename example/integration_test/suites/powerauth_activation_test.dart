@@ -358,10 +358,13 @@ main() {
 
       var status = await sdk.fetchActivationStatus();
       expect(status.state, PowerAuthActivationState.active);
+      expect(status.blockExpirationTime, isNull);
       await helper.changeActivation(ActivationChange.block);
 
       status = await sdk.fetchActivationStatus();
       expect(status.state, PowerAuthActivationState.blocked);
+      // A manually blocked activation has no expiration time.
+      expect(status.blockExpirationTime, isNull);
 
       await helper.changeActivation(ActivationChange.unblock);
       status = await sdk.fetchActivationStatus();
