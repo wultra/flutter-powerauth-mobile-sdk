@@ -27,6 +27,7 @@ void main() {
   late PowerAuthMethodChannel platform;
   var algorithm = 'p384l3';
   var invalidPublicKeyType = false;
+  int? blockExpirationTime;
 
   setUp(() {
     calls.clear();
@@ -39,6 +40,14 @@ void main() {
             'register_releaseNativeObject' => null,
             'getCurrentAlgorithm' => algorithm,
             'cleanupInstanceData' => null,
+            'fetchActivationStatus' => <String, dynamic>{
+              'state': 'blocked',
+              'failCount': 5,
+              'maxFailCount': 5,
+              'remainingAttempts': 0,
+              'blockExpirationTime': blockExpirationTime,
+              'customObject': null,
+            },
             'startProtocolUpgrade' => <String, dynamic>{
               'activationStatusFetchRequired': true,
               'activationFingerprint': null,
@@ -151,6 +160,18 @@ void main() {
       'keychainConfiguration': keychain.toMap(),
       'sharingConfiguration': sharing.toMap(),
     });
+  });
+
+  test('activation status decodes the optional block expiration time', () async {
+    var status = await platform.fetchActivationStatus('instance');
+    expect(status.state, PowerAuthActivationState.blocked);
+    expect(status.blockExpirationTime, isNull);
+    expect(status.toJson().containsKey('blockExpirationTime'), isFalse);
+
+    blockExpirationTime = 1794402000123;
+    status = await platform.fetchActivationStatus('instance');
+    expect(status.blockExpirationTime, 1794402000123);
+    expect(status.toJson()['blockExpirationTime'], 1794402000123);
   });
 
   test('protocol upgrade sends biometry flag and decodes result', () async {

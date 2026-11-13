@@ -24,6 +24,8 @@ internal extension PowerAuthActivationStatus {
             "failCount": failCount,
             "maxFailCount": maxFailCount,
             "remainingAttempts": remainingAttempts,
+            // The date is created from a millisecond timestamp; rounding restores it exactly.
+            "blockExpirationTime": blockExpirationTime.map { Int(($0.timeIntervalSince1970 * 1000).rounded()) },
             "customObject": customObject
         ]
     }

@@ -3,6 +3,9 @@
 ## TBA
 
 * Added `PowerAuthPassword.addCodePoints()`, `removeCodePointAt()`, and `removeLastCodePoint()`. Deprecated `addCharacter()`, `insertCharacter()`, `removeCharacterAt()`, and `removeLastCharacter()`. `addCharacter()` and `insertCharacter()` still store only the first code point of a string. [(#105)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/105)
+* Updated the native PowerAuth Mobile SDK dependencies to version 2.1 (iOS `~> 2.1.0`, Android `2.1.+`). [(#127)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/127)
+* Raised the minimum supported iOS version to 15.0 to support Xcode 27. [(#127)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/127)
+* Added `PowerAuthActivationStatus.blockExpirationTime` with the time when a temporarily blocked activation will be unblocked. [(#127)](https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/127)
 
 ## 2.0.1
 

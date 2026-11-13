@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'dart:io';
+
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,9 +40,15 @@ import 'suites/powerauth_biometrics_automated_test.dart'
 import 'suites/powerauth_cryptoutils_tests.dart' as cryptoutils_suite;
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    // iOS simulators always enable semantics shortly after the Flutter view
+    // appears. Enable them up front, so the change cannot land in the middle
+    // of the first test and fail its check for leaked semantics handles.
+    if (Platform.isIOS) {
+      binding.platformDispatcher.semanticsEnabledTestValue = true;
+    }
     try {
       await dotenv.load(fileName: '.env');
     } catch (_) {}
