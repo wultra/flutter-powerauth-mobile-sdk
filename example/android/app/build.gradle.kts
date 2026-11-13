@@ -22,7 +22,7 @@ android {
     }
 
     androidResources {
-        // The default pattern without `.*`, which would drop the `.env` asset from the APK.
+        // Temporary workaround, see https://github.com/wultra/flutter-powerauth-mobile-sdk/issues/132
         ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
     }
 
