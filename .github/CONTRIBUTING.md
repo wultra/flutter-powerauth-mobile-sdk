@@ -181,6 +181,10 @@ cd example # make sure you are in the example directory
 flutter test -r expanded integration_test/plugin_integration_test.dart # test with expanded report
 ```
 
+The integration tests require the `example/.env` file (copy `example/.env-example` and fill the values) pointing to a PowerAuth Cloud instance. The offline signature tests (`powerauth_offline_signature_test.dart`) also require the `login` operation template on that instance, with offline (QR code) approval enabled. They create an operation, obtain its offline QR code via `GET /v2/operations/{operationId}/offline/qr`, compute the OTP with `offlineSignature()`, and verify it via `POST /v2/operations/{operationId}/offline/otp`.
+
+To run a single test, add `--plain-name "<substring of test name>"`, e.g. `--plain-name "testOfflineSignature"`.
+
 # Creating a Pull Request
 
 > [!WARNING]
